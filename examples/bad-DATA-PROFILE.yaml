@@ -1,0 +1,24 @@
+# Deliberately bad profile — used with bad-ANALYSIS-SPEC assertions.
+
+profile_version: 1
+computed_by: manual
+source_path: warehouse.customers
+row_count: 500
+columns:
+  customer_id:
+    null_rate: 0.22
+    n_unique: 410
+    dtype: string
+  observed_at:
+    null_rate: 0.0
+    n_unique: 3
+    dtype: date
+primary_key: [customer_id]
+primary_key_unique: false
+duplicate_rate: 0.18
+time:
+  column: observed_at
+  min: "2026-01-01"
+  max: "2026-01-10"
+  max_gap_days: 7
+sentinels_found: ["-1", "999"]

@@ -1,0 +1,34 @@
+# Known-good DATA-PROFILE for the signups extract in good-ANALYSIS-SPEC.yaml.
+# Numbers are measured_export stand-ins matching the fixture's rows / assertions.
+
+profile_version: 1
+computed_by: measured_export
+source_path: warehouse.fct_signups
+source_hash: "sha256:goodfixture0000000000000000000000000000000000000000000000000001"
+row_count: 38412
+columns:
+  user_id:
+    null_rate: 0.0
+    n_unique: 38412
+    dtype: string
+  signup_at:
+    null_rate: 0.0
+    n_unique: 14
+    dtype: date
+  is_bot:
+    null_rate: 0.0
+    n_unique: 1
+    dtype: integer
+  country:
+    null_rate: 0.012
+    n_unique: 42
+    dtype: string
+primary_key: [user_id]
+primary_key_unique: true
+duplicate_rate: 0.0
+time:
+  column: signup_at
+  min: "2026-06-01"
+  max: "2026-06-14"
+  max_gap_days: 1
+sentinels_found: []

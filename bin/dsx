@@ -1,0 +1,24 @@
+#!/usr/bin/env sh
+# dsx launcher — resolves the bundled package regardless of cwd.
+# Used verbatim by GSD command-exit-zero gates.
+set -eu
+SELF="$0"
+while [ -L "$SELF" ]; do
+  LINK="$(readlink "$SELF")"
+  case "$LINK" in
+    /*) SELF="$LINK" ;;
+    *)  SELF="$(dirname "$SELF")/$LINK" ;;
+  esac
+done
+ROOT="$(cd "$(dirname "$SELF")/.." && pwd)"
+PY="${DSX_PYTHON:-}"
+if [ -z "$PY" ]; then
+  for candidate in python3 python; do
+    if command -v "$candidate" >/dev/null 2>&1; then PY="$candidate"; break; fi
+  done
+fi
+if [ -z "$PY" ]; then
+  echo "dsx: no python interpreter found. Set DSX_PYTHON to one." >&2
+  exit 2
+fi
+PYTHONPATH="$ROOT${PYTHONPATH:+:$PYTHONPATH}" exec "$PY" -m dsx "$@"

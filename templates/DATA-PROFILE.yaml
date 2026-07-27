@@ -1,0 +1,32 @@
+# DATA-PROFILE — hermetic evidence of what an extract actually contains.
+#
+# Produced preferably by:
+#   dsx profile path/to/extract.csv --out DATA-PROFILE.yaml --pk user_id --time signup_at
+#
+# Gates (`dsx check dq`) compare ANALYSIS-SPEC data[].assertions against this
+# file. They never open the warehouse or the CSV themselves.
+#
+# computed_by:
+#   dsx-profile      — written by `dsx profile` (includes source_hash)
+#   measured_export  — numbers taken from a warehouse query / export script
+#   manual           — hand-entered; requires known_gaps on the matching data[] entry
+
+profile_version: 1
+computed_by: dsx-profile
+source_path: path/to/extract.csv
+source_hash: "sha256:..."
+row_count: 0
+columns:
+  # column_name:
+  #   null_rate: 0.0
+  #   n_unique: 0
+  #   dtype: string | integer | float | date | mixed
+primary_key: []
+primary_key_unique: true
+duplicate_rate: 0.0
+time:
+  column: null
+  min: null
+  max: null
+  max_gap_days: null
+sentinels_found: []

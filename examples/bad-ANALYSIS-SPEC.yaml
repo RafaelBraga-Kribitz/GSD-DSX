@@ -1,0 +1,154 @@
+# A deliberately defective ANALYSIS-SPEC. Every flaw here is one this repository's
+# author has watched ship to a real stakeholder. Run `dsx audit --spec` on it to
+# see the whole finding catalogue at once.
+#
+#   dsx audit --spec examples/bad-ANALYSIS-SPEC.yaml --verbose
+
+spec_version: 1
+title: "Why is churn up?"
+owner: "someone"
+created: "2026-06-01"
+
+question_type: causal          # causal question, observational data, no strategy
+
+decision:
+  owner: "TBD"                 # nobody owns the decision
+  # decision_rule missing      -> any result can be rationalised after the fact
+  # action_if_null missing     -> a null will be reframed as "directionally positive"
+  # minimum_practical_effect missing while kind=experiment below → DSX-COH-020
+
+metrics:
+  - name: churn_rate
+    type: ratio
+    definition: "customers who churned"
+    grain: customer
+    # numerator / denominator missing -> the denominator dispute is guaranteed
+    source: warehouse.customers
+    sql: |
+      SELECT COUNT(*) AS churned, AVG(c.mrr / c.seats) AS arpu
+      FROM warehouse.customers c
+      JOIN warehouse.subscriptions s ON s.customer_id = c.id
+      JOIN warehouse.invoices i ON i.subscription_id = s.id
+      WHERE c.id NOT IN (SELECT customer_id FROM warehouse.exclusions)
+        AND i.created_at BETWEEN '2026-01-01' AND '2026-06-30'
+    reconciliation:
+      tolerance: 0.01
+      sources:
+        - { name: warehouse, value: 0.081 }
+        - { name: finance_report, value: 0.114 }   # 40% apart, shipped anyway
+
+  - name: churn_rate_v2         # same definition, different name
+    type: ratio
+    definition: "customers who churned"
+    grain: customer
+    source: looker.churn
+
+data:
+  - name: customers
+    source: warehouse.customers
+    # no period, no rows, no snapshot -> cannot be re-run
+    profile_path: bad-DATA-PROFILE.yaml
+    assertions:
+      row_count: { equals: 50000, tol: 0.01 }
+      primary_key: [customer_id]
+      max_null_rate:
+        customer_id: 0.0
+      time_column: observed_at
+      max_gap_days: 1
+      banned_sentinels: [-1, 999]
+
+design:
+  kind: experiment             # pretends to be an experiment without MPE/action_if_null
+  identification: none          # yet the question and the claims are causal
+  randomization_unit: account
+  analysis_unit: session        # finer unit, no variance adjustment
+  baseline_rate: 0.08
+  mde: 0.005
+  alpha: 0.05
+  power: 0.80
+  planned_n_per_arm: 1200       # roughly 50x short of what this MDE needs
+  duration_days: 3
+  peeking_policy: fixed_horizon
+  multiplicity:
+    family: [churn_rate, arpu, nps, tickets_per_account, expansion_rate]
+    correction: none            # five hypotheses, no correction
+
+analysis:
+  outcome_type: proportion
+  n_groups: 2
+  test: welch_t                 # wrong family for a proportion outcome
+
+model:
+  task: binary_classification
+  target: churned_90d
+  algorithm: gradient_boosting
+  split: random                 # temporal data, random split
+  time_column: observation_date
+  entity_column: account_id     # accounts repeat, no grouping either
+  features:
+    - tenure_days
+    - cancel_date               # recorded when the outcome happens
+    - days_to_churn             # derived from the outcome
+    - refund_amount             # downstream of the outcome
+    - total_lifetime_value      # aggregates the future
+  preprocessing_fit_on: all_data
+  resampling_applied_to: before_split
+  primary_metric: accuracy      # on a 4% positive rate
+  positive_rate: 0.04
+  threshold_selected_on: test
+
+visuals:
+  - name: "churn by segment"
+    relationship: comparison
+    type: bar
+    y_axis_starts_at_zero: false
+    y_axis_min: 7.4             # a 0.6pp difference rendered as a cliff
+    dual_axis: true
+    palette: red_green
+    category_order: alphabetical
+    shows_estimates: true
+    shows_uncertainty: false
+  - name: "market share"
+    relationship: part_to_whole
+    type: 3d_pie
+    category_count: 12
+
+reproducibility: {}             # no seed, no lockfile, no entrypoint
+
+results:
+  observed_n: [10000, 9200]     # sample ratio mismatch
+  interim_looks: 6              # peeked six times under a fixed-horizon design
+  overall_effect: -0.03
+  segments:                     # every segment moves the other way
+    - { name: smb, effect: 0.021 }
+    - { name: mid_market, effect: 0.018 }
+    - { name: enterprise, effect: 0.012 }
+  train_score: 0.97
+  test_score: 0.71
+  model_score: 0.71
+  baseline_score: 0.74          # the model loses to majority-class
+  test_set_evaluations: 23
+  train_test_overlap_rows: 4120
+  period_comparisons:
+    - metric: churn_rate
+      base_denominator: 40000
+      comparison_denominator: 61000
+  tests:
+    - metric: churn_rate
+      p_value: 0.048            # no effect size, no interval
+    - metric: arpu
+      p_value: 0.049
+      effect: 0.002
+    - metric: nps
+      p_value: 0.31
+      effect: 0.4
+      ci: [0.1, 0.7]            # p says null, interval says otherwise
+      interpretation: "no difference between segments"
+
+claims:
+  - text: "Poor onboarding drives the churn increase across all customers by 12.5pp."
+    type: causal                # causal claim; numbers invent 12.5pp → CLM-033
+    # no evidence pointer, no population
+  - text: "The model predicts churn with 97.4183% accuracy."
+    type: predictive
+    ci: [0.62, 0.94]

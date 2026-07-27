@@ -1,0 +1,15 @@
+{
+  "name": "gsd-dsx",
+  "displayName": "GSD DSX — Data Science Rigour",
+  "version": "1.1.0",
+  "description": "Specialises the GSD phase loop for data science, analytics and BI: an ANALYSIS-SPEC contract written before the data is touched, six specialist agents that fill it, and deterministic Python gates that block the loop when the statistics, causal claims, ML splits, metric definitions, data-quality profiles or charts do not hold up.",
+  "author": { "name": "Rafael Braga" },
+  "license": "MIT",
+  "keywords": [
+    "data-science", "analytics", "business-intelligence", "statistics",
+    "experimentation", "ab-testing", "causal-inference", "machine-learning",
+    "data-visualization", "gsd", "spec-driven-development"
+  ],
+  "skills": "./skills/",
+  "agents": "./agents/"
+}

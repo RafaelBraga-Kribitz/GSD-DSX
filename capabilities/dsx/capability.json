@@ -1,0 +1,235 @@
+{
+  "id": "dsx",
+  "role": "feature",
+  "version": "1.1.0",
+  "title": "Data science, analytics and BI rigour",
+  "description": "Turns the GSD phase loop into an expert analytics workflow: an ANALYSIS-SPEC contract written before the data is touched, specialist agents that fill it, and deterministic Python gates that block the loop when the statistics, the causal claims, the ML splits, the metric definitions, the data-quality profile or the charts do not hold up.",
+  "tier": "full",
+  "requires": [],
+  "engines": {
+    "gsd": ">=1.6.0"
+  },
+  "runtimeCompat": {
+    "supported": ["*"],
+    "unsupported": [],
+    "notes": {
+      "*": "Gates shell out to the bundled `dsx` Python CLI. Requires python3 on PATH (stdlib only — no third-party packages needed)."
+    }
+  },
+  "author": {
+    "name": "Rafael Braga",
+    "url": "https://github.com/open-gsd/gsd-core"
+  },
+  "license": "MIT",
+  "keywords": [
+    "data-science",
+    "analytics",
+    "business-intelligence",
+    "statistics",
+    "experimentation",
+    "causal-inference",
+    "machine-learning",
+    "data-visualization"
+  ],
+
+  "skills": [
+    "dsx-scope-analysis",
+    "dsx-explore-data",
+    "dsx-design-experiment",
+    "dsx-define-metrics",
+    "dsx-build-model",
+    "dsx-visualize",
+    "dsx-narrate",
+    "dsx-review-analysis"
+  ],
+  "agents": [
+    "dsx-analysis-architect",
+    "dsx-statistician",
+    "dsx-ml-integrity-auditor",
+    "dsx-metric-steward",
+    "dsx-viz-critic",
+    "dsx-data-storyteller"
+  ],
+  "hooks": [],
+
+  "config": {
+    "dsx.enforce": {
+      "type": "boolean",
+      "default": true,
+      "description": "Master switch. When false, every dsx gate is skipped and the capability contributes prompt guidance only."
+    },
+    "dsx.require_spec": {
+      "type": "boolean",
+      "default": false,
+      "description": "Fail the plan gate when a phase has no ANALYSIS-SPEC. Leave false in mixed repositories where only some phases are analytical; set true in a pure analytics project."
+    },
+    "dsx.viz_audit": {
+      "type": "boolean",
+      "default": true,
+      "description": "Audit declared chart specs for encoding correctness, proportionality and uncertainty display before shipping."
+    },
+    "dsx.causal_guard": {
+      "type": "boolean",
+      "default": true,
+      "description": "Block causal wording that the declared identification strategy does not support."
+    },
+    "dsx.reproducibility_gate": {
+      "type": "boolean",
+      "default": true,
+      "description": "Require a seed, a pinned environment, identifiable data and a working entrypoint before a phase ships."
+    },
+    "dsx.dq_gate": {
+      "type": "boolean",
+      "default": true,
+      "description": "Compare data[].assertions against DATA-PROFILE.yaml artifacts at execute/verify/ship. Prefer profiles produced by `dsx profile`."
+    },
+    "dsx.domain": {
+      "type": "enum",
+      "values": ["auto", "experimentation", "machine_learning", "business_intelligence", "marketing_science", "research"],
+      "default": "auto",
+      "description": "Biases which specialist agents and reference tables the planner loads. 'auto' infers from the phase goal."
+    },
+    "dsx.python": {
+      "type": "string",
+      "default": "python3",
+      "description": "Interpreter used to run the dsx CLI. Override when python3 is not on PATH."
+    }
+  },
+
+  "steps": [
+    {
+      "point": "plan:pre",
+      "ref": { "skill": "dsx-scope-analysis" },
+      "fragment": { "path": "fragments/scope-analysis.md" },
+      "produces": ["ANALYSIS-SPEC.yaml"],
+      "consumes": ["CONTEXT.md"],
+      "when": "dsx.enforce",
+      "onError": "halt"
+    },
+    {
+      "point": "verify:pre",
+      "ref": { "agent": "dsx-statistician" },
+      "fragment": { "path": "fragments/verify-pre.md" },
+      "produces": ["STATS-REVIEW.md"],
+      "consumes": ["SUMMARY.md"],
+      "when": "dsx.enforce",
+      "onError": "skip"
+    }
+  ],
+
+  "contributions": [
+    {
+      "point": "plan:pre",
+      "into": "planner",
+      "fragment": { "path": "fragments/planner.md" },
+      "produces": [],
+      "consumes": ["ANALYSIS-SPEC.yaml"],
+      "when": "dsx.enforce",
+      "onError": "skip"
+    },
+    {
+      "point": "plan:pre",
+      "into": "researcher",
+      "fragment": { "path": "fragments/researcher.md" },
+      "produces": [],
+      "consumes": ["CONTEXT.md"],
+      "when": "dsx.enforce",
+      "onError": "skip"
+    },
+    {
+      "point": "plan:post",
+      "into": "checker",
+      "fragment": { "path": "fragments/plan-checker.md" },
+      "produces": [],
+      "consumes": ["ANALYSIS-SPEC.yaml"],
+      "when": "dsx.enforce",
+      "onError": "skip"
+    },
+    {
+      "point": "execute:pre",
+      "into": "executor",
+      "fragment": { "path": "fragments/executor.md" },
+      "produces": [],
+      "consumes": ["ANALYSIS-SPEC.yaml"],
+      "when": "dsx.enforce",
+      "onError": "skip"
+    },
+    {
+      "point": "execute:post",
+      "into": "verifier",
+      "fragment": { "path": "fragments/verifier.md" },
+      "produces": [],
+      "consumes": ["ANALYSIS-SPEC.yaml"],
+      "when": "dsx.enforce",
+      "onError": "skip"
+    }
+  ],
+
+  "gates": [
+    {
+      "point": "plan:post",
+      "check": {
+        "predicate": {
+          "kind": "command-exit-zero",
+          "command": "DSX=\"$(command -v dsx 2>/dev/null || echo \"$HOME/.gsd/capabilities/dsx/bin/dsx\")\"; \"$DSX\" gate plan --phase-dir \"${PHASE_DIR}\" --allow-missing --verbose",
+          "timeout": 60
+        }
+      },
+      "when": "dsx.enforce",
+      "blocking": true,
+      "onError": "halt"
+    },
+    {
+      "point": "plan:post",
+      "check": {
+        "predicate": {
+          "kind": "command-exit-zero",
+          "command": "DSX=\"$(command -v dsx 2>/dev/null || echo \"$HOME/.gsd/capabilities/dsx/bin/dsx\")\"; \"$DSX\" gate plan --phase-dir \"${PHASE_DIR}\"",
+          "timeout": 60
+        }
+      },
+      "when": "dsx.require_spec",
+      "blocking": true,
+      "onError": "halt"
+    },
+    {
+      "point": "execute:post",
+      "check": {
+        "predicate": {
+          "kind": "command-exit-zero",
+          "command": "DSX=\"$(command -v dsx 2>/dev/null || echo \"$HOME/.gsd/capabilities/dsx/bin/dsx\")\"; \"$DSX\" gate execute --phase-dir \"${PHASE_DIR}\" --allow-missing",
+          "timeout": 60
+        }
+      },
+      "when": "dsx.enforce",
+      "blocking": true,
+      "onError": "halt"
+    },
+    {
+      "point": "verify:post",
+      "check": {
+        "predicate": {
+          "kind": "command-exit-zero",
+          "command": "DSX=\"$(command -v dsx 2>/dev/null || echo \"$HOME/.gsd/capabilities/dsx/bin/dsx\")\"; \"$DSX\" gate verify --phase-dir \"${PHASE_DIR}\" --allow-missing --report \"${PHASE_DIR}/DATA-REVIEW.md\"",
+          "timeout": 120
+        }
+      },
+      "when": "dsx.enforce",
+      "blocking": true,
+      "onError": "halt"
+    },
+    {
+      "point": "ship:pre",
+      "check": {
+        "predicate": {
+          "kind": "command-exit-zero",
+          "command": "DSX=\"$(command -v dsx 2>/dev/null || echo \"$HOME/.gsd/capabilities/dsx/bin/dsx\")\"; \"$DSX\" gate ship --phase-dir \"${PHASE_DIR}\" --allow-missing --report \"${PHASE_DIR}/DATA-REVIEW.md\"",
+          "timeout": 120
+        }
+      },
+      "when": "dsx.enforce",
+      "blocking": true,
+      "onError": "halt"
+    }
+  ]
+}

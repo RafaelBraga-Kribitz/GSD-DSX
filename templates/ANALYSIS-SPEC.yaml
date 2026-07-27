@@ -1,0 +1,218 @@
+# ANALYSIS-SPEC — the analysis contract.
+#
+# This file is the deterministic input the whole capability turns on. Agents fill
+# it using judgement; `dsx` checks it using arithmetic. Every gate in the GSD loop
+# reads this file, so a field left blank is not a formatting oversight — it is a
+# decision that has not been made yet.
+#
+# Fill it BEFORE touching data. Fields under `results:` are filled during execute.
+#
+# Validate at any time:   dsx validate
+# Full audit:             dsx audit --verbose
+# Vocabularies:           dsx vocab
+
+spec_version: 1
+title: "<one line: the decision this analysis exists to support>"
+owner: "<analyst>"
+created: "<YYYY-MM-DD>"
+
+# ── What kind of question is this? ───────────────────────────────────────────
+# descriptive  — what happened (no inference beyond the sample)
+# diagnostic   — why it happened (decomposition within observed data)
+# predictive   — what will happen (out-of-sample performance is the claim)
+# causal       — what is the effect of X on Y (needs an identification strategy)
+# prescriptive — what should we do (needs a causal estimate plus a decision rule)
+question_type: descriptive
+
+# ── The decision ─────────────────────────────────────────────────────────────
+# Written before results exist. This is the primary defence against reading the
+# answer out of the data after the fact.
+decision:
+  owner: "<who acts on this>"
+  decision_rule: >
+    <If X then we do A, otherwise B. State the threshold and the interval,
+    not just the direction.>
+  action_if_null: "<what happens when no effect is detected>"
+  minimum_practical_effect: null   # smallest effect that would change the decision
+  reversible: true
+  deadline: "<YYYY-MM-DD or null>"
+
+# ── Metrics ──────────────────────────────────────────────────────────────────
+# One name, one definition. Ratios must declare both numerator and denominator —
+# most metric disputes are denominator disputes.
+metrics:
+  - name: <snake_case_name>
+    type: ratio                    # ratio | count | sum | average | rate | percentile | index
+    definition: "<computable expression, not a label>"
+    grain: <user | session | order | account | day>
+    numerator: "<expression including filters>"
+    denominator: "<expression including filters>"
+    timezone: UTC
+    source: <warehouse.table>
+    owner: <team>
+    # sql: |
+    #   SELECT ...            # optional; linted for fan-out and NULL semantics
+    # reconciliation:
+    #   tolerance: 0.01
+    #   sources:
+    #     - { name: warehouse, value: 12345 }
+    #     - { name: product_analytics, value: 12290 }
+
+# ── Data ─────────────────────────────────────────────────────────────────────
+# Prefer `dsx profile path.csv --out DATA-PROFILE.yaml` for local extracts.
+# Gates compare assertions to the profile artifact — they never open the warehouse.
+data:
+  - name: <dataset name>
+    source: <table, path or endpoint>
+    period: "<YYYY-MM-DD..YYYY-MM-DD>"
+    rows: null
+    snapshot_at: null              # or hash: "sha256:..."
+    profile_path: DATA-PROFILE.yaml
+    assertions:
+      row_count: { equals: null, min: null, max: null, tol: 0.01 }
+      primary_key: []              # columns that must be unique in the profile
+      max_null_rate: {}            # column: max allowed null fraction, e.g. user_id: 0.0
+      time_column: null
+      max_gap_days: null
+      banned_sentinels: []         # values that must not appear, e.g. [-1, 999, "1900-01-01"]
+    known_gaps: "<outages, backfills, filters applied upstream>"
+
+# ── Design ───────────────────────────────────────────────────────────────────
+# Required for causal and prescriptive questions. Delete for pure descriptive work.
+design:
+  kind: observational              # experiment | quasi_experiment | observational | timeseries | none
+  identification: none             # see `dsx vocab` for the closed list
+
+  # --- experiment only ---
+  randomization_unit: null
+  analysis_unit: null
+  variance_adjustment: null        # required when the two units differ
+  arms: []
+  expected_allocation: []
+  baseline_rate: null              # proportion, e.g. 0.31
+  mde: null                        # absolute, e.g. 0.02 == 2 percentage points
+  alpha: 0.05
+  power: 0.80
+  planned_n_per_arm: null          # dsx computes what this must be and blocks if short
+  duration_days: null
+  guardrail_metrics: []
+  peeking_policy: fixed_horizon    # fixed_horizon | sequential_obf | sequential_pocock | always_valid
+
+  multiplicity:
+    family: []                     # every metric being tested
+    correction: none               # bonferroni | holm | benjamini_hochberg | none
+
+  # --- quasi-experimental strategies declare their own assumptions ---
+  # parallel_trends_evidence: "<for difference_in_differences>"
+  # instrument: "<for instrumental_variable>"
+  # exclusion_restriction_argument: "<for instrumental_variable>"
+  # running_variable: / cutoff:      "<for regression_discontinuity>"
+  # covariates: / sensitivity_analysis: "<for matching or regression_adjustment>"
+
+# ── Analysis method ──────────────────────────────────────────────────────────
+# dsx derives the correct test from these and blocks if `test` disagrees.
+analysis:
+  outcome_type: proportion         # proportion | continuous | count | ordinal | time_to_event
+  n_groups: 2
+  paired: false
+  n_per_group: null
+  test: null                       # `dsx recommend-test proportion --groups 2` to derive
+  normality_ok: null               # true | false — record the diagnostic used
+  equal_variance: null
+  independence_ok: null            # the one assumption sample size cannot rescue
+
+# ── Model ────────────────────────────────────────────────────────────────────
+# Predictive work only. Delete otherwise.
+# model:
+#   task: binary_classification
+#   target: <column>
+#   algorithm: <e.g. gradient_boosting>
+#   split: temporal                     # random | stratified | temporal | grouped | grouped_temporal | nested_cv
+#   time_column: <column>
+#   entity_column: <column>             # set when entities repeat across rows
+#   train_period: "YYYY-MM-DD..YYYY-MM-DD"
+#   test_period:  "YYYY-MM-DD..YYYY-MM-DD"
+#   prediction_time_definition: "<when the model runs in production>"
+#   features: []
+#   features_excluded_for_leakage: []
+#   preprocessing_fit_on: train_only
+#   resampling_applied_to: train_only
+#   primary_metric: pr_auc
+#   secondary_metrics: []
+#   baseline: majority_class
+#   positive_rate: null
+#   threshold_selected_on: validation
+#   calibration_method: null
+
+# ── Visuals ──────────────────────────────────────────────────────────────────
+# Declare the argument each chart makes; dsx checks the encoding supports it.
+visuals:
+  - name: <chart name>
+    relationship: comparison       # `dsx vocab` for the closed list
+    type: bar
+    y_axis_starts_at_zero: true
+    dual_axis: false
+    units: "<%, USD, count>"
+    takeaway: "<the sentence you want remembered — not 'Revenue by region'>"
+    category_order: by_value
+    category_count: null
+    color_count: null
+    palette: null
+    shows_estimates: false
+    shows_uncertainty: false
+    source: "<dataset, period>"
+
+# ── Reproducibility ──────────────────────────────────────────────────────────
+reproducibility:
+  entrypoint: <analysis.py or notebook.ipynb>
+  random_seed: 42
+  language_version: "<python 3.12>"
+  lockfile: <requirements.txt | uv.lock | environment.yml>
+  package_versions: null
+  runs_clean_top_to_bottom: false  # notebooks only; set true after Restart & Run All
+
+# ── Results ──────────────────────────────────────────────────────────────────
+# Filled during execute. Leave as-is while planning.
+results:
+  observed_n: []                   # per arm — drives the SRM test
+  interim_looks: null              # every time someone looked at the outcome
+  positive_rate: null
+  overall_effect: null
+  segments: []                     # [{ name, effect, n }] — drives Simpson's check
+  train_score: null
+  test_score: null
+  model_score: null
+  baseline_score: null
+  test_set_evaluations: null
+  train_test_overlap_rows: null
+  period_comparisons: []
+  tests: []
+    # - metric: <name>
+    #   p_value: 0.031
+    #   effect: 0.021                     # in the metric's own units
+    #   standardized_effect: 0.045
+    #   effect_size_kind: h               # d | h | r
+    #   ci: [0.002, 0.040]
+    #   interpretation: "<one sentence>"
+    #   minimum_practical_effect: 0.01
+
+# ── Claims ───────────────────────────────────────────────────────────────────
+# Every headline statement the deliverable will make. dsx reads the wording and
+# holds it to the evidence declared above.
+claims:
+  - text: "<the claim exactly as it will appear>"
+    type: association              # descriptive | association | predictive | causal
+    evidence: "RESULTS.md#anchor"
+    population: "<who this applies to>"
+    # ci: [lower, upper]
+    # identification: <overrides design.identification for this claim>
+
+# ── Assumptions and limitations ──────────────────────────────────────────────
+assumptions:
+  - assumption: "<what we are taking as true>"
+    rationale: "<why>"
+    impact_if_wrong: "<what breaks>"
+    checked: false
+
+limitations:
+  - "<what this analysis cannot tell you, stated plainly>"

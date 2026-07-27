@@ -1,0 +1,232 @@
+# A worked ANALYSIS-SPEC that passes every dsx gate at every severity threshold.
+# Used as a regression fixture: if a future check makes this file fail, either the
+# check is wrong or this file needs a genuine fix. Both are worth knowing.
+
+spec_version: 1
+title: "Does the onboarding checklist raise 7-day activation?"
+owner: "r.braga"
+created: "2026-06-01"
+
+question_type: causal
+
+decision:
+  owner: "VP Growth"
+  decision_rule: >
+    Roll out to 100% if the 95% CI lower bound on the activation uplift exceeds
+    +1.0pp and no guardrail metric degrades beyond its declared tolerance.
+    Otherwise hold and iterate on the checklist content.
+  action_if_null: "Keep the current onboarding; close the initiative and reallocate the squad."
+  minimum_practical_effect: 0.02
+  reversible: true
+  deadline: "2026-07-15"
+
+metrics:
+  - name: activation_rate
+    type: ratio
+    definition: "Share of new signups completing >=1 key action within 7 days of signup"
+    grain: user
+    numerator: "count(distinct user_id) where key_action_at <= signup_at + 7 days"
+    denominator: "count(distinct user_id) where signup_at in period and is_bot = false"
+    timezone: UTC
+    source: warehouse.fct_signups
+    owner: growth-analytics
+    sql: |
+      SELECT
+        s.cohort_week,
+        COUNT(DISTINCT CASE WHEN a.first_key_action_at IS NOT NULL THEN s.user_id END) AS activated,
+        COUNT(DISTINCT s.user_id) AS signups
+      FROM warehouse.fct_signups s
+      LEFT JOIN warehouse.agg_first_action a ON a.user_id = s.user_id
+      WHERE s.signup_at >= '2026-06-01' AND s.signup_at < '2026-06-15'
+        AND s.is_bot = false
+      GROUP BY s.cohort_week
+    reconciliation:
+      tolerance: 0.01
+      sources:
+        - { name: warehouse, value: 0.3142 }
+        - { name: product_analytics, value: 0.3128 }
+
+  - name: retention_d7
+    type: rate
+    definition: "Share of signups with >=1 session on day 7 after signup"
+    grain: user
+    numerator: "count(distinct user_id with session on day 7)"
+    denominator: "count(distinct user_id) where signup_at in period and is_bot = false"
+    timezone: UTC
+    source: warehouse.fct_sessions
+    owner: growth-analytics
+
+  - name: revenue_per_user
+    type: average
+    definition: "Gross revenue attributed to the signup cohort in the 14 days after signup, per user"
+    grain: user
+    timezone: UTC
+    source: warehouse.fct_orders
+    owner: finance-analytics
+
+  - name: latency_p95
+    type: percentile
+    definition: "95th percentile server response time for the onboarding endpoints"
+    grain: request
+    timezone: UTC
+    source: observability.http_latency
+    owner: platform
+
+data:
+  - name: signups
+    source: warehouse.fct_signups
+    period: "2026-06-01..2026-06-14"
+    rows: 38412
+    snapshot_at: "2026-06-16T03:00:00Z"
+    profile_path: good-DATA-PROFILE.yaml
+    assertions:
+      row_count: { equals: 38412, tol: 0.01 }
+      primary_key: [user_id]
+      max_null_rate:
+        user_id: 0.0
+        country: 0.05
+      time_column: signup_at
+      max_gap_days: 2
+      banned_sentinels: [-1, 999, "1900-01-01"]
+    known_gaps: "Bot traffic excluded upstream by the standard is_bot filter. No outages in window."
+  - name: sessions
+    source: warehouse.fct_sessions
+    period: "2026-06-01..2026-06-21"
+    rows: 511903
+    snapshot_at: "2026-06-23T03:00:00Z"
+    known_gaps: "Day-7 window extends past the signup window by design."
+
+design:
+  kind: experiment
+  identification: randomized_experiment
+  randomization_unit: user
+  analysis_unit: user
+  arms: [control, treatment]
+  expected_allocation: [0.5, 0.5]
+  baseline_rate: 0.31
+  mde: 0.02
+  alpha: 0.05
+  power: 0.80
+  planned_n_per_arm: 9000
+  duration_days: 14
+  guardrail_metrics: [latency_p95, revenue_per_user]
+  peeking_policy: fixed_horizon
+  multiplicity:
+    family: [activation_rate, retention_d7, revenue_per_user]
+    correction: benjamini_hochberg
+
+analysis:
+  outcome_type: proportion
+  n_groups: 2
+  paired: false
+  n_per_group: 9206
+  test: two_proportion_z
+  normality_ok: true
+  equal_variance: true
+  independence_ok: true
+
+visuals:
+  - name: "activation uplift by arm"
+    relationship: comparison
+    type: bar
+    y_axis_starts_at_zero: true
+    dual_axis: false
+    units: "% of signups"
+    takeaway: "Treatment activates 2.4pp higher than control; the interval clears the +1.0pp bar."
+    category_order: by_value
+    color_count: 2
+    shows_estimates: true
+    shows_uncertainty: true
+    source: "warehouse.fct_signups, 2026-06-01..06-14"
+  - name: "daily activation trend by arm"
+    relationship: trend
+    type: line
+    y_axis_starts_at_zero: false
+    dual_axis: false
+    units: "% of signups"
+    takeaway: "The gap opens on day 2 and holds flat, so this is not a novelty effect."
+    shows_estimates: true
+    shows_uncertainty: true
+    source: "warehouse.fct_signups, 2026-06-01..06-14"
+
+reproducibility:
+  entrypoint: analysis/activation_readout.py
+  random_seed: 42
+  language_version: "python 3.12.4"
+  lockfile: analysis/requirements.lock
+  package_versions: "numpy 2.1.0, statsmodels 0.14.2"
+  runs_clean_top_to_bottom: true
+
+results:
+  observed_n: [9206, 9181]
+  interim_looks: 1
+  overall_effect: 0.024
+  segments:
+    - { name: mobile, effect: 0.027, n: 11204 }
+    - { name: desktop, effect: 0.019, n: 7183 }
+  period_comparisons:
+    - metric: activation_rate
+      base_denominator: 18512
+      comparison_denominator: 18387
+      denominator_tolerance: 0.05
+  tests:
+    - metric: activation_rate
+      p_value: 0.0011
+      effect: 0.024
+      standardized_effect: 0.052
+      effect_size_kind: h
+      ci: [0.0096, 0.0384]
+      interpretation: "Treatment raises activation; the interval clears the practical floor."
+      minimum_practical_effect: 0.02
+    - metric: retention_d7
+      p_value: 0.0121
+      effect: 0.016
+      standardized_effect: 0.038
+      effect_size_kind: h
+      ci: [0.0035, 0.0285]
+      interpretation: "Directionally consistent secondary gain."
+      minimum_practical_effect: 0.01
+    - metric: revenue_per_user
+      p_value: 0.0298
+      effect: 0.41
+      standardized_effect: 0.031
+      effect_size_kind: d
+      ci: [0.04, 0.78]
+      interpretation: "Small revenue gain, consistent with the activation increase."
+      minimum_practical_effect: 0.25
+
+claims:
+  - text: >
+      The onboarding checklist increases 7-day activation by 2.4 percentage points
+      (95% CI 1.0 to 3.8pp) among non-bot signups in the test window.
+    type: causal
+    evidence: "RESULTS.md#activation-uplift"
+    population: "New non-bot signups, 2026-06-01 to 2026-06-14"
+    identification: randomized_experiment
+  - text: >
+      Day-7 retention is associated with a 1.6pp gain in the treatment arm,
+      significant after Benjamini-Hochberg correction across the three-metric family.
+    type: association
+    evidence: "RESULTS.md#retention"
+    population: "New non-bot signups, 2026-06-01 to 2026-06-14"
+  - text: >
+      Neither guardrail moved: p95 latency and 14-day revenue per user stayed
+      within their declared tolerances over the test window.
+    type: descriptive
+    evidence: "RESULTS.md#guardrails"
+    population: "Onboarding endpoints and the signup cohort, 2026-06-01 to 2026-06-14"
+
+assumptions:
+  - assumption: "Bucketing is stable across sessions for a given user_id."
+    rationale: "Assignment is hashed on user_id and persisted server-side."
+    impact_if_wrong: "Contamination between arms would bias the estimate toward zero."
+    checked: true
+  - assumption: "The 14-day window captures the full activation effect."
+    rationale: "97% of historical first key actions occur within 7 days of signup."
+    impact_if_wrong: "A late-activation tail would make this estimate conservative."
+    checked: true
+
+limitations:
+  - "Estimates the effect for new signups only; says nothing about reactivating dormant users."
+  - "Measured over two weeks in June; seasonal cohorts may respond differently."
+  - "Revenue effect is measured at 14 days and does not establish a durable LTV change."
