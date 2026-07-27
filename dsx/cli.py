@@ -20,7 +20,22 @@ from pathlib import Path
 from typing import Callable
 
 from . import __version__
-from .checks import claims, coherence, design, dq, metrics, ml, repro, stats, viz
+from .checks import (
+    claims,
+    code,
+    coherence,
+    decision,
+    design,
+    dq,
+    figures,
+    metrics,
+    ml,
+    narrative,
+    repro,
+    smells,
+    stats,
+    viz,
+)
 from .findings import EXIT_ERROR, CheckError, Report, Severity, emit, merge
 from .loader import SpecParseError, load
 from .spec import describe_vocabulary, validate_structure
@@ -43,6 +58,11 @@ CHECKS: dict[str, Callable] = {
     "viz": viz.check,
     "coherence": coherence.check,
     "dq": dq.check,
+    "smells": smells.check,
+    "figures": figures.check,
+    "narrative": narrative.check,
+    "code": code.check,
+    "decision": decision.check,
 }
 
 # Which checks each GSD loop point cares about. Keeping this here rather than in
@@ -50,14 +70,14 @@ CHECKS: dict[str, Callable] = {
 # versioned with the code that implements it.
 GATE_PROFILES: dict[str, tuple[str, ...]] = {
     "plan": ("spec", "design", "metrics", "coherence"),
-    "execute": ("spec", "ml", "repro", "dq"),
+    "execute": ("spec", "ml", "repro", "dq", "code"),
     "verify": (
         "spec", "design", "stats", "ml", "metrics", "claims", "viz", "repro",
-        "dq", "coherence",
+        "dq", "coherence", "smells", "figures", "narrative", "code", "decision",
     ),
     "ship": (
         "spec", "design", "stats", "ml", "metrics", "claims", "viz", "repro",
-        "dq", "coherence",
+        "dq", "coherence", "smells", "figures", "narrative", "code", "decision",
     ),
 }
 
@@ -113,13 +133,25 @@ def run_checks(
     root = resolve_root or phase_dir
     for name in names:
         if name == "repro":
-            reports.append(repro.check(spec, phase_dir))
+            reports.append(repro.check(spec, phase_dir, strict=strict))
         elif name == "dq":
             reports.append(dq.check(spec, root))
         elif name == "claims":
-            reports.append(claims.check(spec, root))
+            reports.append(claims.check(spec, root, strict=strict))
         elif name == "coherence":
             reports.append(coherence.check(spec, strict=strict))
+        elif name == "figures":
+            reports.append(figures.check(spec, root, strict=strict))
+        elif name == "smells":
+            reports.append(smells.check(spec))
+        elif name == "narrative":
+            reports.append(narrative.check(spec, root, gate_point=gate_point))
+        elif name == "code":
+            reports.append(code.check(spec, root))
+        elif name == "design":
+            reports.append(design.check(spec, strict=strict))
+        elif name == "decision":
+            reports.append(decision.check(spec, gate_point=gate_point))
         elif name in CHECKS:
             reports.append(CHECKS[name](spec))
         else:
@@ -312,6 +344,20 @@ def cmd_init(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_seal(args: argparse.Namespace) -> int:
+    from .checks.figures import file_sha256
+
+    path = Path(args.path)
+    if not path.exists():
+        raise CheckError(f"file not found: {path}")
+    digest = file_sha256(path)
+    if args.json:
+        print(json.dumps({"path": str(path).replace("\\", "/"), "svg_sha256": digest}, indent=2))
+    else:
+        print(digest)
+    return 0
+
+
 def _tri(value: "str | None") -> "bool | None":
     if value is None:
         return None
@@ -438,6 +484,14 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_profile.add_argument("--json", action="store_true")
     p_profile.set_defaults(func=cmd_profile)
+
+    p_seal = sub.add_parser(
+        "seal",
+        help="compute sha256:… for a figure file to paste into visuals[].svg_sha256",
+    )
+    p_seal.add_argument("path", help="path to an SVG/PNG/HTML figure")
+    p_seal.add_argument("--json", action="store_true")
+    p_seal.set_defaults(func=cmd_seal)
 
     return parser
 

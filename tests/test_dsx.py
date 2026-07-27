@@ -524,6 +524,22 @@ class TestStats(unittest.TestCase):
         spec = {"results": {"tests": [{"metric": "cr", "p_value": 0.42, "effect": 0.001,
                                        "ci": [-0.01, 0.012], "equivalence_bound": 0.02,
                                        "interpretation": "no difference between arms"}]}}
+        found = codes(stats.check(spec))
+        self.assertNotIn("DSX-STA-020", found)
+        self.assertNotIn("DSX-STA-021", found)
+
+    def test_equivalence_bound_without_ci_proof_flagged(self):
+        spec = {"results": {"tests": [{"metric": "cr", "p_value": 0.42, "effect": 0.05,
+                                       "ci": [-0.01, 0.12], "equivalence_bound": 0.02,
+                                       "interpretation": "no difference between arms"}]}}
+        found = codes(stats.check(spec))
+        self.assertIn("DSX-STA-021", found)
+        self.assertNotIn("DSX-STA-020", found)
+
+    def test_detectable_mde_escapes_null_claim(self):
+        spec = {"results": {"tests": [{"metric": "cr", "p_value": 0.42, "effect": 0.001,
+                                       "ci": [-0.01, 0.012], "detectable_mde": 0.05,
+                                       "interpretation": "no difference between arms"}]}}
         self.assertNotIn("DSX-STA-020", codes(stats.check(spec)))
 
     def test_correction_flips_significance(self):
@@ -887,6 +903,26 @@ class TestCLI(unittest.TestCase):
                 good_phase / "RESULTS.md",
             )
             shutil.copy(
+                self.ROOT / "examples" / "good-FIGURE-MANIFEST.yaml",
+                good_phase / "good-FIGURE-MANIFEST.yaml",
+            )
+            shutil.copy(
+                self.ROOT / "examples" / "good-NARRATIVE.md",
+                good_phase / "good-NARRATIVE.md",
+            )
+            shutil.copytree(
+                self.ROOT / "examples" / "figures",
+                good_phase / "figures",
+            )
+            charts = good_phase / "analysis" / "charts.py"
+            charts.parent.mkdir(parents=True)
+            charts.write_text("# charts\n", encoding="utf-8")
+            # The good spec declares an entrypoint; with --phase-dir it is resolved
+            # on disk, so it has to exist.
+            entrypoint = good_phase / "analysis" / "activation_readout.py"
+            entrypoint.write_text("# readout\n", encoding="utf-8")
+            (good_phase / "analysis" / "requirements.lock").write_text("#\n", encoding="utf-8")
+            shutil.copy(
                 self.ROOT / "examples" / "bad-ANALYSIS-SPEC.yaml",
                 bad_phase / "ANALYSIS-SPEC.yaml",
             )
@@ -894,11 +930,17 @@ class TestCLI(unittest.TestCase):
                 self.ROOT / "examples" / "bad-DATA-PROFILE.yaml",
                 bad_phase / "bad-DATA-PROFILE.yaml",
             )
-            # The good spec declares an entrypoint; with --phase-dir it is resolved
-            # on disk, so it has to exist.
-            entrypoint = good_phase / "analysis" / "activation_readout.py"
-            entrypoint.parent.mkdir(parents=True)
-            entrypoint.write_text("# readout\n", encoding="utf-8")
+            shutil.copy(
+                self.ROOT / "examples" / "bad-NARRATIVE.md",
+                bad_phase / "bad-NARRATIVE.md",
+            )
+            leaky = bad_phase / "analysis" / "leaky_model.py"
+            leaky.parent.mkdir(parents=True)
+            shutil.copy(
+                self.ROOT / "examples" / "analysis" / "leaky_model.py",
+                leaky,
+            )
+            (bad_phase / "analysis" / "requirements.lock").write_text("#\n", encoding="utf-8")
 
             for point in ("plan", "execute", "verify", "ship"):
                 code, _, err = self._run(
@@ -934,6 +976,21 @@ class TestCLI(unittest.TestCase):
                 self.ROOT / "examples" / "RESULTS.md",
                 phase / "RESULTS.md",
             )
+            shutil.copy(
+                self.ROOT / "examples" / "good-FIGURE-MANIFEST.yaml",
+                phase / "good-FIGURE-MANIFEST.yaml",
+            )
+            shutil.copy(
+                self.ROOT / "examples" / "good-NARRATIVE.md",
+                phase / "good-NARRATIVE.md",
+            )
+            shutil.copytree(
+                self.ROOT / "examples" / "figures",
+                phase / "figures",
+            )
+            charts = phase / "analysis" / "charts.py"
+            charts.parent.mkdir(parents=True)
+            charts.write_text("# charts\n", encoding="utf-8")
             code, _, err = self._run(["gate", "ship", "--phase-dir", str(phase)])
             self.assertEqual(code, 1)
             self.assertIn("DSX-REP-031", err)
@@ -1084,6 +1141,383 @@ class TestDQAndCoherence(unittest.TestCase):
             str(self.ROOT / "examples"),
         )
         self.assertIn("DSX-CLM-031", codes(report))
+
+
+class TestPhase2VizFiguresSmells(unittest.TestCase):
+    ROOT = Path(__file__).resolve().parent.parent
+
+    def _run(self, argv):
+        out, err = io.StringIO(), io.StringIO()
+        with redirect_stdout(out), redirect_stderr(err):
+            code = cli.main(argv)
+        return code, out.getvalue(), err.getvalue()
+
+    def test_seal_cli(self):
+        path = self.ROOT / "examples" / "figures" / "activation_uplift.svg"
+        code, out, err = self._run(["seal", str(path)])
+        self.assertEqual(code, 0, err)
+        self.assertTrue(out.strip().startswith("sha256:"))
+
+    def test_input_type_matrix_blocks(self):
+        from dsx.checks import viz as viz_mod
+
+        report = viz_mod.check(
+            {
+                "visuals": [
+                    {
+                        "name": "bad",
+                        "relationship": "comparison",
+                        "type": "bar",
+                        "data_input_type": "hierarchical",
+                        "takeaway": "A grew 12% vs B",
+                        "units": "%",
+                        "source": "x",
+                    }
+                ]
+            }
+        )
+        self.assertIn("DSX-VIZ-013", codes(report))
+
+    def test_takeaway_equals_name_blocks(self):
+        from dsx.checks import viz as viz_mod
+
+        report = viz_mod.check(
+            {
+                "visuals": [
+                    {
+                        "name": "Revenue by region",
+                        "relationship": "comparison",
+                        "type": "bar",
+                        "data_input_type": "categorical-value",
+                        "takeaway": "Revenue by region",
+                        "units": "USD",
+                        "source": "x",
+                        "y_axis_starts_at_zero": True,
+                    }
+                ]
+            }
+        )
+        self.assertIn("DSX-VIZ-063", codes(report))
+
+    def test_stacked_scenario_smell(self):
+        from dsx.checks import smells as smells_mod
+
+        report = smells_mod.check(
+            {
+                "visuals": [
+                    {
+                        "name": "scenarios",
+                        "type": "stacked_area",
+                        "series_role": "scenario",
+                    }
+                ]
+            }
+        )
+        self.assertIn("DSX-SMELL-009", codes(report))
+
+    def test_figure_seal_mismatch(self):
+        from dsx.checks import figures as figures_mod
+
+        report = figures_mod.check(
+            {
+                "visuals": [
+                    {
+                        "name": "x",
+                        "artifact_path": "figures/activation_uplift.svg",
+                        "svg_sha256": "sha256:deadbeef",
+                    }
+                ]
+            },
+            str(self.ROOT / "examples"),
+            strict=True,
+        )
+        self.assertIn("DSX-FIG-010", codes(report))
+
+    def test_good_figures_pass(self):
+        from dsx.checks import figures as figures_mod
+        from dsx.loader import load
+
+        spec = load(self.ROOT / "examples" / "good-ANALYSIS-SPEC.yaml")
+        report = figures_mod.check(spec, str(self.ROOT / "examples"), strict=True)
+        self.assertFalse(report.blocks(Severity.HIGH), codes(report))
+
+
+# ── Phase 3: narrative, claims base, SQL expand, code smells ─────────────────
+
+
+class TestPhase3NarrativeClaims(unittest.TestCase):
+    ROOT = Path(__file__).resolve().parent.parent
+
+    def test_clm_070_relative_percent_without_base(self):
+        from dsx.checks import claims as claims_mod
+
+        spec = {
+            "question_type": "descriptive",
+            "claims": [{"text": "Churn is up 40% after launch.", "type": "descriptive"}],
+        }
+        self.assertIn("DSX-CLM-070", codes(claims_mod.check(spec)))
+
+    def test_clm_070_passes_with_base_n(self):
+        from dsx.checks import claims as claims_mod
+
+        spec = {
+            "claims": [
+                {
+                    "text": "Churn is up 40% after launch.",
+                    "type": "descriptive",
+                    "base_n": 500,
+                }
+            ]
+        }
+        self.assertNotIn("DSX-CLM-070", codes(claims_mod.check(spec)))
+
+    def test_clm_080_empty_limitations_on_causal(self):
+        from dsx.checks import claims as claims_mod
+
+        spec = {
+            "question_type": "causal",
+            "claims": [{"text": "X raises Y by 2pp.", "type": "causal"}],
+            "limitations": [],
+        }
+        self.assertIn("DSX-CLM-080", codes(claims_mod.check(spec, strict=True)))
+        self.assertNotIn("DSX-CLM-080", codes(claims_mod.check(spec, strict=False)))
+
+    def test_nar_forbidden_and_claim_subset(self):
+        from dsx.checks import narrative as narrative_mod
+        from dsx.loader import load
+
+        bad = load(self.ROOT / "examples" / "bad-ANALYSIS-SPEC.yaml")
+        report = narrative_mod.check(bad, str(self.ROOT / "examples"), gate_point="ship")
+        found = codes(report)
+        self.assertIn("DSX-NAR-030", found)
+        self.assertIn("DSX-NAR-020", found)
+
+    def test_good_narrative_passes(self):
+        from dsx.checks import narrative as narrative_mod
+        from dsx.loader import load
+
+        good = load(self.ROOT / "examples" / "good-ANALYSIS-SPEC.yaml")
+        report = narrative_mod.check(good, str(self.ROOT / "examples"), gate_point="ship")
+        self.assertFalse(report.blocks(Severity.HIGH), codes(report))
+        self.assertNotIn("DSX-NAR-030", codes(report))
+
+
+class TestPhase3SqlWarehouse(unittest.TestCase):
+    def test_sql_null_compare_and_select_star(self):
+        from dsx.checks import metrics as metrics_mod
+
+        spec = {
+            "metrics": [
+                {
+                    "name": "x",
+                    "definition": "x",
+                    "grain": "user",
+                    "source": "warehouse.x",
+                    "sql": "SELECT * FROM t WHERE status = NULL",
+                }
+            ]
+        }
+        found = codes(metrics_mod.check(spec))
+        self.assertIn("DSX-SQL-008", found)
+        self.assertIn("DSX-SQL-009", found)
+
+    def test_met_040_warehouse_without_sql(self):
+        from dsx.checks import metrics as metrics_mod
+
+        spec = {
+            "metrics": [
+                {
+                    "name": "x",
+                    "definition": "x",
+                    "grain": "user",
+                    "source": "warehouse.fct_x",
+                }
+            ]
+        }
+        self.assertIn("DSX-MET-040", codes(metrics_mod.check(spec)))
+
+    def test_sql_007_division_without_nullif(self):
+        from dsx.checks import metrics as metrics_mod
+
+        spec = {
+            "metrics": [
+                {
+                    "name": "x",
+                    "definition": "x",
+                    "grain": "user",
+                    "source": "app.events",
+                    "sql": "SELECT a / b FROM t",
+                }
+            ]
+        }
+        self.assertIn("DSX-SQL-007", codes(metrics_mod.check(spec)))
+
+
+class TestPhase3Code(unittest.TestCase):
+    ROOT = Path(__file__).resolve().parent.parent
+
+    def test_fit_before_split_is_critical(self):
+        from dsx.checks import code as code_mod
+
+        report = code_mod.check(
+            {
+                "model": {"task": "binary_classification"},
+                "reproducibility": {"entrypoint": "analysis/leaky_model.py"},
+            },
+            str(self.ROOT / "examples"),
+        )
+        found = codes(report)
+        self.assertIn("DSX-CODE-001", found)
+        self.assertIn("DSX-CODE-002", found)
+
+    def test_good_entrypoint_without_ml_passes(self):
+        from dsx.checks import code as code_mod
+        from dsx.loader import load
+
+        spec = load(self.ROOT / "examples" / "good-ANALYSIS-SPEC.yaml")
+        report = code_mod.check(spec, str(self.ROOT / "examples"))
+        self.assertNotIn("DSX-CODE-001", codes(report))
+
+
+# ── Phase 4: assumptions, null/TOST, exploratory, decision, repro_lock ───────
+
+
+class TestPhase4AnalyticalLogic(unittest.TestCase):
+    ROOT = Path(__file__).resolve().parent.parent
+
+    def test_coh_031_unchecked_assumption(self):
+        from dsx.checks import coherence as coherence_mod
+
+        spec = {
+            "question_type": "causal",
+            "assumptions": [
+                {
+                    "assumption": "X",
+                    "rationale": "Y",
+                    "impact_if_wrong": "Z",
+                    "checked": False,
+                }
+            ],
+        }
+        self.assertIn("DSX-COH-031", codes(coherence_mod.check(spec, strict=True)))
+        self.assertNotIn("DSX-COH-031", codes(coherence_mod.check(spec, strict=False)))
+
+    def test_exp_051_looks_exceed_family(self):
+        from dsx.checks import design as design_mod
+
+        spec = {
+            "design": {
+                "kind": "observational",
+                "multiplicity": {
+                    "family": ["a", "b"],
+                    "correction": "benjamini_hochberg",
+                },
+            },
+            "results": {"comparisons_looked_at": 9, "tests": [{"metric": "a", "p_value": 0.1}]},
+        }
+        self.assertIn("DSX-EXP-051", codes(design_mod.check(spec)))
+
+    def test_decision_replay_fail_and_pass(self):
+        from dsx.checks import decision as decision_mod
+
+        fail_spec = {
+            "question_type": "causal",
+            "design": {"kind": "experiment", "alpha": 0.05},
+            "decision": {
+                "replay": {
+                    "metric": "activation_rate",
+                    "ci_lower_min": 0.05,
+                    "on_pass": "roll",
+                    "on_fail": "hold",
+                }
+            },
+            "results": {
+                "tests": [
+                    {
+                        "metric": "activation_rate",
+                        "p_value": 0.01,
+                        "effect": 0.02,
+                        "ci": [0.01, 0.03],
+                    }
+                ]
+            },
+        }
+        self.assertIn("DSX-DEC-020", codes(decision_mod.check(fail_spec, gate_point="ship")))
+
+        pass_spec = {
+            "question_type": "causal",
+            "design": {"kind": "experiment", "alpha": 0.05},
+            "decision": {
+                "replay": {
+                    "metric": "activation_rate",
+                    "ci_lower_min": 0.009,
+                    "on_pass": "roll",
+                    "on_fail": "hold",
+                }
+            },
+            "results": {
+                "tests": [
+                    {
+                        "metric": "activation_rate",
+                        "p_value": 0.01,
+                        "effect": 0.02,
+                        "ci": [0.01, 0.03],
+                    }
+                ]
+            },
+        }
+        found = codes(decision_mod.check(pass_spec, gate_point="ship"))
+        self.assertNotIn("DSX-DEC-020", found)
+        self.assertNotIn("DSX-DEC-021", found)
+
+    def test_repro_lock_missing_and_null(self):
+        from dsx.checks import repro as repro_mod
+
+        missing = {
+            "results": {"tests": [{"metric": "a", "p_value": 0.1}]},
+            "reproducibility": {"entrypoint": "x.py", "lockfile": "l"},
+        }
+        self.assertIn("DSX-REP-050", codes(repro_mod.check(missing, strict=True)))
+
+        opted = {
+            "results": {"tests": [{"metric": "a", "p_value": 0.1}]},
+            "reproducibility": {
+                "entrypoint": "x.py",
+                "lockfile": "l",
+                "repro_lock": None,
+            },
+        }
+        self.assertIn("DSX-REP-051", codes(repro_mod.check(opted, strict=True)))
+
+    def test_met_012_unknown_class(self):
+        from dsx.checks import metrics as metrics_mod
+
+        spec = {
+            "metrics": [
+                {
+                    "name": "x",
+                    "definition": "x",
+                    "grain": "user",
+                    "source": "app.x",
+                    "reconciliation": {
+                        "class": "galaxy",
+                        "sources": [
+                            {"name": "a", "value": 1.0},
+                            {"name": "b", "value": 1.0},
+                        ],
+                    },
+                }
+            ]
+        }
+        self.assertIn("DSX-MET-012", codes(metrics_mod.check(spec)))
+
+    def test_good_fixture_phase4_fields(self):
+        from dsx.loader import load
+
+        spec = load(self.ROOT / "examples" / "good-ANALYSIS-SPEC.yaml")
+        self.assertIn("replay", spec["decision"])
+        self.assertEqual(spec["results"]["comparisons_looked_at"], 3)
+        self.assertIsInstance(spec["reproducibility"]["repro_lock"], dict)
 
 
 if __name__ == "__main__":

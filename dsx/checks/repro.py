@@ -21,7 +21,12 @@ STOCHASTIC_MARKERS = (
 )
 
 
-def check(spec: dict, phase_dir: "str | None" = None) -> Report:
+def check(
+    spec: dict,
+    phase_dir: "str | None" = None,
+    *,
+    strict: bool = False,
+) -> Report:
     report = Report(check="repro")
     repro = section(spec, "reproducibility")
 
@@ -30,6 +35,8 @@ def check(spec: dict, phase_dir: "str | None" = None) -> Report:
     _check_data_identity(spec, report)
     _check_code_pointer(repro, report, phase_dir)
     _check_notebook_hygiene(repro, report)
+    if strict:
+        _check_repro_lock(spec, repro, report)
     return report
 
 
@@ -188,3 +195,85 @@ def _check_notebook_hygiene(repro: dict, report: Report) -> None:
         )
     else:
         report.ok("notebook confirmed to run clean top-to-bottom")
+
+
+def _check_repro_lock(spec: dict, repro: dict, report: Report) -> None:
+    tests = items(section(spec, "results"), "tests")
+    if not tests:
+        return
+
+    # Key omitted vs explicit null — distinguish via raw section membership.
+    if "repro_lock" not in repro:
+        report.add(
+            "DSX-REP-050",
+            "HIGH",
+            "repro_lock key missing while results.tests is non-empty",
+            detail=(
+                "Without a lock (or an explicit null opt-out), a null or revised result can "
+                "be rationalised after the fact with no configuration trail."
+            ),
+            remedy=(
+                "Add reproducibility.repro_lock with schema_version and "
+                "stochasticity_declaration, or set repro_lock: null for an honest opt-out."
+            ),
+            where="spec.reproducibility.repro_lock",
+        )
+        return
+
+    lock = repro.get("repro_lock")
+    if lock is None:
+        report.add(
+            "DSX-REP-051",
+            "MEDIUM",
+            "repro_lock is null (honest opt-out)",
+            detail="Explicit null records that configuration was not locked.",
+            remedy="Populate repro_lock when the analysis should be investigable later.",
+            where="spec.reproducibility.repro_lock",
+        )
+        return
+
+    if not isinstance(lock, dict):
+        report.add(
+            "DSX-REP-052",
+            "HIGH",
+            "repro_lock incomplete (schema_version / stochasticity_declaration)",
+            remedy="Use a YAML object with schema_version and stochasticity_declaration.",
+            where="spec.reproducibility.repro_lock",
+        )
+        return
+
+    if is_blank(lock.get("schema_version")) or is_blank(lock.get("stochasticity_declaration")):
+        report.add(
+            "DSX-REP-052",
+            "HIGH",
+            "repro_lock incomplete (schema_version / stochasticity_declaration)",
+            detail=(
+                "The declaration is required so the lock cannot be read as a byte-replay guarantee."
+            ),
+            remedy="Set both fields. See references/analytical-logic.md.",
+            where="spec.reproducibility.repro_lock",
+        )
+        return
+
+    from .. import __version__ as dsx_version
+
+    declared = lock.get("dsx_version")
+    if is_blank(declared):
+        report.add(
+            "DSX-REP-053",
+            "MEDIUM",
+            "repro_lock.dsx_version missing or mismatched",
+            remedy=f"Set dsx_version to {dsx_version!r}.",
+            where="spec.reproducibility.repro_lock.dsx_version",
+        )
+    elif str(declared) != str(dsx_version):
+        report.add(
+            "DSX-REP-053",
+            "MEDIUM",
+            "repro_lock.dsx_version missing or mismatched",
+            detail=f"Declared {declared!r}; package is {dsx_version!r}.",
+            remedy=f"Update dsx_version to {dsx_version!r} or note why it differs.",
+            where="spec.reproducibility.repro_lock.dsx_version",
+        )
+    else:
+        report.ok(f"repro_lock present (dsx_version={dsx_version})")

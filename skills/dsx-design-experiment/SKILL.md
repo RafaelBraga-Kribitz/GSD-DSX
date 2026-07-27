@@ -49,6 +49,13 @@ guessed. Readout mode: an honest reading of one that has run.
 7. **Run duration in whole weeks**, minimum one, to cover the weekly cycle and
    let novelty effects decay.
 
+8. **Write `decision.replay`** with the same thresholds as the prose rule
+   (`metric`, `ci_lower_min` / `effect_min`, `on_pass`, `on_fail`). The gate
+   re-applies these to `results.tests` — it does not parse English.
+
+9. **Assumption dispositions.** For causal work, every assumption needs
+   `checked: true` or a non-blank `waiver` before ship.
+
 </design_mode>
 
 <readout_mode>
@@ -60,9 +67,11 @@ Order matters — each step can stop the readout:
    the effect; find the bug. SRM is never noise you can adjust away.
 2. **Guardrails second.** A primary-metric win with a guardrail regression is not
    a win.
-3. **Primary metric third**, with its interval, against the pre-declared rule.
-4. **Segments last, and labelled exploratory.** Segment effects are
-   hypothesis-generating unless the segmentation was pre-registered.
+3. **Primary metric third**, with its interval, against `decision.replay` and the
+   pre-declared rule. Quote `DSX-DEC-*` verdict JSON unmodified.
+4. **Segments last, and labelled exploratory.** Record
+   `results.comparisons_looked_at` (including exploratory cuts). If it exceeds
+   the multiplicity family, fix the family or stop claiming significance.
 
 Then apply the decision rule as written. If the result sits between "significant"
 and "practically meaningful", the rule already said what to do — follow it.
@@ -71,4 +80,5 @@ and "practically meaningful", the rule already said what to do — follow it.
 <references>
 @references/experiment-pitfalls.md
 @references/test-selection.md
+@references/analytical-logic.md
 </references>

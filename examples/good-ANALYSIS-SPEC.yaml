@@ -19,6 +19,11 @@ decision:
   minimum_practical_effect: 0.02
   reversible: true
   deadline: "2026-07-15"
+  replay:
+    metric: activation_rate
+    ci_lower_min: 0.01
+    on_pass: rollout
+    on_fail: hold
 
 metrics:
   - name: activation_rate
@@ -41,6 +46,7 @@ metrics:
         AND s.is_bot = false
       GROUP BY s.cohort_week
     reconciliation:
+      class: user
       tolerance: 0.01
       sources:
         - { name: warehouse, value: 0.3142 }
@@ -55,6 +61,16 @@ metrics:
     timezone: UTC
     source: warehouse.fct_sessions
     owner: growth-analytics
+    sql: |
+      SELECT
+        s.user_id,
+        COUNT(DISTINCT CASE WHEN DATEDIFF(day, s.signup_at, sess.session_at) = 7
+          THEN s.user_id END) AS retained
+      FROM warehouse.fct_signups s
+      LEFT JOIN warehouse.fct_sessions sess ON sess.user_id = s.user_id
+      WHERE s.signup_at >= '2026-06-01' AND s.signup_at < '2026-06-15'
+        AND s.is_bot = false
+      GROUP BY s.user_id
 
   - name: revenue_per_user
     type: average
@@ -63,6 +79,17 @@ metrics:
     timezone: UTC
     source: warehouse.fct_orders
     owner: finance-analytics
+    sql: |
+      SELECT
+        s.user_id,
+        SUM(o.gross_revenue) AS revenue_14d
+      FROM warehouse.fct_signups s
+      LEFT JOIN warehouse.fct_orders o
+        ON o.user_id = s.user_id
+       AND o.ordered_at < DATEADD(day, 14, s.signup_at)
+      WHERE s.signup_at >= '2026-06-01' AND s.signup_at < '2026-06-15'
+        AND s.is_bot = false
+      GROUP BY s.user_id
 
   - name: latency_p95
     type: percentile
@@ -127,8 +154,19 @@ analysis:
 
 visuals:
   - name: "activation uplift by arm"
+    chart_id: activation_uplift_bar
     relationship: comparison
     type: bar
+    data_input_type: categorical-value
+    renderer: matplotlib
+    artifact_path: figures/activation_uplift.svg
+    svg_sha256: "sha256:b28c2586533d49da811084975855b3cdb8487e319c72b845ce40712ca826ea5e"
+    generator: analysis/charts.py
+    run_id: "2026-06-readout"
+    expected_categories: [control, treatment]
+    category_count: 2
+    series_role: component
+    encodings: { x: arm, y: activation_rate, color: null }
     y_axis_starts_at_zero: true
     dual_axis: false
     units: "% of signups"
@@ -139,8 +177,17 @@ visuals:
     shows_uncertainty: true
     source: "warehouse.fct_signups, 2026-06-01..06-14"
   - name: "daily activation trend by arm"
+    chart_id: daily_activation_trend
     relationship: trend
     type: line
+    data_input_type: time-series
+    renderer: matplotlib
+    artifact_path: figures/daily_activation_trend.svg
+    svg_sha256: "sha256:78a7cf4d2fd6139365a74ff1a4e396db0c28d0234091e974bb389fffcc6249b4"
+    generator: analysis/charts.py
+    run_id: "2026-06-readout"
+    series_role: component
+    encodings: { x: day, y: activation_rate, color: arm }
     y_axis_starts_at_zero: false
     dual_axis: false
     units: "% of signups"
@@ -156,10 +203,22 @@ reproducibility:
   lockfile: analysis/requirements.lock
   package_versions: "numpy 2.1.0, statsmodels 0.14.2"
   runs_clean_top_to_bottom: true
+  repro_lock:
+    schema_version: "1"
+    stochasticity_declaration: >
+      Analysis outputs depend on data extracts and library versions recorded
+      elsewhere in this block; this lock documents configuration, not byte-identical replay.
+    dsx_version: "1.4.0"
+
+narrative:
+  path: good-NARRATIVE.md
+  audience: executive
+  lead_claim: 0
 
 results:
   observed_n: [9206, 9181]
   interim_looks: 1
+  comparisons_looked_at: 3
   overall_effect: 0.024
   segments:
     - { name: mobile, effect: 0.027, n: 11204 }
@@ -175,7 +234,7 @@ results:
       effect: 0.024
       standardized_effect: 0.052
       effect_size_kind: h
-      ci: [0.0096, 0.0384]
+      ci: [0.0101, 0.0384]
       interpretation: "Treatment raises activation; the interval clears the practical floor."
       minimum_practical_effect: 0.02
     - metric: retention_d7

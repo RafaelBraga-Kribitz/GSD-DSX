@@ -1,9 +1,9 @@
 {
   "id": "dsx",
   "role": "feature",
-  "version": "1.1.0",
+  "version": "1.4.0",
   "title": "Data science, analytics and BI rigour",
-  "description": "Turns the GSD phase loop into an expert analytics workflow: an ANALYSIS-SPEC contract written before the data is touched, specialist agents that fill it, and deterministic Python gates that block the loop when the statistics, the causal claims, the ML splits, the metric definitions, the data-quality profile or the charts do not hold up.",
+  "description": "Turns the GSD phase loop into an expert analytics workflow: an ANALYSIS-SPEC contract written before the data is touched, specialist agents that fill it, and deterministic Python gates that block the loop when the statistics, the causal claims, the ML splits, the metric definitions, the data-quality profile, the chart seals, the narrative wording, the entrypoint fit order, decision replay or repro_lock do not hold up.",
   "tier": "full",
   "requires": [],
   "engines": {
@@ -82,6 +82,31 @@
       "type": "boolean",
       "default": true,
       "description": "Compare data[].assertions against DATA-PROFILE.yaml artifacts at execute/verify/ship. Prefer profiles produced by `dsx profile`."
+    },
+    "dsx.figure_seal": {
+      "type": "boolean",
+      "default": true,
+      "description": "Require svg_sha256 seals for visuals with artifact_path at verify/ship, and enforce FIGURE-MANIFEST coverage when present."
+    },
+    "dsx.narrative_gate": {
+      "type": "boolean",
+      "default": true,
+      "description": "Require narrative.path when claims exist, claim⊆deliverable, and forbidden-wording scans at verify/ship."
+    },
+    "dsx.code_gate": {
+      "type": "boolean",
+      "default": true,
+      "description": "Scan reproducibility.entrypoint for fit-before-split and related leakage smells at execute/verify/ship."
+    },
+    "dsx.decision_replay": {
+      "type": "boolean",
+      "default": true,
+      "description": "Evaluate structured decision.replay thresholds against results.tests at verify/ship."
+    },
+    "dsx.repro_lock": {
+      "type": "boolean",
+      "default": true,
+      "description": "Require reproducibility.repro_lock (or explicit null opt-out) when results.tests is non-empty."
     },
     "dsx.domain": {
       "type": "enum",

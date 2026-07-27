@@ -6,5 +6,5 @@ is pure, dependency-free and returns findings with stable codes, so the same spe
 always produces the same verdict.
 """
 
-__version__ = "1.1.0"
+__version__ = "1.4.0"
 __all__ = ["__version__"]

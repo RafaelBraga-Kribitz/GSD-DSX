@@ -1,0 +1,12 @@
+# Optional phase-local forbidden wording. Merged with the universal pack in
+# dsx/checks/narrative.py. Patterns must match only overclaims — not negated
+# corrections ("the data does not prove" should not fire data_proves).
+
+forbidden_version: 1
+patterns:
+  - id: data_proves
+    regex: '(?i)\b(the )?data (proves|shows that|demonstrates that)\b'
+  - id: high_confidence
+    regex: '(?i)with high confidence'
+  - id: virtually_all_scenarios
+    regex: '(?i)under virtually all scenarios'

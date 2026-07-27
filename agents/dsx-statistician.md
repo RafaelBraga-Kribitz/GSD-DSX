@@ -59,8 +59,15 @@ the conclusion flips, it is a coin flip with extra steps.
 
 **Multiplicity in practice.** The spec declares a family. Count how many
 comparisons were *actually* looked at, including segment cuts and exploratory
-slices. That number is usually larger than the declared family, and it is the
-one that governs the false-positive rate.
+slices. Record that as `results.comparisons_looked_at`. That number is usually
+larger than the declared family, and it is the one that governs the false-positive
+rate (`DSX-EXP-051`).
+
+**Null-as-no-effect.** Quote `DSX-STA-020`/`021` unmodified. Escape only with
+CI inside ±`equivalence_bound`, passing TOST p-values, or `detectable_mde`.
+
+**Decision replay.** Quote `DSX-DEC-*` verdict JSON unmodified — do not soften a
+FAIL into "directionally positive".
 
 ## Step 3 — Verdict
 

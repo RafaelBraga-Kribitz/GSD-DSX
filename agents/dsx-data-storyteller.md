@@ -21,8 +21,11 @@ Narrating an unverified result is how a leak becomes a strategy.
 readability. If the plain-language version needs a causal verb to land, the
 answer is to run the study that licenses it, not to write the sentence anyway.
 
-Run `dsx check claims --phase-dir "$PHASE_DIR"` on the final wording. The causal
-language guard reads what you wrote.
+Run `dsx check claims narrative --phase-dir "$PHASE_DIR"` on the final wording.
+Quote `DSX-NAR-*` and `DSX-CLM-*` findings unmodified — do not soften a CRITICAL
+into a caveat. Every `claims[].text` must appear in `narrative.path`; relative
+`%` needs `base_n` or from/to; limitations must be non-empty before ship for
+causal/prescriptive/predictive questions.
 </core_principle>
 
 <structure>

@@ -28,8 +28,10 @@ Every metric declares, without exception:
 | `numerator` | with its filters stated |
 | `denominator` | with its filters stated — most disputes are denominator disputes |
 | `timezone` | daily aggregates in UTC and local time disagree by a few percent |
-| `source` | the table of record |
+| `source` | the table of record — warehouse / dbt / catalog.schema.table sources **must** include `sql:` (`DSX-MET-040`) |
 | `owner` | who arbitrates a change |
+| `sql` | required when `source` looks like a warehouse (see above) |
+| `reconciliation.class` | `financial` \| `user` \| `behavioral` \| `default` — sets the default relative tolerance when `tolerance` is omitted |
 
 Search the semantic layer, dbt models and existing dashboards before writing a
 new definition. Two definitions of one word is the most expensive artefact you
@@ -56,8 +58,10 @@ Record the outcome in the spec's `reconciliation` block with an agreed tolerance
 dsx check metrics --phase-dir <phase-dir> --verbose
 ```
 Lints for `NOT IN` against a nullable subquery, `COUNT(*)` after a `LEFT JOIN`,
-averaging a ratio, bare `UNION`, `BETWEEN` on timestamps, and aggregation across
-multiple joins with no fan-out guard.
+averaging a ratio, bare `UNION`, `BETWEEN` on timestamps, division without
+`NULLIF`, `= NULL`, `SELECT *`, `CROSS JOIN` without a filter, `JOIN` without
+`ON`, `COUNT(DISTINCT *)`, `SUM(a/b)`, and aggregation across multiple joins
+with no fan-out guard.
 
 Read for what the linter cannot: does the result's grain match the declared
 grain, and is every filter in `WHERE` rather than in an outer-join `ON` clause

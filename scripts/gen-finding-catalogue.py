@@ -30,10 +30,15 @@ PREFIX_GROUPS = [
     ("DSX-MET", "Metric semantics", "Definitions, reconciliation, drift, Simpson's paradox."),
     ("DSX-SQL", "SQL correctness", "Fan-out, NULL semantics, aggregation order."),
     ("DSX-CLM", "Claim discipline", "Causal language, evidence, generalisation, precision."),
+    ("DSX-NAR", "Narrative discipline", "Deliverable path, claim⊆narrative, forbidden wording."),
+    ("DSX-CODE", "Code reality", "Fit-before-split and leakage smells in the entrypoint."),
+    ("DSX-DEC", "Decision replay", "Structured decision.replay thresholds vs results.tests."),
     ("DSX-VIZ", "Visualization", "Encoding correctness, proportionality, uncertainty, access."),
-    ("DSX-REP", "Reproducibility", "Seeds, environment, data identity, entrypoint."),
+    ("DSX-REP", "Reproducibility", "Seeds, environment, data identity, entrypoint, repro_lock."),
     ("DSX-DQ", "Data quality", "Hermetic assertions against DATA-PROFILE artifacts."),
     ("DSX-COH", "Coherence", "Question ↔ claim ↔ decision agreement."),
+    ("DSX-FIG", "Figure seals", "Artifact paths and svg_sha256 hermetic seals."),
+    ("DSX-SMELL", "Plot smells", "Declaration-based plot-construction smells."),
 ]
 
 
@@ -70,6 +75,36 @@ def extract(path: Path) -> list[tuple[str, str, str]]:
     return found
 
 
+def extract_sql_rules(path: Path) -> list[tuple[str, str, str]]:
+    """Pull codes from `_SQL_RULES` tuple literals (not always passed as report.add args)."""
+    tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+    found: list[tuple[str, str, str]] = []
+
+    def _from_list(value: ast.AST) -> None:
+        if not isinstance(value, (ast.List, ast.Tuple)):
+            return
+        for elt in value.elts:
+            if not isinstance(elt, (ast.Tuple, ast.List)) or len(elt.elts) < 4:
+                continue
+            code = _literal(elt.elts[0])
+            severity = _literal(elt.elts[2])
+            detail = _literal(elt.elts[3])
+            if code and code.startswith("DSX-") and severity and detail:
+                title = detail.split(".")[0].strip()
+                found.append((code, severity, title))
+
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Assign):
+            for target in node.targets:
+                if isinstance(target, ast.Name) and target.id == "_SQL_RULES":
+                    _from_list(node.value)
+        elif isinstance(node, ast.AnnAssign):
+            if isinstance(node.target, ast.Name) and node.target.id == "_SQL_RULES":
+                if node.value is not None:
+                    _from_list(node.value)
+    return found
+
+
 def collect() -> list[tuple[str, str, str, str]]:
     rows: list[tuple[str, str, str, str]] = []
     sources = sorted((ROOT / "dsx").rglob("*.py"))
@@ -77,6 +112,9 @@ def collect() -> list[tuple[str, str, str, str]]:
         module = source.stem if source.parent.name == "dsx" else f"checks/{source.stem}"
         for code, severity, title in extract(source):
             rows.append((code, severity, title, module))
+        if source.name == "metrics.py":
+            for code, severity, title in extract_sql_rules(source):
+                rows.append((code, severity, title, module))
     rows.sort(key=lambda r: r[0])
     seen: dict[str, tuple[str, str, str, str]] = {}
     for row in rows:

@@ -9,7 +9,7 @@ declared chart spec — no rendering required, so the check runs in a gate.
 from __future__ import annotations
 
 from ..findings import Report
-from ..spec import as_number, is_blank, items, normalize
+from ..spec import CHART_CAPABILITIES, DATA_INPUT_TYPES, as_number, is_blank, items, normalize
 
 # Relationship → admissible chart types. The first entry is the default choice.
 RELATIONSHIP_CHARTS: dict[str, tuple[str, ...]] = {
@@ -28,7 +28,8 @@ RELATIONSHIP_CHARTS: dict[str, tuple[str, ...]] = {
 # Chart families whose visual encoding is length from a baseline. Truncating the
 # axis breaks the proportionality the reader is decoding.
 LENGTH_ENCODED = {"bar", "horizontal_bar", "stacked_bar", "area", "stacked_area", "waterfall",
-                  "diverging_bar", "column", "histogram", "waffle", "funnel", "stream"}
+                  "diverging_bar", "column", "histogram", "waffle", "funnel", "stream",
+                  "grouped_bar"}
 
 BANNED_TYPES = {
     "3d_bar": "3D bars distort length with perspective and occlude the back rows.",
@@ -40,6 +41,12 @@ BANNED_TYPES = {
 
 MAX_PIE_SLICES = 5
 MAX_CATEGORICAL_COLORS = 7
+
+COMPARISON_TOKENS = (
+    "higher", "lower", "vs", "versus", "fell", "grew", "more", "less", "above",
+    "below", "increase", "decrease", "up", "down", "gain", "loss", "clear",
+    "exceed", "miss", "lead", "lag", "ahead", "behind", "difference", "gap",
+)
 
 
 def check(spec: dict) -> Report:
@@ -55,6 +62,7 @@ def check(spec: dict) -> Report:
 
         _check_banned(chart_type, label, where, report)
         _check_relationship_match(visual, chart_type, label, where, report)
+        _check_input_type_matrix(visual, chart_type, label, where, report)
         _check_axis_truncation(visual, chart_type, label, where, report)
         _check_dual_axis(visual, label, where, report)
         _check_slice_count(visual, chart_type, label, where, report)
@@ -118,6 +126,56 @@ def _check_relationship_match(
         )
     elif chart_type:
         report.ok(f"'{label}': {chart_type} suits a {relationship} relationship")
+
+
+def _check_input_type_matrix(
+    visual: dict, chart_type: str, label: str, where: str, report: Report
+) -> None:
+    raw = visual.get("data_input_type")
+    if is_blank(raw):
+        if chart_type:
+            report.add(
+                "DSX-VIZ-014",
+                "MEDIUM",
+                f"'{label}' has no data_input_type",
+                detail=(
+                    "The input-type × chart matrix catches marks that look plausible for "
+                    "the relationship but wrong for the column signature."
+                ),
+                remedy="Declare data_input_type from `dsx vocab` (see references/data-input-types.md).",
+                where=f"{where}.data_input_type",
+            )
+        return
+    dit = normalize(str(raw)).replace("_", "-")
+    if dit not in DATA_INPUT_TYPES:
+        report.add(
+            "DSX-VIZ-013",
+            "HIGH",
+            f"'{label}' chart type conflicts with data_input_type",
+            detail=f"Unrecognised data_input_type {raw!r}. Allowed: " + ", ".join(sorted(DATA_INPUT_TYPES)),
+            remedy="Pick a closed data_input_type id.",
+            where=f"{where}.data_input_type",
+        )
+        return
+    if not chart_type:
+        return
+    admissible = CHART_CAPABILITIES.get(dit, frozenset())
+    # Accept both underscored and hyphenated mark aliases
+    aliases = {chart_type, chart_type.replace("_", "-"), chart_type.replace("-", "_")}
+    if not aliases & set(admissible) and chart_type not in admissible:
+        report.add(
+            "DSX-VIZ-013",
+            "HIGH",
+            f"'{label}' chart type conflicts with data_input_type",
+            detail=(
+                f"type {chart_type!r} is not admissible for data_input_type {dit}. "
+                f"Admissible marks: {', '.join(sorted(admissible))}."
+            ),
+            remedy=f"Change type to one of {', '.join(sorted(admissible)[:4])}…, or fix data_input_type.",
+            where=f"{where}.type",
+        )
+    else:
+        report.ok(f"'{label}': {chart_type} admitted by {dit}")
 
 
 def _check_axis_truncation(
@@ -245,7 +303,9 @@ def _check_color(visual: dict, label: str, where: str, report: Report) -> None:
 
 
 def _check_labelling(visual: dict, label: str, where: str, report: Report) -> None:
-    if is_blank(visual.get("takeaway")):
+    takeaway = visual.get("takeaway")
+    name = str(visual.get("name") or "")
+    if is_blank(takeaway):
         report.add(
             "DSX-VIZ-060",
             "MEDIUM",
@@ -258,6 +318,48 @@ def _check_labelling(visual: dict, label: str, where: str, report: Report) -> No
             remedy="Write the title as the sentence you want remembered.",
             where=f"{where}.takeaway",
         )
+        report.add(
+            "DSX-VIZ-063",
+            "HIGH",
+            f"'{label}' takeaway is blank or identical to the chart name",
+            detail="An empty takeaway is not an argument.",
+            remedy="Write a takeaway sentence that states the finding.",
+            where=f"{where}.takeaway",
+        )
+    else:
+        takeaway_s = str(takeaway).strip()
+        if name and takeaway_s.casefold() == name.strip().casefold():
+            report.add(
+                "DSX-VIZ-063",
+                "HIGH",
+                f"'{label}' takeaway is blank or identical to the chart name",
+                detail=(
+                    f"takeaway repeats name {name!r}. Variable labels are not findings."
+                ),
+                remedy="Rewrite the takeaway as the sentence you want remembered.",
+                where=f"{where}.takeaway",
+            )
+        else:
+            lowered = takeaway_s.casefold()
+            has_digit = any(ch.isdigit() for ch in takeaway_s)
+            has_token = any(tok in lowered for tok in COMPARISON_TOKENS) or (
+                "%" in takeaway_s or "pp" in lowered
+            )
+            if not has_digit and not has_token:
+                report.add(
+                    "DSX-VIZ-064",
+                    "MEDIUM",
+                    f"'{label}' takeaway has no magnitude or comparison",
+                    detail=(
+                        "A strong takeaway usually contains a digit or a comparison word "
+                        "(higher, fell, vs, …)."
+                    ),
+                    remedy="Add the magnitude or the comparison the reader should leave with.",
+                    where=f"{where}.takeaway",
+                )
+            else:
+                report.ok(f"'{label}' takeaway states a finding")
+
     if is_blank(visual.get("units")):
         report.add(
             "DSX-VIZ-061",

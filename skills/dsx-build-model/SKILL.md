@@ -51,11 +51,12 @@ The sequence is not stylistic. Each step makes the next one checkable.
 
 <verification>
 ```bash
-dsx check ml repro --phase-dir <phase-dir> --verbose
+dsx check ml repro code --phase-dir <phase-dir> --verbose
 ```
-Screens the declared configuration. Then spawn `dsx-ml-integrity-auditor` to
-verify the code matches the declaration — the spec is a claim, and claims get
-audited.
+Screens the declared configuration **and** the entrypoint for fit-before-split
+smells (`DSX-CODE-*`). Fix fit-before-split before arguing with the auditor.
+Then spawn `dsx-ml-integrity-auditor` to verify the code matches the declaration
+— the spec is a claim, and claims get audited.
 </verification>
 
 <report>

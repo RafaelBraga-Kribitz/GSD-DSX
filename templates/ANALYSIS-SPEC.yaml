@@ -36,6 +36,15 @@ decision:
   minimum_practical_effect: null   # smallest effect that would change the decision
   reversible: true
   deadline: "<YYYY-MM-DD or null>"
+  # Structured replay — evaluated against results.tests at verify/ship (not NLP).
+  # Required at ship when design.kind=experiment (or causal/prescriptive) with tests.
+  # replay:
+  #   metric: activation_rate
+  #   ci_lower_min: 0.01
+  #   # ci_upper_max: null
+  #   # effect_min: null
+  #   on_pass: rollout
+  #   on_fail: hold
 
 # ── Metrics ──────────────────────────────────────────────────────────────────
 # One name, one definition. Ratios must declare both numerator and denominator —
@@ -53,7 +62,8 @@ metrics:
     # sql: |
     #   SELECT ...            # optional; linted for fan-out and NULL semantics
     # reconciliation:
-    #   tolerance: 0.01
+    #   class: default           # financial | user | behavioral | default
+    #   tolerance: 0.01          # overrides class default when set
     #   sources:
     #     - { name: warehouse, value: 12345 }
     #     - { name: product_analytics, value: 12290 }
@@ -148,8 +158,22 @@ analysis:
 # Declare the argument each chart makes; dsx checks the encoding supports it.
 visuals:
   - name: <chart name>
-    relationship: comparison       # `dsx vocab` for the closed list
+    chart_id: <stable_id>              # unique across visuals; used by FIGURE-MANIFEST
+    relationship: comparison           # `dsx vocab` for the closed list
     type: bar
+    data_input_type: categorical-value # `dsx vocab` — must admit `type`
+    renderer: matplotlib               # matplotlib | plotly | altair | ggplot | glyph | other
+    artifact_path: figures/<name>.svg  # on-disk figure; seal with `dsx seal`
+    svg_sha256: null                   # "sha256:..." — required at ship when artifact_path set
+    generator: analysis/charts.py
+    run_id: null                       # shared across visuals from the same readout
+    expected_categories: []            # for smell J vs category_count
+    series_role: component             # component | scenario — never stack scenarios
+    encodings: { x: null, y: null, color: null }
+    # within_group_std: null           # set 0 to flag dead/broadcast series (smell B)
+    # atomicity: false                 # true when y has few discrete atoms (smell G)
+    # n_unique: null
+    # ratio_of_x: false                # true when y algebraically contains x (smell K)
     y_axis_starts_at_zero: true
     dual_axis: false
     units: "<%, USD, count>"
@@ -170,12 +194,23 @@ reproducibility:
   lockfile: <requirements.txt | uv.lock | environment.yml>
   package_versions: null
   runs_clean_top_to_bottom: false  # notebooks only; set true after Restart & Run All
+  # Required key when results.tests is non-empty (verify/ship). null = honest opt-out.
+  repro_lock:
+    schema_version: "1"
+    stochasticity_declaration: >
+      Analysis outputs depend on data extracts and library versions recorded
+      elsewhere in this block; this lock documents configuration, not byte-identical replay.
+    dsx_version: "1.4.0"
+    # entrypoint_sha256: "sha256:…"
+    # results_fingerprint: "sha256:…"
+  # OR: repro_lock: null
 
 # ── Results ──────────────────────────────────────────────────────────────────
 # Filled during execute. Leave as-is while planning.
 results:
   observed_n: []                   # per arm — drives the SRM test
   interim_looks: null              # every time someone looked at the outcome
+  comparisons_looked_at: null      # incl. exploratory cuts; vs multiplicity.family
   positive_rate: null
   overall_effect: null
   segments: []                     # [{ name, effect, n }] — drives Simpson's check
@@ -195,6 +230,22 @@ results:
     #   ci: [0.002, 0.040]
     #   interpretation: "<one sentence>"
     #   minimum_practical_effect: 0.01
+    #   equivalence_bound: null           # ±bound for TOST / CI-in-bounds
+    #   detectable_mde: null              # smallest effect the study could detect
+    #   tost: { lower_p: null, upper_p: null }
+
+# ── Narrative deliverable ────────────────────────────────────────────────────
+# Required at ship when claims[] is non-empty. Every claim text must appear
+# verbatim (whitespace-normalised) in this file.
+narrative:
+  path: NARRATIVE.md
+  audience: executive              # executive | product | technical
+  lead_claim: 0
+
+# Optional BI surface — if declared, path must exist at ship.
+# dashboard:
+#   path: dashboard/README.md
+#   tools: []
 
 # ── Claims ───────────────────────────────────────────────────────────────────
 # Every headline statement the deliverable will make. dsx reads the wording and
@@ -206,6 +257,9 @@ claims:
     population: "<who this applies to>"
     # ci: [lower, upper]
     # identification: <overrides design.identification for this claim>
+    # base_n: null                 # absolute base when text has a relative %
+    # from_value: null             # optional pair for "up X% from A to B"
+    # to_value: null
 
 # ── Assumptions and limitations ──────────────────────────────────────────────
 assumptions:
@@ -213,6 +267,8 @@ assumptions:
     rationale: "<why>"
     impact_if_wrong: "<what breaks>"
     checked: false
+    # waiver: "Not testable: …"   # at ship: checked:true XOR non-blank waiver
 
 limitations:
   - "<what this analysis cannot tell you, stated plainly>"
+  # Required non-empty at verify/ship when question_type is causal|prescriptive|predictive

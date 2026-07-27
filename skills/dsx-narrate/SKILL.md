@@ -38,18 +38,31 @@ decision-makers read for the answer first.
 - Match the verb to the design. A claim typed `association` gets associational
   verbs, however much better the causal phrasing reads.
 - Never a percentage without its base. "Up 40%" from 5 to 7 is a different story
-  from 500 to 700, and readers assume the larger one.
+  from 500 to 700, and readers assume the larger one. Set `base_n` or
+  `from_value`/`to_value` on the claim when the text uses a relative %.
 - State uncertainty as a range, not as a hedge. "Between 1 and 4 points" is
   actionable; "roughly 2.4%, though there's uncertainty" is neither.
 - Name the population. Readers default to "everyone".
-- Put limitations up front. Stated early they read as competence; discovered late
-  they read as concealment.
+- Put limitations up front. Required non-empty at verify/ship for causal,
+  prescriptive and predictive questions (`DSX-CLM-080`).
 - Round to what the interval supports. Four significant figures on a wide
   interval projects precision the estimate does not have.
+- Write `narrative.path` (e.g. `NARRATIVE.md`) and embed every `claims[].text`
+  verbatim. Forbidden wording (`data proves`, `with high confidence`, …) is
+  `DSX-NAR-030`.
 
-Verify the final wording: `dsx check claims --phase-dir <phase-dir>`. The causal
-language guard reads what you actually wrote, not what you meant.
+Verify the final wording:
+
+```bash
+dsx check claims narrative --phase-dir <phase-dir> --verbose
+```
+
+Cite NAR/CLM findings unmodified. Do not rephrase a CRITICAL into a soft note.
 </discipline>
+
+<references>
+@references/narrative-discipline.md
+</references>
 
 <delegation>
 Spawn `dsx-data-storyteller` for the draft. For a Word or PowerPoint deliverable,

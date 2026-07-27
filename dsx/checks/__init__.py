@@ -6,21 +6,46 @@
     metrics     DSX-MET-*, DSX-SQL-*   definitions, reconciliation, Simpson's, SQL lint
     claims      DSX-CLM-*              causal language, evidence, generalisation
     viz         DSX-VIZ-*              encoding correctness, proportionality, uncertainty
-    repro       DSX-REP-*              seeds, environment, data identity, entrypoint
+    repro       DSX-REP-*              seeds, environment, data identity, entrypoint, repro_lock
     dq          DSX-DQ-*               profile assertions vs DATA-PROFILE artifact
     coherence   DSX-COH-*              question ↔ claim ↔ decision agreement
+    figures     DSX-FIG-*              artifact paths and svg_sha256 seals
+    smells      DSX-SMELL-*            declaration-based plot-construction smells
+    narrative   DSX-NAR-*              deliverable path, claim⊆narrative, forbidden wording
+    code        DSX-CODE-*             fit-before-split entrypoint scan
+    decision    DSX-DEC-*              structured decision.replay vs results.tests
 """
 
-from . import claims, coherence, design, dq, metrics, ml, repro, stats, viz
+from . import (
+    claims,
+    code,
+    coherence,
+    decision,
+    design,
+    dq,
+    figures,
+    metrics,
+    ml,
+    narrative,
+    repro,
+    smells,
+    stats,
+    viz,
+)
 
 __all__ = [
     "claims",
+    "code",
     "coherence",
+    "decision",
     "design",
     "dq",
+    "figures",
     "metrics",
     "ml",
+    "narrative",
     "repro",
+    "smells",
     "stats",
     "viz",
 ]

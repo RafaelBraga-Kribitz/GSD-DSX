@@ -37,10 +37,9 @@ written profile.
 
 ## Current state
 
-- **v1.0.0** shipped: 8 skills, 6 agents, ~132 finding codes, gates on
-  plan / execute / verify / ship.
-- **Phase 1 (v1.1.0):** DQ profile runner + hermetic `DSX-DQ-*`, evidence
-  resolution (`DSX-CLM-031+`), question↔claim↔decision coherence (`DSX-COH-*`).
+- **v1.4.0** shipped: Phases 1–4 complete. Ten quality dimensions gated where
+  decidable (DQ, evidence, coherence, viz/seals/smells, narrative/code, analytical
+  logic / stats extensions including decision replay and repro_lock).
 
 ## Non-goals
 

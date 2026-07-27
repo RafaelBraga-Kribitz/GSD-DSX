@@ -13,9 +13,14 @@ question_type: causal          # causal question, observational data, no strateg
 
 decision:
   owner: "TBD"                 # nobody owns the decision
+  action_if_null: "TBD"          # placeholder — reframes nulls
   # decision_rule missing      -> any result can be rationalised after the fact
-  # action_if_null missing     -> a null will be reframed as "directionally positive"
   # minimum_practical_effect missing while kind=experiment below → DSX-COH-020
+  replay:
+    metric: churn_rate
+    ci_lower_min: 0.05            # CI missing / thresholds fail → DEC-020
+    on_pass: ship_anyway
+    on_fail: also_ship
 
 metrics:
   - name: churn_rate
@@ -25,13 +30,15 @@ metrics:
     # numerator / denominator missing -> the denominator dispute is guaranteed
     source: warehouse.customers
     sql: |
-      SELECT COUNT(*) AS churned, AVG(c.mrr / c.seats) AS arpu
+      SELECT *, c.mrr / c.seats AS arpu
       FROM warehouse.customers c
-      JOIN warehouse.subscriptions s ON s.customer_id = c.id
+      JOIN warehouse.subscriptions s
       JOIN warehouse.invoices i ON i.subscription_id = s.id
       WHERE c.id NOT IN (SELECT customer_id FROM warehouse.exclusions)
+        AND c.status = NULL
         AND i.created_at BETWEEN '2026-01-01' AND '2026-06-30'
     reconciliation:
+      class: financial
       tolerance: 0.01
       sources:
         - { name: warehouse, value: 0.081 }
@@ -41,7 +48,7 @@ metrics:
     type: ratio
     definition: "customers who churned"
     grain: customer
-    source: looker.churn
+    source: warehouse.churn_v2   # warehouse-like, no sql → DSX-MET-040
 
 data:
   - name: customers
@@ -99,8 +106,11 @@ model:
 
 visuals:
   - name: "churn by segment"
+    chart_id: churn_segment
     relationship: comparison
     type: bar
+    data_input_type: hierarchical     # wrong matrix fit for a bar comparison
+    takeaway: "churn by segment"      # identical to name → VIZ-063
     y_axis_starts_at_zero: false
     y_axis_min: 7.4             # a 0.6pp difference rendered as a cliff
     dual_axis: true
@@ -108,16 +118,37 @@ visuals:
     category_order: alphabetical
     shows_estimates: true
     shows_uncertainty: false
+    expected_categories: [smb, mid_market, enterprise]
+    category_count: 2           # disagree → SMELL-010
+    run_id: "run-a"
+    artifact_path: figures/missing_churn.svg
   - name: "market share"
+    chart_id: churn_segment     # duplicate id → FIG-030
     relationship: part_to_whole
     type: 3d_pie
     category_count: 12
+    takeaway: "Share overview"
+    run_id: "run-b"             # disagrees with run-a → SMELL-013
+  - name: "scenario stack"
+    chart_id: scenario_stack
+    relationship: composition_over_time
+    type: stacked_area
+    series_role: scenario       # SMELL-009
+    data_input_type: composition
+    takeaway: "Scenarios stacked as if parts of a whole"
+    units: "%"
+    source: "fake"
+    run_id: "run-c"
 
-reproducibility: {}             # no seed, no lockfile, no entrypoint
+reproducibility:
+  entrypoint: analysis/leaky_model.py
+  random_seed: 1
+  lockfile: analysis/requirements.lock
 
 results:
   observed_n: [10000, 9200]     # sample ratio mismatch
   interim_looks: 6              # peeked six times under a fixed-horizon design
+  comparisons_looked_at: 20     # >> family size → EXP-051
   overall_effect: -0.03
   segments:                     # every segment moves the other way
     - { name: smb, effect: 0.021 }
@@ -152,3 +183,18 @@ claims:
   - text: "The model predicts churn with 97.4183% accuracy."
     type: predictive
     ci: [0.62, 0.94]
+  - text: "Churn is up 40% after the launch."
+    type: descriptive           # relative % with no base → CLM-070
+
+narrative:
+  path: bad-NARRATIVE.md
+  audience: executive
+
+# limitations intentionally empty → CLM-080 for causal question
+limitations: []
+
+assumptions:
+  - assumption: "Seasonality does not matter."
+    rationale: "We looked at one quarter."
+    impact_if_wrong: "Trend confounded with season."
+    checked: false              # neither checked nor waived → COH-031

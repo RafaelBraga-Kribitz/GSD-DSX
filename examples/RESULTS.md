@@ -3,7 +3,7 @@
 
 ## Activation uplift
 
-Treatment raises 7-day activation by 2.4pp (95% CI 0.96–3.84pp).
+Treatment raises 7-day activation by 2.4pp (95% CI 1.01–3.84pp).
 
 ## Retention
 

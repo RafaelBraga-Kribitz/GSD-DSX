@@ -18,60 +18,42 @@ Aesthetics come third, and only after both are yes.
 
 <process>
 
-## Step 1 — Deterministic audit
+## Step 1 — Deterministic audit (Gate C then D)
 
 ```bash
-dsx check viz --phase-dir "$PHASE_DIR" --verbose
+dsx check viz smells figures --phase-dir "$PHASE_DIR" --verbose
 ```
 
-Catches the decidable defects: truncated baselines on length-encoded charts,
-dual axes, chart type mismatched to the declared relationship, rainbow scales,
-red/green as the sole distinction, missing units, estimates without uncertainty,
-alphabetical ordering where ranking is the point.
+Treat CRITICAL/HIGH from these families as blockers before any polish:
 
-## Step 2 — Judge what the code cannot
+- **Gate C (chart type):** `DSX-VIZ-01x`, `DSX-VIZ-013` (input-type × mark matrix)
+- **Gate D (data/plot):** `DSX-VIZ-020+`, `DSX-FIG-*` (seals), `DSX-SMELL-*`
 
-**Does the title state the finding?** "Revenue by region" makes the reader do the
-work. "EMEA revenue fell 12% while every other region grew" delivers it. The
-title is the most-read element on the chart; spending it on variable names is a
-waste.
+Do not rewrite takeaways while those remain open.
 
-**Is the comparison the reader needs actually adjacent?** Small differences read
-only when the marks are aligned on a common baseline. If the reader has to
-compare across panels or hold a number in memory, restructure.
+## Step 2 — Agent checklist (smells A/C/D/E/F/H/L)
 
-**What is the chart hiding?** An average hides a bimodal distribution. A total
-hides a mix shift. A trend line hides the variance around it. Ask what the raw
-data would show that this summary does not.
+After the gate is clean, walk `references/viz-smells.md` for the items that
+need notebook/code judgement (walk-forward leakage, interval label mismatch,
+rank-as-noise, MC noise, geo placeholders, clipping, synthetic early windows).
 
-**Is the ink earning its place?** Gridlines, borders, drop shadows, legends that
-could be direct labels, a third dimension that encodes nothing. Every removed
-element makes the remaining ones easier to read.
+## Step 3 — Judge what the code cannot
 
-**Would this survive being screenshotted into Slack with no context?** Charts
-travel. Units, period and source have to travel with them.
+**Does the title state the finding?** Digits or comparison words beat variable names.
 
-## Step 3 — Rewrite rather than only criticise
+**Is the comparison the reader needs actually adjacent?**
 
-For each defect, state the specific replacement: which chart type, which
-encoding, what the title should say. A critique that stops at "this is
-misleading" costs the analyst another round trip.
+**What is the chart hiding?** Means hide multimodality; totals hide mix shift.
+
+**Would this survive Slack without context?** Units, period, source travel with it.
+
+## Step 4 — Rewrite rather than only criticise
+
+For each defect, state the replacement mark, encoding, and takeaway sentence.
 </process>
 
-<chart_selection>
-Relationship determines the chart, not the other way round:
-
-| Relationship | Default | Avoid |
-|---|---|---|
-| comparison across categories | horizontal bar, sorted by value | pie, radar |
-| trend over time | line | bar (unless discrete periods) |
-| part to whole | stacked bar, treemap | pie beyond 5 slices |
-| distribution | histogram, box, ECDF | bar of means |
-| correlation | scatter | dual-axis line |
-| ranking | dot plot, slope | 3D anything |
-| flow | sankey, funnel | stacked bar |
-| deviation from target | diverging bar, bullet | gauge |
-
-Bars, areas and anything else encoding length must start at zero. Lines and
-scatters encode position and may be zoomed — say so in the axis label.
-</chart_selection>
+<references>
+@references/chart-selection.md
+@references/data-input-types.md
+@references/viz-smells.md
+</references>

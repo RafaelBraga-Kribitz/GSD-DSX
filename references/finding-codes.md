@@ -13,7 +13,7 @@ a suppression or a reference in a review stays valid across versions.
 **Gate thresholds.** `plan` and `execute` block at CRITICAL; `verify` and
 `ship` block at HIGH.
 
-**Total: 145 codes.**
+**Total: 202 codes.**
 
 ## Contract structure — `DSX-SPEC-*`
 
@@ -72,6 +72,8 @@ Power, allocation, units, duration, multiplicity, peeking.
 | `DSX-EXP-031` | LOW | Experiment duration of <…> days is not a whole number of weeks |
 | `DSX-EXP-040` | MEDIUM | No guardrail metrics declared for the experiment |
 | `DSX-EXP-050` | HIGH | <…> hypotheses tested with no multiplicity correction |
+| `DSX-EXP-051` | HIGH | comparisons_looked_at=<…> exceeds multiplicity family size <…> |
+| `DSX-EXP-052` | MEDIUM | Multiple tests with a declared family but comparisons_looked_at is missing |
 | `DSX-EXP-060` | CRITICAL | <…> interim looks were taken under a fixed-horizon design |
 
 ## Causal identification — `DSX-CAU-*`
@@ -101,6 +103,7 @@ Test selection, assumptions, and the reporting contract.
 | `DSX-STA-010` | HIGH | '<…>' is statistically significant but below the practical threshold |
 | `DSX-STA-011` | MEDIUM | '<…>' is significant with a negligible effect size (<…>=<…>) |
 | `DSX-STA-020` | HIGH | '<…>' interprets p=<…> as evidence of no effect |
+| `DSX-STA-021` | HIGH | '<…>' declares equivalence_bound=<…> but CI/TOST do not prove it |
 | `DSX-STA-030` | MEDIUM | Multiplicity correction could not be applied |
 | `DSX-STA-031` | HIGH | <…> result(s) lose significance after <…> correction |
 | `DSX-STA-040` | MEDIUM | analysis.outcome_type <…> is not recognised |
@@ -150,10 +153,12 @@ Definitions, reconciliation, drift, Simpson's paradox.
 | `DSX-MET-002` | MEDIUM | <…> metrics share one definition: <…> |
 | `DSX-MET-010` | MEDIUM | Reconciliation for <…> declares sources but no values |
 | `DSX-MET-011` | HIGH | Metric <…> differs <…> across sources |
+| `DSX-MET-012` | MEDIUM | Unknown reconciliation class <…> for <…> |
 | `DSX-MET-020` | HIGH | Denominator for <…> moved <…> between periods |
 | `DSX-MET-030` | CRITICAL | Simpson's paradox: every segment moves opposite to the aggregate |
 | `DSX-MET-031` | HIGH | <…> of <…> segments move against the aggregate |
-| `DSX-MET-040` | MEDIUM | Time-grained metric <…> declares no timezone |
+| `DSX-MET-040` | HIGH | Warehouse-like source <…> has no sql definition |
+| `DSX-MET-041` | MEDIUM | Time-grained metric <…> declares no timezone |
 
 ## SQL correctness — `DSX-SQL-*`
 
@@ -161,7 +166,20 @@ Fan-out, NULL semantics, aggregation order.
 
 | Code | Severity | Finding |
 |---|---|---|
+| `DSX-SQL-001` | HIGH | NOT IN against a subquery returns no rows when the subquery yields any NULL |
+| `DSX-SQL-002` | MEDIUM | COUNT(*) after a LEFT JOIN counts non-matching rows as 1, inflating the result |
+| `DSX-SQL-003` | LOW | Bare UNION silently deduplicates rows and costs a sort |
+| `DSX-SQL-004` | HIGH | Averaging a per-row ratio gives an unweighted average of averages |
+| `DSX-SQL-005` | MEDIUM | BETWEEN on a timestamp excludes everything after 00:00:00 on the end date |
+| `DSX-SQL-006` | LOW | SELECT DISTINCT often patches a join fan-out rather than fixing it |
+| `DSX-SQL-007` | HIGH | SQL for <…>: Division without nearby NULLIF |
+| `DSX-SQL-008` | HIGH | = NULL / != NULL is always unknown in SQL; use IS NULL / IS NOT NULL |
+| `DSX-SQL-009` | MEDIUM | SELECT * couples the metric to every column change and hides grain |
 | `DSX-SQL-010` | HIGH | SQL for <…> aggregates across <…> joins with no fan-out guard |
+| `DSX-SQL-011` | HIGH | SQL for <…>: CROSS JOIN without WHERE/ON |
+| `DSX-SQL-012` | HIGH | SQL for <…>: JOIN without ON |
+| `DSX-SQL-013` | MEDIUM | COUNT(DISTINCT *) is invalid or meaningless in most engines |
+| `DSX-SQL-014` | HIGH | SUM of per-row ratios is not a ratio of sums |
 
 ## Claim discipline — `DSX-CLM-*`
 
@@ -182,6 +200,43 @@ Causal language, evidence, generalisation, precision.
 | `DSX-CLM-041` | HIGH | Predictive claim with no out-of-sample score reported |
 | `DSX-CLM-050` | MEDIUM | Claim generalises broadly (<…>) without naming its population |
 | `DSX-CLM-060` | LOW | Claim quotes <…> to <…> decimals against a CI half-width of <…> |
+| `DSX-CLM-070` | HIGH | Relative % in claim without a declared or nearby base |
+| `DSX-CLM-080` | HIGH | question_type <…> requires a non-empty limitations list at verify/ship |
+
+## Narrative discipline — `DSX-NAR-*`
+
+Deliverable path, claim⊆narrative, forbidden wording.
+
+| Code | Severity | Finding |
+|---|---|---|
+| `DSX-NAR-001` | HIGH | Claims declared but narrative.path is missing |
+| `DSX-NAR-010` | HIGH | narrative.path <…> does not exist |
+| `DSX-NAR-020` | HIGH | Claim text missing from narrative: claims[<…>] |
+| `DSX-NAR-030` | CRITICAL | Forbidden wording (<…>) in <…> |
+| `DSX-NAR-040` | MEDIUM | Narrative contains a relative % without a nearby base |
+| `DSX-NAR-050` | HIGH | dashboard.path <…> does not exist |
+
+## Code reality — `DSX-CODE-*`
+
+Fit-before-split and leakage smells in the entrypoint.
+
+| Code | Severity | Finding |
+|---|---|---|
+| `DSX-CODE-001` | CRITICAL | Fit/transform appears before the first train/test split marker |
+| `DSX-CODE-002` | HIGH | StandardScaler().fit_transform on full frame with no prior X_train |
+| `DSX-CODE-003` | HIGH | Resampler (SMOTE / RandomOverSampler / …) before split |
+| `DSX-CODE-010` | MEDIUM | model: block present but entrypoint has no declared split marker |
+
+## Decision replay — `DSX-DEC-*`
+
+Structured decision.replay thresholds vs results.tests.
+
+| Code | Severity | Finding |
+|---|---|---|
+| `DSX-DEC-001` | HIGH | decision.replay missing or incomplete |
+| `DSX-DEC-010` | HIGH | decision.replay.metric missing from results.tests |
+| `DSX-DEC-020` | HIGH | Decision replay FAIL for metric <…> |
+| `DSX-DEC-021` | HIGH | Decision replay PASS but primary p=<…> ≥ alpha=<…> |
 
 ## Visualization — `DSX-VIZ-*`
 
@@ -193,6 +248,8 @@ Encoding correctness, proportionality, uncertainty, access.
 | `DSX-VIZ-010` | MEDIUM | '<…>' does not declare the relationship it shows |
 | `DSX-VIZ-011` | MEDIUM | '<…>' declares unrecognised relationship <…> |
 | `DSX-VIZ-012` | HIGH | '<…>' shows a <…> relationship with a <…> chart |
+| `DSX-VIZ-013` | HIGH | '<…>' chart type conflicts with data_input_type |
+| `DSX-VIZ-014` | MEDIUM | '<…>' has no data_input_type |
 | `DSX-VIZ-020` | CRITICAL | '<…>' is a <…> chart with a truncated y-axis |
 | `DSX-VIZ-021` | LOW | '<…>' does not declare its y-axis baseline |
 | `DSX-VIZ-030` | HIGH | '<…>' uses two y-axes |
@@ -203,12 +260,14 @@ Encoding correctness, proportionality, uncertainty, access.
 | `DSX-VIZ-060` | MEDIUM | '<…>' has no takeaway title |
 | `DSX-VIZ-061` | HIGH | '<…>' does not declare its units |
 | `DSX-VIZ-062` | LOW | '<…>' has no source note |
+| `DSX-VIZ-063` | HIGH | '<…>' takeaway is blank or identical to the chart name |
+| `DSX-VIZ-064` | MEDIUM | '<…>' takeaway has no magnitude or comparison |
 | `DSX-VIZ-070` | HIGH | '<…>' plots estimates without any uncertainty |
 | `DSX-VIZ-080` | LOW | '<…>' orders categories <…> |
 
 ## Reproducibility — `DSX-REP-*`
 
-Seeds, environment, data identity, entrypoint.
+Seeds, environment, data identity, entrypoint, repro_lock.
 
 | Code | Severity | Finding |
 |---|---|---|
@@ -219,6 +278,10 @@ Seeds, environment, data identity, entrypoint.
 | `DSX-REP-030` | HIGH | No analysis entrypoint declared |
 | `DSX-REP-031` | HIGH | Declared entrypoint <…> does not exist |
 | `DSX-REP-040` | HIGH | Notebook entrypoint not confirmed to run top-to-bottom from a clean kernel |
+| `DSX-REP-050` | HIGH | repro_lock key missing while results.tests is non-empty |
+| `DSX-REP-051` | MEDIUM | repro_lock is null (honest opt-out) |
+| `DSX-REP-052` | HIGH | repro_lock incomplete (schema_version / stochasticity_declaration) |
+| `DSX-REP-053` | MEDIUM | repro_lock.dsx_version missing or mismatched |
 
 ## Data quality — `DSX-DQ-*`
 
@@ -243,3 +306,32 @@ Question ↔ claim ↔ decision agreement.
 | `DSX-COH-001` | CRITICAL | Claim type <…> exceeds question_type <…> |
 | `DSX-COH-010` | CRITICAL | Decision rule uses causal language under question_type=<…> |
 | `DSX-COH-020` | CRITICAL | Experiment decision block incomplete (MPE or action_if_null) |
+| `DSX-COH-030` | HIGH | Causal/prescriptive question has an empty assumptions list |
+| `DSX-COH-031` | HIGH | Assumption[<…>] is neither checked nor waived |
+
+## Figure seals — `DSX-FIG-*`
+
+Artifact paths and svg_sha256 hermetic seals.
+
+| Code | Severity | Finding |
+|---|---|---|
+| `DSX-FIG-001` | HIGH | '<…>' artifact_path <…> not found |
+| `DSX-FIG-010` | CRITICAL | '<…>' svg_sha256 does not match the file on disk |
+| `DSX-FIG-011` | HIGH | '<…>' has artifact_path but no svg_sha256 |
+| `DSX-FIG-020` | HIGH | '<…>' uses renderer glyph without svg_sha256 |
+| `DSX-FIG-030` | HIGH | Duplicate chart_id <…> |
+| `DSX-FIG-040` | HIGH | FIGURE-MANIFEST coverage or generator path failed |
+| `DSX-FIG-041` | MEDIUM | Manifest chart_id <…> not referenced by any visuals[].chart_id |
+
+## Plot smells — `DSX-SMELL-*`
+
+Declaration-based plot-construction smells.
+
+| Code | Severity | Finding |
+|---|---|---|
+| `DSX-SMELL-002` | CRITICAL | '<…>' declares within_group_std ≈ 0 |
+| `DSX-SMELL-007` | HIGH | '<…>' uses <…> on atomic / low-cardinality data |
+| `DSX-SMELL-009` | CRITICAL | '<…>' stacks scenario series |
+| `DSX-SMELL-010` | HIGH | '<…>' category_count <…> ≠ len(expected_categories)=<…> |
+| `DSX-SMELL-011` | HIGH | '<…>' plots a y that algebraically contains x |
+| `DSX-SMELL-013` | HIGH | visuals[] declare disagreeing run_id values |

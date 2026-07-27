@@ -12,7 +12,8 @@ Analytical phase. The spec is the contract; the code must match it.
   assertions in the pipeline replace expensive debugging in the review.
 - **Fit every transform inside the training fold.** Scalers, imputers, encoders,
   feature selectors, resamplers. Fitting on the full dataset leaks test
-  statistics into training and never raises an error.
+  statistics into training and never raises an error. `dsx check code` scans the
+  entrypoint for fit-before-split (`DSX-CODE-*`) at execute.
 - **Set the seed everywhere.** The language RNG, numpy, and the framework each
   have their own. An unseeded result cannot be confirmed or refuted.
 - **Fill `results:` in ANALYSIS-SPEC.yaml as you go** — observed sample sizes,
@@ -22,6 +23,8 @@ Analytical phase. The spec is the contract; the code must match it.
   guardrail gets silently disabled.
 - **Report the effect and its interval, never a bare p-value.** The p-value is
   the least informative number in the output.
+- **Warehouse metrics need SQL.** A `source` of `warehouse.*` / `dbt.*` /
+  `catalog.schema.table` without `sql:` fails `DSX-MET-040`.
 
 **Stop and escalate rather than working around:**
 
@@ -30,6 +33,8 @@ Analytical phase. The spec is the contract; the code must match it.
   two versions of one number costs more than the delay.
 - A model that does not beat its baseline. That is a finding to report, not a
   problem to hide behind more feature engineering.
+- Fit-before-split in the entrypoint. Fix the order before arguing with the
+  ML auditor.
 
 Run `dsx gate execute --phase-dir <phase>` before declaring the phase complete.
 </dsx_execution_discipline>

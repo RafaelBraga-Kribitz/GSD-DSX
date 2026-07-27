@@ -16,6 +16,33 @@
 - [x] REQ-P1-12 Finding catalogue regenerated; tests green
 - [x] REQ-P1-13 Capability/plugin version bumped to 1.1.0
 
-## Phase 2–4
+## Phase 2 (v1.2.0) — complete
 
-Tracked in ROADMAP.md; not in scope until explicitly started.
+- [x] REQ-P2-01 `visuals[]` supports chart_id, data_input_type, artifact_path, svg_sha256, series_role, run_id
+- [x] REQ-P2-02 `DSX-VIZ-013/014` enforce data_input_type × chart matrix
+- [x] REQ-P2-03 `DSX-VIZ-063/064` takeaway heuristics
+- [x] REQ-P2-04 `DSX-FIG-*` hermetic seals + `dsx seal`; FIGURE-MANIFEST coverage
+- [x] REQ-P2-05 `DSX-SMELL-*` for B/G/I/J/K/M
+- [x] REQ-P2-06 Verifier Gate A–D protocol; visualize skill + viz-critic updated
+- [x] REQ-P2-07 Good/bad fixtures + SVG stubs; version 1.2.0; catalogue current
+
+## Phase 3 (v1.3.0) — complete
+
+- [x] REQ-P3-01 `narrative` / `dashboard` / claim `base_n`/`from_value`/`to_value` in ANALYSIS-SPEC
+- [x] REQ-P3-02 `FORBIDDEN-CLAIMS.yaml` template + `references/narrative-discipline.md`
+- [x] REQ-P3-03 `DSX-CLM-070` relative % without base; `DSX-CLM-080` limitations for causal|prescriptive|predictive
+- [x] REQ-P3-04 `DSX-NAR-*` narrative path, claim⊆file, forbidden wording, dashboard path
+- [x] REQ-P3-05 `DSX-SQL-007`–`014` + `DSX-MET-040` warehouse requires sql; timezone → `DSX-MET-041`
+- [x] REQ-P3-06 `DSX-CODE-*` fit-before-split entrypoint scan; wired on execute/verify/ship
+- [x] REQ-P3-07 Skills/agents/fragments updated (narrate, storyteller, build-model, define-metrics)
+- [x] REQ-P3-08 Good/bad fixtures + tests; catalogue regen; version 1.3.0
+
+## Phase 4 (v1.4.0) — complete
+
+- [x] REQ-P4-01 Assumption `checked:true` XOR `waiver` at verify/ship (`DSX-COH-031`)
+- [x] REQ-P4-02 Null-as-no-effect requires CI-in-bounds / TOST / `detectable_mde` (`DSX-STA-020`/`021`)
+- [x] REQ-P4-03 `comparisons_looked_at` vs multiplicity family (`DSX-EXP-051`/`052`)
+- [x] REQ-P4-04 `repro_lock` honest-null (`DSX-REP-050`–`053`)
+- [x] REQ-P4-05 Structured `decision.replay` vs `results.tests` (`DSX-DEC-*`)
+- [x] REQ-P4-06 Reconciliation class tolerances + `DSX-MET-012`
+- [x] REQ-P4-07 Skills/agents/fragments + fixtures/tests; catalogue; version 1.4.0

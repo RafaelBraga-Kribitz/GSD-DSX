@@ -15,6 +15,13 @@ from ..spec import as_number, get, is_blank, items, normalize, section
 
 DEFAULT_RECONCILIATION_TOLERANCE = 0.01  # 1% relative difference
 
+RECONCILIATION_CLASS_TOLERANCES = {
+    "financial": 0.005,
+    "user": 0.02,
+    "behavioral": 0.05,
+    "default": DEFAULT_RECONCILIATION_TOLERANCE,
+}
+
 
 def check(spec: dict) -> Report:
     report = Report(check="metrics")
@@ -27,6 +34,7 @@ def check(spec: dict) -> Report:
     _check_denominator_drift(spec, report)
     _check_simpsons_paradox(spec, report)
     _check_time_semantics(metrics, report)
+    _check_warehouse_sql(metrics, report)
     for index, metric in enumerate(metrics):
         _lint_sql(metric, f"spec.metrics[{index}]", report)
     return report
@@ -104,9 +112,29 @@ def _check_reconciliation(metrics: list[dict], report: Report) -> None:
         if not isinstance(sources, list) or len(sources) < 2:
             continue
 
+        recon_class = normalize(str(recon.get("class") or "default")) or "default"
+        if recon.get("class") is not None and recon_class not in RECONCILIATION_CLASS_TOLERANCES:
+            report.add(
+                "DSX-MET-012",
+                "MEDIUM",
+                f"Unknown reconciliation class {recon.get('class')!r} for {metric.get('name')!r}",
+                detail=(
+                    "Known classes: "
+                    + ", ".join(sorted(RECONCILIATION_CLASS_TOLERANCES))
+                    + "."
+                ),
+                remedy="Use financial | user | behavioral | default, or set an explicit tolerance.",
+                where=f"{where}.class",
+            )
+            class_default = DEFAULT_RECONCILIATION_TOLERANCE
+        else:
+            class_default = RECONCILIATION_CLASS_TOLERANCES.get(
+                recon_class, DEFAULT_RECONCILIATION_TOLERANCE
+            )
+
         tolerance = as_number(recon.get("tolerance"))
         if tolerance is None:
-            tolerance = DEFAULT_RECONCILIATION_TOLERANCE
+            tolerance = class_default
 
         values: list[tuple[str, float]] = []
         for source in sources:
@@ -140,7 +168,8 @@ def _check_reconciliation(metrics: list[dict], report: Report) -> None:
                 f"Metric {metric.get('name')!r} differs {worst_gap:.2%} across sources",
                 detail=(
                     f"'{reference_name}'={reference:,.6g} vs '{worst_name}' differs by "
-                    f"{worst_gap:.2%}, above the declared tolerance of {tolerance:.2%}. "
+                    f"{worst_gap:.2%}, above the declared tolerance of {tolerance:.2%}"
+                    f" (class={recon_class}). "
                     "Values: " + "; ".join(f"{n}={v:,.6g}" for n, v in values)
                 ),
                 remedy=(
@@ -151,9 +180,10 @@ def _check_reconciliation(metrics: list[dict], report: Report) -> None:
                 where=where,
                 gap=round(worst_gap, 6),
                 tolerance=tolerance,
+                recon_class=recon_class,
             )
         else:
-            report.ok(f"{metric.get('name')} reconciles within {tolerance:.2%}")
+            report.ok(f"{metric.get('name')} reconciles within {tolerance:.2%} ({recon_class})")
 
 
 def _check_denominator_drift(spec: dict, report: Report) -> None:
@@ -256,7 +286,7 @@ def _check_time_semantics(metrics: list[dict], report: Report) -> None:
             grain = normalize(str(metric.get("grain")))
             if any(token in grain for token in ("day", "date", "week", "month", "hour")):
                 report.add(
-                    "DSX-MET-040",
+                    "DSX-MET-041",
                     "MEDIUM",
                     f"Time-grained metric {metric.get('name')!r} declares no timezone",
                     detail=(
@@ -268,8 +298,36 @@ def _check_time_semantics(metrics: list[dict], report: Report) -> None:
                 )
 
 
+_WAREHOUSE_SOURCE_RE = re.compile(
+    r"(?i)^(warehouse\.|dbt\.)|[A-Za-z_][\w]*\.[A-Za-z_][\w]*\.[A-Za-z_][\w]*"
+)
+
+
+def _check_warehouse_sql(metrics: list[dict], report: Report) -> None:
+    for index, metric in enumerate(metrics):
+        source = str(metric.get("source") or "")
+        if not source or not _WAREHOUSE_SOURCE_RE.search(source):
+            continue
+        sql = metric.get("sql")
+        if isinstance(sql, str) and sql.strip():
+            continue
+        report.add(
+            "DSX-MET-040",
+            "HIGH",
+            f"Warehouse-like source {source!r} has no sql definition",
+            detail=(
+                "Sources matching warehouse., dbt., or catalog.schema.table need the SQL "
+                "that produces the metric — otherwise two teams invent two queries."
+            ),
+            remedy="Add metrics[].sql for this source, or point source at a documented view.",
+            where=f"spec.metrics[{index}].sql",
+        )
+
+
 # ── SQL lint ─────────────────────────────────────────────────────────────────
 
+# Pattern-based rules applied after comment strip. Codes SQL-007/011/012 need
+# extra logic in `_lint_sql`; string literals below keep the catalogue complete.
 _SQL_RULES: list[tuple[str, str, str, str, str]] = [
     (
         "DSX-SQL-001",
@@ -313,11 +371,47 @@ _SQL_RULES: list[tuple[str, str, str, str, str]] = [
         "SELECT DISTINCT often patches a join fan-out rather than fixing it.",
         "Confirm the join grain; deduplicate at the source CTE if fan-out is the cause.",
     ),
+    (
+        "DSX-SQL-008",
+        r"(?:=|!=|<>)\s*NULL\b",
+        "HIGH",
+        "= NULL / != NULL is always unknown in SQL; use IS NULL / IS NOT NULL.",
+        "Replace with IS NULL or IS NOT NULL.",
+    ),
+    (
+        "DSX-SQL-009",
+        r"\bSELECT\s+\*",
+        "MEDIUM",
+        "SELECT * couples the metric to every column change and hides grain.",
+        "List the columns the metric actually needs.",
+    ),
+    (
+        "DSX-SQL-013",
+        r"\bCOUNT\s*\(\s*DISTINCT\s*\*\s*\)",
+        "MEDIUM",
+        "COUNT(DISTINCT *) is invalid or meaningless in most engines.",
+        "Count a specific key: COUNT(DISTINCT id).",
+    ),
+    (
+        "DSX-SQL-014",
+        r"\bSUM\s*\(\s*[A-Za-z_][A-Za-z0-9_.]*\s*/\s*[A-Za-z_]",
+        "HIGH",
+        "SUM of per-row ratios is not a ratio of sums.",
+        "Compute SUM(numerator) / NULLIF(SUM(denominator), 0) instead.",
+    ),
 ]
 
 _AGGREGATE_RE = re.compile(r"\b(SUM|COUNT|AVG)\s*\(", re.IGNORECASE)
 _JOIN_RE = re.compile(r"\bJOIN\b", re.IGNORECASE)
 _DISTINCT_RE = re.compile(r"\bDISTINCT\b", re.IGNORECASE)
+_DIVISION_RE = re.compile(r"(?<![=<>!])/(?![/=*])\s*(?:\w|\()")
+_NULLIF_RE = re.compile(r"\bNULLIF\b", re.IGNORECASE)
+_CROSS_JOIN_RE = re.compile(r"\bCROSS\s+JOIN\b", re.IGNORECASE)
+_JOIN_CLAUSE_RE = re.compile(
+    r"\b(?:(?:INNER|LEFT|RIGHT|FULL|LEFT\s+OUTER|RIGHT\s+OUTER|FULL\s+OUTER)\s+)?"
+    r"JOIN\b",
+    re.IGNORECASE,
+)
 
 
 def _lint_sql(metric: dict, where: str, report: Report) -> None:
@@ -330,8 +424,66 @@ def _lint_sql(metric: dict, where: str, report: Report) -> None:
 
     for code, pattern, severity, detail, remedy in _SQL_RULES:
         if re.search(pattern, stripped, re.IGNORECASE):
-            report.add(code, severity, f"SQL for {name!r}: {detail.split('.')[0]}",
-                       detail=detail, remedy=remedy, where=f"{where}.sql")
+            report.add(
+                code,
+                severity,
+                f"SQL for {name!r}: {detail.split('.')[0]}",
+                detail=detail,
+                remedy=remedy,
+                where=f"{where}.sql",
+            )
+
+    if _DIVISION_RE.search(stripped) and not _NULLIF_RE.search(stripped):
+        report.add(
+            "DSX-SQL-007",
+            "HIGH",
+            f"SQL for {name!r}: Division without nearby NULLIF",
+            detail=(
+                "Division in metric SQL without nearby NULLIF — divide-by-zero yields "
+                "NULL or error."
+            ),
+            remedy="Wrap the denominator: NULLIF(denominator, 0).",
+            where=f"{where}.sql",
+        )
+
+    if _CROSS_JOIN_RE.search(stripped):
+        has_where = bool(re.search(r"\bWHERE\b", stripped, re.IGNORECASE))
+        has_on = bool(re.search(r"\bON\b", stripped, re.IGNORECASE))
+        if not has_where and not has_on:
+            report.add(
+                "DSX-SQL-011",
+                "HIGH",
+                f"SQL for {name!r}: CROSS JOIN without WHERE/ON",
+                detail="CROSS JOIN without a restricting WHERE/ON explodes the row count.",
+                remedy="Add a join predicate, or replace with an intentional filtered cross join.",
+                where=f"{where}.sql",
+            )
+
+    for match in _JOIN_CLAUSE_RE.finditer(stripped):
+        start = match.start()
+        chunk = stripped[start : start + 180]
+        if re.match(r"(?i)\bCROSS\s+JOIN\b", chunk):
+            continue
+        if re.search(r"(?i)\bNATURAL\s+", stripped[max(0, start - 12) : start + 20]):
+            continue
+        tail = stripped[match.end() :]
+        next_boundary = re.search(
+            r"\b(?:JOIN|WHERE|GROUP\s+BY|ORDER\s+BY|LIMIT|UNION|INTERSECT|EXCEPT)\b|;",
+            tail,
+            re.IGNORECASE,
+        )
+        region = tail[: next_boundary.start()] if next_boundary else tail[:200]
+        if not re.search(r"\bON\b", region, re.IGNORECASE):
+            if not re.search(r"\bUSING\s*\(", region, re.IGNORECASE):
+                report.add(
+                    "DSX-SQL-012",
+                    "HIGH",
+                    f"SQL for {name!r}: JOIN without ON",
+                    detail="JOIN without ON (after comment strip) is an implicit cross product.",
+                    remedy="Add an ON clause, or use CROSS JOIN deliberately with a filter.",
+                    where=f"{where}.sql",
+                )
+                break
 
     joins = len(_JOIN_RE.findall(stripped))
     if joins >= 2 and _AGGREGATE_RE.search(stripped) and not _DISTINCT_RE.search(stripped):

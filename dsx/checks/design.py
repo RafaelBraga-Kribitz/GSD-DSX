@@ -30,7 +30,7 @@ SRM_ALPHA = 0.001  # deliberately strict: SRM is a bug signal, not a hypothesis 
 MIN_EXPERIMENT_DAYS = 7
 
 
-def check(spec: dict) -> Report:
+def check(spec: dict, *, strict: bool = False) -> Report:
     report = Report(check="design")
     design = section(spec, "design")
     kind = normalize(design.get("kind", "")) if design else ""
@@ -79,7 +79,7 @@ def check(spec: dict) -> Report:
         _check_units(design, report)
         _check_duration(design, report)
         _check_guardrails(design, report)
-    _check_multiplicity(design, spec, report)
+    _check_multiplicity(design, spec, report, strict=strict)
     _check_peeking(design, spec, report)
     _check_identification(design, spec, report)
     return report
@@ -359,7 +359,9 @@ def _check_guardrails(design: dict, report: Report) -> None:
 # ── Multiplicity and peeking ─────────────────────────────────────────────────
 
 
-def _check_multiplicity(design: dict, spec: dict, report: Report) -> None:
+def _check_multiplicity(
+    design: dict, spec: dict, report: Report, *, strict: bool = False
+) -> None:
     family = get(design, "multiplicity.family")
     correction = get(design, "multiplicity.correction")
     tests = items(section(spec, "results"), "tests") if section(spec, "results") else []
@@ -370,9 +372,7 @@ def _check_multiplicity(design: dict, spec: dict, report: Report) -> None:
     if n_tests <= 1:
         if n_tests == 1:
             report.ok("single hypothesis — no correction needed")
-        return
-
-    if is_blank(correction) or normalize(correction) == "none":
+    elif is_blank(correction) or normalize(correction) == "none":
         report.add(
             "DSX-EXP-050",
             "HIGH",
@@ -392,6 +392,53 @@ def _check_multiplicity(design: dict, spec: dict, report: Report) -> None:
         )
     else:
         report.ok(f"{n_tests} hypotheses corrected via {normalize(correction)}")
+
+    _check_exploratory_looks(design, spec, report, strict=strict)
+
+
+def _check_exploratory_looks(
+    design: dict, spec: dict, report: Report, *, strict: bool
+) -> None:
+    family = get(design, "multiplicity.family")
+    if not isinstance(family, list) or not family:
+        return
+    family_n = len(family)
+    results = section(spec, "results")
+    looked = as_number(results.get("comparisons_looked_at")) if results else None
+    tests = items(results, "tests") if results else []
+
+    if looked is not None and looked > family_n:
+        report.add(
+            "DSX-EXP-051",
+            "HIGH",
+            f"comparisons_looked_at={int(looked)} exceeds multiplicity family size {family_n}",
+            detail=(
+                "Segment cuts and exploratory comparisons inflate the family-wise error "
+                "beyond what the declared correction covers."
+            ),
+            remedy=(
+                "Expand design.multiplicity.family to every cut examined, or stop examining "
+                "undeclared cuts, or label extras exploratory and do not claim significance."
+            ),
+            where="spec.results.comparisons_looked_at",
+            looked_at=int(looked),
+            family_size=family_n,
+        )
+    elif looked is not None:
+        report.ok(f"comparisons_looked_at={int(looked)} within family size {family_n}")
+
+    if strict and len(tests) >= 2 and looked is None:
+        report.add(
+            "DSX-EXP-052",
+            "MEDIUM",
+            "Multiple tests with a declared family but comparisons_looked_at is missing",
+            detail=(
+                "Without a count of cuts actually examined, the multiplicity family cannot "
+                "be audited against exploratory work."
+            ),
+            remedy="Set results.comparisons_looked_at to the number of comparisons examined.",
+            where="spec.results.comparisons_looked_at",
+        )
 
 
 def _check_peeking(design: dict, spec: dict, report: Report) -> None:

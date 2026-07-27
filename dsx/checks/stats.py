@@ -296,11 +296,55 @@ def _check_null_acceptance(
     null_phrases = ("no_effect", "no_difference", "equivalent", "same", "no_impact", "unchanged")
     if not any(phrase in interpretation for phrase in null_phrases):
         return
-    if not is_blank(test.get("equivalence_bound")) or not is_blank(
-        get(spec, "design.equivalence_bound")
-    ):
-        report.ok(f"'{label}' null interpretation backed by an equivalence bound")
+
+    bound = as_number(test.get("equivalence_bound"))
+    if bound is None:
+        bound = as_number(get(spec, "design.equivalence_bound"))
+    ci = test.get("ci")
+    ci_ok = False
+    if bound is not None and isinstance(ci, (list, tuple)) and len(ci) == 2:
+        lo, hi = as_number(ci[0]), as_number(ci[1])
+        if lo is not None and hi is not None and abs(lo) <= bound and abs(hi) <= bound:
+            ci_ok = True
+
+    tost = test.get("tost") if isinstance(test.get("tost"), dict) else {}
+    lower_p = as_number(tost.get("lower_p"))
+    upper_p = as_number(tost.get("upper_p"))
+    tost_ok = (
+        lower_p is not None
+        and upper_p is not None
+        and lower_p < alpha
+        and upper_p < alpha
+    )
+
+    detectable = as_number(test.get("detectable_mde"))
+    if detectable is None:
+        detectable = as_number(get(spec, "results.detectable_mde"))
+
+    if ci_ok or tost_ok:
+        report.ok(f"'{label}' null interpretation backed by equivalence/TOST evidence")
         return
+    if detectable is not None:
+        report.ok(f"'{label}' null interpretation scoped by detectable_mde={detectable}")
+        return
+
+    if bound is not None and not ci_ok and not tost_ok:
+        report.add(
+            "DSX-STA-021",
+            "HIGH",
+            f"'{label}' declares equivalence_bound={bound:g} but CI/TOST do not prove it",
+            detail=(
+                "An equivalence bound without a CI wholly inside ±bound (or passing "
+                "TOST p-values) does not license a 'no effect' claim."
+            ),
+            remedy=(
+                "Ensure ci lies inside ±equivalence_bound, or report tost.lower_p and "
+                "tost.upper_p both below alpha, or set detectable_mde and phrase as inconclusive."
+            ),
+            where=where,
+        )
+        return
+
     report.add(
         "DSX-STA-020",
         "HIGH",
@@ -310,8 +354,8 @@ def _check_null_acceptance(
             "thin to detect an effect that is present and material."
         ),
         remedy=(
-            "Run an equivalence test (TOST) against a declared bound, or report the smallest "
-            "effect the study could have detected and phrase the finding as inconclusive."
+            "Run an equivalence test (TOST) against a declared bound with CI inside ±bound, "
+            "or report detectable_mde and phrase the finding as inconclusive."
         ),
         where=where,
     )

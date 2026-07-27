@@ -1,0 +1,9 @@
+manifest_version: 1
+run_id: "2026-06-readout"
+figures:
+  - chart_id: activation_uplift_bar
+    path: figures/activation_uplift.svg
+    generator: analysis/charts.py
+  - chart_id: daily_activation_trend
+    path: figures/daily_activation_trend.svg
+    generator: analysis/charts.py

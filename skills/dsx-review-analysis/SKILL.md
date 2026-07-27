@@ -34,8 +34,12 @@ Find the reason this analysis is wrong before a stakeholder does.
    - Is the effect large enough to matter to the declared decision?
    - Does the sample represent the population the decision covers?
    - How many comparisons were *actually* looked at, including exploratory cuts?
+     (`results.comparisons_looked_at` vs `design.multiplicity.family`)
 
-4. **Resolve every claim** to SUPPORTED, OVERSTATED, UNSUPPORTED or
+4. **Null discipline.** A "no effect" interpretation needs CI-in-bounds / TOST
+   or `detectable_mde` (`DSX-STA-020`/`021`). Quote finding codes unmodified.
+
+5. **Resolve every claim** to SUPPORTED, OVERSTATED, UNSUPPORTED or
    INCONCLUSIVE. "Inconclusive" is a legitimate verdict and frequently the
    correct one — reaching for "unsupported" when the study was underpowered is
    its own error.

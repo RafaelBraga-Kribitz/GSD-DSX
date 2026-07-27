@@ -29,7 +29,9 @@ data available. Report it and re-scope.
 Keep claim `type` at or below `question_type` strength. Do not put causal verbs
 in `decision_rule` when the question is only descriptive or diagnostic.
 Experiments must declare `minimum_practical_effect` and `action_if_null` before
-the plan gate will pass.
+the plan gate will pass. At ship, also declare structured `decision.replay`
+thresholds matching the prose rule, and mark every assumption `checked: true`
+or with an explicit `waiver`.
 </core_principle>
 
 <process>

@@ -90,6 +90,52 @@ VARIANCE_ADJUSTMENTS = {"cluster_robust", "delta_method", "bootstrap_cluster", "
 
 METRIC_TYPES = {"ratio", "count", "sum", "average", "rate", "percentile", "index"}
 
+# Data-input types (DDVF) → admissible chart marks in dsx vocabulary.
+DATA_INPUT_TYPES = {
+    "bivariate-simple",
+    "bivariate-dual",
+    "trivariate",
+    "categorical-value",
+    "categorical-multi",
+    "time-series",
+    "interval-range",
+    "grouped-categorical",
+    "composition",
+    "hierarchical",
+    "matrix",
+    "event-time",
+}
+
+# Admissible chart types per data_input_type (dsx mark names, underscored).
+CHART_CAPABILITIES: dict[str, frozenset[str]] = {
+    "bivariate-simple": frozenset({"line", "scatter", "area", "bar", "column", "horizontal_bar"}),
+    "bivariate-dual": frozenset({"line", "area", "bar", "horizontal_bar", "grouped_bar", "multi_line"}),
+    "trivariate": frozenset({"scatter", "bubble", "heatmap", "hexbin"}),
+    "categorical-value": frozenset(
+        {"bar", "horizontal_bar", "pie", "donut", "waffle", "dot_plot", "bullet"}
+    ),
+    "categorical-multi": frozenset(
+        {"grouped_bar", "stacked_bar", "horizontal_bar", "bar", "slope", "dot_plot"}
+    ),
+    "time-series": frozenset(
+        {"line", "area", "stacked_area", "sparkline", "slope", "bar", "stream"}
+    ),
+    "interval-range": frozenset({"box", "violin", "dot_plot", "bar", "horizontal_bar", "bullet"}),
+    "grouped-categorical": frozenset(
+        {"grouped_bar", "stacked_bar", "horizontal_bar", "bar", "dot_plot", "heatmap"}
+    ),
+    "composition": frozenset(
+        {"stacked_bar", "pie", "donut", "treemap", "waffle", "stacked_area"}
+    ),
+    "hierarchical": frozenset({"treemap", "sunburst", "icicle", "circle_pack"}),
+    "matrix": frozenset({"heatmap", "chord"}),
+    "event-time": frozenset({"line", "scatter", "timeline", "funnel", "gantt"}),
+}
+
+RENDERERS = {"matplotlib", "plotly", "altair", "ggplot", "glyph", "other"}
+
+SERIES_ROLES = {"component", "scenario"}
+
 
 # ── Access helpers ───────────────────────────────────────────────────────────
 
@@ -504,4 +550,10 @@ def describe_vocabulary() -> dict[str, Iterable[str]]:
         "split_strategies": sorted(SPLIT_STRATEGIES),
         "variance_adjustments": sorted(VARIANCE_ADJUSTMENTS),
         "metric_types": sorted(METRIC_TYPES),
+        "data_input_types": sorted(DATA_INPUT_TYPES),
+        "renderers": sorted(RENDERERS),
+        "series_roles": sorted(SERIES_ROLES),
+        "chart_capabilities": {
+            key: sorted(values) for key, values in sorted(CHART_CAPABILITIES.items())
+        },
     }

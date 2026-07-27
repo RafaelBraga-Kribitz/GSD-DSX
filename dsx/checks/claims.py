@@ -15,6 +15,7 @@ import re
 from pathlib import Path
 
 from ..findings import Report
+from ..pct_base import relative_percent_without_base
 from ..spec import (
     CAUSAL_VERBS,
     IDENTIFICATION_STRATEGIES,
@@ -40,7 +41,12 @@ GENERALISATION_TERMS = (
 _NUMBER_RE = re.compile(r"(\d+\.\d+|\d+)\s*(%|pp|percentage points)?")
 
 
-def check(spec: dict, phase_dir: "str | None" = None) -> Report:
+def check(
+    spec: dict,
+    phase_dir: "str | None" = None,
+    *,
+    strict: bool = False,
+) -> Report:
     report = Report(check="claims")
     claims = items(spec, "claims")
     if not claims:
@@ -78,6 +84,10 @@ def check(spec: dict, phase_dir: "str | None" = None) -> Report:
         _check_predictive_support(claim, ctype, spec, where, report)
         _check_generalisation(claim, text, spec, where, report)
         _check_precision(claim, text, where, report)
+        _check_relative_percent_base(claim, text, where, report)
+
+    if strict:
+        _check_limitations_required(spec, report)
 
     report.ok(f"{len(claims)} claim(s) audited")
     return report
@@ -460,3 +470,47 @@ def _check_precision(claim: dict, text: str, where: str, report: Report) -> None
                 where=where,
             )
             return
+
+
+def _check_relative_percent_base(
+    claim: dict, text: str, where: str, report: Report
+) -> None:
+    if not relative_percent_without_base(text, claim):
+        return
+    report.add(
+        "DSX-CLM-070",
+        "HIGH",
+        "Relative % in claim without a declared or nearby base",
+        detail=(
+            f"“{text[:160]}”. A relative percentage without from/to, n=, or base_n "
+            "invites the reader to invent a flattering denominator. Absolute "
+            "percentage points with a CI are fine (see DSX-CLM-033)."
+        ),
+        remedy=(
+            "Add nearby base language, or set base_n, or set both from_value and to_value."
+        ),
+        where=where,
+    )
+
+
+def _check_limitations_required(spec: dict, report: Report) -> None:
+    qtype = normalize(spec.get("question_type", ""))
+    if qtype not in {"causal", "prescriptive", "predictive"}:
+        return
+    limitations = spec.get("limitations")
+    if isinstance(limitations, list) and any(
+        isinstance(item, str) and item.strip() for item in limitations
+    ):
+        report.ok("limitations declared for a high-stakes question type")
+        return
+    report.add(
+        "DSX-CLM-080",
+        "HIGH",
+        f"question_type {qtype!r} requires a non-empty limitations list at verify/ship",
+        detail=(
+            "Causal, prescriptive and predictive answers without stated limits read as "
+            "complete. Put the limits where the decision-maker will see them."
+        ),
+        remedy="Add limitations: with at least one concrete sentence.",
+        where="spec.limitations",
+    )

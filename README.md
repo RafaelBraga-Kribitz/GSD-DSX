@@ -35,8 +35,9 @@ declared MDE requires, and that no feature in the model is populated after the
 outcome. The agent stays flexible; the output stops being a matter of opinion.
 
 **Finding codes** across check families (contract, experiment, causal, stats, ML,
-metrics/SQL, claims, data quality, coherence, visualization, reproducibility),
-each with a stable identifier, a severity, evidence in numbers, and a concrete fix.
+metrics/SQL, claims, narrative, code, decision, data quality, coherence,
+visualization, reproducibility), each with a stable identifier, a severity,
+evidence in numbers, and a concrete fix.
 
 ---
 
@@ -164,12 +165,17 @@ gap.
 | **Causal** | `DSX-CAU-*` | Causal question with no identification strategy, strategies missing their required assumptions, weak strategies presented as strong |
 | **Statistics** | `DSX-STA-*` | Test that does not match the outcome's shape, p-value with no effect size or interval, interval and p-value disagreeing, null accepted without an equivalence test, results that die under correction, significant-but-trivial effects |
 | **ML integrity** | `DSX-ML-*` | Random split on temporal data, overlapping train/test periods, leaky feature names, preprocessing fitted before the split, resampling before the split, accuracy or ROC-AUC on an imbalanced target, no baseline, model losing to its baseline, train/test gap, test-set reuse, threshold tuned on test |
-| **Metrics & SQL** | `DSX-MET-*` `DSX-SQL-*` | Undefined metrics in use, cross-source reconciliation beyond tolerance, denominator drift, Simpson's paradox (sign reversal across segments), join fan-out, `NOT IN` NULL traps, average-of-ratios, `BETWEEN` on timestamps |
-| **Claims** | `DSX-CLM-*` | Causal verbs on an association claim, causal claims with no strategy, unhedged conclusions from weak identification, missing or unresolvable evidence pointers, claim numbers that do not overlap `results.tests`, overbroad generalisation, false precision against the interval |
+| **Metrics & SQL** | `DSX-MET-*` `DSX-SQL-*` | Undefined metrics in use, cross-source reconciliation beyond class/tolerance, denominator drift, Simpson's paradox, warehouse source without `sql`, join fan-out, `NOT IN` NULL traps, average-of-ratios, division without `NULLIF`, `= NULL`, `SELECT *`, `JOIN` without `ON`, `SUM(a/b)`, `BETWEEN` on timestamps |
+| **Claims** | `DSX-CLM-*` | Causal verbs on an association claim, causal claims with no strategy, unhedged conclusions from weak identification, missing or unresolvable evidence pointers, claim numbers that do not overlap `results.tests`, relative `%` without a base, empty limitations on causal/prescriptive/predictive, overbroad generalisation, false precision against the interval |
+| **Narrative** | `DSX-NAR-*` | Missing `narrative.path` at ship, claim text absent from deliverable, forbidden wording (`data proves`, …), relative `%` in narrative without base, missing `dashboard.path` |
+| **Code reality** | `DSX-CODE-*` | Fit/transform before split, full-frame `StandardScaler().fit_transform`, SMOTE before split, model block with no split marker in entrypoint |
+| **Decision replay** | `DSX-DEC-*` | Missing structured `decision.replay` at ship, metric missing from tests, replay FAIL, pass with non-significant primary p |
 | **Data quality** | `DSX-DQ-*` | Assertions vs `DATA-PROFILE.yaml`: row count, PK uniqueness, null caps, time gaps, banned sentinels, manual profiles without gap notes |
-| **Coherence** | `DSX-COH-*` | Claim type exceeding question type, causal decision language on descriptive questions, experiments missing MPE/`action_if_null`, causal work with empty assumptions |
-| **Visualization** | `DSX-VIZ-*` | Truncated baselines on length-encoded charts, dual axes, chart type wrong for the relationship, >5 pie slices, 3D, red/green as sole distinction, rainbow scales, estimates with no uncertainty, missing units |
-| **Reproducibility** | `DSX-REP-*` | No seed on stochastic methods, unpinned environment, unidentifiable data extracts, missing entrypoint, notebooks not confirmed clean top-to-bottom |
+| **Coherence** | `DSX-COH-*` | Claim type exceeding question type, causal decision language on descriptive questions, experiments missing MPE/`action_if_null`, empty assumptions, unchecked/unwaived assumptions |
+| **Figure seals** | `DSX-FIG-*` | Missing artifacts, `svg_sha256` mismatch, unsealed paths at ship, glyph without seal, duplicate `chart_id`, FIGURE-MANIFEST coverage |
+| **Plot smells** | `DSX-SMELL-*` | Dead series, density on atoms, stacked scenarios, category dropouts, self-correlation, disagreeing `run_id` |
+| **Visualization** | `DSX-VIZ-*` | Truncated baselines on length-encoded charts, dual axes, chart type wrong for the relationship or data_input_type, takeaway = name, >5 pie slices, 3D, red/green as sole distinction, rainbow scales, estimates with no uncertainty, missing units |
+| **Reproducibility** | `DSX-REP-*` | No seed on stochastic methods, unpinned environment, unidentifiable data extracts, missing entrypoint, notebooks not confirmed clean top-to-bottom, missing/`null`/incomplete `repro_lock` |
 
 Full catalogue: [`references/finding-codes.md`](references/finding-codes.md) —
 generated from the source, so it cannot drift from what the code emits.
@@ -205,6 +211,7 @@ dsx validate                                      # structure only
 dsx audit --verbose --report DATA-REVIEW.md       # everything
 dsx check ml metrics                              # a subset
 dsx profile extract.csv --out DATA-PROFILE.yaml --pk user_id --time signup_at
+dsx seal figures/chart.svg                            # sha256:… for visuals[].svg_sha256
 dsx power --baseline 0.31 --mde 0.02              # sample size, achieved power, detectable MDE
 dsx recommend-test continuous --groups 3 --normal false
 dsx vocab                                         # every closed vocabulary
@@ -231,6 +238,7 @@ gsd config set dsx.domain experimentation  # bias agent and reference loading
 | `dsx.causal_guard` | `true` | Block causal wording the design does not support |
 | `dsx.reproducibility_gate` | `true` | Require seed, environment, data identity, entrypoint |
 | `dsx.dq_gate` | `true` | Compare `data[].assertions` to `DATA-PROFILE.yaml` |
+| `dsx.figure_seal` | `true` | Require `svg_sha256` when `artifact_path` is set |
 | `dsx.domain` | `auto` | `experimentation` · `machine_learning` · `business_intelligence` · `marketing_science` · `research` |
 | `dsx.python` | `python3` | Interpreter for the CLI |
 

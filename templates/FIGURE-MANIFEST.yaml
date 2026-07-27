@@ -1,0 +1,15 @@
+# FIGURE-MANIFEST — optional coverage ledger for on-disk figures.
+#
+# When present next to ANALYSIS-SPEC (or named via figures.manifest_path),
+# `dsx check figures` requires every file under figures/ to have an entry, and
+# every entry's chart_id to appear on a visuals[] row.
+#
+# Prefer filling visuals[].artifact_path / svg_sha256 / chart_id first; this
+# file is for multi-figure coverage and generator ownership.
+
+manifest_version: 1
+run_id: "<shared readout id>"
+figures:
+  - chart_id: <stable_id>
+    path: figures/<name>.svg
+    generator: analysis/charts.py

@@ -19,12 +19,13 @@ not your reassurance.
 ## Step 1 — Deterministic screen
 
 ```bash
-dsx check ml repro --phase-dir "$PHASE_DIR" --verbose
+dsx check ml repro code --phase-dir "$PHASE_DIR" --verbose
 ```
 
-This screens the *declared* configuration. Your job is to verify the code
-matches the declaration — a spec saying `preprocessing_fit_on: train_only` is a
-claim, and claims are what you audit.
+This screens the *declared* configuration and the entrypoint for fit-before-split
+(`DSX-CODE-001`–`003`). Fix those before debating the auditor. Your job is still
+to verify the code matches the declaration — a spec saying
+`preprocessing_fit_on: train_only` is a claim, and claims are what you audit.
 
 ## Step 2 — Read the pipeline in this order
 

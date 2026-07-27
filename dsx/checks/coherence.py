@@ -149,21 +149,54 @@ def _check_assumptions(
     if qtype not in {"causal", "prescriptive"}:
         return
     assumptions = items(spec, "assumptions")
-    if assumptions:
-        report.ok(f"{len(assumptions)} assumption(s) declared")
-        return
-    severity = "CRITICAL" if strict else "HIGH"
-    report.add(
-        "DSX-COH-030",
-        severity,
-        f"{qtype} question has an empty assumptions list",
-        detail=(
+    if not assumptions:
+        detail = (
             "Causal and prescriptive answers rest on assumptions. An empty list "
             "means none have been named, so none can be checked or waived."
-        ),
-        remedy=(
+        )
+        remedy = (
             "Declare each material assumption with rationale and impact_if_wrong. "
             "Mark checked: true once tested, or record an explicit waiver."
-        ),
-        where="spec.assumptions",
-    )
+        )
+        if strict:
+            report.add(
+                "DSX-COH-030",
+                "CRITICAL",
+                "Causal/prescriptive question has an empty assumptions list",
+                detail=detail,
+                remedy=remedy,
+                where="spec.assumptions",
+            )
+        else:
+            report.add(
+                "DSX-COH-030",
+                "HIGH",
+                "Causal/prescriptive question has an empty assumptions list",
+                detail=detail,
+                remedy=remedy,
+                where="spec.assumptions",
+            )
+        return
+
+    report.ok(f"{len(assumptions)} assumption(s) declared")
+    if not strict:
+        return
+
+    for index, assumption in enumerate(assumptions):
+        checked = assumption.get("checked") is True
+        waiver = assumption.get("waiver")
+        has_waiver = isinstance(waiver, str) and bool(waiver.strip())
+        if checked or has_waiver:
+            continue
+        report.add(
+            "DSX-COH-031",
+            "HIGH",
+            f"Assumption[{index}] is neither checked nor waived",
+            detail=(
+                f"“{str(assumption.get('assumption', ''))[:120]}”. "
+                "At verify/ship every declared assumption needs checked: true or a "
+                "non-blank waiver."
+            ),
+            remedy="Set checked: true after testing, or write waiver: with why it cannot be tested.",
+            where=f"spec.assumptions[{index}]",
+        )
