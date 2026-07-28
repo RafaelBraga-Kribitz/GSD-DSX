@@ -1520,5 +1520,87 @@ class TestPhase4AnalyticalLogic(unittest.TestCase):
         self.assertIsInstance(spec["reproducibility"]["repro_lock"], dict)
 
 
+class TestPhase5Suppressions(unittest.TestCase):
+    ROOT = Path(__file__).resolve().parent.parent
+
+    def test_missing_reason_flagged(self):
+        from dsx.suppressions import validate_suppressions
+
+        report = validate_suppressions(
+            {
+                "suppressions": [
+                    {
+                        "code": "DSX-VIZ-030",
+                        "authority": "docs/SPEC.md",
+                    }
+                ]
+            }
+        )
+        self.assertIn("DSX-SPEC-070", {f.code for f in report.findings})
+
+    def test_unknown_code_critical(self):
+        from dsx.suppressions import validate_suppressions
+
+        report = validate_suppressions(
+            {
+                "suppressions": [
+                    {
+                        "code": "DSX-FAKE-999",
+                        "reason": "nope",
+                        "authority": "docs/x.md",
+                    }
+                ]
+            }
+        )
+        self.assertIn("DSX-SPEC-072", {f.code for f in report.findings})
+
+    def test_apply_suppresses_dual_axis(self):
+        from dsx.checks import viz
+        from dsx.cli import run_checks
+        from dsx.loader import load
+        from dsx.suppressions import apply_suppressions
+
+        spec = load(self.ROOT / "examples" / "good-ANALYSIS-SPEC.yaml")
+        # Mutate first visual to dual-axis (would emit DSX-VIZ-030)
+        spec["visuals"][0]["dual_axis"] = True
+        viz_report = viz.check(spec)
+        self.assertIn("DSX-VIZ-030", {f.code for f in viz_report.findings})
+
+        spec["suppressions"] = [
+            {
+                "code": "DSX-VIZ-030",
+                "chart_id": spec["visuals"][0]["chart_id"],
+                "reason": "SPEC requires twin axes for this readout",
+                "authority": "docs/SPEC.md#twin-axes",
+            }
+        ]
+        cleared = apply_suppressions(spec, viz_report)
+        self.assertNotIn("DSX-VIZ-030", {f.code for f in cleared.findings})
+        self.assertTrue(cleared.context.get("suppressions_applied"))
+
+        # Full run_checks path also clears it
+        full = run_checks(spec, ("viz",), None)
+        self.assertNotIn("DSX-VIZ-030", {f.code for f in full.findings})
+
+    def test_unknown_code_apply_raises(self):
+        from dsx.findings import CheckError, Report
+        from dsx.suppressions import apply_suppressions
+
+        report = Report(check="t")
+        with self.assertRaises(CheckError):
+            apply_suppressions(
+                {
+                    "suppressions": [
+                        {
+                            "code": "DSX-ZZZ-001",
+                            "reason": "x",
+                            "authority": "y",
+                        }
+                    ]
+                },
+                report,
+            )
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

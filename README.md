@@ -197,7 +197,28 @@ Six specialists, each with a narrow adversarial brief:
 
 Eight skills covering the workflow end to end: `dsx-scope-analysis`,
 `dsx-explore-data`, `dsx-design-experiment`, `dsx-define-metrics`,
-`dsx-build-model`, `dsx-visualize`, `dsx-narrate`, `dsx-review-analysis`.
+`dsx-build-model`, `dsx-visualize`, `dsx-chart-audit`, `dsx-narrate`,
+`dsx-review-analysis`.
+
+`dsx-chart-audit` is the standalone retroactive path: run `dsx check viz smells
+figures`, spawn `dsx-viz-critic`, write scored `CHART-REVIEW.md`
+(`schema: dsx-chart-review-v1`). Use when you need a figure audit without a full
+experiment/ML readout.
+
+### Finding suppressions
+
+When a SPEC or ADR forbids the preferred fix (e.g. a mandated dual axis), declare:
+
+```yaml
+suppressions:
+  - code: DSX-VIZ-030
+    chart_id: a3_realized_vol
+    reason: "AN-301 requires twin axes; change needs ADR"
+    authority: "docs/SPEC-04_analytics.md"
+```
+
+Suppressions apply after checks and before the blocking threshold. Unknown codes
+abort the run (exit 2). Missing `reason` / `authority` → `DSX-SPEC-070`.
 
 ---
 

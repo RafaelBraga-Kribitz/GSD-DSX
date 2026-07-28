@@ -248,6 +248,10 @@ def validate_structure(spec: dict) -> Report:
     _validate_model_shape(spec, report)
     _validate_claims_shape(spec, report)
 
+    from .suppressions import validate_suppressions
+
+    report.extend(validate_suppressions(spec))
+
     return report
 
 

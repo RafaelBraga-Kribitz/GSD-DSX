@@ -208,7 +208,7 @@ reproducibility:
     stochasticity_declaration: >
       Analysis outputs depend on data extracts and library versions recorded
       elsewhere in this block; this lock documents configuration, not byte-identical replay.
-    dsx_version: "1.4.0"
+    dsx_version: "1.5.0"
 
 narrative:
   path: good-NARRATIVE.md

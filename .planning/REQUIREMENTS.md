@@ -46,3 +46,11 @@
 - [x] REQ-P4-05 Structured `decision.replay` vs `results.tests` (`DSX-DEC-*`)
 - [x] REQ-P4-06 Reconciliation class tolerances + `DSX-MET-012`
 - [x] REQ-P4-07 Skills/agents/fragments + fixtures/tests; catalogue; version 1.4.0
+
+## Phase 5 (v1.5.0) — complete
+
+- [x] REQ-P5-01 ANALYSIS-SPEC `suppressions[]` with reason + authority; unknown code → exit 2
+- [x] REQ-P5-02 `DSX-SPEC-070`–`072` structural findings for bad suppressions
+- [x] REQ-P5-03 `chart-review-schema.md` + `templates/CHART-REVIEW.md` (`dsx-chart-review-v1`)
+- [x] REQ-P5-04 `dsx-viz-critic` writes CHART-REVIEW; skill `dsx-chart-audit` registered
+- [x] REQ-P5-05 Tests for suppressions; catalogue regenerated; version 1.5.0

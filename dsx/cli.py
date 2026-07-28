@@ -39,6 +39,7 @@ from .checks import (
 from .findings import EXIT_ERROR, CheckError, Report, Severity, emit, merge
 from .loader import SpecParseError, load
 from .spec import describe_vocabulary, validate_structure
+from .suppressions import apply_suppressions
 
 DEFAULT_SPEC_NAMES = (
     "ANALYSIS-SPEC.yaml",
@@ -159,7 +160,8 @@ def run_checks(
                 f"unknown check {name!r}; known: "
                 + ", ".join(sorted(set(CHECKS) | {"repro"}))
             )
-    return merge("+".join(names), reports)
+    merged = merge("+".join(names), reports)
+    return apply_suppressions(spec, merged)
 
 
 # ── Subcommands ──────────────────────────────────────────────────────────────
@@ -395,6 +397,15 @@ def _markdown_report(report: Report, threshold: Severity, spec_path: str) -> str
                 lines += [finding.detail, ""]
             if finding.remedy:
                 lines += [f"**Fix:** {finding.remedy}", ""]
+    applied = report.context.get("suppressions_applied") or []
+    if applied:
+        lines += ["## Suppressions applied", ""]
+        for row in applied:
+            chart = f" (chart_id={row['chart_id']})" if row.get("chart_id") else ""
+            lines += [
+                f"- `{row['code']}`{chart}: {row['reason']} — authority: {row['authority']}",
+            ]
+        lines.append("")
     if report.passed_checks:
         lines += ["## Passed", ""]
         lines += [f"- {item}" for item in sorted(set(report.passed_checks))]

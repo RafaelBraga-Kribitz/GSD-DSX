@@ -40,3 +40,12 @@
 - `repro_lock` honest-null pattern (`DSX-REP-050`–`053`)
 - Decision replay against `results.tests` (`DSX-DEC-*`)
 - Metric reconciliation class tolerances (`DSX-MET-012` + class defaults)
+
+## Phase 5 — Chart review + suppressions (v1.5.0) — COMPLETE
+
+**Dimensions:** Chart Audit residual (scored review artifact, ADR suppressions)
+
+- ANALYSIS-SPEC `suppressions[]` with reason + authority; unknown codes → exit 2
+- `DSX-SPEC-070`–`072` for malformed/unknown suppressions
+- `templates/CHART-REVIEW.md` + `references/chart-review-schema.md` (`dsx-chart-review-v1`)
+- `dsx-viz-critic` writes CHART-REVIEW.md; skill `dsx-chart-audit` for standalone runs

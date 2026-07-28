@@ -272,3 +272,15 @@ assumptions:
 limitations:
   - "<what this analysis cannot tell you, stated plainly>"
   # Required non-empty at verify/ship when question_type is causal|prescriptive|predictive
+
+# ── Suppressions (optional) ──────────────────────────────────────────────────
+# ADR/SPEC-backed waivers for known HIGH/CRITICAL findings. Each row removes
+# matching findings from the blocking set after checks run. Unknown codes abort
+# the run (exit 2). Prefer fixing the defect; suppress only when a written
+# authority forbids the preferred fix.
+#
+# suppressions:
+#   - code: DSX-VIZ-030
+#     chart_id: a3_realized_vol      # optional: scope to one visual
+#     reason: "AN-301 requires twin axes; change needs ADR"
+#     authority: "docs/SPEC-04_analytics.md"
