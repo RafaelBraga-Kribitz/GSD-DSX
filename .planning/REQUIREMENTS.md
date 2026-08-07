@@ -186,7 +186,7 @@ Every v2.0.0 requirement maps to exactly one phase. 53/53 mapped; no orphans, no
 | REQ-P6-08 | Phase 6 | Pending |
 | REQ-P6-09 | Phase 6 | Pending |
 | REQ-P6-10 | Phase 6 | Pending |
-| REQ-P6-11 | Phase 6 | Pending |
+| REQ-P6-11 | Phase 6 | Complete |
 | REQ-P6-12 | Phase 6 | Pending |
 | REQ-P6-13 | Phase 6 | Pending |
 | REQ-P6-14 | Phase 6 | Pending |
