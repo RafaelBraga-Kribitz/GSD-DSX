@@ -1392,6 +1392,92 @@ class TestCLI(unittest.TestCase):
         code, _, err = self._run(["gate", "plan", "--spec", str(template)])
         self.assertEqual(code, 0, err)
 
+    # ── 06-07: DSX-PAR-001 registered at all four default gate thresholds ─────
+    # (CRITICAL at plan/execute, HIGH at verify/ship) — REQ-P6-09's "cannot
+    # block at any gate threshold" is a claim about those four defaults, not
+    # an arbitrary operator --block-on override.
+
+    def test_paradigm_check_registered_in_every_gate_profile(self):
+        from dsx.cli import CHECKS, GATE_PROFILES
+        from dsx.frame import paradigm
+
+        self.assertIs(CHECKS["paradigm"], paradigm.check)
+        for point, checks in GATE_PROFILES.items():
+            with self.subTest(point=point):
+                self.assertIn("paradigm", checks)
+
+    def _bayesian_variant_spec_path(self, tmp: str) -> Path:
+        """Copy examples/ into tmp and flip inference.paradigm to bayesian on
+        the good fixture, in place — no second committed fixture, and the
+        good fixture's own paradigm is never edited. JSON round-tripping the
+        mutated dict back into the .yaml-named file works regardless of
+        whether PyYAML is installed: dsx.loader.loads() tries a JSON parse
+        before YAML/the bundled parser whenever the stripped text starts with
+        '{', independent of the .yaml suffix.
+        """
+        import json
+        import shutil
+
+        from dsx.loader import load
+
+        target = Path(tmp) / "examples"
+        shutil.copytree(self.ROOT / "examples", target)
+        spec_path = target / "good-ANALYSIS-SPEC.yaml"
+        spec = load(spec_path)
+        spec.setdefault("inference", {})["paradigm"] = "bayesian"
+        spec_path.write_text(json.dumps(spec), encoding="utf-8")
+        return spec_path
+
+    def test_bayesian_variant_exits_zero_at_every_gate_with_manifest_printed(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            variant = self._bayesian_variant_spec_path(tmp)
+            for point in ("plan", "execute", "verify", "ship"):
+                with self.subTest(point=point):
+                    code, out, err = self._run(["gate", point, "--spec", str(variant)])
+                    self.assertEqual(code, 0, f"gate {point} unexpectedly blocked:\n{err}")
+                    self.assertIn("DSX-PAR-001", out + err)
+
+    def test_bayesian_variant_audit_json_contains_dsx_par_001_at_info(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            variant = self._bayesian_variant_spec_path(tmp)
+            _, out, _ = self._run(["audit", "--spec", str(variant), "--json"])
+            payload = json.loads(out)
+            findings = [f for f in payload["findings"] if f["code"] == "DSX-PAR-001"]
+            self.assertEqual(len(findings), 1)
+            self.assertEqual(findings[0]["severity"], "INFO")
+
+    def test_bad_fixture_still_blocks_with_paradigm_registered(self):
+        fixture = self.ROOT / "examples" / "bad-ANALYSIS-SPEC.yaml"
+        for point in ("plan", "ship"):
+            with self.subTest(point=point):
+                code, _, _ = self._run(["gate", point, "--spec", str(fixture)])
+                self.assertEqual(code, 1)
+
+    # D-05: DSX-PAR-001
+    def test_every_dsx_par_code_reachable_from_a_gate_profile(self):
+        from dsx.cli import GATE_PROFILES
+        from dsx.suppressions import known_codes
+
+        par_codes = [c for c in known_codes() if c.startswith("DSX-PAR-")]
+        self.assertTrue(par_codes, "expected at least DSX-PAR-001 to be known")
+        reachable_checks = set().union(*GATE_PROFILES.values())
+        self.assertIn("paradigm", reachable_checks)
+
+    def test_suppressing_dsx_par_001_needs_zero_suppressions_py_changes(self):
+        from dsx.cli import run_checks
+        from dsx.loader import load
+
+        spec = load(self.ROOT / "examples" / "good-ANALYSIS-SPEC.yaml")
+        spec["suppressions"] = [
+            {
+                "code": "DSX-PAR-001",
+                "reason": "manifest is informational",
+                "authority": ".planning/ROADMAP.md",
+            }
+        ]
+        report = run_checks(spec, ("spec", "paradigm"), None, resolve_root="examples")
+        self.assertNotIn("DSX-PAR-001", {f.code for f in report.findings})
+
 
 # ── Phase 1: profiler, DQ, coherence, evidence ───────────────────────────────
 
