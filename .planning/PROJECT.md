@@ -76,8 +76,8 @@ paid-media budgets. The check set is weighted accordingly.
 - Calibration corpus with measured catch rate and false-positive rate
 
 **Version rationale:** v2.0.0 rather than v1.6.0 because `validity_frame:` becomes
-required at verify/ship, so existing specs without it begin to block — a breaking
-contract change.
+required from plan (the `plan` gate point, at CRITICAL severity), so existing
+specs without it begin to block — a breaking contract change.
 
 ## Requirements
 
