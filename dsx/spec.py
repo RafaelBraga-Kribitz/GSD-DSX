@@ -64,7 +64,14 @@ PEEKING_POLICIES = {
     "fixed_horizon": "One analysis at the pre-declared sample size. No interim looks.",
     "sequential_obf": "Interim looks against O'Brien-Fleming boundaries.",
     "sequential_pocock": "Interim looks against constant Pocock boundaries.",
-    "always_valid": "Anytime-valid inference (mSPRT / confidence sequences).",
+    "always_valid": (
+        "Error rate is controlled continuously via anytime-valid inference "
+        "(mSPRT / confidence sequences)."
+    ),
+    "uncontrolled_continuous": (
+        "Interim looks continue with no sequential correction and no anytime-valid method — "
+        "the error rate is not controlled."
+    ),
 }
 
 ML_TASKS = {
@@ -135,6 +142,148 @@ CHART_CAPABILITIES: dict[str, frozenset[str]] = {
 RENDERERS = {"matplotlib", "plotly", "altair", "ggplot", "glyph", "other"}
 
 SERIES_ROLES = {"component", "scenario"}
+
+# ── Validity-frame / inference vocabularies (Phase 6, REQ-P6-06) ────────────
+# Every one is a name->description dict, no exceptions (D-04). No new vocabulary is
+# defined for dependence.method_family_required — it is typed against the existing
+# VARIANCE_ADJUSTMENTS set above (M-09).
+
+IDENTIFICATION_STRENGTHS = {
+    "strong": "The identification strategy rules out confounding by design (e.g. randomization).",
+    "moderate": (
+        "The identification strategy relies on an assumption that is plausible but not "
+        "verifiable from the data alone."
+    ),
+    "weak": "The identification strategy relies on covariate adjustment with no design-based support.",
+}
+
+CONSTRAINT_SOURCES = {
+    "none": "No external constraint informs the estimate beyond the observed data.",
+    "informative_priors": "A prior distribution encodes external information about the parameter.",
+    "penalisation": (
+        "A penalty term (e.g. ridge, lasso) shrinks the estimate toward a null or reference value."
+    ),
+    "design_restriction": (
+        "The study design itself restricts the parameter space "
+        "(e.g. a capped effect by construction)."
+    ),
+    "hierarchical_pooling": (
+        "Partial pooling across groups in a hierarchical model constrains group-level estimates."
+    ),
+}
+
+DEPENDENCE_STRUCTURES = {
+    "none": "Observations are independent; no dependence structure is declared.",
+    "clustered": "Observations are grouped into clusters that share unobserved factors.",
+    "repeated_measures": "The same unit is observed multiple times.",
+    "temporal": "Observations are ordered in time and adjacent observations are correlated.",
+    "spatial": "Observations are located in space and nearby observations are correlated.",
+    "hierarchical": "Observations are nested within multiple levels of grouping.",
+}
+
+INTERFERENCE_RISKS = {
+    "none": "Treatment of one unit does not plausibly affect another unit's outcome.",
+    "shared_budget": (
+        "Units compete for a shared, capacity-limited resource (e.g. a paid-media budget)."
+    ),
+    "marketplace": (
+        "Units interact through a two-sided market where one side's treatment shifts the "
+        "other side's outcomes."
+    ),
+    "geo_spillover": "Treatment effects in one geography leak into a nearby untreated geography.",
+    "social_graph": (
+        "Units are connected by a social or referral graph through which treatment can propagate."
+    ),
+    "shared_inventory": "Units draw from a shared, finite inventory of a physical or virtual good.",
+}
+
+INTERFERENCE_MITIGATIONS = {
+    "none": "No mitigation is applied; interference risk, if any, is unaddressed.",
+    "geo_split": "Randomization is performed at the geography level to contain spillover.",
+    "cluster_randomisation": "Randomization is performed at the cluster level rather than the individual level.",
+    "time_split": "Treatment and control are separated in time rather than concurrently.",
+    "budget_isolation": "Each arm draws from a separate, non-competing budget.",
+    "modelled": "Interference is estimated and adjusted for statistically rather than designed away.",
+}
+
+# Exactly four members, no "none" member (locked decision R-02): missingness is never
+# absent, only unassessed. Do not re-add a "none" member.
+MISSINGNESS_MECHANISMS = {
+    "MCAR": (
+        "Missing completely at random — missingness is independent of both observed and "
+        "unobserved data."
+    ),
+    "MAR": "Missing at random — missingness depends only on observed data.",
+    "MNAR": "Missing not at random — missingness depends on the unobserved value itself.",
+    "not_assessed": "The missingness mechanism has not been evaluated.",
+}
+
+ANALYSIS_POPULATIONS = {
+    "eligible": "The population that met eligibility criteria, regardless of subsequent engagement.",
+    "triggered": "The subset of the eligible population that actually triggered the analyzed event.",
+}
+
+DECLARATION_POINTS = {
+    "pre_data": "The inference plan was declared before the data was observed.",
+    "post_data": (
+        "The inference plan was declared after the data was observed — an unverifiable "
+        "operator self-declaration (Phase 10 REQ-P10-02 documents this limit)."
+    ),
+}
+
+PARADIGMS = {
+    "frequentist": "Inference based on the sampling distribution of a statistic under repeated sampling.",
+    "bayesian": "Inference based on a posterior distribution combining a prior with the observed data.",
+}
+
+# No description ranks one reason above another (D-12 symmetry).
+PARADIGM_JUSTIFICATIONS = {
+    "prior_information_available": "Credible external information exists to form an informative prior.",
+    "sequential_monitoring_required": (
+        "The analysis requires continuous or repeated looks at accumulating data."
+    ),
+    "decision_theoretic_loss_specified": (
+        "A decision rule with an explicit loss function drives the analysis."
+    ),
+    "small_sample_informative_prior": (
+        "The sample is too small for frequentist asymptotics to apply reliably."
+    ),
+    "regulatory_requirement": "A regulatory or compliance requirement mandates the paradigm.",
+    "team_convention": "The paradigm follows the team's established analytical convention.",
+    "vendor_constraint": "The paradigm is constrained by a third-party tool or vendor.",
+}
+
+# Single registry behind describe_vocabulary() (D-05, REQ-P6-06): the object each shape
+# validator imports is the exact object dumped here — one place to add a vocabulary, not two.
+# Deliberately excludes SPEC_VERSION, CAUSAL_VERBS, REQUIRED_TOP_LEVEL and
+# IMBALANCE_UNSAFE_METRICS — they are not vocabularies. chart_capabilities stays
+# special-cased in describe_vocabulary() below, exactly as before.
+_VOCABULARIES: "list[tuple[str, Any]]" = [
+    ("question_types", QUESTION_TYPES),
+    ("design_kinds", DESIGN_KINDS),
+    ("identification_strategies", IDENTIFICATION_STRATEGIES),
+    ("claim_types", CLAIM_TYPES),
+    ("multiplicity_corrections", MULTIPLICITY_CORRECTIONS),
+    ("peeking_policies", PEEKING_POLICIES),
+    ("ml_tasks", ML_TASKS),
+    ("split_strategies", SPLIT_STRATEGIES),
+    ("variance_adjustments", VARIANCE_ADJUSTMENTS),
+    ("metric_types", METRIC_TYPES),
+    ("data_input_types", DATA_INPUT_TYPES),
+    ("renderers", RENDERERS),
+    ("series_roles", SERIES_ROLES),
+    # New this phase (REQ-P6-06) — every one a name->description dict per D-04:
+    ("identification_strengths", IDENTIFICATION_STRENGTHS),
+    ("constraint_sources", CONSTRAINT_SOURCES),
+    ("dependence_structures", DEPENDENCE_STRUCTURES),
+    ("interference_risks", INTERFERENCE_RISKS),
+    ("interference_mitigations", INTERFERENCE_MITIGATIONS),
+    ("missingness_mechanisms", MISSINGNESS_MECHANISMS),
+    ("analysis_populations", ANALYSIS_POPULATIONS),
+    ("declaration_points", DECLARATION_POINTS),
+    ("paradigms", PARADIGMS),
+    ("paradigm_justifications", PARADIGM_JUSTIFICATIONS),
+]
 
 
 # ── Access helpers ───────────────────────────────────────────────────────────
@@ -541,23 +690,17 @@ def _validate_claims_shape(spec: dict, report: Report) -> None:
     report.ok(f"{len(claims)} claim(s) declared")
 
 
-def describe_vocabulary() -> dict[str, Iterable[str]]:
-    """Machine-readable dump of every closed vocabulary — used by `dsx vocab`."""
-    return {
-        "question_types": sorted(QUESTION_TYPES),
-        "design_kinds": sorted(DESIGN_KINDS),
-        "identification_strategies": sorted(IDENTIFICATION_STRATEGIES),
-        "claim_types": sorted(CLAIM_TYPES),
-        "multiplicity_corrections": sorted(MULTIPLICITY_CORRECTIONS),
-        "peeking_policies": sorted(PEEKING_POLICIES),
-        "ml_tasks": sorted(ML_TASKS),
-        "split_strategies": sorted(SPLIT_STRATEGIES),
-        "variance_adjustments": sorted(VARIANCE_ADJUSTMENTS),
-        "metric_types": sorted(METRIC_TYPES),
-        "data_input_types": sorted(DATA_INPUT_TYPES),
-        "renderers": sorted(RENDERERS),
-        "series_roles": sorted(SERIES_ROLES),
-        "chart_capabilities": {
-            key: sorted(values) for key, values in sorted(CHART_CAPABILITIES.items())
-        },
+def describe_vocabulary() -> "dict[str, Any]":
+    """Machine-readable dump of every closed vocabulary — used by `dsx vocab`.
+
+    Registry-driven (D-05): a dict-backed vocabulary dumps as a key-sorted dict of its
+    descriptions; a set-backed vocabulary dumps as a sorted list. `chart_capabilities` stays
+    special-cased — it is not a vocabulary, it is a capability matrix keyed by vocabulary.
+    """
+    out: "dict[str, Any]" = {}
+    for name, obj in _VOCABULARIES:
+        out[name] = {k: obj[k] for k in sorted(obj)} if isinstance(obj, dict) else sorted(obj)
+    out["chart_capabilities"] = {
+        key: sorted(values) for key, values in sorted(CHART_CAPABILITIES.items())
     }
+    return out
