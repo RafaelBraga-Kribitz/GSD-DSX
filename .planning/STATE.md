@@ -5,22 +5,22 @@ milestone_name: DSX Validity Frame
 current_phase: 06
 current_phase_name: contract-extension-decision-record-paradigm-manifest
 status: executing
-stopped_at: Completed 06-01-PLAN.md
-last_updated: "2026-08-07T21:57:13.086Z"
+stopped_at: Completed 06-02-PLAN.md
+last_updated: "2026-08-07T22:04:44.993Z"
 last_activity: 2026-08-07
 last_activity_desc: Phase 06 execution started
 progress:
   total_phases: 1
   completed_phases: 0
   total_plans: 10
-  completed_plans: 1
+  completed_plans: 2
   percent: 0
 ---
 
 # Project state
 
 **Status:** Ready to execute
-**Progress:** [█░░░░░░░░░] 10% (0/7 phases)  
+**Progress:** [██░░░░░░░░] 20% (0/7 phases)  
 **Locked decisions:** DQ = profile runner + hermetic gates; Glyph = hermetic svg_sha256 only (no MCP dep); forbidden claims = universal pack + optional phase YAML; repro_lock = ARS-style honest-null (not byte-replay); decision replay = structured thresholds only; suppressions = ADR/SPEC authority required (unknown codes → exit 2)  
 **v2.0.0 locked decisions:** DSX-PAR-010 is a distinct code, DSX-EXP-060 untouched (M-01); no `inference.stopping_rule` — PAR-010/011 read the existing `design.peeking_policy` (M-02); PEEKING_POLICIES gains an uncontrolled-continuous-monitoring value (M-03); automated import test enforces the D-03a boundary from M1 (M-04); SELF-001 stays a convention, REVERSALS.md template seeded in M1 (M-05); `validity_frame` sub-block requiredness gated by `question_type` (M-06); existing `suppressions[]` is the pre-v2.0.0 grandfather path (M-07); D-05 citation enforcement automated via `gen-finding-catalogue.py` (M-08); `dependence.method_family_required` reuses `VARIANCE_ADJUSTMENTS` (M-09)
 
@@ -70,14 +70,14 @@ progress:
 ## Current Position
 
 Phase: 06 (contract-extension-decision-record-paradigm-manifest) — EXECUTING
-Plan: 2 of 10
+Plan: 3 of 10
 Status: Ready to execute
 Last activity: 2026-08-07 — Phase 06 execution started
 
 ## Session
 
-**Last session:** 2026-08-07T21:57:13.077Z
-**Stopped at:** Completed 06-01-PLAN.md
+**Last session:** 2026-08-07T22:04:44.974Z
+**Stopped at:** Completed 06-02-PLAN.md
 **Resume file:** None
 
 ## Performance Metrics
@@ -85,8 +85,10 @@ Last activity: 2026-08-07 — Phase 06 execution started
 | Plan | Duration | Tasks | Files |
 |------|----------|-------|-------|
 | Phase 06 P01 | 25min | 2 tasks | 3 files |
+| Phase 06 P02 | 6min | 2 tasks | 2 files |
 
 ## Decisions
 
 - [Phase ?]: PEEKING_POLICIES.uncontrolled_continuous ships in Phase 6 (D-01); describe_vocabulary() now emits ALL dict-backed vocabularies as full key-sorted description dicts, not just peeking_policies
 - [Phase ?]: dependence.method_family_required defines no parallel vocabulary; reuses VARIANCE_ADJUSTMENTS verbatim (M-09)
+- [Phase ?]: invocation_id chosen over run_id (D-15); frame_digest lives on InvocationHeader only, not on every DecisionRecord
