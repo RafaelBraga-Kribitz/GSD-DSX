@@ -1,0 +1,168 @@
+# A known-bad ANALYSIS-SPEC (REQ-P6-13, D-06). This file is structurally valid —
+# it parses, and today's dsx validate/gate checks pass it — but it encodes a real,
+# documented interference failure: a declared shared-budget interference risk with
+# no mitigation and no residual note. Phase 8's DSX-INT-010 is the code that will
+# block this pattern once it ships; nothing in Phase 6 or 7 catches it, which is
+# correct — Phase 6 checks shape, not semantics. See the paired POSTMORTEM.md.
+#
+#   dsx validate --spec examples/known-bad/interference-shared-budget-ANALYSIS-SPEC.yaml
+
+spec_version: 1
+title: "Does raising bid caps for the high-intent audience raise signups, when treatment and control draw from one shared daily ad budget?"
+owner: "growth-marketing"
+created: "2026-04-01"
+
+question_type: causal
+
+decision:
+  owner: "Head of Growth Marketing"
+  decision_rule: >
+    Roll out raised bid caps to 100% of the high-intent audience if the 95%
+    CI lower bound on the signup-rate lift exceeds +0.5pp and CPA does not
+    rise beyond its declared tolerance. Otherwise hold at current bid caps.
+  action_if_null: "Keep the current bid caps; close the initiative and revisit targeting instead."
+  minimum_practical_effect: 0.005
+  reversible: true
+  deadline: "2026-05-01"
+
+metrics:
+  - name: signup_rate
+    type: ratio
+    definition: "Share of ad-exposed users who complete signup within 24 hours of first impression"
+    grain: user
+    numerator: "count(distinct user_id) where signed_up_at <= first_impression_at + 24 hours"
+    denominator: "count(distinct user_id) where first_impression_at in period"
+    source: warehouse.fct_ad_exposures
+    owner: growth-marketing
+
+data:
+  - name: ad_exposures
+    source: warehouse.fct_ad_exposures
+    period: "2026-04-01..2026-04-14"
+    rows: 210344
+
+design:
+  kind: experiment
+  identification: randomized_experiment
+  randomization_unit: user
+  analysis_unit: user
+  arms: [control, treatment]
+  expected_allocation: [0.5, 0.5]
+  baseline_rate: 0.041
+  mde: 0.005
+  alpha: 0.05
+  power: 0.80
+  planned_n_per_arm: 95000
+  duration_days: 14
+  peeking_policy: fixed_horizon
+
+analysis:
+  outcome_type: proportion
+  n_groups: 2
+  paired: false
+  test: two_proportion_z
+
+results:
+  observed_n: [96201, 95884]
+  interim_looks: 1
+  overall_effect: 0.006
+
+claims:
+  - text: >
+      Raising bid caps for the high-intent audience increases signups by 0.6
+      percentage points among users exposed to acquisition ads in the test
+      window.
+    type: causal
+    evidence: "RESULTS.md#bid-cap-lift"
+    population: "Users exposed to acquisition ads, 2026-04-01 to 2026-04-14"
+    identification: randomized_experiment
+
+assumptions:
+  - assumption: "Ad exposure volume is independent across arms."
+    rationale: "Arms are randomized at the user level before any auction is placed."
+    impact_if_wrong: "A shared budget could let one arm's bidding change what the other arm is shown."
+    checked: false
+
+limitations:
+  - "Both arms draw impressions from one shared, capacity-limited daily ad budget; see validity_frame.interference."
+
+# ── Validity frame (REQ-P6-02) ───────────────────────────────────────────────
+# question_type: causal + design.kind: experiment, so all ten sub-blocks are
+# required from plan onward (R-01 / M-06). The defect: interference.risk is
+# declared as shared_budget with mitigation: none and an empty residual_note —
+# a declared, unaddressed interference risk. DSX-INT-010 (Phase 8) is the code
+# that will block this once it ships.
+validity_frame:
+  estimand:
+    quantity: "difference in 24-hour signup rate among ad-exposed users"
+    population: "users exposed to acquisition ads, 2026-04-01 to 2026-04-14"
+    contrast: "raised bid caps (treatment) vs current bid caps (control)"
+    time_window: "24 hours from first impression"
+    falsifier: "95% CI on the signup-rate lift includes zero, or its lower bound sits below +0.5pp"
+
+  units:
+    observation: impression
+    assignment: user
+    analysis: user
+
+  identification:
+    strength: strong               # strong | moderate | weak
+    evidence: "Assignment is randomized per user before any auction is placed."
+    constraint_source: none        # none | informative_priors | penalisation | design_restriction | hierarchical_pooling
+    constraint_justification: ""
+
+  dependence:
+    structure: none                # none | clustered | repeated_measures | temporal | spatial | hierarchical
+    cluster_var: ""
+    method_family_required: ""
+
+  interference:
+    risk: shared_budget            # none | shared_budget | marketplace | geo_spillover | social_graph | shared_inventory
+    mechanism: >
+      Both arms draw impressions from one shared, capacity-limited daily ad
+      budget. Treatment's raised bid caps win a larger share of the ad
+      platform's auctions, which reduces the volume of impressions served to
+      control. Control's measured signup rate can fall not because control
+      users behave differently, but because control was simply shown fewer
+      ads that day — the arms are not independent of one another.
+    mitigation: none               # none | geo_split | cluster_randomisation | time_split | budget_isolation | modelled
+    residual_note: ""
+
+  triggering:
+    eligible_population: "all users targeted by the acquisition campaign in the test window"
+    triggered_definition: "received at least one ad impression"
+    analysis_population: triggered # eligible | triggered
+    expected_trigger_rate: 0.62
+    dilution_adjusted: false
+
+  stability:
+    window: "14 days"
+    novelty_primacy_assessed: false
+    evidence: ""
+
+  sampling_frame:
+    source: "warehouse.fct_ad_exposures, all geos"
+    claim_population: "all users targeted by the acquisition campaign"
+    known_exclusions: []
+    selection_risk: "none identified beyond the interference risk above"
+
+  missingness:
+    mechanism: not_assessed        # MCAR | MAR | MNAR | not_assessed
+    rate: 0.0
+    method_implied: complete_case
+
+  measurement:
+    construct: "signup"
+    operationalisation: "completed signup event within 24 hours of first impression"
+    known_gaps: "none identified"
+
+# ── Inference plan (REQ-P6-04) ───────────────────────────────────────────────
+inference:
+  paradigm: frequentist            # frequentist | bayesian
+  paradigm_justification: team_convention
+  declared_at: pre_data            # pre_data | post_data
+  primary_procedure: two_proportion_z
+  alpha_spending: null
+  fallback_rule: >
+    If either arm's observed n falls below 80% of planned_n_per_arm, extend
+    to the pre-declared duration_days ceiling before analysing.
