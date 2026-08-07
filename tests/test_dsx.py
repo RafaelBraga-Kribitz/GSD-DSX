@@ -310,6 +310,80 @@ class TestSpecStructure(unittest.TestCase):
         self.assertEqual(len(PARADIGM_JUSTIFICATIONS), 7)
         self.assertIsInstance(VARIANCE_ADJUSTMENTS, set)
 
+    # ── 06-05: validity_frame / inference round-trip (REQ-P6-02, REQ-P6-04, D-12) ──
+
+    def test_template_validity_frame_and_inference_round_trip(self):
+        from dsx.loader import load
+
+        template = Path(__file__).resolve().parent.parent / "templates" / "ANALYSIS-SPEC.yaml"
+        spec = load(str(template))
+        vf = spec["validity_frame"]
+        need = [
+            "estimand", "units", "identification", "dependence", "interference",
+            "triggering", "stability", "sampling_frame", "missingness", "measurement",
+        ]
+        missing = [k for k in need if not isinstance(vf.get(k), dict)]
+        self.assertEqual(missing, [], missing)
+        self.assertEqual(
+            set(spec["inference"]),
+            {
+                "paradigm", "paradigm_justification", "declared_at",
+                "primary_procedure", "alpha_spending", "fallback_rule",
+            },
+        )
+
+    def test_template_vocabulary_placeholders_are_legal_members(self):
+        from dsx.loader import load
+        from dsx.spec import (
+            ANALYSIS_POPULATIONS,
+            CONSTRAINT_SOURCES,
+            DECLARATION_POINTS,
+            DEPENDENCE_STRUCTURES,
+            IDENTIFICATION_STRENGTHS,
+            INTERFERENCE_MITIGATIONS,
+            INTERFERENCE_RISKS,
+            MISSINGNESS_MECHANISMS,
+            PARADIGM_JUSTIFICATIONS,
+            PARADIGMS,
+        )
+
+        template = Path(__file__).resolve().parent.parent / "templates" / "ANALYSIS-SPEC.yaml"
+        spec = load(str(template))
+        vf = spec["validity_frame"]
+        inf = spec["inference"]
+        self.assertIn(vf["identification"]["strength"], IDENTIFICATION_STRENGTHS)
+        self.assertIn(vf["identification"]["constraint_source"], CONSTRAINT_SOURCES)
+        self.assertIn(vf["dependence"]["structure"], DEPENDENCE_STRUCTURES)
+        self.assertIn(vf["interference"]["risk"], INTERFERENCE_RISKS)
+        self.assertIn(vf["interference"]["mitigation"], INTERFERENCE_MITIGATIONS)
+        self.assertIn(vf["triggering"]["analysis_population"], ANALYSIS_POPULATIONS)
+        self.assertIn(vf["missingness"]["mechanism"], MISSINGNESS_MECHANISMS)
+        self.assertIn(inf["paradigm"], PARADIGMS)
+        self.assertIn(inf["paradigm_justification"], PARADIGM_JUSTIFICATIONS)
+        self.assertIn(inf["declared_at"], DECLARATION_POINTS)
+
+    def test_good_fixture_none_frame_fields_round_trip_as_strings(self):
+        from dsx.loader import load
+
+        fixture = Path(__file__).resolve().parent.parent / "examples" / "good-ANALYSIS-SPEC.yaml"
+        vf = load(str(fixture))["validity_frame"]
+        self.assertEqual(vf["interference"]["risk"], "none")
+        self.assertEqual(vf["interference"]["mitigation"], "none")
+        self.assertEqual(vf["identification"]["constraint_source"], "none")
+
+    def test_no_shipped_spec_declares_removed_stopping_rule_field(self):
+        from dsx.loader import load
+
+        root = Path(__file__).resolve().parent.parent
+        bad = []
+        for p in list((root / "examples").rglob("*.yaml")) + list((root / "templates").rglob("*.yaml")):
+            if "ANALYSIS-SPEC" not in p.name:
+                continue
+            inf = load(str(p)).get("inference") or {}
+            if "stopping_rule" in inf:
+                bad.append(str(p))
+        self.assertEqual(bad, [])
+
 
 # ── design ───────────────────────────────────────────────────────────────────
 
@@ -1088,6 +1162,18 @@ class TestCLI(unittest.TestCase):
         first = self._run(["audit", "--spec", str(fixture), "--json"])
         second = self._run(["audit", "--spec", str(fixture), "--json"])
         self.assertEqual(first, second)
+
+    # ── 06-05: scaffolded template still passes its own structural gates ──────
+
+    def test_template_validity_frame_and_inference_pass_dsx_validate(self):
+        template = self.ROOT / "templates" / "ANALYSIS-SPEC.yaml"
+        code, _, err = self._run(["validate", "--spec", str(template)])
+        self.assertEqual(code, 0, err)
+
+    def test_template_validity_frame_and_inference_pass_gate_plan(self):
+        template = self.ROOT / "templates" / "ANALYSIS-SPEC.yaml"
+        code, _, err = self._run(["gate", "plan", "--spec", str(template)])
+        self.assertEqual(code, 0, err)
 
 
 # ── Phase 1: profiler, DQ, coherence, evidence ───────────────────────────────
