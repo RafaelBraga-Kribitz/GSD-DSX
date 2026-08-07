@@ -172,7 +172,79 @@ in either direction — they cannot justify a check and cannot excuse skipping o
 
 ## Traceability
 
-Populated during roadmap creation.
+Every v2.0.0 requirement maps to exactly one phase. 53/53 mapped; no orphans, no duplicates.
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| REQ-P6-01 | Phase 6 | Pending |
+| REQ-P6-02 | Phase 6 | Pending |
+| REQ-P6-03 | Phase 6 | Pending |
+| REQ-P6-04 | Phase 6 | Pending |
+| REQ-P6-05 | Phase 6 | Pending |
+| REQ-P6-06 | Phase 6 | Pending |
+| REQ-P6-07 | Phase 6 | Pending |
+| REQ-P6-08 | Phase 6 | Pending |
+| REQ-P6-09 | Phase 6 | Pending |
+| REQ-P6-10 | Phase 6 | Pending |
+| REQ-P6-11 | Phase 6 | Pending |
+| REQ-P6-12 | Phase 6 | Pending |
+| REQ-P6-13 | Phase 6 | Pending |
+| REQ-P6-14 | Phase 6 | Pending |
+| REQ-P6-15 | Phase 6 | Pending |
+| REQ-P6-16 | Phase 6 | Pending |
+| REQ-P7-01 | Phase 7 | Pending |
+| REQ-P7-02 | Phase 7 | Pending |
+| REQ-P7-03 | Phase 7 | Pending |
+| REQ-P7-04 | Phase 7 | Pending |
+| REQ-P7-05 | Phase 7 | Pending |
+| REQ-P7-06 | Phase 7 | Pending |
+| REQ-P7-07 | Phase 7 | Pending |
+| REQ-P7-08 | Phase 7 | Pending |
+| REQ-P7-09 | Phase 7 | Pending |
+| REQ-P8-01 | Phase 8 | Pending |
+| REQ-P8-02 | Phase 8 | Pending |
+| REQ-P8-03 | Phase 8 | Pending |
+| REQ-P8-04 | Phase 8 | Pending |
+| REQ-P8-05 | Phase 8 | Pending |
+| REQ-P8-06 | Phase 8 | Pending |
+| REQ-P9-01 | Phase 9 | Pending |
+| REQ-P9-02 | Phase 9 | Pending |
+| REQ-P9-03 | Phase 9 | Pending |
+| REQ-P9-04 | Phase 9 | Pending |
+| REQ-P9-05 | Phase 9 | Pending |
+| REQ-P9-06 | Phase 9 | Pending |
+| REQ-P9-07 | Phase 9 | Pending |
+| REQ-P10-01 | Phase 10 | Pending |
+| REQ-P10-02 | Phase 10 | Pending |
+| REQ-P10-03 | Phase 10 | Pending |
+| REQ-P10-04 | Phase 10 | Pending |
+| REQ-P11-01 | Phase 11 | Pending |
+| REQ-P11-02 | Phase 11 | Pending |
+| REQ-P11-03 | Phase 11 | Pending |
+| REQ-P11-04 | Phase 11 | Pending |
+| REQ-P11-05 | Phase 11 | Pending |
+| REQ-P11-06 | Phase 11 | Pending |
+| REQ-P12-01 | Phase 12 | Pending |
+| REQ-P12-02 | Phase 12 | Pending |
+| REQ-P12-03 | Phase 12 | Pending |
+| REQ-P12-04 | Phase 12 | Pending |
+| REQ-P12-05 | Phase 12 | Pending |
+
+### Coverage summary
+
+| Phase | Milestone | Requirements | Count |
+|-------|-----------|--------------|-------|
+| 6 | M1 — Contract extension, decision record, paradigm manifest | REQ-P6-01 … REQ-P6-16 | 16 |
+| 7 | M2a — Validity frame checks (`DSX-VAL-*`) | REQ-P7-01 … REQ-P7-09 | 9 |
+| 8 | M2b — Interference, triggering, stability (`DSX-INT-*`) | REQ-P8-01 … REQ-P8-06 | 6 |
+| 9 | M2c — Monitoring discipline, symmetric (`DSX-PAR-*`) | REQ-P9-01 … REQ-P9-07 | 7 |
+| 10 | M3 — Pre-registered inference plan (`DSX-PRE-*`) | REQ-P10-01 … REQ-P10-04 | 4 |
+| 11 | M4 — Frequentist admissibility adjudicator (`DSX-ADM-*`) | REQ-P11-01 … REQ-P11-06 | 6 |
+| 12 | M5 — Calibration | REQ-P12-01 … REQ-P12-05 | 5 |
+| **Total** | — | — | **53** |
+
+See `.planning/ROADMAP.md` for each phase's goal, success criteria, dependencies and
+ordering constraints.
 
 ---
 *v2.0.0 requirements defined: 2026-08-07*
