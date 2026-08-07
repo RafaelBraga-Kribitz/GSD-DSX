@@ -138,7 +138,19 @@ REQ-P6-15, REQ-P6-16
      the `suppressions[]` migration path and the "a frame that lies passes" limit, version
      2.0.0, and a regenerated finding catalogue.
 
-**Plans**: TBD
+**Plans:** 10 plans in 6 waves
+
+Plans:
+- [ ] 06-01-PLAN.md — loader `_NULL` fix + the ten new closed vocabularies, `uncontrolled_continuous`, and the `_VOCABULARIES` registry behind `dsx vocab` (wave 1)
+- [ ] 06-02-PLAN.md — `dsx/decisions.py`: record schema, fsync-per-record append, tolerant reader, invocation identity and frame digest (wave 1)
+- [ ] 06-03-PLAN.md — D-05 made mechanical in `scripts/gen-finding-catalogue.py`, proven against a deliberately violating fixture (wave 1)
+- [ ] 06-04-PLAN.md — `.planning/REVERSALS.md`, README migration path + known limit + the two tiers of D-05 rigour, PROJECT.md gate-point amendment (wave 1)
+- [ ] 06-05-PLAN.md — extend both canonical fixtures and scaffold the template with `validity_frame:` and `inference:`; pin the round-trip (wave 2)
+- [ ] 06-06-PLAN.md — `_validate_validity_frame_shape` / `_validate_inference_shape` under `DSX-SPEC-080`–`086`, with question_type-gated requiredness (wave 3)
+- [ ] 06-07-PLAN.md — `dsx/frame/` + the D-03a AST boundary test + `DSX-PAR-001`, the INFO paradigm manifest, registered at all four gate points (wave 4)
+- [ ] 06-08-PLAN.md — the known-bad seed corpus: interference, frequentist and Bayesian uncontrolled-continuous, each with a sourced post-mortem (wave 4)
+- [ ] 06-09-PLAN.md — `dsx explain` (never blocks) + the `add_common` refactor + the gate-path `DECISIONS.jsonl` write (wave 5)
+- [ ] 06-10-PLAN.md — version 2.0.0 across every manifest, catalogue regeneration, and the closing phase gate (wave 6)
 
 ### Phase 7: Validity frame checks (`DSX-VAL-*`)
 
@@ -396,7 +408,7 @@ cases where absence permitted a false pass" is a debate, not a count.
 | 3. Storytelling + code reality | — | Complete | v1.3.0 |
 | 4. Analytical logic depth + stats extensions | — | Complete | v1.4.0 |
 | 5. Chart review + suppressions | — | Complete | v1.5.0 |
-| 6. Contract extension, decision record, paradigm manifest | 0/TBD | Not started | - |
+| 6. Contract extension, decision record, paradigm manifest | 0/10 | Planned | - |
 | 7. Validity frame checks (`DSX-VAL-*`) | 0/TBD | Not started | - |
 | 8. Interference, triggering, stability (`DSX-INT-*`) | 0/TBD | Not started | - |
 | 9. Monitoring discipline, symmetric (`DSX-PAR-*`) | 0/TBD | Not started | - |

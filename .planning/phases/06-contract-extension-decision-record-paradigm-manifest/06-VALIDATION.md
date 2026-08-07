@@ -53,22 +53,22 @@ full suite every time; there is no subset worth maintaining.
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| TBD | TBD | TBD | REQ-P6-01 | — | N/A | unit | `python3 -m unittest tests.test_dsx.TestLoader -v` | ❌ W0 (new method) | ⬜ pending |
-| TBD | TBD | TBD | REQ-P6-02 | — | N/A | unit/integration | `python3 -m unittest tests.test_dsx.TestSpecStructure -v` | ❌ W0 | ⬜ pending |
-| TBD | TBD | TBD | REQ-P6-03 | — | N/A | unit | `python3 -m unittest tests.test_dsx.TestSpecStructure -v` | ❌ W0 | ⬜ pending |
-| TBD | TBD | TBD | REQ-P6-04 | — | N/A | unit | `python3 -m unittest tests.test_dsx.TestSpecStructure -v` | ❌ W0 | ⬜ pending |
-| TBD | TBD | TBD | REQ-P6-05 | — | N/A | unit | `python3 -m unittest tests.test_dsx.TestChecks -v` | ❌ W0 | ⬜ pending |
-| TBD | TBD | TBD | REQ-P6-06 | — | N/A | unit | `python3 -m unittest tests.test_dsx.TestSpecStructure -v` | ❌ W0 | ⬜ pending |
-| TBD | TBD | TBD | REQ-P6-07 | T-6-02 | Tolerant reader: a truncated tail line is skipped, not fatal | unit | `python3 -m unittest tests.test_decisions -v` | ❌ W0 (new file) | ⬜ pending |
-| TBD | TBD | TBD | REQ-P6-08 | T-6-02 | `dsx explain` exits `0` on empty, missing, and corrupt `DECISIONS.jsonl` | integration | `python3 -m unittest tests.test_dsx.TestCLI -v` | ❌ W0 | ⬜ pending |
-| TBD | TBD | TBD | REQ-P6-09 | — | INFO cannot flip the exit code at any of the four default `GATE_THRESHOLDS` | unit + integration | `python3 -m unittest tests.test_dsx.TestCLI -v` | ❌ W0 | ⬜ pending |
-| TBD | TBD | TBD | REQ-P6-10 | T-6-01 | `dsx/frame/*` never imports `dsx.checks.*` (D-03a blast-radius control) | unit (meta-test) | `python3 -m unittest tests.test_frame_boundary -v` | ❌ W0 (new file) | ⬜ pending |
-| TBD | TBD | TBD | REQ-P6-11 | — | N/A | unit (meta-test) | `python3 -m unittest tests.test_gen_finding_catalogue -v` | ❌ W0 (new file) | ⬜ pending |
-| TBD | TBD | TBD | REQ-P6-12 | — | N/A | integration | `python3 -m unittest tests.test_dsx.TestCLI -v` | ✅ `tests/test_dsx.py:804-839` | ⬜ pending |
-| TBD | TBD | TBD | REQ-P6-13 | — | N/A | integration | `python3 -m unittest tests.test_dsx.TestCLI -v` | ❌ W0 | ⬜ pending |
-| TBD | TBD | TBD | REQ-P6-14 | — | N/A | doc check | file-existence assertion on `.planning/REVERSALS.md` | N/A — docs | ⬜ pending |
-| TBD | TBD | TBD | REQ-P6-15 | — | N/A | doc check | manual review of README | N/A — docs | ⬜ pending |
-| TBD | TBD | TBD | REQ-P6-16 | — | N/A | integration | `python3 scripts/gen-finding-catalogue.py --check` | ✅ exists | ⬜ pending |
+| 06-01/T1 | 06-01 | 1 | REQ-P6-01 | T-6-04 | Parser agrees with PyYAML on the literal `none`; a declared value never silently becomes null | unit | `python3 -m unittest tests.test_dsx.TestLoader -v` | ❌ W0 (new method) | ⬜ pending |
+| 06-05/T1,T3 · 06-06/T1 | 06-05, 06-06 | 2, 3 | REQ-P6-02 | T-6-11, T-6-12 | Malformed `validity_frame` degrades to a finding, never an exception (exit 1, not exit 2) | unit/integration | `python3 -m unittest tests.test_dsx.TestSpecStructure -v` | ❌ W0 | ⬜ pending |
+| 06-06/T1 | 06-06 | 3 | REQ-P6-03 | T-6-12 | Requiredness gating is data, not a branch; absence blocks from `plan` at CRITICAL | unit | `python3 -m unittest tests.test_dsx.TestSpecStructure -v` | ❌ W0 | ⬜ pending |
+| 06-05/T1 · 06-06/T2 | 06-05, 06-06 | 2, 3 | REQ-P6-04 | T-6-07 | A field removed by M-02 produces a redirect finding rather than silence | unit | `python3 -m unittest tests.test_dsx.TestSpecStructure -v` | ❌ W0 | ⬜ pending |
+| 06-01/T2 | 06-01 | 1 | REQ-P6-05 | T-6-18 | `DSX-EXP-060`'s trigger set is pinned by a parametrised disjointness test (M-01) | unit | `python3 -m unittest tests.test_dsx.TestDesign -v` | ❌ W0 | ⬜ pending |
+| 06-01/T2 | 06-01 | 1 | REQ-P6-06 | — | N/A | unit | `python3 -m unittest tests.test_dsx.TestSpecStructure -v` | ❌ W0 | ⬜ pending |
+| 06-02/T1,T2 · 06-09/T2 | 06-02, 06-09 | 1, 5 | REQ-P6-07 | T-6-02, T-6-05, T-6-19 | Tolerant reader: a truncated tail line is skipped, not fatal; fsync per record; a write failure never changes an exit code | unit | `python3 -m unittest tests.test_decisions -v` | ❌ W0 (new file) | ⬜ pending |
+| 06-09/T1,T3 | 06-09 | 5 | REQ-P6-08 | T-6-02 | `dsx explain` exits `0` on empty, missing, corrupt and unknown-invocation `DECISIONS.jsonl`, and on a missing spec | integration | `python3 -m unittest tests.test_dsx.TestDecisionTrailCLI -v` | ❌ W0 | ⬜ pending |
+| 06-07/T2,T3 | 06-07 | 4 | REQ-P6-09 | T-6-14, T-6-15 | INFO cannot flip the exit code at any of the four default `GATE_THRESHOLDS`; the manifest never names an unshipped family as applied | unit + integration | `python3 -m unittest tests.test_dsx.TestCLI -v` | ❌ W0 | ⬜ pending |
+| 06-07/T1 | 06-07 | 4 | REQ-P6-10 | T-6-01 | `dsx/frame/*` never imports `dsx.checks.*` (D-03a blast-radius control), proven against three violating sources | unit (meta-test) | `python3 -m unittest tests.test_frame_boundary -v` | ❌ W0 (new file) | ⬜ pending |
+| 06-03/T1,T2 | 06-03 | 1 | REQ-P6-11 | T-6-07, T-6-08 | Both halves of D-05 fail the build on a violating fixture; the allow-list is finite and visible | unit (meta-test) | `python3 -m unittest tests.test_gen_finding_catalogue -v` | ❌ W0 (new file) | ⬜ pending |
+| 06-05/T1,T2 · 06-10/T2 | 06-05, 06-10 | 2, 6 | REQ-P6-12 | T-6-11 | The three D-08 tests and the `_run` harness stay byte-for-byte unedited | integration | `python3 -m unittest tests.test_dsx.TestCLI -v` | ✅ `tests/test_dsx.py:804-839` | ⬜ pending |
+| 06-08/T1,T2,T3 | 06-08 | 4 | REQ-P6-13 | T-6-16, T-6-17 | Every post-mortem traces to a primary source; the Bayesian fixture names its formulation | integration | `python3 -m unittest tests.test_known_bad_corpus -v` | ❌ W0 (new file) | ⬜ pending |
+| 06-04/T1 | 06-04 | 1 | REQ-P6-14 | T-6-10 | N/A | doc check | file-existence + required-heading assertion on `.planning/REVERSALS.md` | N/A — docs | ⬜ pending |
+| 06-04/T2 | 06-04 | 1 | REQ-P6-15 | T-6-09 | The `suppressions[]` authority requirement is documented as a requirement, not a suggestion | doc check | keyword assertion on README.md, plus manual review | N/A — docs | ⬜ pending |
+| 06-10/T1,T2 | 06-10 | 6 | REQ-P6-16 | T-6-20, T-6-21 | Every version declaration agrees; the catalogue's rendered rows equal its declared total | integration | `python3 scripts/gen-finding-catalogue.py --check` | ✅ exists | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
