@@ -3,22 +3,22 @@ gsd_state_version: 1.0
 milestone: v2.0.0
 milestone_name: DSX Validity Frame
 current_phase: 6
-status: roadmap_complete
-stopped_at: Phase 6 context gathered
-last_updated: "2026-08-07T19:47:02.374Z"
+status: planned
+stopped_at: Phase 6 planned — ready to execute
+last_updated: "2026-08-07T22:10:00.000Z"
 last_activity: 2026-08-07
-last_activity_desc: v2.0.0 roadmap created (Phases 6–12)
+last_activity_desc: Phase 6 planned (10 plans, 6 waves)
 progress:
-  total_phases: 1
+  total_phases: 7
   completed_phases: 0
-  total_plans: 0
+  total_plans: 10
   completed_plans: 0
   percent: 0
 ---
 
 # Project state
 
-**Status:** v1.5.0 shipped (Phases 1–5 complete); milestone v2.0.0 DSX Validity Frame roadmapped (Phases 6–12), 0/7 phases complete  
+**Status:** v1.5.0 shipped (Phases 1–5 complete); milestone v2.0.0 DSX Validity Frame roadmapped (Phases 6–12), 0/7 phases complete. Phase 6 planned — 10 plans in 6 waves, ready to execute.  
 **Progress:** [░░░░░░░░░░░░░░░░░░░░] 0% (0/7 phases)  
 **Locked decisions:** DQ = profile runner + hermetic gates; Glyph = hermetic svg_sha256 only (no MCP dep); forbidden claims = universal pack + optional phase YAML; repro_lock = ARS-style honest-null (not byte-replay); decision replay = structured thresholds only; suppressions = ADR/SPEC authority required (unknown codes → exit 2)  
 **v2.0.0 locked decisions:** DSX-PAR-010 is a distinct code, DSX-EXP-060 untouched (M-01); no `inference.stopping_rule` — PAR-010/011 read the existing `design.peeking_policy` (M-02); PEEKING_POLICIES gains an uncontrolled-continuous-monitoring value (M-03); automated import test enforces the D-03a boundary from M1 (M-04); SELF-001 stays a convention, REVERSALS.md template seeded in M1 (M-05); `validity_frame` sub-block requiredness gated by `question_type` (M-06); existing `suppressions[]` is the pre-v2.0.0 grandfather path (M-07); D-05 citation enforcement automated via `gen-finding-catalogue.py` (M-08); `dependence.method_family_required` reuses `VARIANCE_ADJUSTMENTS` (M-09)

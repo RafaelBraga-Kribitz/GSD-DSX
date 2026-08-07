@@ -72,8 +72,7 @@ Requirements: REQ-P6-01 … REQ-P6-16 (16 requirements, see `.planning/REQUIREME
   became clear the split would need its own stable criterion to survive Phases 7–12.) brief §5.1
   already carries much of the prose as inline comments, so this is largely transcription.
   Membership checks are unchanged — `x in DICT` tests keys.
-- **D-05: `describe_vocabulary()` is built from an explicit vocabulary-name registry, with a test
-  asserting coverage.** Removes the two-places-to-update problem (REQ-P6-06, PITFALLS:655)
+- **D-05: `describe_vocabulary()` is built from an explicit vocabulary-name registry, with a test asserting coverage.** Removes the two-places-to-update problem (REQ-P6-06, PITFALLS:655)
   without needing an introspection deny-list for the existing non-vocabulary module constants
   (`SPEC_VERSION`, `CAUSAL_VERBS`, `REQUIRED_TOP_LEVEL`, `IMBALANCE_UNSAFE_METRICS`).
 
@@ -96,8 +95,7 @@ Requirements: REQ-P6-01 … REQ-P6-16 (16 requirements, see `.planning/REQUIREME
 
 ### Structural validation: location, codes, severity
 
-- **D-09: `_validate_validity_frame_shape()` and `_validate_inference_shape()` live in
-  `dsx/spec.py` under `DSX-SPEC-08x`**, mirroring `_validate_design_shape` (`dsx/spec.py:422`)
+- **D-09: `_validate_validity_frame_shape()` and `_validate_inference_shape()` live in `dsx/spec.py` under `DSX-SPEC-08x`**, mirroring `_validate_design_shape` (`dsx/spec.py:422`)
   exactly — ARCHITECTURE §4.3's recommendation. `spec` is already in all four gate profiles
   (`dsx/cli.py:72-84`), so **no `GATE_PROFILES` change ships in Phase 6**. `DSX-SPEC-0xx` is
   free from `080` (used through `073` in `dsx/suppressions.py`). This keeps `dsx/frame/` holding
@@ -164,8 +162,7 @@ Requirements: REQ-P6-01 … REQ-P6-16 (16 requirements, see `.planning/REQUIREME
   `--block-on` flag on a command that always exits `0` is a lie in the help text, and D-04 is
   precisely about `explain` staying out of the block contract. **Refactor `add_common()` to make
   the blocking flags opt-in** rather than copy-pasting three arguments into a new parser.
-- **D-19: The gate emits `layer: deterministic` records only; the append contract is documented.**
-  REQ-P6-07 mandates the `layer` field, but nothing in `dsx` makes stochastic decisions — the
+- **D-19: The gate emits `layer: deterministic` records only — the append contract is documented.** REQ-P6-07 mandates the `layer` field, but nothing in `dsx` makes stochastic decisions — the
   agents do. Phase 6 documents file location, line format and required fields so a dsx agent can
   begin writing `layer: stochastic` entries with no further code change, and `dsx explain` renders
   both layers correctly the moment anything writes them. Wiring the agents was rejected as beyond
@@ -174,8 +171,7 @@ Requirements: REQ-P6-01 … REQ-P6-16 (16 requirements, see `.planning/REQUIREME
 
 ### D-05 enforcement (REQ-P6-11, M-08)
 
-- **D-20: The citation-marker requirement binds new v2.0.0 checks only, via an explicit
-  allow-list.** It applies to `dsx/frame/*` and the new `DSX-SPEC-08x` checks. The **206
+- **D-20: The citation-marker requirement binds new v2.0.0 checks only, via an explicit allow-list.** It applies to `dsx/frame/*` and the new `DSX-SPEC-08x` checks. The **206
   pre-existing finding codes across 17 families** are exempted by an allow-list carried *inside*
   the check itself, so the exemption is finite, visible and shrinks as codes get cited — not an
   implicit "anything old is fine". D-05's own wording is "no check *ships* without", written for

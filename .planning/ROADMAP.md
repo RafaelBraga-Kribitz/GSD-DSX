@@ -96,20 +96,24 @@ REQ-P6-07, REQ-P6-08, REQ-P6-09, REQ-P6-10, REQ-P6-11, REQ-P6-12, REQ-P6-13, REQ
 REQ-P6-15, REQ-P6-16
 
 **Ordering constraints** (within phase):
+
 1. **REQ-P6-01 before REQ-P6-02.** The loader `_NULL` fix lands before the `validity_frame:`
    schema. Four frame fields (`dependence.structure`, `interference.risk`,
    `interference.mitigation`, `missingness.mechanism`) use `none` as a legitimate declared
    value and would otherwise parse as null. Reproduced: `_parse_yaml_subset("x: [none, clustered]")`
    returns `[None, "clustered"]` today.
+
 2. **REQ-P6-09 ships here, not in Phase 9.** The instant `inference.paradigm` is a legal
    field an operator can declare `bayesian`, and the behaviour when they do must be defined
    from that moment. The only alternatives in the gap are "block" (which D-10 forbids) or
    "silently pass" (worse). Ordering constraint, not preference.
+
 3. **REQ-P6-10 and REQ-P6-11 before the first frame check carries logic.** The D-03a AST
    boundary test and the citation-marker build check must exist before Phase 7 opens
    `frame/val.py`, or there is a window where a violation lands undetected.
 
 **Success Criteria** (what must be TRUE):
+
   1. `_parse_yaml_subset("x: [none, clustered]")` returns `["none", "clustered"]` and a test
      asserts the bundled parser and PyYAML agree on `none` for scalars and sequences; only
      then does a spec carrying full `validity_frame:` + `inference:` blocks round-trip, with
@@ -117,20 +121,24 @@ REQ-P6-15, REQ-P6-16
      typed against `VARIANCE_ADJUSTMENTS`, `PEEKING_POLICIES` carrying a member for
      uncontrolled continuous monitoring distinct from `always_valid`, and no
      `inference.stopping_rule` field anywhere.
+
   2. `dsx gate` exits `0` at plan/execute/verify/ship on the extended
      `examples/good-ANALYSIS-SPEC.yaml` and `1` at plan and at ship on the extended
      `examples/bad-ANALYSIS-SPEC.yaml`, with the two existing D-08 tests unchanged; a
      descriptive-question spec that omits `interference`/`triggering`/`stability` **entirely**
      also exits `0`, while a causal spec omitting them blocks.
+
   3. A `paradigm: bayesian` spec that is otherwise clean exits `0` at `dsx gate ship` with the
      `DSX-PAR-001` manifest printed on stdout naming which check families applied and which
      did not — INFO cannot flip the exit code at any configured threshold — and `dsx explain`
      exits `0` rendering that run's decision trail from an append-only `DECISIONS.jsonl` that
      survives a crashed run.
+
   4. D-05 and D-03a are mechanical, not review-only: `scripts/gen-finding-catalogue.py --check`
      exits non-zero on a check whose docstring lacks a citation marker, and the AST boundary
      test fails when a `dsx/frame/*.py` module imports `dsx.checks.*` — each proven against a
      deliberately violating case in the suite.
+
   5. At least three known-bad fixtures (≥1 interference case, ≥1 Bayesian continuous-monitoring
      case) are committed with documented post-mortems and pass `dsx validate` structurally —
      the code-specific block assertions land with the phase that ships each code — alongside
@@ -141,15 +149,32 @@ REQ-P6-15, REQ-P6-16
 **Plans:** 10 plans in 6 waves
 
 Plans:
+**Wave 1**
+
 - [ ] 06-01-PLAN.md — loader `_NULL` fix + the ten new closed vocabularies, `uncontrolled_continuous`, and the `_VOCABULARIES` registry behind `dsx vocab` (wave 1)
 - [ ] 06-02-PLAN.md — `dsx/decisions.py`: record schema, fsync-per-record append, tolerant reader, invocation identity and frame digest (wave 1)
 - [ ] 06-03-PLAN.md — D-05 made mechanical in `scripts/gen-finding-catalogue.py`, proven against a deliberately violating fixture (wave 1)
 - [ ] 06-04-PLAN.md — `.planning/REVERSALS.md`, README migration path + known limit + the two tiers of D-05 rigour, PROJECT.md gate-point amendment (wave 1)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 06-05-PLAN.md — extend both canonical fixtures and scaffold the template with `validity_frame:` and `inference:`; pin the round-trip (wave 2)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
 - [ ] 06-06-PLAN.md — `_validate_validity_frame_shape` / `_validate_inference_shape` under `DSX-SPEC-080`–`086`, with question_type-gated requiredness (wave 3)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
 - [ ] 06-07-PLAN.md — `dsx/frame/` + the D-03a AST boundary test + `DSX-PAR-001`, the INFO paradigm manifest, registered at all four gate points (wave 4)
 - [ ] 06-08-PLAN.md — the known-bad seed corpus: interference, frequentist and Bayesian uncontrolled-continuous, each with a sourced post-mortem (wave 4)
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
 - [ ] 06-09-PLAN.md — `dsx explain` (never blocks) + the `add_common` refactor + the gate-path `DECISIONS.jsonl` write (wave 5)
+
+**Wave 6** *(blocked on Wave 5 completion)*
+
 - [ ] 06-10-PLAN.md — version 2.0.0 across every manifest, catalogue regeneration, and the closing phase gate (wave 6)
 
 ### Phase 7: Validity frame checks (`DSX-VAL-*`)
@@ -177,23 +202,28 @@ value per unit of work.
 assignments within `DSX-VAL-*` beyond those the brief fixes (D-06 makes numbering irreversible).
 
 **Success Criteria** (what must be TRUE):
+
   1. `examples/known-bad/weak-identification-mmm-ANALYSIS-SPEC.yaml` exits `1` at
      `dsx gate plan` naming `DSX-VAL-040`; a spec declaring strong identification whose
      constraint carries parameter-scale information surfaces `DSX-VAL-041` at HIGH — printed
      but non-blocking at plan, blocking at verify/ship — both citing Gelman, Simpson &
      Betancourt (2017).
+
   2. A spec whose `units.observation` is finer than `units.assignment` with no dependence
      method family exits `1` under `DSX-VAL-020`, and the finding text quantifies the
      consequence via `DEFF = 1 + (m-1)·ICC`, with a test asserting the published worked value.
+
   3. `DSX-VAL-020` and the existing `DSX-EXP-021` never both fire on the same defect: a fixture
      tripping `DSX-EXP-021` produces no `DSX-VAL-020` and vice versa, and `dsx gate` output on
      the existing v1.5.0 `DSX-EXP-020/021` fixtures is unchanged.
+
   4. Each of estimand incompleteness/non-falsifiability, dependence-declared-without-method-family,
      sampling frame vs claim population, missingness mechanism vs implied method (against the
      Rubin MCAR/MAR/MNAR validity table), and measurement construct/operationalisation gaps
      blocks its own bad fixture and passes the extended good fixture — every check carrying a
      primary-source citation naming the exact formulation plus a test against a published
      reference value or a named structural criterion.
+
   5. A test asserts that no `dsx/frame/val.py` code path reads `inference.paradigm` (D-11),
      failing the suite if one is introduced.
 
@@ -220,21 +250,26 @@ violate D-05.
 the brief fixes verbatim and D-06 makes irreversible.
 
 **Success Criteria** (what must be TRUE):
+
   1. `examples/known-bad/interference-shared-budget-ANALYSIS-SPEC.yaml` exits `1` at
      `dsx gate plan` naming `DSX-INT-010`; the same spec with an admissible `mitigation` or an
      explicit `residual_note` added exits `0` — citing the SUTVA statement in Imbens & Rubin
      (2015).
+
   2. Shared-budget and marketplace interference resolve to distinct declared risks with distinct
      admissible mitigations: a fixture applying a marketplace-only mitigation to a shared-budget
      risk still exits `1`.
+
   3. `examples/known-bad/triggering-dilution-ANALYSIS-SPEC.yaml` exits `1` under `DSX-INT-030`
      when an additive metric is analysed on the eligible population with no dilution adjustment
      declared, and a test asserts `delta_diluted = delta_triggered × trigger_rate` against the
      Deng & Hu (2015) published value.
+
   4. A ratio metric under triggering is explicitly out of scope rather than silently adjudicated:
      `DSX-INT-030` does not fire on it, its docstring states the additive-only scope, and
      `brief.md` §6.5 carries the entry condition that the Deng & Hu (2015) ratio-metric equation
      be obtained from primary source before it ships (D-13).
+
   5. An unassessed novelty/primacy effect over the declared stability window is flagged at
      verify/ship with the assessment method cited, and a test asserts no
      `dsx/frame/interference.py` code path reads `inference.paradigm` (D-11).
@@ -262,24 +297,29 @@ classic result", no year or paper) is upgraded to a full D-05 citation now that 
 depend on it.
 
 **Success Criteria** (what must be TRUE):
+
   1. A frequentist spec declaring the uncontrolled-continuous `design.peeking_policy` with no
      `alpha_spending` and no sequential method exits `1` at `dsx gate plan` naming
      `DSX-PAR-010`, reusing the existing `inflation_from_peeking()` table rather than a second
      one, while `DSX-EXP-060`'s own fixtures and output are unchanged (M-01).
+
   2. `examples/known-bad/bayesian-continuous-monitoring-ANALYSIS-SPEC.yaml` — the spec asserting
      that a weakly informative prior controls false positives while peeking — exits `1` naming
      `DSX-PAR-011`, and a test asserts the prior-averaged Ville bound `1/(K+1)`: at the
      `P(B>A) > 0.95` threshold, `K = 19` and the bound is `0.05`, traced to Deng, Lu & Chen
      (2016) Theorem 1.
+
   3. The `DSX-PAR-011` docstring states explicitly that it asserts the prior-averaged
      formulation and **not** the point-null / law-of-iterated-logarithm formulation, and the
      fixture comments the theorem its number traces to — so a mismatch reads as a formulation
      question in five minutes, not an implementation bug for a day.
+
   4. Switching `paradigm` cannot buy a pass in either direction: the `DSX-PAR-010` bad fixture
      retyped to `bayesian` still exits `1` (now under `DSX-PAR-011`), and the `DSX-PAR-011` bad
      fixture retyped to `frequentist` still exits `1` (now under `DSX-PAR-010`) — asserted by
      test both ways; `DSX-PAR-002` validates `paradigm_justification` against the closed
      vocabulary with no reason ranked above another.
+
   5. Both codes ship together at identical severity, and a committed audit records the cheapest
      dishonest satisfaction path for each half, showing the disjunctive `prior_justification`
      route is no weaker than the sequential-method requirement (D-12); the `DSX-PAR-011`
@@ -303,19 +343,24 @@ channel). Soft dependency on Phase 7: the brief's own fallback-rule example refe
 reconcile against at plan or execute.
 
 **Success Criteria** (what must be TRUE):
+
   1. A fallback rule in the mini-DSL (e.g. `if clusters < 30 -> wild cluster bootstrap`)
      resolves to exactly one branch against the declared observed facts, and an unparseable rule
      exits `2` — could-not-run — never `0`.
+
   2. A run whose executed procedure differs from the branch the declared rule selects exits `1`
      at `dsx gate verify`, with both the declared branch and the executed branch named in the
      finding text.
+
   3. A procedure switched after seeing the data exits `1` even when the substituted procedure is
      individually defensible — a fixture whose substitution is a strictly more conservative test
      still blocks.
+
   4. `declared_at` provenance is recorded and named as an unverifiable self-declaration in both
      the finding remedy and the README rather than presented as a guarantee; where a content lock
      over `validity_frame:` + `inference:` is captured at plan, reconciliation compares the
      recorded bytes, not the declared string.
+
   5. Every `DSX-PRE-*` check carries a primary-source citation naming its exact formulation plus
      a test against a published reference value or a named structural criterion, and a test
      asserts every `DSX-PRE-*` code is reachable from at least one `GATE_PROFILES` entry.
@@ -344,19 +389,24 @@ completeness pressure on the alias list.
 **Open items**: final numeric code assignments within `DSX-ADM-*` beyond those the brief fixes.
 
 **Success Criteria** (what must be TRUE):
+
   1. `references/families.yaml` holds 25–35 estimator families as data keyed on
      estimand × family × inference method × dependence handling, parsed by the existing
      `dsx.loader.load()` with no new parser, and named tests resolve as aliases into families
      rather than being enumerated as a test catalogue.
+
   2. `dsx recommend-test` returns a ranked admissible set naming, per entry, the assumptions
      bought and the assumptions charged — the existing subcommand extended, not replaced, with
      its v1.5.0 behaviour on existing specs unchanged.
+
   3. A deliberately underdetermined frame returns `no_admissible_procedure` and exits `1` under
      the escalating code at CRITICAL rather than falling back to the nearest-sounding family,
      and an unrecognised alias escalates rather than resolving.
+
   4. A `families.yaml` entry with no citation fails the build via the Phase 6 catalogue check,
      and the adjudicator refuses to rank an uncited family — D-05 binds the ontology data
      exactly as it binds check code.
+
   5. Every family entry traces to a fixture or corpus case that needed it, and a test asserts no
      `families.yaml` entry declares a Bayesian inference method — the axis space is capped to
      v1's frequentist scope, with Bayesian admissibility left in the gated backlog.
@@ -380,17 +430,22 @@ corpus case is added, not retrofitted after "full size" is declared reached — 
 cases where absence permitted a false pass" is a debate, not a count.
 
 **Success Criteria** (what must be TRUE):
+
   1. The known-bad corpus is extended from the Phase 6 seed set to full size — retracted papers
      with published post-mortems, documented p-hacking cases, and prior work whose answer is now
      known — each case committed as a spec + post-mortem pair.
+
   2. A harness run over the corpus reports a catch rate and a false-positive rate as numbers,
      reproducibly, with per-case pass/block recorded and attributable to specific codes.
+
   3. Every corpus case carries structured, machine-readable catch-attribution tags naming which
      currently-absent code would have caught it, so each `brief.md` §6.5 entry condition is
      counted rather than argued (D-13).
+
   4. `dsx stats --paradigm` exits `0` and reports the frequentist/Bayesian split across the
      operator's own frame history — the value the Bayesian-admissibility entry condition is
      stated against.
+
   5. Each gated-backlog item is re-evaluated against its stated entry condition using the
      measured corpus, and any item whose condition cannot be evaluated is removed from §6.5
      rather than carried — with a D-14 reversal record where a removal reverses a prior decision.
@@ -429,6 +484,7 @@ Phase 6 (M1) ──┬──> Phase 7 (M2a) ──┬──> Phase 10 (M3, soft)
 - Phase 6 is the only true single point every other phase depends on.
 - Phases 7, 8 and 9 are mutually independent and could be parallelised; they are listed in
   the brief's order, which is catastrophe-prevention value per unit of work.
+
 - Phase 10 is soft-sequenced after Phase 7 (fallback-rule DSL semantics).
 - Phase 11 hard-depends on Phase 7 (dependence taxonomy).
 - Phase 12 is terminal by construction.
