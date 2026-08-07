@@ -10,6 +10,8 @@ Run:  python3 -m unittest tests.test_gen_finding_catalogue -v
 from __future__ import annotations
 
 import importlib.util
+import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -177,6 +179,85 @@ report.add("DSX-PAR-001", "HIGH", "t")
             if not any(row[0].startswith(prefix + "-") for prefix in prefixes)
         ]
         self.assertEqual(unresolved, [])
+
+
+# ── Task 2: enforcement proven against a committed violating fixture ───────────
+
+_FIXTURE_DIR = _ROOT / "tests" / "fixtures" / "d05"
+
+
+class TestD05EnforcementFixture(unittest.TestCase):
+    """Proves both halves of D-05 can actually fail (ROADMAP Success Criterion 4).
+
+    `tests/fixtures/d05/bad_check.py` is not test*-named, so `unittest discover`
+    never collects it as a test module (nothing in it is ever imported or run).
+    """
+
+    def test_violating_fixture_flags_missing_reference_value(self):
+        rows = [("DSX-PAR-999", "HIGH", "t", "fixtures")]
+        with tempfile.TemporaryDirectory() as tests_dir:
+            _write(Path(tests_dir), "test_marker.py", "# D-05: DSX-PAR-999\n")
+            problems = g.check_d05(rows, _FIXTURE_DIR, Path(tests_dir))
+        self.assertTrue(
+            any("Reference value" in p and "DSX-PAR-999" in p for p in problems),
+            f"enforcement failed to detect the violating fixture: {problems!r}",
+        )
+
+    def test_violating_fixture_flags_missing_test_marker(self):
+        rows = [("DSX-PAR-999", "HIGH", "t", "fixtures")]
+        # No `# D-05: DSX-PAR-999` marker anywhere under this empty tests root.
+        empty_tests_dir = Path(tempfile.mkdtemp())
+        problems = g.check_d05(rows, _FIXTURE_DIR, empty_tests_dir)
+        self.assertTrue(
+            any("marker" in p and "DSX-PAR-999" in p for p in problems),
+            f"enforcement failed to detect the missing test marker: {problems!r}",
+        )
+
+    def test_check_d05_ignores_uncovered_code_against_fixture_dir(self):
+        rows = [("DSX-VIZ-030", "HIGH", "t", "viz")]
+        self.assertEqual(
+            g.check_d05(rows, _FIXTURE_DIR, Path(tempfile.mkdtemp())), []
+        )
+
+    def test_compliant_fixture_code_produces_no_problem(self):
+        rows = [("DSX-SPEC-089", "HIGH", "t", "fixtures")]
+        with tempfile.TemporaryDirectory() as tests_dir:
+            _write(Path(tests_dir), "test_marker.py", "# D-05: DSX-SPEC-089\n")
+            problems = g.check_d05(rows, _FIXTURE_DIR, Path(tests_dir))
+        self.assertEqual(problems, [])
+
+    def test_unittest_discover_excludes_fixture_module(self):
+        # Isolated subprocess scoped to the fixture directory alone (start_dir ==
+        # top_level_dir) — avoids self-recursively re-running the whole `tests/`
+        # suite (which would include this very test) while still proving
+        # `unittest discover`'s default `test*.py` pattern never collects
+        # `bad_check.py`.
+        result = subprocess.run(
+            [sys.executable, "-m", "unittest", "discover", "-s", str(_FIXTURE_DIR), "-v"],
+            cwd=str(_ROOT),
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("NO TESTS RAN", result.stderr)
+        self.assertNotIn("bad_check", result.stderr)
+
+    def test_collect_excludes_fixture_only_codes(self):
+        fixture_codes = {row[0] for row in g.collect()}
+        self.assertNotIn("DSX-PAR-999", fixture_codes)
+        self.assertNotIn("DSX-SPEC-089", fixture_codes)
+
+
+class TestD05RealTreeStandingGuarantee(unittest.TestCase):
+    """The standing guarantee: the real tree returns zero D-05 problems.
+
+    This is what turns D-05 from a convention into a build gate for every later
+    phase — the 206 pre-existing codes produce zero new failures, and every
+    allow-listed code this phase ships is compliant.
+    """
+
+    def test_real_tree_check_d05_is_empty(self):
+        self.assertEqual(g.check_d05(g.collect(), g.ROOT / "dsx", g.ROOT / "tests"), [])
 
 
 if __name__ == "__main__":
