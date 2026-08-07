@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import io
 import json
+import re
 import sys
 import tempfile
 import unittest
@@ -383,6 +384,222 @@ class TestSpecStructure(unittest.TestCase):
             if "stopping_rule" in inf:
                 bad.append(str(p))
         self.assertEqual(bad, [])
+
+    # ── 06-06: validity_frame requiredness, aggregation, membership (REQ-P6-02/03) ──
+
+    def test_causal_spec_with_no_validity_frame_key_reports_one_critical_itemising_ten(self):
+        # D-05: DSX-SPEC-080
+        report = validate_structure(
+            {"spec_version": 1, "title": "t", "question_type": "causal", "decision": {"owner": "x"}}
+        )
+        found = [f for f in report.findings if f.code == "DSX-SPEC-080"]
+        self.assertEqual(len(found), 1)
+        detail = found[0].detail
+        for name in (
+            "estimand", "units", "measurement", "dependence", "sampling_frame", "missingness",
+            "identification", "interference", "triggering", "stability",
+        ):
+            self.assertIn(name, detail)
+
+    def test_descriptive_spec_with_no_validity_frame_key_names_only_six(self):
+        report = validate_structure(
+            {"spec_version": 1, "title": "t", "question_type": "descriptive", "decision": {"owner": "x"}}
+        )
+        found = [f for f in report.findings if f.code == "DSX-SPEC-080"]
+        self.assertEqual(len(found), 1)
+        detail = found[0].detail
+        for name in ("interference", "triggering", "stability", "identification"):
+            self.assertNotIn(name, detail)
+
+    def test_causal_spec_missing_three_sub_blocks_reports_three_findings(self):
+        # D-05: DSX-SPEC-081
+        base = {
+            "spec_version": 1, "title": "t", "question_type": "causal", "decision": {"owner": "x"},
+            "validity_frame": {
+                k: {"a": 1} for k in
+                ("estimand", "units", "measurement", "dependence", "sampling_frame",
+                 "missingness", "identification")
+            },
+        }
+        report = validate_structure(base)
+        found = [f for f in report.findings if f.code == "DSX-SPEC-081"]
+        self.assertEqual(len(found), 3, [f.where for f in found])
+        self.assertEqual(
+            {f.where for f in found},
+            {"spec.validity_frame.interference", "spec.validity_frame.triggering",
+             "spec.validity_frame.stability"},
+        )
+        self.assertTrue(all(f.severity == Severity.CRITICAL for f in found))
+
+    def test_descriptive_spec_with_only_six_always_required_produces_no_findings(self):
+        spec = {
+            "spec_version": 1, "title": "t", "question_type": "descriptive", "decision": {"owner": "x"},
+            "validity_frame": {
+                k: {"a": 1} for k in
+                ("estimand", "units", "measurement", "dependence", "sampling_frame", "missingness")
+            },
+        }
+        report = validate_structure(spec)
+        self.assertFalse([f for f in report.findings if f.code in ("DSX-SPEC-080", "DSX-SPEC-081")])
+
+    def test_descriptive_experiment_design_still_requires_interference(self):
+        spec = {
+            "spec_version": 1, "title": "t", "question_type": "descriptive", "decision": {"owner": "x"},
+            "design": {"kind": "experiment"},
+            "validity_frame": {
+                k: {"a": 1} for k in
+                ("estimand", "units", "measurement", "dependence", "sampling_frame", "missingness",
+                 "identification", "triggering", "stability")
+            },
+        }
+        report = validate_structure(spec)
+        found = [f for f in report.findings if f.code == "DSX-SPEC-081"]
+        self.assertEqual({f.where for f in found}, {"spec.validity_frame.interference"})
+
+    def test_out_of_vocabulary_sub_field_reports_high_with_allowed_members(self):
+        # D-05: DSX-SPEC-082
+        spec = {
+            "spec_version": 1, "title": "t", "question_type": "descriptive", "decision": {"owner": "x"},
+            "validity_frame": {
+                **{k: {"a": 1} for k in
+                   ("estimand", "units", "measurement", "sampling_frame", "missingness")},
+                "dependence": {"structure": "not_a_member"},
+            },
+        }
+        report = validate_structure(spec)
+        found = [f for f in report.findings if f.code == "DSX-SPEC-082"]
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0].severity, Severity.HIGH)
+        self.assertEqual(found[0].where, "spec.validity_frame.dependence.structure")
+        self.assertIn("clustered", found[0].detail)
+
+    def test_malformed_validity_frame_shapes_degrade_to_dsx_spec_080_not_a_crash(self):
+        for bad in ("a string", [], {}, None):
+            spec = {
+                "spec_version": 1, "title": "t", "question_type": "causal", "decision": {"owner": "x"},
+                "validity_frame": bad,
+            }
+            report = validate_structure(spec)  # must not raise
+            self.assertIn("DSX-SPEC-080", codes(report))
+
+    def test_good_fixture_produces_none_of_the_three_validity_frame_codes(self):
+        from dsx.loader import load
+
+        fixture = Path(__file__).resolve().parent.parent / "examples" / "good-ANALYSIS-SPEC.yaml"
+        spec = load(str(fixture))
+        report = validate_structure(spec)
+        self.assertFalse(
+            [f for f in report.findings if f.code in ("DSX-SPEC-080", "DSX-SPEC-081", "DSX-SPEC-082")]
+        )
+
+    # ── 06-06: inference block shape, removed-field redirect (REQ-P6-04) ──────────
+
+    def test_absent_inference_block_produces_no_finding(self):
+        spec = {
+            "spec_version": 1, "title": "t", "question_type": "descriptive", "decision": {"owner": "x"},
+        }
+        report = validate_structure(spec)
+        self.assertFalse([f for f in report.findings if f.code in ("DSX-SPEC-085", "DSX-SPEC-086")])
+
+    def test_inference_fields_constant_matches_req_p6_04(self):
+        from dsx.spec import _INFERENCE_FIELDS
+
+        self.assertEqual(
+            _INFERENCE_FIELDS,
+            ("paradigm", "paradigm_justification", "declared_at",
+             "primary_procedure", "alpha_spending", "fallback_rule"),
+        )
+
+    def test_inference_vocabulary_violations_report_three_high_findings(self):
+        # D-05: DSX-SPEC-085
+        base = {
+            "spec_version": 1, "title": "t", "question_type": "descriptive", "decision": {"owner": "x"},
+            "validity_frame": {
+                k: {"a": 1} for k in
+                ("estimand", "units", "measurement", "dependence", "sampling_frame", "missingness")
+            },
+        }
+        spec = dict(base, inference={
+            "paradigm": "freqentist", "paradigm_justification": "nope", "declared_at": "whenever",
+        })
+        report = validate_structure(spec)
+        found = [f for f in report.findings if f.code == "DSX-SPEC-085"]
+        self.assertEqual(len(found), 3, [f.where for f in found])
+        self.assertTrue(all(f.severity == Severity.HIGH for f in found))
+
+    def test_removed_stopping_rule_field_redirects_to_peeking_policy(self):
+        # D-05: DSX-SPEC-086
+        base = {
+            "spec_version": 1, "title": "t", "question_type": "descriptive", "decision": {"owner": "x"},
+            "validity_frame": {
+                k: {"a": 1} for k in
+                ("estimand", "units", "measurement", "dependence", "sampling_frame", "missingness")
+            },
+        }
+        spec = dict(base, inference={"paradigm": "frequentist", "stopping_rule": "fixed_horizon"})
+        report = validate_structure(spec)
+        found = [f for f in report.findings if f.code == "DSX-SPEC-086"]
+        self.assertEqual(len(found), 1)
+        self.assertIn("design.peeking_policy", found[0].remedy)
+
+    def test_good_fixture_produces_none_of_the_inference_codes(self):
+        from dsx.loader import load
+
+        fixture = Path(__file__).resolve().parent.parent / "examples" / "good-ANALYSIS-SPEC.yaml"
+        spec = load(str(fixture))
+        report = validate_structure(spec)
+        self.assertFalse([f for f in report.findings if f.code in ("DSX-SPEC-085", "DSX-SPEC-086")])
+
+    # ── 06-06: decision records from structural adjudications (D-13, D-19) ────────
+
+    def test_structural_adjudications_emit_deterministic_decision_records(self):
+        s = {
+            "spec_version": 1, "title": "t", "question_type": "causal", "decision": {"owner": "x"},
+            "validity_frame": {
+                k: {"a": 1} for k in
+                ("estimand", "units", "measurement", "dependence", "sampling_frame", "missingness",
+                 "identification", "interference", "triggering", "stability")
+            },
+            "inference": {"paradigm": "bayesian"},
+        }
+        report = validate_structure(s)
+        decisions = report.context["decisions"]
+        self.assertEqual(len(decisions), 2, decisions)
+        self.assertTrue(all(d["layer"] == "deterministic" for d in decisions))
+        self.assertTrue(all(d["id"] == "" and d["invocation_id"] == "" for d in decisions))
+        self.assertTrue(decisions[0]["counterfactual"].strip())
+        self.assertTrue(decisions[0]["rule"].strip())
+        self.assertEqual(set(decisions[0]["inputs"]), {"question_type", "design.kind"})
+        self.assertIn("inference.paradigm", decisions[1]["inputs"])
+
+    def test_collect_from_report_returns_both_decisions_in_order(self):
+        from dsx.decisions import collect_from_report
+        from dsx.findings import merge
+
+        s = {
+            "spec_version": 1, "title": "t", "question_type": "causal", "decision": {"owner": "x"},
+            "validity_frame": {
+                k: {"a": 1} for k in
+                ("estimand", "units", "measurement", "dependence", "sampling_frame", "missingness",
+                 "identification", "interference", "triggering", "stability")
+            },
+            "inference": {"paradigm": "bayesian"},
+        }
+        merged = merge("x", [validate_structure(s)])
+        collected = collect_from_report(merged)
+        self.assertEqual(len(collected), 2)
+        self.assertIn("question_type", collected[0]["inputs"])
+        self.assertIn("inference.paradigm", collected[1]["inputs"])
+
+    def test_no_check_module_appends_to_a_decisions_list(self):
+        pattern = re.compile(r'context(\[.decisions.\]|\.setdefault\(.decisions.)')
+        checks_dir = Path(__file__).resolve().parent.parent / "dsx" / "checks"
+        offenders = []
+        for path in sorted(checks_dir.glob("*.py")):
+            text = path.read_text(encoding="utf-8")
+            if pattern.search(text):
+                offenders.append(str(path))
+        self.assertEqual(offenders, [], offenders)
 
 
 # ── design ───────────────────────────────────────────────────────────────────
