@@ -5,22 +5,22 @@ milestone_name: DSX Validity Frame
 current_phase: 06
 current_phase_name: contract-extension-decision-record-paradigm-manifest
 status: executing
-stopped_at: Completed 06-06-PLAN.md
-last_updated: "2026-08-07T22:51:43.744Z"
+stopped_at: Completed 06-07-PLAN.md
+last_updated: "2026-08-07T23:08:42.001Z"
 last_activity: 2026-08-07
 last_activity_desc: Phase 06 execution started
 progress:
   total_phases: 1
   completed_phases: 0
   total_plans: 10
-  completed_plans: 6
+  completed_plans: 7
   percent: 0
 ---
 
 # Project state
 
 **Status:** Ready to execute
-**Progress:** [██████░░░░] 60% (0/7 phases)  
+**Progress:** [███████░░░] 70% (0/7 phases)  
 **Locked decisions:** DQ = profile runner + hermetic gates; Glyph = hermetic svg_sha256 only (no MCP dep); forbidden claims = universal pack + optional phase YAML; repro_lock = ARS-style honest-null (not byte-replay); decision replay = structured thresholds only; suppressions = ADR/SPEC authority required (unknown codes → exit 2)  
 **v2.0.0 locked decisions:** DSX-PAR-010 is a distinct code, DSX-EXP-060 untouched (M-01); no `inference.stopping_rule` — PAR-010/011 read the existing `design.peeking_policy` (M-02); PEEKING_POLICIES gains an uncontrolled-continuous-monitoring value (M-03); automated import test enforces the D-03a boundary from M1 (M-04); SELF-001 stays a convention, REVERSALS.md template seeded in M1 (M-05); `validity_frame` sub-block requiredness gated by `question_type` (M-06); existing `suppressions[]` is the pre-v2.0.0 grandfather path (M-07); D-05 citation enforcement automated via `gen-finding-catalogue.py` (M-08); `dependence.method_family_required` reuses `VARIANCE_ADJUSTMENTS` (M-09)
 
@@ -70,14 +70,14 @@ progress:
 ## Current Position
 
 Phase: 06 (contract-extension-decision-record-paradigm-manifest) — EXECUTING
-Plan: 7 of 10
+Plan: 8 of 10
 Status: Ready to execute
 Last activity: 2026-08-07 — Phase 06 execution started
 
 ## Session
 
-**Last session:** 2026-08-07T22:51:43.710Z
-**Stopped at:** Completed 06-06-PLAN.md
+**Last session:** 2026-08-07T23:08:41.993Z
+**Stopped at:** Completed 06-07-PLAN.md
 **Resume file:** None
 
 ## Performance Metrics
@@ -90,6 +90,7 @@ Last activity: 2026-08-07 — Phase 06 execution started
 | Phase 06 P04 | 15min | 2 tasks | 3 files |
 | Phase 06 P05 | 20min | 3 tasks | 4 files |
 | Phase 06 P06 | 20min | 3 tasks | 3 files |
+| Phase 06 P07 | 10min | 3 tasks | 6 files |
 
 ## Decisions
 
@@ -105,3 +106,5 @@ Last activity: 2026-08-07 — Phase 06 execution started
 - [Phase ?]: 06-06: validity_frame/inference structural shape validators land, gated at CRITICAL from plan; membership comparison normalizes both value and vocab keys so MISSINGNESS_MECHANISMS' case-sensitive MCAR/MAR/MNAR match without a per-field special case (Rule 1 fix)
 - [Phase ?]: 06-06: DecisionRecord emission is live for the first time — both new validators append layer=deterministic records onto report.context['decisions'], first real caller of dsx/decisions.py
 - [Phase ?]: 06-06: Deng, Lu & Chen (2016) citation's exact section/theorem locator flagged unverified (escalated per D-05, not fabricated); author/title/venue/year confirmed against brief.md
+- [Phase ?]: 06-07: DSX-PAR-001 paradigm manifest computes applied/not-applied check-family sets from a data-driven map (_PARADIGM_INDEPENDENT, _PARADIGM_CONDITIONAL keyed by every PARADIGMS member, _NOT_SHIPPED) rather than a paradigm branch — never blocks (INFO=10 < every default GATE_THRESHOLDS)
+- [Phase ?]: 06-07: dsx/frame/ package created with D-03a import boundary enforced by an AST scanner proven against three deliberately violating sources; two Rule-1 fixes needed for gen-finding-catalogue.py compatibility (literal f-string title at call site, D-05 citation on check()'s own docstring)
