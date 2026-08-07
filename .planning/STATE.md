@@ -2,11 +2,14 @@
 gsd_state_version: 1.0
 milestone: v2.0.0
 milestone_name: DSX Validity Frame
+current_phase: 6
 status: roadmap_complete
-last_updated: "2026-08-07T00:00:00.000Z"
+stopped_at: Phase 6 context gathered
+last_updated: "2026-08-07T19:47:02.374Z"
 last_activity: 2026-08-07
+last_activity_desc: v2.0.0 roadmap created (Phases 6–12)
 progress:
-  total_phases: 7
+  total_phases: 1
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -69,3 +72,9 @@ Phase: 6 — Contract extension, decision record, paradigm manifest (not started
 Plan: —
 Status: Roadmap complete; ready for `/gsd-plan-phase 6`
 Last activity: 2026-08-07 — v2.0.0 roadmap created (Phases 6–12)
+
+## Session
+
+**Last session:** 2026-08-07T19:47:02.366Z
+**Stopped at:** Phase 6 context gathered
+**Resume file:** .planning/phases/06-contract-extension-decision-record-paradigm-manifest/06-CONTEXT.md
