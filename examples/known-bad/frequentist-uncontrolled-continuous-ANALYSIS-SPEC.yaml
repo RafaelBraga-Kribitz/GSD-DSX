@@ -1,0 +1,167 @@
+# A known-bad ANALYSIS-SPEC (REQ-P6-13, D-06). This is the frequentist half of
+# Phase 9's atomic monitoring pair (DSX-PAR-010/DSX-PAR-011 ship together or not
+# at all). The file is structurally valid — it parses, and today's dsx
+# validate/gate checks pass it — but it declares design.peeking_policy:
+# uncontrolled_continuous with no sequential correction and no anytime-valid
+# method, then reports the result from the look where the running p-value first
+# crossed 0.05. DSX-PAR-010 (Phase 9) is the code that will block this pattern
+# once it ships. See the paired POSTMORTEM.md, and note that DSX-EXP-060 does
+# NOT fire on this spec, by construction (M-01) — that is not a bug.
+#
+#   dsx validate --spec examples/known-bad/frequentist-uncontrolled-continuous-ANALYSIS-SPEC.yaml
+
+spec_version: 1
+title: "Does the new checkout flow reduce cart abandonment, monitored continuously without a sequential correction?"
+owner: "ecommerce-analytics"
+created: "2026-04-01"
+
+question_type: causal
+
+decision:
+  owner: "VP Ecommerce"
+  decision_rule: >
+    Ship the new checkout flow as soon as the running p-value for the
+    abandonment-rate reduction crosses 0.05 on any daily dashboard check.
+  action_if_null: "Keep the current checkout flow; re-evaluate after the full duration_days window."
+  minimum_practical_effect: 0.01
+  reversible: true
+  deadline: "2026-04-20"
+
+metrics:
+  - name: abandonment_rate
+    type: ratio
+    definition: "Share of started checkouts that do not complete within the session"
+    grain: session
+    numerator: "count(distinct session_id) where checkout_started_at is not null and order_completed_at is null"
+    denominator: "count(distinct session_id) where checkout_started_at is not null"
+    source: warehouse.fct_checkout_sessions
+    owner: ecommerce-analytics
+
+data:
+  - name: checkout_sessions
+    source: warehouse.fct_checkout_sessions
+    period: "2026-04-01..2026-04-20"
+    rows: 88213
+
+design:
+  kind: experiment
+  identification: randomized_experiment
+  randomization_unit: session
+  analysis_unit: session
+  arms: [control, treatment]
+  expected_allocation: [0.5, 0.5]
+  baseline_rate: 0.32
+  mde: 0.02
+  alpha: 0.05
+  power: 0.80
+  planned_n_per_arm: 20000
+  duration_days: 20
+  peeking_policy: uncontrolled_continuous
+
+analysis:
+  outcome_type: proportion
+  n_groups: 2
+  paired: false
+  test: two_proportion_z
+
+results:
+  observed_n: [21084, 20977]
+  interim_looks: 5
+  overall_effect: -0.021
+
+claims:
+  - text: >
+      The new checkout flow reduces cart abandonment by 2.1 percentage
+      points, first crossing significance on the fourth of five daily
+      dashboard checks.
+    type: causal
+    evidence: "RESULTS.md#checkout-abandonment"
+    population: "Started checkout sessions, 2026-04-01 to 2026-04-20"
+    identification: randomized_experiment
+
+assumptions:
+  - assumption: "The dashboard's running p-value is a valid test statistic at every look."
+    rationale: "It uses the same formula that was pre-declared for the final fixed-horizon analysis."
+    impact_if_wrong: "The true type-I error at the stopping look is far higher than the nominal 0.05."
+    checked: false
+
+limitations:
+  - "The team stopped as soon as the dashboard's p-value crossed 0.05 on the fourth of five daily checks; see validity_frame and inference."
+
+# ── Validity frame (REQ-P6-02) ───────────────────────────────────────────────
+# question_type: causal + design.kind: experiment, so all ten sub-blocks are
+# required from plan onward (R-01 / M-06). The defect lives in inference.paradigm
+# + design.peeking_policy below, not in this block, which is clean.
+validity_frame:
+  estimand:
+    quantity: "difference in checkout abandonment rate"
+    population: "started checkout sessions, 2026-04-01 to 2026-04-20"
+    contrast: "new checkout flow (treatment) vs current flow (control)"
+    time_window: "within-session, 2026-04-01 to 2026-04-20"
+    falsifier: "the pre-declared final-look 95% CI on the abandonment reduction includes zero"
+
+  units:
+    observation: session
+    assignment: session
+    analysis: session
+
+  identification:
+    strength: strong               # strong | moderate | weak
+    evidence: "Assignment is randomized per session at checkout start."
+    constraint_source: none        # none | informative_priors | penalisation | design_restriction | hierarchical_pooling
+    constraint_justification: ""
+
+  dependence:
+    structure: none                # none | clustered | repeated_measures | temporal | spatial | hierarchical
+    cluster_var: ""
+    method_family_required: ""
+
+  interference:
+    risk: none                     # none | shared_budget | marketplace | geo_spillover | social_graph | shared_inventory
+    mechanism: ""
+    mitigation: none               # none | geo_split | cluster_randomisation | time_split | budget_isolation | modelled
+    residual_note: ""
+
+  triggering:
+    eligible_population: "all sessions that start checkout in the window"
+    triggered_definition: "reached the checkout payment step"
+    analysis_population: eligible  # eligible | triggered
+    expected_trigger_rate: 1.0
+    dilution_adjusted: false
+
+  stability:
+    window: "20 days"
+    novelty_primacy_assessed: false
+    evidence: ""
+
+  sampling_frame:
+    source: "warehouse.fct_checkout_sessions, all regions"
+    claim_population: "all sessions that start checkout in the window"
+    known_exclusions: []
+    selection_risk: "none identified"
+
+  missingness:
+    mechanism: not_assessed        # MCAR | MAR | MNAR | not_assessed
+    rate: 0.0
+    method_implied: complete_case
+
+  measurement:
+    construct: "cart abandonment"
+    operationalisation: "checkout started without a completed order in the same session"
+    known_gaps: "none identified"
+
+# ── Inference plan (REQ-P6-04) ───────────────────────────────────────────────
+# The defect: design.peeking_policy is uncontrolled_continuous (five interim
+# looks, no sequential correction, no anytime-valid method) yet the analysis
+# uses an ordinary fixed-horizon test statistic (two_proportion_z). At a
+# nominal alpha of 0.05 with 5 interim looks, the true type-I error is
+# approximately 0.142 (dsx.mathx.inflation_from_peeking(5) == 0.142; Armitage,
+# McPherson & Rowe 1969). No sequential method is named in primary_procedure —
+# that absence is itself part of the defect.
+inference:
+  paradigm: frequentist            # frequentist | bayesian
+  paradigm_justification: team_convention
+  declared_at: pre_data            # pre_data | post_data
+  primary_procedure: two_proportion_z
+  alpha_spending: null
+  fallback_rule: ""
