@@ -6,6 +6,7 @@ Run:  python3 -m unittest discover -s tests -v
 from __future__ import annotations
 
 import io
+import json
 import sys
 import tempfile
 import unittest
@@ -18,7 +19,7 @@ from dsx import cli, mathx  # noqa: E402
 from dsx.checks import claims, design, metrics, ml, repro, stats, viz  # noqa: E402
 from dsx.findings import Report, Severity  # noqa: E402
 from dsx.loader import SpecParseError, _parse_yaml_subset, loads  # noqa: E402
-from dsx.spec import validate_structure  # noqa: E402
+from dsx.spec import PEEKING_POLICIES, describe_vocabulary, validate_structure  # noqa: E402
 
 
 def codes(report: Report) -> set[str]:
@@ -258,6 +259,57 @@ class TestSpecStructure(unittest.TestCase):
         )
         self.assertIn("DSX-SPEC-003", codes(report))
 
+    def test_vocabularies_registry_covers_the_dump(self):
+        from dsx import spec as spec_mod
+
+        out = describe_vocabulary()
+        for name, obj in spec_mod._VOCABULARIES:
+            self.assertIn(name, out, f"{name} missing from describe_vocabulary() output")
+            self.assertTrue(out[name], f"{name} maps to an empty container")
+        # identity, not equality — the registry holds the actual module constant
+        registry = dict(spec_mod._VOCABULARIES)
+        self.assertIs(registry["peeking_policies"], spec_mod.PEEKING_POLICIES)
+        self.assertIs(registry["variance_adjustments"], spec_mod.VARIANCE_ADJUSTMENTS)
+        self.assertIs(registry["paradigms"], spec_mod.PARADIGMS)
+        self.assertIs(registry["missingness_mechanisms"], spec_mod.MISSINGNESS_MECHANISMS)
+
+    def test_describe_vocabulary_dict_backed_are_sorted_dicts(self):
+        out = describe_vocabulary()
+        self.assertIsInstance(out["variance_adjustments"], list)
+        self.assertEqual(out["variance_adjustments"], sorted(out["variance_adjustments"]))
+
+    def test_describe_vocabulary_is_byte_stable(self):
+        a = json.dumps(describe_vocabulary(), indent=2)
+        b = json.dumps(describe_vocabulary(), indent=2)
+        self.assertEqual(a, b)
+
+    def test_peeking_policies_dump_is_a_description_dict(self):
+        out = describe_vocabulary()["peeking_policies"]
+        self.assertIsInstance(out, dict)
+        self.assertEqual(set(out), set(PEEKING_POLICIES))
+        self.assertTrue(out["always_valid"].strip())
+        self.assertTrue(out["uncontrolled_continuous"].strip())
+        self.assertNotEqual(out["always_valid"], out["uncontrolled_continuous"])
+
+    def test_uncontrolled_continuous_peeking_policy_exists(self):
+        self.assertIn("uncontrolled_continuous", PEEKING_POLICIES)
+        self.assertTrue(PEEKING_POLICIES["uncontrolled_continuous"].strip())
+        self.assertNotEqual(
+            PEEKING_POLICIES["uncontrolled_continuous"], PEEKING_POLICIES["always_valid"]
+        )
+
+    def test_missingness_mechanisms_has_exactly_four_members_no_none(self):
+        from dsx.spec import MISSINGNESS_MECHANISMS
+
+        self.assertEqual(set(MISSINGNESS_MECHANISMS), {"MCAR", "MAR", "MNAR", "not_assessed"})
+
+    def test_paradigms_and_paradigm_justifications(self):
+        from dsx.spec import PARADIGM_JUSTIFICATIONS, PARADIGMS, VARIANCE_ADJUSTMENTS
+
+        self.assertEqual(set(PARADIGMS), {"frequentist", "bayesian"})
+        self.assertEqual(len(PARADIGM_JUSTIFICATIONS), 7)
+        self.assertIsInstance(VARIANCE_ADJUSTMENTS, set)
+
 
 # ── design ───────────────────────────────────────────────────────────────────
 
@@ -331,6 +383,20 @@ class TestDesign(unittest.TestCase):
                 "design": {**self.BASE["design"], "peeking_policy": "sequential_obf"},
                 "results": {"interim_looks": 5}}
         self.assertNotIn("DSX-EXP-060", codes(design.check(spec)))
+
+    def test_dsx_exp_060_fires_only_for_empty_and_fixed_horizon(self):
+        # D-08: pins the property, not just the current members — fails if _check_peeking
+        # is later widened to fire on a member it should not.
+        for policy in list(PEEKING_POLICIES) + [""]:
+            with self.subTest(policy=policy):
+                spec = {**self.BASE,
+                        "design": {**self.BASE["design"], "peeking_policy": policy},
+                        "results": {"interim_looks": 5}}
+                fires = "DSX-EXP-060" in codes(design.check(spec))
+                if policy in ("", "fixed_horizon"):
+                    self.assertTrue(fires, f"expected DSX-EXP-060 for peeking_policy={policy!r}")
+                else:
+                    self.assertFalse(fires, f"unexpected DSX-EXP-060 for peeking_policy={policy!r}")
 
     def test_uncorrected_multiplicity_flagged(self):
         spec = {**self.BASE,
