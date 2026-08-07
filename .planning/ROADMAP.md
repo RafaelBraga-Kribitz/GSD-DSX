@@ -146,7 +146,7 @@ REQ-P6-15, REQ-P6-16
      the `suppressions[]` migration path and the "a frame that lies passes" limit, version
      2.0.0, and a regenerated finding catalogue.
 
-**Plans:** 4/10 plans executed
+**Plans:** 5/10 plans executed
 
 Plans:
 **Wave 1**
@@ -158,7 +158,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 06-05-PLAN.md — extend both canonical fixtures and scaffold the template with `validity_frame:` and `inference:`; pin the round-trip (wave 2)
+- [x] 06-05-PLAN.md — extend both canonical fixtures and scaffold the template with `validity_frame:` and `inference:`; pin the round-trip (wave 2)
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
@@ -463,7 +463,7 @@ cases where absence permitted a false pass" is a debate, not a count.
 | 3. Storytelling + code reality | — | Complete | v1.3.0 |
 | 4. Analytical logic depth + stats extensions | — | Complete | v1.4.0 |
 | 5. Chart review + suppressions | — | Complete | v1.5.0 |
-| 6. Contract extension, decision record, paradigm manifest | 4/10 | In Progress|  |
+| 6. Contract extension, decision record, paradigm manifest | 5/10 | In Progress|  |
 | 7. Validity frame checks (`DSX-VAL-*`) | 0/TBD | Not started | - |
 | 8. Interference, triggering, stability (`DSX-INT-*`) | 0/TBD | Not started | - |
 | 9. Monitoring discipline, symmetric (`DSX-PAR-*`) | 0/TBD | Not started | - |
