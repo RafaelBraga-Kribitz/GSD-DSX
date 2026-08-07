@@ -1597,6 +1597,98 @@ class TestCLI(unittest.TestCase):
                     cli.main([sub, "--help"])
             self.assertIn("--block-on", buf.getvalue(), sub)
 
+    # ── 06-09 Task 2: gate-path trail write (REQ-P6-07, D-14, D-16) ────────────
+
+    def test_gate_writes_one_header_and_sequential_decision_records(self):
+        import shutil
+
+        with tempfile.TemporaryDirectory() as tmp:
+            spec_path = Path(tmp) / "ANALYSIS-SPEC.yaml"
+            shutil.copy(self.ROOT / "examples" / "good-ANALYSIS-SPEC.yaml", spec_path)
+            code, _, err = self._run(["gate", "plan", "--phase-dir", tmp])
+            self.assertEqual(code, 0, err)
+            trail = Path(tmp) / "DECISIONS.jsonl"
+            self.assertTrue(trail.exists())
+            records = [
+                json.loads(line) for line in trail.read_text(encoding="utf-8").splitlines()
+                if line.strip()
+            ]
+            self.assertEqual(records[0]["record_type"], "invocation")
+            self.assertEqual(records[0]["gate_point"], "plan")
+            self.assertTrue(records[0]["frame_digest"])
+            inv = records[0]["invocation_id"]
+            body = records[1:]
+            self.assertTrue(body)
+            self.assertTrue(all(r["invocation_id"] == inv for r in body))
+            self.assertEqual([r["id"] for r in body], [f"DEC-{i+1:03d}" for i in range(len(body))])
+
+    def test_second_gate_run_appends_new_header_leaving_first_run_intact(self):
+        import shutil
+
+        with tempfile.TemporaryDirectory() as tmp:
+            spec_path = Path(tmp) / "ANALYSIS-SPEC.yaml"
+            shutil.copy(self.ROOT / "examples" / "good-ANALYSIS-SPEC.yaml", spec_path)
+            self._run(["gate", "plan", "--phase-dir", tmp])
+            trail = Path(tmp) / "DECISIONS.jsonl"
+            first_records = trail.read_text(encoding="utf-8").splitlines()
+            self._run(["gate", "plan", "--phase-dir", tmp])
+            second_records = trail.read_text(encoding="utf-8").splitlines()
+            self.assertGreater(len(second_records), len(first_records))
+            self.assertEqual(second_records[: len(first_records)], first_records)
+            headers = [
+                json.loads(line) for line in second_records
+                if json.loads(line).get("record_type") == "invocation"
+            ]
+            self.assertEqual(len(headers), 2)
+            self.assertNotEqual(headers[0]["invocation_id"], headers[1]["invocation_id"])
+
+    def test_decisions_jsonl_is_gitignored(self):
+        text = (self.ROOT / ".gitignore").read_text(encoding="utf-8")
+        self.assertIn("DECISIONS.jsonl", text)
+
+    def test_validate_check_audit_do_not_write_a_trail(self):
+        import shutil
+
+        with tempfile.TemporaryDirectory() as tmp:
+            spec_path = Path(tmp) / "ANALYSIS-SPEC.yaml"
+            shutil.copy(self.ROOT / "examples" / "good-ANALYSIS-SPEC.yaml", spec_path)
+            for sub in ("validate", "check", "audit"):
+                self._run([sub, "--phase-dir", tmp])
+            self.assertFalse((Path(tmp) / "DECISIONS.jsonl").exists())
+
+    def test_gate_every_point_still_exits_correctly_with_trail_write_added(self):
+        fixture = self.ROOT / "examples" / "good-ANALYSIS-SPEC.yaml"
+        for point in ("plan", "execute", "verify", "ship"):
+            code, _, err = self._run(["gate", point, "--spec", str(fixture)])
+            self.assertEqual(code, 0, f"gate {point} unexpectedly blocked:\n{err}")
+        bad = self.ROOT / "examples" / "bad-ANALYSIS-SPEC.yaml"
+        code, _, _ = self._run(["gate", "plan", "--spec", str(bad)])
+        self.assertEqual(code, 1)
+
+    def test_unwritable_trail_directory_does_not_change_exit_code(self):
+        import shutil
+
+        with tempfile.TemporaryDirectory() as tmp:
+            spec_path = Path(tmp) / "ANALYSIS-SPEC.yaml"
+            shutil.copy(self.ROOT / "examples" / "good-ANALYSIS-SPEC.yaml", spec_path)
+            control_code, _, control_err = self._run(["gate", "plan", "--spec", str(spec_path)])
+
+            # A regular file can never be a directory: DECISIONS.jsonl's parent
+            # cannot be created there, forcing an OSError on write, without
+            # relying on filesystem permission bits (which differ on Windows).
+            blocker = Path(tmp) / "not-a-directory"
+            blocker.write_text("x", encoding="utf-8")
+            unwritable_root = str(blocker / "nested")
+            code, _, err = self._run(
+                ["gate", "plan", "--spec", str(spec_path), "--phase-dir", unwritable_root]
+            )
+            self.assertEqual(code, control_code, err)
+
+    def test_examples_directory_never_gains_an_untracked_decisions_file(self):
+        fixture = self.ROOT / "examples" / "good-ANALYSIS-SPEC.yaml"
+        self._run(["gate", "plan", "--spec", str(fixture)])
+        self.assertFalse((self.ROOT / "examples" / "DECISIONS.jsonl").exists())
+
 
 # ── Phase 1: profiler, DQ, coherence, evidence ───────────────────────────────
 
