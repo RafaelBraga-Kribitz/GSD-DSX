@@ -1478,6 +1478,108 @@ class TestCLI(unittest.TestCase):
         report = run_checks(spec, ("spec", "paradigm"), None, resolve_root="examples")
         self.assertNotIn("DSX-PAR-001", {f.code for f in report.findings})
 
+    # ── 06-09 Task 1: `dsx explain` and the add_common refactor (D-18) ────────
+    # `dsx explain` is deliberately outside the block contract (D-04): it
+    # always exits 0 and carries no --block-on. Every case below proves a
+    # different failure mode still exits 0 rather than surfacing exit 2.
+
+    def test_explain_prints_no_trail_message_when_none_written(self):
+        import shutil
+
+        with tempfile.TemporaryDirectory() as tmp:
+            spec_path = Path(tmp) / "ANALYSIS-SPEC.yaml"
+            shutil.copy(self.ROOT / "examples" / "good-ANALYSIS-SPEC.yaml", spec_path)
+            code, out, _ = self._run(["explain", "--spec", str(spec_path)])
+            self.assertEqual(code, 0)
+            self.assertIn("no decision trail", (out).lower())
+
+    def test_explain_missing_spec_exits_zero_not_two(self):
+        code, out, err = self._run(["explain", "--spec", "/nonexistent/spec.yaml"])
+        self.assertEqual(code, 0)
+        self.assertIn("no decision trail", (out + err).lower())
+
+    def test_explain_no_args_from_dir_with_no_spec_exits_zero(self):
+        import os
+
+        with tempfile.TemporaryDirectory() as tmp:
+            cwd = os.getcwd()
+            try:
+                os.chdir(tmp)
+                code, _, _ = self._run(["explain"])
+            finally:
+                os.chdir(cwd)
+            self.assertEqual(code, 0)
+
+    def test_explain_empty_trail_file_exits_zero(self):
+        import shutil
+
+        with tempfile.TemporaryDirectory() as tmp:
+            spec_path = Path(tmp) / "ANALYSIS-SPEC.yaml"
+            shutil.copy(self.ROOT / "examples" / "good-ANALYSIS-SPEC.yaml", spec_path)
+            (Path(tmp) / "DECISIONS.jsonl").write_text("", encoding="utf-8")
+            code, out, _ = self._run(["explain", "--spec", str(spec_path)])
+            self.assertEqual(code, 0)
+            self.assertIn("no decision trail", out.lower())
+
+    def test_explain_truncated_tail_line_still_renders_intact_records(self):
+        import shutil
+
+        with tempfile.TemporaryDirectory() as tmp:
+            spec_path = Path(tmp) / "ANALYSIS-SPEC.yaml"
+            shutil.copy(self.ROOT / "examples" / "good-ANALYSIS-SPEC.yaml", spec_path)
+            self._run(["gate", "plan", "--spec", str(spec_path), "--phase-dir", tmp])
+            trail = Path(tmp) / "DECISIONS.jsonl"
+            trail.write_text(
+                trail.read_text(encoding="utf-8") + '{"id": "DEC-9', encoding="utf-8"
+            )
+            code, out, _ = self._run(
+                ["explain", "--spec", str(spec_path), "--phase-dir", tmp]
+            )
+            self.assertEqual(code, 0)
+            self.assertIn("INV-", out)
+
+    def test_explain_unknown_invocation_id_exits_zero_and_reports_not_found(self):
+        import shutil
+
+        with tempfile.TemporaryDirectory() as tmp:
+            spec_path = Path(tmp) / "ANALYSIS-SPEC.yaml"
+            shutil.copy(self.ROOT / "examples" / "good-ANALYSIS-SPEC.yaml", spec_path)
+            self._run(["gate", "plan", "--spec", str(spec_path), "--phase-dir", tmp])
+            code, out, _ = self._run(
+                [
+                    "explain", "--spec", str(spec_path), "--phase-dir", tmp,
+                    "--invocation", "INV-9999",
+                ]
+            )
+            self.assertEqual(code, 0)
+            self.assertIn("INV-9999", out)
+
+    def test_explain_json_is_parseable(self):
+        fixture = self.ROOT / "examples" / "good-ANALYSIS-SPEC.yaml"
+        code, out, _ = self._run(["explain", "--spec", str(fixture), "--json"])
+        self.assertEqual(code, 0)
+        json.loads(out)
+
+    def test_explain_help_offers_no_block_on_flag(self):
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            with self.assertRaises(SystemExit):
+                cli.main(["explain", "--help"])
+        help_text = buf.getvalue()
+        self.assertIn("--spec", help_text)
+        self.assertIn("--phase-dir", help_text)
+        self.assertIn("--invocation", help_text)
+        self.assertIn("--json", help_text)
+        self.assertNotIn("--block-on", help_text)
+
+    def test_other_subcommands_still_accept_block_on(self):
+        for sub in ("validate", "check", "audit", "gate"):
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                with self.assertRaises(SystemExit):
+                    cli.main([sub, "--help"])
+            self.assertIn("--block-on", buf.getvalue(), sub)
+
 
 # ── Phase 1: profiler, DQ, coherence, evidence ───────────────────────────────
 
