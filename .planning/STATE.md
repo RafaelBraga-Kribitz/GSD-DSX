@@ -1,7 +1,23 @@
+---
+gsd_state_version: 1.0
+milestone: v2.0.0
+milestone_name: DSX Validity Frame
+status: planning
+last_updated: "2026-08-07T12:00:57.553Z"
+last_activity: 2026-08-07
+progress:
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
+---
+
 # Project state
 
-**Status:** Phase 5 complete (v1.5.0)  
-**Locked decisions:** DQ = profile runner + hermetic gates; Glyph = hermetic svg_sha256 only (no MCP dep); forbidden claims = universal pack + optional phase YAML; repro_lock = ARS-style honest-null (not byte-replay); decision replay = structured thresholds only; suppressions = ADR/SPEC authority required (unknown codes → exit 2)
+**Status:** v1.5.0 shipped (Phases 1–5 complete); milestone v2.0.0 DSX Validity Frame starting  
+**Locked decisions:** DQ = profile runner + hermetic gates; Glyph = hermetic svg_sha256 only (no MCP dep); forbidden claims = universal pack + optional phase YAML; repro_lock = ARS-style honest-null (not byte-replay); decision replay = structured thresholds only; suppressions = ADR/SPEC authority required (unknown codes → exit 2)  
+**v2.0.0 locked decisions:** DSX-PAR-010 is a distinct code, DSX-EXP-060 untouched (M-01); no `inference.stopping_rule` — PAR-010/011 read the existing `design.peeking_policy` (M-02); PEEKING_POLICIES gains an uncontrolled-continuous-monitoring value (M-03); automated import test enforces the D-03a boundary from M1 (M-04); SELF-001 stays a convention, REVERSALS.md template seeded in M1 (M-05)
 
 ## Done
 
@@ -14,4 +30,12 @@
 
 ## Next
 
-- Maintenance / optional later extensions (Parquet profiler, live Glyph MCP, NLP decision_rule — explicitly out of scope for core gates)
+- Milestone v2.0.0 — DSX Validity Frame. Defining requirements, then roadmap (Phases 6–12).
+- Deferred, unchanged: Parquet profiler, live Glyph MCP, NLP decision_rule — out of scope for core gates.
+
+## Current Position
+
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-08-07 — Milestone v2.0.0 started
