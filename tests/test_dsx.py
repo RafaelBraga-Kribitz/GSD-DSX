@@ -1684,6 +1684,146 @@ class TestCLI(unittest.TestCase):
             )
             self.assertEqual(code, control_code, err)
 
+
+class TestDecisionTrailCLI(unittest.TestCase):
+    """06-09 Task 3: end-to-end decision-trail round-trip at the CLI level
+    (REQ-P6-07, REQ-P6-08). Kept separate from ``TestCLI`` so the D-08
+    fixture tests and their harness stay untouched. Every test copies
+    ``examples/good-ANALYSIS-SPEC.yaml`` into a ``tempfile.TemporaryDirectory()``
+    and drives both ``gate`` and ``explain`` through ``--phase-dir``, so
+    nothing writes into ``examples/``."""
+
+    ROOT = Path(__file__).resolve().parent.parent
+
+    def _run(self, argv: "list[str]") -> "tuple[int, str, str]":
+        out, err = io.StringIO(), io.StringIO()
+        with redirect_stdout(out), redirect_stderr(err):
+            code = cli.main(argv)
+        return code, out.getvalue(), err.getvalue()
+
+    def _gated_spec(self, tmp: str) -> Path:
+        import shutil
+
+        spec_path = Path(tmp) / "ANALYSIS-SPEC.yaml"
+        shutil.copy(self.ROOT / "examples" / "good-ANALYSIS-SPEC.yaml", spec_path)
+        return spec_path
+
+    def test_explain_names_the_invocation_id_the_gate_wrote(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            spec_path = self._gated_spec(tmp)
+            self._run(["gate", "plan", "--spec", str(spec_path), "--phase-dir", tmp])
+            trail = Path(tmp) / "DECISIONS.jsonl"
+            header = json.loads(trail.read_text(encoding="utf-8").splitlines()[0])
+            code, out, _ = self._run(["explain", "--phase-dir", tmp])
+            self.assertEqual(code, 0)
+            self.assertIn(header["invocation_id"], out)
+
+    def test_explain_renders_only_the_second_runs_records(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            spec_path = self._gated_spec(tmp)
+            self._run(["gate", "plan", "--spec", str(spec_path), "--phase-dir", tmp])
+            self._run(["gate", "plan", "--spec", str(spec_path), "--phase-dir", tmp])
+            trail = Path(tmp) / "DECISIONS.jsonl"
+            records = [
+                json.loads(line) for line in trail.read_text(encoding="utf-8").splitlines()
+                if line.strip()
+            ]
+            headers = [r for r in records if r["record_type"] == "invocation"]
+            second_id = headers[1]["invocation_id"]
+
+            code, out, _ = self._run(["explain", "--phase-dir", tmp])
+            self.assertEqual(code, 0)
+            self.assertIn(second_id, out)
+            self.assertNotIn(headers[0]["invocation_id"], out)
+
+    def test_explain_invocation_flag_selects_the_first_runs_records(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            spec_path = self._gated_spec(tmp)
+            self._run(["gate", "plan", "--spec", str(spec_path), "--phase-dir", tmp])
+            self._run(["gate", "plan", "--spec", str(spec_path), "--phase-dir", tmp])
+            trail = Path(tmp) / "DECISIONS.jsonl"
+            records = [
+                json.loads(line) for line in trail.read_text(encoding="utf-8").splitlines()
+                if line.strip()
+            ]
+            headers = [r for r in records if r["record_type"] == "invocation"]
+            first_id = headers[0]["invocation_id"]
+
+            code, out, _ = self._run(
+                ["explain", "--phase-dir", tmp, "--invocation", first_id]
+            )
+            self.assertEqual(code, 0)
+            self.assertIn(first_id, out)
+            self.assertNotIn(headers[1]["invocation_id"], out)
+
+    def test_truncated_tail_line_leaves_explain_at_exit_zero_with_survivors(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            spec_path = self._gated_spec(tmp)
+            self._run(["gate", "plan", "--spec", str(spec_path), "--phase-dir", tmp])
+            trail = Path(tmp) / "DECISIONS.jsonl"
+            before = trail.read_text(encoding="utf-8")
+            trail.write_text(before + '{"id": "DEC-9', encoding="utf-8")
+
+            code, out, _ = self._run(["explain", "--phase-dir", tmp])
+            self.assertEqual(code, 0)
+            header = json.loads(before.splitlines()[0])
+            self.assertIn(header["invocation_id"], out)
+
+    def test_non_json_tail_line_leaves_explain_at_exit_zero(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            spec_path = self._gated_spec(tmp)
+            self._run(["gate", "plan", "--spec", str(spec_path), "--phase-dir", tmp])
+            trail = Path(tmp) / "DECISIONS.jsonl"
+            with trail.open("a", encoding="utf-8") as fh:
+                fh.write("not json at all\n")
+
+            code, _, _ = self._run(["explain", "--phase-dir", tmp])
+            self.assertEqual(code, 0)
+
+    def test_explain_json_after_gate_emits_array_with_expected_record_keys(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            spec_path = self._gated_spec(tmp)
+            self._run(["gate", "plan", "--spec", str(spec_path), "--phase-dir", tmp])
+            code, out, _ = self._run(["explain", "--phase-dir", tmp, "--json"])
+            self.assertEqual(code, 0)
+            payload = json.loads(out)
+            self.assertIsInstance(payload, list)
+            self.assertTrue(payload)
+            header = next(r for r in payload if r["record_type"] == "invocation")
+            self.assertEqual(
+                set(header),
+                {"invocation_id", "gate_point", "dsx_version", "frame_digest", "record_type"},
+            )
+            decisions = [r for r in payload if r["record_type"] == "decision"]
+            self.assertTrue(decisions)
+            expected_keys = {
+                "id", "invocation_id", "layer", "choice", "inputs", "rule", "citation",
+                "counterfactual", "alternatives_rejected", "confidence", "escalate",
+                "record_type",
+            }
+            for record in decisions:
+                self.assertEqual(set(record), expected_keys)
+
+    def test_rendered_text_names_the_counterfactual_of_at_least_one_record(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            spec_path = self._gated_spec(tmp)
+            self._run(["gate", "plan", "--spec", str(spec_path), "--phase-dir", tmp])
+            trail = Path(tmp) / "DECISIONS.jsonl"
+            records = [
+                json.loads(line) for line in trail.read_text(encoding="utf-8").splitlines()
+                if line.strip()
+            ]
+            counterfactuals = [
+                r["counterfactual"] for r in records
+                if r["record_type"] == "decision" and r.get("counterfactual")
+            ]
+            self.assertTrue(counterfactuals)
+
+            code, out, _ = self._run(["explain", "--phase-dir", tmp])
+            self.assertEqual(code, 0)
+            self.assertTrue(any(cf in out for cf in counterfactuals))
+
+
 # ── Phase 1: profiler, DQ, coherence, evidence ───────────────────────────────
 
 
