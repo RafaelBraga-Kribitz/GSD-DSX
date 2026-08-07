@@ -13,7 +13,7 @@ a suppression or a reference in a review stays valid across versions.
 **Gate thresholds.** `plan` and `execute` block at CRITICAL; `verify` and
 `ship` block at HIGH.
 
-**Total: 210 codes.**
+**Total: 211 codes.**
 
 ## Contract structure — `DSX-SPEC-*`
 
@@ -343,3 +343,11 @@ Declaration-based plot-construction smells.
 | `DSX-SMELL-010` | HIGH | '<…>' category_count <…> ≠ len(expected_categories)=<…> |
 | `DSX-SMELL-011` | HIGH | '<…>' plots a y that algebraically contains x |
 | `DSX-SMELL-013` | HIGH | visuals[] declare disagreeing run_id values |
+
+## Paradigm and monitoring discipline — `DSX-PAR-*`
+
+The declared inferential paradigm manifest and its symmetric peeking-monitoring pair.
+
+| Code | Severity | Finding |
+|---|---|---|
+| `DSX-PAR-001` | INFO | paradigm manifest — inference.paradigm: <…> |

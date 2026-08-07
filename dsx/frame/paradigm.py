@@ -11,20 +11,6 @@ Applicability is modelled as data, not as an if/else on one paradigm value
 ``<assumption_delta_decision>``): ``_PARADIGM_CONDITIONAL`` is keyed by every
 member of ``PARADIGMS``, computed by the same code path regardless of which
 one is declared.
-
-Citation: Deng, A., Lu, J. & Chen, S. (2016), "Continuous Monitoring of A/B
-Tests without Pain: Optional Stopping in Bayesian Testing", IEEE DSAA 2016 —
-the primary source establishing that a decision procedure's realised error
-rate is paradigm-dependent, which is what makes an undeclared paradigm a real
-gap rather than a formality. The exact section/theorem locator within this
-paper is unverified at time of writing (same citation, same flag as
-``dsx/spec.py::_validate_inference_shape``, escalated in the 06-06 plan
-summary rather than invented); author/year/title/venue match brief.md
-section 7.
-Structural criterion: a set-membership computation over a data-driven
-applicability map (``_PARADIGM_INDEPENDENT``, ``_PARADIGM_CONDITIONAL``,
-``_NOT_SHIPPED``), keyed by every member of ``PARADIGMS`` plus the undeclared
-case — no numeric threshold or statistic is computed here.
 """
 
 from __future__ import annotations
@@ -72,6 +58,23 @@ _NOT_SHIPPED: "dict[str, str]" = {
 
 
 def check(spec: dict) -> Report:
+    """Emit DSX-PAR-001 — the informational paradigm manifest.
+
+    Citation: Deng, A., Lu, J. & Chen, S. (2016), "Continuous Monitoring of
+    A/B Tests without Pain: Optional Stopping in Bayesian Testing", IEEE
+    DSAA 2016 — the primary source establishing that a decision procedure's
+    realised error rate is paradigm-dependent, which is what makes an
+    undeclared paradigm a real gap rather than a formality. The exact
+    section/theorem locator within this paper is unverified at time of
+    writing (same citation, same flag as
+    ``dsx/spec.py::_validate_inference_shape``, escalated in the 06-06 plan
+    summary rather than invented); author/year/title/venue match brief.md
+    section 7.
+    Structural criterion: a set-membership computation over a data-driven
+    applicability map (``_PARADIGM_INDEPENDENT``, ``_PARADIGM_CONDITIONAL``,
+    ``_NOT_SHIPPED``), keyed by every member of ``PARADIGMS`` plus the
+    undeclared case — no numeric threshold or statistic is computed here.
+    """
     report = Report(check="paradigm")
 
     declared = get(spec, "inference.paradigm")
@@ -92,11 +95,6 @@ def check(spec: dict) -> Report:
         for prefix in not_applied_prefixes
     }
 
-    if paradigm:
-        title = f"paradigm manifest — declared inference.paradigm: {paradigm}"
-    else:
-        title = "paradigm manifest — no inference.paradigm declared"
-
     applied_text = ", ".join(applied) if applied else "(none)"
     not_applied_text = "; ".join(
         f"{prefix} ({reason})" for prefix, reason in not_applied.items()
@@ -111,10 +109,15 @@ def check(spec: dict) -> Report:
         "incentive to misdeclare a paradigm just to look checked (D-10)."
     )
 
+    # The title is a single f-string literal at the call site (not a
+    # pre-assigned variable) so scripts/gen-finding-catalogue.py's AST
+    # extractor — which requires a Constant/JoinedStr literal in this
+    # position — can read it; a dynamic segment collapses to '<…>' there,
+    # same convention every other dsx/checks/*.py module already follows.
     report.add(
         "DSX-PAR-001",
         "INFO",
-        title,
+        f"paradigm manifest — inference.paradigm: {paradigm or 'undeclared'}",
         detail=detail,
         remedy=remedy,
         where="spec.inference.paradigm",

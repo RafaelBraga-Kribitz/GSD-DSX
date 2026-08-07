@@ -37,6 +37,7 @@ from .checks import (
     viz,
 )
 from .findings import EXIT_ERROR, CheckError, Report, Severity, emit, merge
+from .frame import paradigm
 from .loader import SpecParseError, load
 from .spec import describe_vocabulary, validate_structure
 from .suppressions import apply_suppressions
@@ -64,21 +65,28 @@ CHECKS: dict[str, Callable] = {
     "narrative": narrative.check,
     "code": code.check,
     "decision": decision.check,
+    "paradigm": paradigm.check,
 }
 
 # Which checks each GSD loop point cares about. Keeping this here rather than in
 # the capability manifest means the gate command stays short and the policy stays
 # versioned with the code that implements it.
+#
+# "paradigm" (DSX-PAR-001, informational, REQ-P6-09) is registered at all four
+# points, not just verify/ship: it must be visible wherever a gate runs, and
+# INFO severity means it structurally cannot flip any gate's exit code.
 GATE_PROFILES: dict[str, tuple[str, ...]] = {
-    "plan": ("spec", "design", "metrics", "coherence"),
-    "execute": ("spec", "ml", "repro", "dq", "code"),
+    "plan": ("spec", "design", "metrics", "coherence", "paradigm"),
+    "execute": ("spec", "ml", "repro", "dq", "code", "paradigm"),
     "verify": (
         "spec", "design", "stats", "ml", "metrics", "claims", "viz", "repro",
         "dq", "coherence", "smells", "figures", "narrative", "code", "decision",
+        "paradigm",
     ),
     "ship": (
         "spec", "design", "stats", "ml", "metrics", "claims", "viz", "repro",
         "dq", "coherence", "smells", "figures", "narrative", "code", "decision",
+        "paradigm",
     ),
 }
 
