@@ -106,7 +106,7 @@ design:
   planned_n_per_arm: null          # dsx computes what this must be and blocks if short
   duration_days: null
   guardrail_metrics: []
-  peeking_policy: fixed_horizon    # fixed_horizon | sequential_obf | sequential_pocock | always_valid
+  peeking_policy: fixed_horizon    # fixed_horizon | sequential_obf | sequential_pocock | always_valid | uncontrolled_continuous
 
   multiplicity:
     family: []                     # every metric being tested
@@ -252,7 +252,7 @@ narrative:
 # holds it to the evidence declared above.
 claims:
   - text: "<the claim exactly as it will appear>"
-    type: association              # descriptive | association | predictive | causal
+    type: descriptive              # descriptive | association | predictive | causal
     evidence: "RESULTS.md#anchor"
     population: "<who this applies to>"
     # ci: [lower, upper]
@@ -272,6 +272,84 @@ assumptions:
 limitations:
   - "<what this analysis cannot tell you, stated plainly>"
   # Required non-empty at verify/ship when question_type is causal|prescriptive|predictive
+
+# ── Validity frame (REQ-P6-02) ───────────────────────────────────────────────
+# estimand, units, measurement, dependence, sampling_frame and missingness are
+# required for every question_type. identification, interference, triggering
+# and stability are additionally required when question_type is causal or
+# prescriptive, or when design.kind above is experiment. `dsx vocab` lists
+# every closed vocabulary referenced below.
+validity_frame:
+  estimand:
+    quantity: "<the difference, rate or quantity being estimated>"
+    population: "<who this covers>"
+    contrast: "<treatment vs control, or before vs after>"
+    time_window: "<the window over which the effect is measured>"
+    falsifier: "<the observation that would prove this wrong>"
+
+  units:
+    observation: "<the finest-grained row in the source data>"
+    assignment: "<the unit treatment/exposure is assigned at>"
+    analysis: "<the unit the analysis is run at>"
+
+  identification:
+    strength: weak                 # strong | moderate | weak
+    evidence: "<why this strength, e.g. randomisation or a VIF check>"
+    constraint_source: none        # none | informative_priors | penalisation | design_restriction | hierarchical_pooling
+    constraint_justification: "<required unless constraint_source is none>"
+
+  dependence:
+    structure: none                # none | clustered | repeated_measures | temporal | spatial | hierarchical
+    cluster_var: null
+    method_family_required: null   # cluster_robust | delta_method | bootstrap_cluster | mixed_effects
+
+  interference:
+    risk: none                     # none | shared_budget | marketplace | geo_spillover | social_graph | shared_inventory
+    mechanism: "<required unless risk is none>"
+    mitigation: none               # none | geo_split | cluster_randomisation | time_split | budget_isolation | modelled
+    residual_note: "<what remains unaddressed, if anything>"
+
+  triggering:
+    eligible_population: "<who could have triggered the analysed event>"
+    triggered_definition: "<the event that puts a unit in the analysis>"
+    analysis_population: eligible  # eligible | triggered
+    expected_trigger_rate: null
+    dilution_adjusted: false
+
+  stability:
+    window: "<how long the effect was observed for>"
+    novelty_primacy_assessed: false
+    evidence: "<pointer to the check, e.g. RESULTS.md#week1-vs-week2>"
+
+  sampling_frame:
+    source: "<where the analysed rows come from>"
+    claim_population: "<the population the claim will be made about>"
+    known_exclusions: []
+    selection_risk: "<how the sample could differ systematically from the claim population>"
+
+  missingness:
+    mechanism: not_assessed        # MCAR | MAR | MNAR | not_assessed
+    rate: null
+    method_implied: "<how missing rows are handled, e.g. complete_case>"
+
+  measurement:
+    construct: "<the concept being measured>"
+    operationalisation: "<the exact rule that turns the construct into a number>"
+    known_gaps: "<what the measurement misses>"
+
+# ── Inference plan (REQ-P6-04) ───────────────────────────────────────────────
+# Declared before results exist, same discipline as decision: above. The
+# stopping-rule concept lives in design.peeking_policy above, not here (M-02).
+inference:
+  paradigm: frequentist            # frequentist | bayesian
+  paradigm_justification: team_convention
+    # prior_information_available | sequential_monitoring_required
+    # decision_theoretic_loss_specified | small_sample_informative_prior
+    # regulatory_requirement | team_convention | vendor_constraint
+  declared_at: pre_data            # pre_data | post_data
+  primary_procedure: "<the test or model that will be run, e.g. two_proportion_z>"
+  alpha_spending: null
+  fallback_rule: "<what happens if an assumption fails, e.g. switch to a bootstrap>"
 
 # ── Suppressions (optional) ──────────────────────────────────────────────────
 # ADR/SPEC-backed waivers for known HIGH/CRITICAL findings. Each row removes
