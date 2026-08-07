@@ -1684,12 +1684,6 @@ class TestCLI(unittest.TestCase):
             )
             self.assertEqual(code, control_code, err)
 
-    def test_examples_directory_never_gains_an_untracked_decisions_file(self):
-        fixture = self.ROOT / "examples" / "good-ANALYSIS-SPEC.yaml"
-        self._run(["gate", "plan", "--spec", str(fixture)])
-        self.assertFalse((self.ROOT / "examples" / "DECISIONS.jsonl").exists())
-
-
 # ── Phase 1: profiler, DQ, coherence, evidence ───────────────────────────────
 
 

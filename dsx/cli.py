@@ -254,20 +254,58 @@ def cmd_gate(args: argparse.Namespace) -> int:
         raise
 
     spec = load(path)
+    root = args.phase_dir or str(path.parent)
     report = run_checks(
         spec,
         GATE_PROFILES[point],
         args.phase_dir,
         gate_point=point,
-        resolve_root=args.phase_dir or str(path.parent),
+        resolve_root=root,
     )
     report.check = f"gate:{point}"
     report.context["spec_path"] = str(path)
+    _write_decision_trail(report, spec, root, point, args.verbose)
     if args.report:
         Path(args.report).write_text(
             _markdown_report(report, threshold, str(path)), encoding="utf-8"
         )
     return emit(report, threshold, args.json, args.verbose)
+
+
+def _write_decision_trail(
+    report: Report, spec: dict, root: str, point: str, verbose: bool
+) -> None:
+    """Append this gate run's invocation header and decision records to
+    ``DECISIONS.jsonl`` (D-14, D-16). Only ``dsx gate`` calls this —
+    ``validate``/``check``/``audit`` are read-only inspection commands, not
+    the plan-through-ship trail D-04 wants rendered.
+
+    Wrapped in ``try/except OSError`` and swallowed on failure: this is the
+    mirror of D-04, ``dsx explain``'s side of the same rule. A trail that
+    cannot be written is a missing trail, not a failed gate — the write is a
+    side channel, never part of the block contract, so it can never change
+    ``point``'s exit code. Surfaced only under ``--verbose``.
+    """
+    try:
+        target = decisions_path(root)
+        inv = next_invocation_id(target)
+        append_decision(
+            target,
+            InvocationHeader(
+                invocation_id=inv,
+                gate_point=point,
+                dsx_version=__version__,
+                frame_digest=frame_digest(spec),
+            ),
+        )
+        for n, raw in enumerate(collect_from_report(report), start=1):
+            fields = {k: v for k, v in raw.items() if k != "record_type"}
+            fields["id"] = f"DEC-{n:03d}"
+            fields["invocation_id"] = inv
+            append_decision(target, DecisionRecord(**fields))
+    except OSError as exc:
+        if verbose:
+            print(f"dsx: could not write decision trail — {exc}", file=sys.stderr)
 
 
 def cmd_profile(args: argparse.Namespace) -> int:
