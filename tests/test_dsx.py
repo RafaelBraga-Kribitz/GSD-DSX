@@ -194,6 +194,28 @@ note: >
         data = _parse_yaml_subset('color: "#ff0000"\n', "<t>")
         self.assertEqual(data["color"], "#ff0000")
 
+    def test_bare_none_is_a_string_not_null(self):
+        self.assertEqual(_parse_yaml_subset("x: none\n", "<t>")["x"], "none")
+        self.assertEqual(
+            _parse_yaml_subset("x: [none, clustered]\n", "<t>")["x"], ["none", "clustered"]
+        )
+        self.assertIsNone(_parse_yaml_subset("x: null\n", "<t>")["x"])
+        self.assertIsNone(_parse_yaml_subset("x: ~\n", "<t>")["x"])
+        self.assertIsNone(_parse_yaml_subset("x:\n", "<t>")["x"])
+
+    def test_bare_none_matches_pyyaml(self):
+        try:
+            import yaml
+        except ImportError:  # pragma: no cover
+            self.skipTest("PyYAML not installed")
+        self.assertEqual(
+            _parse_yaml_subset("x: none\n", "<t>")["x"], yaml.safe_load("x: none\n")["x"]
+        )
+        self.assertEqual(
+            _parse_yaml_subset("x: [none, clustered]\n", "<t>")["x"],
+            yaml.safe_load("x: [none, clustered]\n")["x"],
+        )
+
 
 # ── spec structure ───────────────────────────────────────────────────────────
 
