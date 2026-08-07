@@ -38,6 +38,7 @@ The append contract (D-19), normative for any future writer of this file:
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 from dataclasses import asdict, dataclass, field
@@ -122,3 +123,47 @@ def read_all(path: "str | Path") -> "list[dict]":
         except json.JSONDecodeError:
             continue  # tolerant reader — a half-written crash-tail line is skipped, not fatal
     return records
+
+
+def next_invocation_id(path: "str | Path") -> str:
+    """Deterministic, file-derived invocation identifier — never uuid, never a
+    clock read, so identical input produces identical output. Named
+    ``invocation_id``, not ``run_id`` (D-15): ``run_id`` is
+    ``visuals[].run_id``, checked by ``DSX-SMELL-013``."""
+    records = read_all(path)
+    n = sum(1 for r in records if r.get("record_type") == "invocation") + 1
+    return f"INV-{n:04d}"
+
+
+def frame_digest(spec: "dict[str, Any]") -> str:
+    """Stable digest over the ``validity_frame:``/``inference:`` blocks only.
+    Key-order invariant (``sort_keys=True``); unchanged by edits elsewhere in
+    the spec. Change-detection, not a security control."""
+    payload = json.dumps(
+        {"validity_frame": spec.get("validity_frame"), "inference": spec.get("inference")},
+        sort_keys=True,
+        default=str,
+    ).encode("utf-8")
+    return hashlib.sha256(payload).hexdigest()
+
+
+def decisions_path(root: "str | Path") -> Path:
+    """``DECISIONS.jsonl`` beside the resolved spec (D-14). Does not
+    re-implement ``find_spec()``'s search: the caller already has the resolved
+    root (``args.phase_dir or str(path.parent)``)."""
+    return Path(root) / "DECISIONS.jsonl"
+
+
+def collect_from_report(report: Any) -> "list[dict]":
+    """Flatten every sub-report's ``decisions`` list out of a merged
+    ``Report.context`` (``merge()`` nests each sub-report's context under its
+    own check name), in iteration order. Producers append plain dicts onto
+    ``report.context.setdefault("decisions", [])`` before merge; this keeps
+    checks pure and puts the only file write at the CLI layer."""
+    out: "list[dict]" = []
+    for value in report.context.values():
+        if isinstance(value, dict):
+            decisions = value.get("decisions")
+            if isinstance(decisions, list):
+                out.extend(decisions)
+    return out
