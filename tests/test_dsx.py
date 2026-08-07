@@ -1524,11 +1524,19 @@ class TestCLI(unittest.TestCase):
     def test_explain_truncated_tail_line_still_renders_intact_records(self):
         import shutil
 
+        from dsx.decisions import InvocationHeader, append
+
         with tempfile.TemporaryDirectory() as tmp:
             spec_path = Path(tmp) / "ANALYSIS-SPEC.yaml"
             shutil.copy(self.ROOT / "examples" / "good-ANALYSIS-SPEC.yaml", spec_path)
-            self._run(["gate", "plan", "--spec", str(spec_path), "--phase-dir", tmp])
             trail = Path(tmp) / "DECISIONS.jsonl"
+            append(
+                trail,
+                InvocationHeader(
+                    invocation_id="INV-0001", gate_point="plan", dsx_version="0.0.0",
+                    frame_digest="deadbeef",
+                ),
+            )
             trail.write_text(
                 trail.read_text(encoding="utf-8") + '{"id": "DEC-9', encoding="utf-8"
             )
@@ -1536,15 +1544,24 @@ class TestCLI(unittest.TestCase):
                 ["explain", "--spec", str(spec_path), "--phase-dir", tmp]
             )
             self.assertEqual(code, 0)
-            self.assertIn("INV-", out)
+            self.assertIn("INV-0001", out)
 
     def test_explain_unknown_invocation_id_exits_zero_and_reports_not_found(self):
         import shutil
 
+        from dsx.decisions import InvocationHeader, append
+
         with tempfile.TemporaryDirectory() as tmp:
             spec_path = Path(tmp) / "ANALYSIS-SPEC.yaml"
             shutil.copy(self.ROOT / "examples" / "good-ANALYSIS-SPEC.yaml", spec_path)
-            self._run(["gate", "plan", "--spec", str(spec_path), "--phase-dir", tmp])
+            trail = Path(tmp) / "DECISIONS.jsonl"
+            append(
+                trail,
+                InvocationHeader(
+                    invocation_id="INV-0001", gate_point="plan", dsx_version="0.0.0",
+                    frame_digest="deadbeef",
+                ),
+            )
             code, out, _ = self._run(
                 [
                     "explain", "--spec", str(spec_path), "--phase-dir", tmp,

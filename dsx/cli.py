@@ -36,6 +36,16 @@ from .checks import (
     stats,
     viz,
 )
+from .decisions import (
+    DecisionRecord,
+    InvocationHeader,
+    append as append_decision,
+    collect_from_report,
+    decisions_path,
+    frame_digest,
+    next_invocation_id,
+    read_all,
+)
 from .findings import EXIT_ERROR, CheckError, Report, Severity, emit, merge
 from .frame import paradigm
 from .loader import SpecParseError, load
@@ -342,6 +352,83 @@ def cmd_vocab(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_explain(args: argparse.Namespace) -> int:
+    """Render the decision trail (D-04, REQ-P6-08). A pure reader over
+    ``DECISIONS.jsonl``: never imports the block-contract primitives (the
+    severity ladder, the per-gate threshold table, the report emitter) or
+    ``Report`` itself, never blocks, always returns 0 — modelled on
+    ``cmd_vocab``'s bare ``return 0``, not on ``cmd_validate``'s pattern of
+    returning the emitted report's exit code.
+
+    Root resolution is defensive by necessity, not by style: ``find_spec``
+    raises ``CheckError`` on a missing explicit ``--spec`` path, and ``main()``
+    maps that to exit 2 for every other subcommand. A missing spec is a
+    missing trail here, not an error, so the exception is caught and root
+    falls back to ``--phase-dir`` (or cwd).
+    """
+    try:
+        path = find_spec(args.spec, args.phase_dir)
+        root = args.phase_dir or str(path.parent)
+    except CheckError:
+        root = args.phase_dir or "."
+
+    records = read_all(decisions_path(root))
+    not_found_message = None
+
+    if args.invocation:
+        selected = [r for r in records if r.get("invocation_id") == args.invocation]
+        if not selected:
+            not_found_message = f"no decision trail found for invocation {args.invocation!r}"
+    else:
+        last_id = None
+        for record in records:
+            if record.get("record_type") == "invocation":
+                last_id = record.get("invocation_id")
+        selected = (
+            [r for r in records if r.get("invocation_id") == last_id] if last_id else []
+        )
+
+    if args.json:
+        print(json.dumps(selected, indent=2, sort_keys=True))
+    elif not_found_message:
+        print(not_found_message)
+    else:
+        print(_render_decision_trail(selected))
+    return 0
+
+
+def _render_decision_trail(records: "list[dict]") -> str:
+    """Human-readable text: the invocation header line, then one block per
+    decision record. ``counterfactual`` is rendered prominently, not as a
+    footnote — 'what would have to be different for me to choose otherwise'
+    is the rule the record teaches, not just the instance it recorded."""
+    if not records:
+        return "no decision trail was found."
+
+    lines: "list[str]" = []
+    header = next((r for r in records if r.get("record_type") == "invocation"), None)
+    if header:
+        lines.append(
+            f"invocation {header.get('invocation_id')} "
+            f"(gate={header.get('gate_point')}, dsx={header.get('dsx_version')}, "
+            f"frame_digest={header.get('frame_digest')})"
+        )
+
+    for record in records:
+        if record.get("record_type") != "decision":
+            continue
+        lines.append("")
+        lines.append(f"{record.get('id')} [{record.get('layer')}] {record.get('choice')}")
+        if record.get("rule"):
+            lines.append(f"  rule:           {record['rule']}")
+        if record.get("citation"):
+            lines.append(f"  citation:       {record['citation']}")
+        if record.get("counterfactual"):
+            lines.append(f"  counterfactual: {record['counterfactual']}")
+
+    return "\n".join(lines) if lines else "no decision trail was found."
+
+
 def cmd_init(args: argparse.Namespace) -> int:
     template = Path(__file__).resolve().parent.parent / "templates" / "ANALYSIS-SPEC.yaml"
     if not template.exists():
@@ -432,11 +519,17 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--version", action="version", version=f"dsx {__version__}")
     sub = parser.add_subparsers(dest="command", required=True)
 
-    def add_common(p: argparse.ArgumentParser, default_block: str = "HIGH") -> None:
+    def add_common(
+        p: argparse.ArgumentParser,
+        default_block: str = "HIGH",
+        *,
+        include_block_on: bool = True,
+    ) -> None:
         p.add_argument("--spec", help="path to ANALYSIS-SPEC (auto-discovered when omitted)")
         p.add_argument("--phase-dir", help="GSD phase directory to search and resolve paths against")
-        p.add_argument("--block-on", default=default_block,
-                       help="minimum severity that fails the command (default: %(default)s)")
+        if include_block_on:
+            p.add_argument("--block-on", default=default_block,
+                           help="minimum severity that fails the command (default: %(default)s)")
         p.add_argument("--json", action="store_true", help="emit machine-readable JSON")
         p.add_argument("--verbose", action="store_true", help="list checks that passed")
 
@@ -461,6 +554,14 @@ def build_parser() -> argparse.ArgumentParser:
     p_gate.add_argument("--allow-missing", action="store_true",
                         help="exit 0 when no spec exists instead of erroring")
     p_gate.set_defaults(func=cmd_gate)
+
+    p_explain = sub.add_parser(
+        "explain",
+        help="render the decision trail from DECISIONS.jsonl — read-only, never blocks",
+    )
+    add_common(p_explain, include_block_on=False)
+    p_explain.add_argument("--invocation", help="render only this invocation id's records")
+    p_explain.set_defaults(func=cmd_explain)
 
     p_rec = sub.add_parser("recommend-test", help="derive the correct test from the data's shape")
     p_rec.add_argument("outcome_type", help="proportion | continuous | count | ordinal | time_to_event")
