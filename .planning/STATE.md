@@ -5,22 +5,22 @@ milestone_name: DSX Validity Frame
 current_phase: 06
 current_phase_name: contract-extension-decision-record-paradigm-manifest
 status: executing
-stopped_at: Completed 06-07-PLAN.md
-last_updated: "2026-08-07T23:08:42.001Z"
+stopped_at: Completed 06-08-PLAN.md
+last_updated: "2026-08-07T23:21:11.771Z"
 last_activity: 2026-08-07
 last_activity_desc: Phase 06 execution started
 progress:
   total_phases: 1
   completed_phases: 0
   total_plans: 10
-  completed_plans: 7
+  completed_plans: 8
   percent: 0
 ---
 
 # Project state
 
 **Status:** Ready to execute
-**Progress:** [███████░░░] 70% (0/7 phases)  
+**Progress:** [████████░░] 80% (0/7 phases)  
 **Locked decisions:** DQ = profile runner + hermetic gates; Glyph = hermetic svg_sha256 only (no MCP dep); forbidden claims = universal pack + optional phase YAML; repro_lock = ARS-style honest-null (not byte-replay); decision replay = structured thresholds only; suppressions = ADR/SPEC authority required (unknown codes → exit 2)  
 **v2.0.0 locked decisions:** DSX-PAR-010 is a distinct code, DSX-EXP-060 untouched (M-01); no `inference.stopping_rule` — PAR-010/011 read the existing `design.peeking_policy` (M-02); PEEKING_POLICIES gains an uncontrolled-continuous-monitoring value (M-03); automated import test enforces the D-03a boundary from M1 (M-04); SELF-001 stays a convention, REVERSALS.md template seeded in M1 (M-05); `validity_frame` sub-block requiredness gated by `question_type` (M-06); existing `suppressions[]` is the pre-v2.0.0 grandfather path (M-07); D-05 citation enforcement automated via `gen-finding-catalogue.py` (M-08); `dependence.method_family_required` reuses `VARIANCE_ADJUSTMENTS` (M-09)
 
@@ -70,14 +70,14 @@ progress:
 ## Current Position
 
 Phase: 06 (contract-extension-decision-record-paradigm-manifest) — EXECUTING
-Plan: 8 of 10
+Plan: 9 of 10
 Status: Ready to execute
 Last activity: 2026-08-07 — Phase 06 execution started
 
 ## Session
 
-**Last session:** 2026-08-07T23:08:41.993Z
-**Stopped at:** Completed 06-07-PLAN.md
+**Last session:** 2026-08-07T23:21:11.762Z
+**Stopped at:** Completed 06-08-PLAN.md
 **Resume file:** None
 
 ## Performance Metrics
@@ -91,6 +91,7 @@ Last activity: 2026-08-07 — Phase 06 execution started
 | Phase 06 P05 | 20min | 3 tasks | 4 files |
 | Phase 06 P06 | 20min | 3 tasks | 3 files |
 | Phase 06 P07 | 10min | 3 tasks | 6 files |
+| Phase 06 P08 | 30min | 3 tasks | 7 files |
 
 ## Decisions
 
@@ -108,3 +109,7 @@ Last activity: 2026-08-07 — Phase 06 execution started
 - [Phase ?]: 06-06: Deng, Lu & Chen (2016) citation's exact section/theorem locator flagged unverified (escalated per D-05, not fabricated); author/title/venue/year confirmed against brief.md
 - [Phase ?]: 06-07: DSX-PAR-001 paradigm manifest computes applied/not-applied check-family sets from a data-driven map (_PARADIGM_INDEPENDENT, _PARADIGM_CONDITIONAL keyed by every PARADIGMS member, _NOT_SHIPPED) rather than a paradigm branch — never blocks (INFO=10 < every default GATE_THRESHOLDS)
 - [Phase ?]: 06-07: dsx/frame/ package created with D-03a import boundary enforced by an AST scanner proven against three deliberately violating sources; two Rule-1 fixes needed for gen-finding-catalogue.py compatibility (literal f-string title at call site, D-05 citation on check()'s own docstring)
+- [Phase ?]: 06-08: known-bad corpus fixtures are full-shape clones of the good fixture (all validity_frame/inference blocks) rather than minimal specs, guaranteeing zero CRITICAL findings without per-field auditing
+- [Phase ?]: 06-08: dsx validate (CRITICAL-only) confirmed as the acceptance bar for known-bad fixtures, not dsx gate ship — fixtures need no visuals/reproducibility/narrative sections
+- [Phase ?]: 06-08: both halves of Phase 9's atomic DSX-PAR-010/DSX-PAR-011 pair committed (D-06); frequentist reference value 0.142 at 5 looks matches dsx.mathx.inflation_from_peeking exactly; Bayesian post-mortem states the prior-averaged Ville bound (K=19, ~0.05) against the point-null formulation it is not
+- [Phase ?]: 06-08: Kohavi, Tang & Xu (2020) chapter locator for shared-budget interference flagged unverified, escalated for human confirmation rather than invented (T-6-16)

@@ -175,3 +175,17 @@ None — no external service configuration required.
 ---
 *Phase: 06-contract-extension-decision-record-paradigm-manifest*
 *Completed: 2026-08-08*
+
+## Self-Check: PASSED
+
+- FOUND: examples/known-bad/interference-shared-budget-ANALYSIS-SPEC.yaml
+- FOUND: examples/known-bad/interference-shared-budget-POSTMORTEM.md
+- FOUND: examples/known-bad/frequentist-uncontrolled-continuous-ANALYSIS-SPEC.yaml
+- FOUND: examples/known-bad/frequentist-uncontrolled-continuous-POSTMORTEM.md
+- FOUND: examples/known-bad/bayesian-continuous-monitoring-ANALYSIS-SPEC.yaml
+- FOUND: examples/known-bad/bayesian-continuous-monitoring-POSTMORTEM.md
+- FOUND: tests/test_known_bad_corpus.py
+- FOUND: .planning/phases/06-contract-extension-decision-record-paradigm-manifest/06-08-SUMMARY.md
+- FOUND commit: df1674f (feat(06-08): add interference-shared-budget known-bad fixture)
+- FOUND commit: 112af76 (feat(06-08): add both halves of Phase 9 monitoring-pair known-bad fixtures)
+- FOUND commit: e52c869 (test(06-08): corpus invariants for examples/known-bad (REQ-P6-13))
