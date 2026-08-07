@@ -13,7 +13,7 @@ a suppression or a reference in a review stays valid across versions.
 **Gate thresholds.** `plan` and `execute` block at CRITICAL; `verify` and
 `ship` block at HIGH.
 
-**Total: 205 codes.**
+**Total: 210 codes.**
 
 ## Contract structure — `DSX-SPEC-*`
 
@@ -52,6 +52,11 @@ Shape and vocabulary of ANALYSIS-SPEC itself.
 | `DSX-SPEC-070` | HIGH | suppression of <…> is missing authority |
 | `DSX-SPEC-071` | HIGH | suppression code <…> has invalid shape |
 | `DSX-SPEC-072` | CRITICAL | suppression references unknown code <…> |
+| `DSX-SPEC-080` | CRITICAL | validity_frame block is missing |
+| `DSX-SPEC-081` | CRITICAL | validity_frame.<…> is required and missing |
+| `DSX-SPEC-082` | HIGH | validity_frame.<…>.<…> <…> is not recognised |
+| `DSX-SPEC-085` | HIGH | inference.<…> <…> is not recognised |
+| `DSX-SPEC-086` | HIGH | inference.<…> is not a field under inference: |
 
 ## Experiment design — `DSX-EXP-*`
 
