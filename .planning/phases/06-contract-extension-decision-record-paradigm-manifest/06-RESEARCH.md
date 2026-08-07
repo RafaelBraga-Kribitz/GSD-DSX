@@ -1151,6 +1151,48 @@ lightly contradict each other on these five narrow points, and none should be si
 
 ## Open Questions
 
+> **RESOLVED AT PLAN TIME (2026-08-07, operator decision).** Questions 1 and 2 below were put to
+> the operator during `/gsd-plan-phase 6` and are now **locked**. They are binding on the plan;
+> the discussion beneath each is retained only as the reasoning that produced the answer.
+>
+> **R-01 — `validity_frame` sub-block requiredness (resolves Open Question 2 / Assumption A1).**
+> The four sub-blocks REQ-P6-03 leaves unpinned are placed as:
+> - `dependence`, `sampling_frame`, `missingness` → **always required**, every `question_type`.
+> - `identification` → **required only for causal and experimental** question types, joining
+>   `interference`/`triggering`/`stability`.
+>
+> Full resulting lists for `_validate_validity_frame_shape()` / `DSX-SPEC-081`:
+> - **Always required (6):** `estimand`, `units`, `measurement`, `dependence`, `sampling_frame`,
+>   `missingness`
+> - **Causal/experimental only (4):** `identification`, `interference`, `triggering`, `stability`
+>
+> Rationale: `dependence` and `sampling_frame` are paradigm-independent per D-11 and PITFALLS.md
+> Pitfall 2 (every analysis has a unit of observation and a claimed population). `missingness`
+> applies to every dataset, with `not_assessed` as the honest escape hatch — so a silently
+> truncated descriptive dataset still has to be declared. `identification` is meaningless without
+> a causal claim, and `DSX-CAU-010` / `_check_identification` is the existing precedent for
+> gating it on `question_type`.
+>
+> Note the deliberate divergence from PITFALLS.md Pitfall 2, which put `interference` in the
+> conditional-with-justification tier and `identification` in the causal-only tier. REQ-P6-03 and
+> ROADMAP Success Criterion 2 are the binding sources and both place `interference` squarely in
+> the causal-only list ("a descriptive-question spec that omits `interference`/`triggering`/
+> `stability` **entirely** also exits `0`"). Where PITFALLS.md and REQUIREMENTS.md disagree,
+> REQUIREMENTS.md wins.
+>
+> **R-02 — `MISSINGNESS_MECHANISMS` gets no `"none"` member (resolves Open Question 1 /
+> Assumption A2).** The vocabulary ships as exactly `MCAR | MAR | MNAR | not_assessed`, per
+> brief.md §5.1. ROADMAP.md's ordering-constraint prose naming `missingness.mechanism` as a
+> `none`-bearing field is an editing slip; the intended fourth field is
+> `identification.constraint_source`, which brief.md §5.1 does list `none` for. The REQ-P6-01
+> `_NULL` loader fix and its bundled-parser-vs-PyYAML agreement test are **unchanged in scope** —
+> they are simply exercised through the three frame fields that genuinely declare `none`
+> (`dependence.structure`, `interference.risk`, `interference.mitigation`) plus
+> `identification.constraint_source`, not through `missingness.mechanism`.
+>
+> Open Question 3 (`paradigm.check()` needs no `gate_point` parameter) was already answered by the
+> research itself and needs no operator input — implement as recommended.
+
 1. **Does `MISSINGNESS_MECHANISMS` need a `"none"` member?**
    - What we know: ROADMAP.md's ordering-constraint text names `missingness.mechanism` as one of
      four `"none"`-bearing fields; brief §5.1's own worked-example comment lists only
