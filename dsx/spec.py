@@ -396,6 +396,8 @@ def validate_structure(spec: dict) -> Report:
     _validate_design_shape(spec, report)
     _validate_model_shape(spec, report)
     _validate_claims_shape(spec, report)
+    _validate_validity_frame_shape(spec, report)
+    _validate_inference_shape(spec, report)
 
     from .suppressions import validate_suppressions
 
@@ -688,6 +690,233 @@ def _validate_claims_shape(spec: dict, report: Report) -> None:
                 where=where,
             )
     report.ok(f"{len(claims)} claim(s) declared")
+
+
+# ── validity_frame / inference structural validators (Phase 6, REQ-P6-02/03/04) ──
+# Locked by decision R-01. Diverges deliberately from research/PITFALLS.md Pitfall 2,
+# which placed `interference` in a conditional tier and `identification` in the
+# causal-only tier: REQ-P6-03 and ROADMAP Success Criterion 2 are the binding sources
+# and both put `interference` in the causal-only list below. Do not "fix" this back to
+# match PITFALLS.md.
+_VALIDITY_FRAME_ALWAYS_REQUIRED = (
+    "estimand", "units", "measurement", "dependence", "sampling_frame", "missingness",
+)
+_VALIDITY_FRAME_CAUSAL_REQUIRED = ("identification", "interference", "triggering", "stability")
+
+# (sub-block, sub-field, closed vocabulary). `dependence.method_family_required` reuses
+# VARIANCE_ADJUSTMENTS verbatim (M-09) — no parallel set is defined for it.
+_VALIDITY_FRAME_MEMBERSHIP: "tuple[tuple[str, str, Any], ...]" = (
+    ("identification", "strength", IDENTIFICATION_STRENGTHS),
+    ("identification", "constraint_source", CONSTRAINT_SOURCES),
+    ("dependence", "structure", DEPENDENCE_STRUCTURES),
+    ("dependence", "method_family_required", VARIANCE_ADJUSTMENTS),
+    ("interference", "risk", INTERFERENCE_RISKS),
+    ("interference", "mitigation", INTERFERENCE_MITIGATIONS),
+    ("triggering", "analysis_population", ANALYSIS_POPULATIONS),
+    ("missingness", "mechanism", MISSINGNESS_MECHANISMS),
+)
+
+
+def _validate_validity_frame_shape(spec: dict, report: Report) -> None:
+    """Requiredness, aggregation and membership shape of the ``validity_frame:`` block.
+
+    Codes DSX-SPEC-080 (block absent), DSX-SPEC-081 (required sub-block missing, one
+    finding per sub-block per D-11) and DSX-SPEC-082 (sub-field outside its closed
+    vocabulary).
+
+    Citation: Hernan, M.A. & Robins, J.M. (2020), *Causal Inference: What If*, Chapter 1
+    ("A Definition of Causal Effect") and Chapter 3 ("Observational Studies") — the
+    estimand and identification-condition vocabulary the `estimand` and `identification`
+    sub-blocks encode.
+    Citation: Little, R.J.A. & Rubin, D.B. (2019), *Statistical Analysis with Missing
+    Data*, 3rd ed., Chapter 1 ("Introduction") — the MCAR/MAR/MNAR missingness-mechanism
+    taxonomy this validator's membership check enforces via MISSINGNESS_MECHANISMS.
+    Citation: Imbens, G.W. & Rubin, D.B. (2015), *Causal Inference for Statistics,
+    Social, and Biomedical Sciences*, Chapter 1, Section 1.6 ("The Stable Unit Treatment
+    Value Assumption") — the interference/SUTVA vocabulary the `interference` sub-block
+    encodes.
+    Structural criterion: presence-and-membership test, not a numeric one. Requiredness
+    is a set-membership check against a question_type/design.kind-gated list of exactly
+    ten sub-block names; the aggregation rule (one finding per missing sub-block once the
+    block itself is present) and the eight per-field vocabulary memberships are D-11 and
+    D-04, respectively. No threshold, effect size or statistic is computed here.
+    """
+    from .decisions import DecisionRecord
+
+    frame = spec.get("validity_frame")
+    needs_causal_block = (
+        normalize(spec.get("question_type", "")) in ("causal", "prescriptive")
+        or normalize(get(spec, "design.kind", "")) == "experiment"
+    )
+    required = list(_VALIDITY_FRAME_ALWAYS_REQUIRED) + (
+        list(_VALIDITY_FRAME_CAUSAL_REQUIRED) if needs_causal_block else []
+    )
+
+    report.context.setdefault("decisions", []).append(
+        DecisionRecord(
+            id="",
+            invocation_id="",
+            layer="deterministic",
+            choice=f"validity_frame requires: {', '.join(required)}",
+            inputs=["question_type", "design.kind"],
+            rule=(
+                "R-01: question_type in ('causal', 'prescriptive') or design.kind == "
+                "'experiment' adds identification, interference, triggering and stability "
+                "to the six always-required sub-blocks (estimand, units, measurement, "
+                "dependence, sampling_frame, missingness)."
+            ),
+            citation="Hernan & Robins (2020), Causal Inference: What If, Ch. 1 and Ch. 3",
+            counterfactual=(
+                "If question_type were not 'causal'/'prescriptive' and design.kind were "
+                "not 'experiment', identification, interference, triggering and stability "
+                "would not be required."
+            ),
+        ).to_dict()
+    )
+
+    if not isinstance(frame, dict) or not frame:
+        report.add(
+            "DSX-SPEC-080",
+            "CRITICAL",
+            "validity_frame block is missing",
+            detail="Required sub-blocks: " + ", ".join(required),
+            remedy=(
+                "Add a validity_frame: block with the required sub-blocks. "
+                "See templates/ANALYSIS-SPEC.yaml."
+            ),
+            where="spec.validity_frame",
+        )
+        return
+
+    missing = [name for name in required if not frame.get(name) or not isinstance(frame.get(name), dict)]
+    if missing:
+        for name in missing:
+            report.add(
+                "DSX-SPEC-081",
+                "CRITICAL",
+                f"validity_frame.{name} is required and missing",
+                detail=f"question_type/design.kind requires: {', '.join(required)}",
+                remedy=f"Declare validity_frame.{name} with its required sub-fields.",
+                where=f"spec.validity_frame.{name}",
+            )
+    else:
+        report.ok("validity_frame required sub-blocks present")
+
+    for block_name, field_name, vocab in _VALIDITY_FRAME_MEMBERSHIP:
+        block = frame.get(block_name)
+        if not isinstance(block, dict):
+            continue
+        value = block.get(field_name)
+        if is_blank(value):
+            continue
+        # Case-insensitive membership: most vocabularies are already lowercase (normalize()
+        # is a no-op against their keys), but MISSINGNESS_MECHANISMS is a case-sensitive
+        # acronym set (MCAR/MAR/MNAR, per R-02) — comparing against normalized keys keeps
+        # exactly one comparison path instead of special-casing this one field.
+        if normalize(value) not in {normalize(k) for k in vocab}:
+            report.add(
+                "DSX-SPEC-082",
+                "HIGH",
+                f"validity_frame.{block_name}.{field_name} {value!r} is not recognised",
+                detail="Allowed: " + ", ".join(sorted(vocab)),
+                remedy=f"Set validity_frame.{block_name}.{field_name} to one of the allowed values.",
+                where=f"spec.validity_frame.{block_name}.{field_name}",
+            )
+
+
+# The six REQ-P6-04 field names — the machine-readable statement plan 06-05's round-trip
+# test and the catalogue can both read. M-02 removes `stopping_rule`: the stopping-rule
+# concept lives in design.peeking_policy, not here.
+_INFERENCE_FIELDS = (
+    "paradigm", "paradigm_justification", "declared_at",
+    "primary_procedure", "alpha_spending", "fallback_rule",
+)
+
+_INFERENCE_MEMBERSHIP: "tuple[tuple[str, Any], ...]" = (
+    ("paradigm", PARADIGMS),
+    ("paradigm_justification", PARADIGM_JUSTIFICATIONS),
+    ("declared_at", DECLARATION_POINTS),
+)
+
+# The field M-02 removed from inference: — declaring it is redirected, not silently
+# ignored. The concept it named (the stopping rule) lives in design.peeking_policy.
+_INFERENCE_REMOVED_FIELD = "stopping_rule"
+
+
+def _validate_inference_shape(spec: dict, report: Report) -> None:
+    """Shape validation of the optional ``inference:`` block.
+
+    Codes DSX-SPEC-085 (sub-field outside its closed vocabulary) and DSX-SPEC-086 (the
+    field M-02 removed is declared).
+
+    Citation: Deng, A., Lu, J. & Chen, S. (2016), "Continuous Monitoring of A/B Tests
+    without Pain: Optional Stopping in Bayesian Testing", IEEE DSAA 2016 — the primary
+    source establishing that a decision procedure's realised error rate depends on the
+    declared inferential paradigm and monitoring plan, which is why inference.paradigm
+    must be declared rather than assumed. The exact section/theorem locator within this
+    paper is unverified at time of writing and is flagged for human confirmation in the
+    06-06 plan summary; the author/year/title/venue anchor itself is not in doubt and
+    matches brief.md section 7.
+    Structural criterion: presence-and-membership test on three closed-vocabulary
+    sub-fields, plus a fourth check for the presence of a removed field name. No
+    numeric threshold is computed here.
+    """
+    inference = spec.get("inference")
+    if not isinstance(inference, dict) or not inference:
+        return
+
+    from .decisions import DecisionRecord
+
+    declared_paradigm = inference.get("paradigm")
+    report.context.setdefault("decisions", []).append(
+        DecisionRecord(
+            id="",
+            invocation_id="",
+            layer="deterministic",
+            choice=(
+                f"paradigm={declared_paradigm}" if not is_blank(declared_paradigm)
+                else "paradigm=undeclared"
+            ),
+            inputs=["inference.paradigm"],
+            rule=(
+                "inference.paradigm must be a member of PARADIGMS "
+                "(frequentist, bayesian) (REQ-P6-04)."
+            ),
+            citation="Deng, Lu & Chen (2016), Continuous Monitoring of A/B Tests without Pain",
+            counterfactual=(
+                "Declaring the other paradigm would route this analysis to that "
+                "paradigm's symmetric monitoring-discipline checks (Phase 9's "
+                "DSX-PAR-010/011 pair) instead of the ones this declaration selects."
+            ),
+        ).to_dict()
+    )
+
+    for field_name, vocab in _INFERENCE_MEMBERSHIP:
+        value = inference.get(field_name)
+        if is_blank(value):
+            continue
+        if normalize(value) not in vocab:
+            report.add(
+                "DSX-SPEC-085",
+                "HIGH",
+                f"inference.{field_name} {value!r} is not recognised",
+                detail="Allowed: " + ", ".join(sorted(vocab)),
+                remedy=f"Set inference.{field_name} to one of the allowed values.",
+                where=f"spec.inference.{field_name}",
+            )
+
+    if _INFERENCE_REMOVED_FIELD in inference:
+        report.add(
+            "DSX-SPEC-086",
+            "HIGH",
+            f"inference.{_INFERENCE_REMOVED_FIELD} is not a field under inference:",
+            detail=(
+                "No equivalent field exists under inference: — the stopping-rule "
+                "concept (M-02) lives in design.peeking_policy."
+            ),
+            remedy="Remove inference.stopping_rule; declare design.peeking_policy instead.",
+            where=f"spec.inference.{_INFERENCE_REMOVED_FIELD}",
+        )
 
 
 def describe_vocabulary() -> "dict[str, Any]":
