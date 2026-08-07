@@ -10,6 +10,7 @@ import unittest
 from pathlib import Path
 
 import dsx.decisions as d
+from dsx.findings import Report, merge
 
 
 # ── Task 1: schema, crash-safe append, tolerant reader ─────────────────────
@@ -125,6 +126,87 @@ class TestDecisions(unittest.TestCase):
             d.append(p1, rec)
             d.append(p2, rec)
             self.assertEqual(p1.read_text(encoding="utf-8"), p2.read_text(encoding="utf-8"))
+
+    # ── Task 2: invocation identity, frame digest, path resolution, report collection ──
+
+    def test_next_invocation_id_missing_file_returns_inv_0001(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            p = Path(tmp) / "DECISIONS.jsonl"
+            self.assertEqual(d.next_invocation_id(p), "INV-0001")
+
+    def test_next_invocation_id_after_two_headers_returns_inv_0003(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            p = Path(tmp) / "DECISIONS.jsonl"
+            d.append(
+                p,
+                d.InvocationHeader(
+                    invocation_id="INV-0001", gate_point="plan", dsx_version="x",
+                    frame_digest="y",
+                ),
+            )
+            d.append(
+                p,
+                d.InvocationHeader(
+                    invocation_id="INV-0002", gate_point="plan", dsx_version="x",
+                    frame_digest="y",
+                ),
+            )
+            self.assertEqual(d.next_invocation_id(p), "INV-0003")
+
+    def test_next_invocation_id_stable_with_no_write_between_calls(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            p = Path(tmp) / "DECISIONS.jsonl"
+            d.append(
+                p,
+                d.InvocationHeader(
+                    invocation_id="INV-0001", gate_point="plan", dsx_version="x",
+                    frame_digest="y",
+                ),
+            )
+            first = d.next_invocation_id(p)
+            second = d.next_invocation_id(p)
+            self.assertEqual(first, second)
+
+    def test_frame_digest_is_64_char_lowercase_hex(self):
+        spec = {"validity_frame": {"estimand": "ate"}, "inference": {"paradigm": "frequentist"}}
+        digest = d.frame_digest(spec)
+        self.assertEqual(len(digest), 64)
+        self.assertEqual(digest, digest.lower())
+        int(digest, 16)  # raises if not hex
+
+    def test_frame_digest_unchanged_by_edit_outside_frame_blocks(self):
+        a = {"title": "a", "validity_frame": {"x": 1}, "inference": {"paradigm": "frequentist"}}
+        b = {"title": "CHANGED", "validity_frame": {"x": 1}, "inference": {"paradigm": "frequentist"}}
+        self.assertEqual(d.frame_digest(a), d.frame_digest(b))
+
+    def test_frame_digest_changes_when_frame_block_value_changes(self):
+        a = {"validity_frame": {"x": 1}, "inference": {"paradigm": "frequentist"}}
+        b = {"validity_frame": {"x": 1}, "inference": {"paradigm": "bayesian"}}
+        self.assertNotEqual(d.frame_digest(a), d.frame_digest(b))
+
+    def test_frame_digest_unchanged_by_key_insertion_order_permutation(self):
+        a = {"validity_frame": {"x": 1, "y": 2}, "inference": {"paradigm": "frequentist"}}
+        b = {"validity_frame": {"y": 2, "x": 1}, "inference": {"paradigm": "frequentist"}}
+        self.assertEqual(d.frame_digest(a), d.frame_digest(b))
+
+    def test_decisions_path_ends_in_decisions_jsonl_under_root(self):
+        p = d.decisions_path("/some/root")
+        self.assertEqual(p.name, "DECISIONS.jsonl")
+        self.assertEqual(p.parent, Path("/some/root"))
+
+    def test_collect_from_report_flattens_in_gate_profiles_order(self):
+        r1 = Report(check="spec")
+        r1.context["decisions"] = [{"id": "DEC-001"}]
+        r2 = Report(check="design")
+        r2.context["decisions"] = [{"id": "DEC-002"}, {"id": "DEC-003"}]
+        merged = merge("spec+design", [r1, r2])
+        collected = d.collect_from_report(merged)
+        self.assertEqual([c["id"] for c in collected], ["DEC-001", "DEC-002", "DEC-003"])
+
+    def test_collect_from_report_empty_for_report_with_no_decisions(self):
+        r1 = Report(check="spec")
+        merged = merge("spec", [r1])
+        self.assertEqual(d.collect_from_report(merged), [])
 
 
 if __name__ == "__main__":
