@@ -1993,5 +1993,103 @@ class TestPhase5Suppressions(unittest.TestCase):
             )
 
 
+# ── Phase 6 (06-07): DSX-PAR-001 paradigm manifest (REQ-P6-09, D-10) ─────────
+
+
+class TestPhase6ParadigmManifest(unittest.TestCase):
+    """DSX-PAR-001 — the informational paradigm manifest.
+
+    Two of these tests are the honesty invariant the plan's prohibition exists
+    to enforce (T-6-14): every prefix the manifest calls 'applied' must have at
+    least one matching emitted code, and every prefix it calls 'not shipped'
+    must have none. ``known_codes()`` is imported here, in the test — never
+    inside ``dsx/frame/paradigm.py`` itself, since the gate path must not
+    AST-walk the package on every invocation.
+    """
+
+    def test_every_paradigm_and_undeclared_case_yields_exactly_one_info_finding(self):
+        from dsx.findings import Severity
+        from dsx.frame import paradigm
+        from dsx.spec import PARADIGMS
+
+        specs = [{"inference": {"paradigm": q}} for q in PARADIGMS] + [{}, {"inference": {}}]
+        for spec in specs:
+            with self.subTest(spec=spec):
+                report = paradigm.check(spec)
+                par = [f for f in report.findings if f.code == "DSX-PAR-001"]
+                self.assertEqual(len(par), 1)
+                self.assertEqual(par[0].severity, Severity.INFO)
+                self.assertTrue(par[0].detail.strip())
+
+    def test_undeclared_paradigm_names_the_gap_rather_than_assuming_frequentist(self):
+        from dsx.frame import paradigm
+
+        for spec in ({}, {"inference": {}}):
+            with self.subTest(spec=spec):
+                report = paradigm.check(spec)
+                finding = [f for f in report.findings if f.code == "DSX-PAR-001"][0]
+                combined = (finding.title + " " + finding.detail).lower()
+                self.assertIn("no", combined)
+                self.assertIn("paradigm", combined)
+                self.assertNotIn("frequentist", finding.title.lower())
+
+    def test_detail_names_an_applied_set_and_a_not_applied_set_with_reasons(self):
+        from dsx.frame import paradigm
+
+        report = paradigm.check({"inference": {"paradigm": "bayesian"}})
+        finding = [f for f in report.findings if f.code == "DSX-PAR-001"][0]
+        self.assertIn("applied", finding.detail.lower())
+        self.assertTrue(finding.data.get("applied"))
+        not_applied = finding.data.get("not_applied") or {}
+        self.assertTrue(not_applied)
+        for prefix, reason in not_applied.items():
+            self.assertTrue(reason.strip(), f"{prefix} has a blank reason")
+
+    def test_manifest_never_blocks_at_any_default_gate_threshold(self):
+        from dsx.cli import GATE_THRESHOLDS
+        from dsx.findings import Severity
+        from dsx.frame import paradigm
+
+        report = paradigm.check({"inference": {"paradigm": "bayesian"}})
+        for point, label in GATE_THRESHOLDS.items():
+            with self.subTest(point=point):
+                self.assertFalse(report.blocks(Severity.parse(label)))
+
+    def test_check_appends_one_deterministic_decision_record(self):
+        from dsx.frame import paradigm
+
+        report = paradigm.check({"inference": {"paradigm": "frequentist"}})
+        decisions = report.context.get("decisions") or []
+        self.assertEqual(len(decisions), 1)
+        self.assertEqual(decisions[0]["layer"], "deterministic")
+        self.assertEqual(decisions[0]["id"], "")
+        self.assertTrue(decisions[0]["counterfactual"].strip())
+
+    # D-05: DSX-PAR-001
+    def test_applied_prefixes_have_codes_and_not_shipped_prefixes_have_none(self):
+        from dsx.frame import paradigm
+        from dsx.spec import PARADIGMS
+        from dsx.suppressions import known_codes
+
+        known = known_codes()
+        for declared in list(PARADIGMS) + [""]:
+            spec = {"inference": {"paradigm": declared}} if declared else {}
+            with self.subTest(declared=declared or "undeclared"):
+                report = paradigm.check(spec)
+                finding = [f for f in report.findings if f.code == "DSX-PAR-001"][0]
+                for prefix in finding.data.get("applied", []):
+                    self.assertTrue(
+                        [c for c in known if c.startswith(prefix)],
+                        f"{prefix} reported applied but no known code starts with it",
+                    )
+                for prefix in finding.data.get("not_applied", {}):
+                    self.assertFalse(
+                        [c for c in known if c.startswith(prefix)],
+                        f"{prefix} reported not-shipped but a known code exists",
+                    )
+        for prefix in paradigm._NOT_SHIPPED:
+            self.assertFalse([c for c in known if c.startswith(prefix)], prefix)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
