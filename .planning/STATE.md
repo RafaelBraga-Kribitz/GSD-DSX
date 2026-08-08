@@ -6,20 +6,20 @@ current_phase: 06
 current_phase_name: contract-extension-decision-record-paradigm-manifest
 status: executing
 stopped_at: Completed 06-08-PLAN.md
-last_updated: "2026-08-07T23:21:11.771Z"
-last_activity: 2026-08-07
+last_updated: "2026-08-08T07:04:39.567Z"
+last_activity: 2026-08-08
 last_activity_desc: Phase 06 execution started
 progress:
   total_phases: 1
   completed_phases: 0
   total_plans: 10
-  completed_plans: 8
+  completed_plans: 9
   percent: 0
 ---
 
 # Project state
 
-**Status:** Ready to execute
+**Status:** Executing Phase 06
 **Progress:** [████████░░] 80% (0/7 phases)  
 **Locked decisions:** DQ = profile runner + hermetic gates; Glyph = hermetic svg_sha256 only (no MCP dep); forbidden claims = universal pack + optional phase YAML; repro_lock = ARS-style honest-null (not byte-replay); decision replay = structured thresholds only; suppressions = ADR/SPEC authority required (unknown codes → exit 2)  
 **v2.0.0 locked decisions:** DSX-PAR-010 is a distinct code, DSX-EXP-060 untouched (M-01); no `inference.stopping_rule` — PAR-010/011 read the existing `design.peeking_policy` (M-02); PEEKING_POLICIES gains an uncontrolled-continuous-monitoring value (M-03); automated import test enforces the D-03a boundary from M1 (M-04); SELF-001 stays a convention, REVERSALS.md template seeded in M1 (M-05); `validity_frame` sub-block requiredness gated by `question_type` (M-06); existing `suppressions[]` is the pre-v2.0.0 grandfather path (M-07); D-05 citation enforcement automated via `gen-finding-catalogue.py` (M-08); `dependence.method_family_required` reuses `VARIANCE_ADJUSTMENTS` (M-09)
@@ -70,9 +70,9 @@ progress:
 ## Current Position
 
 Phase: 06 (contract-extension-decision-record-paradigm-manifest) — EXECUTING
-Plan: 10 of 10
-Status: Ready to execute
-Last activity: 2026-08-08 — 06-09 closed out after session-limit interruption; 9 of 10 plans complete
+Plan: 1 of 10
+Status: Executing Phase 06
+Last activity: 2026-08-08 — Phase 06 execution started
 
 ## Session
 
