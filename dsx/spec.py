@@ -824,9 +824,20 @@ def _validate_validity_frame_shape(spec: dict, report: Report) -> None:
             )
 
 
-# The six REQ-P6-04 field names — the machine-readable statement plan 06-05's round-trip
-# test and the catalogue can both read. M-02 removes `stopping_rule`: the stopping-rule
-# concept lives in design.peeking_policy, not here.
+# The six REQ-P6-04 field names — a machine-readable manifest pinning that requirement's
+# declared field list against drift. Its one consumer is the drift-guard test
+# tests/test_dsx.py::test_inference_fields_constant_matches_req_p6_04; the finding
+# catalogue does not read it.
+#
+# This tuple is not an enforced closed set: _validate_inference_shape vocabulary-checks
+# only three of these six fields (paradigm, paradigm_justification, declared_at, via
+# _INFERENCE_MEMBERSHIP below) and rejects exactly one non-member field, the one named by
+# _INFERENCE_REMOVED_FIELD. An unrecognised or misspelled key under inference: — e.g.
+# `inference: {paradgim: bayesian}` — is accepted silently today; there is no unknown-key
+# check for this block.
+#
+# M-02 removes `stopping_rule`: the stopping-rule concept lives in design.peeking_policy,
+# not here.
 _INFERENCE_FIELDS = (
     "paradigm", "paradigm_justification", "declared_at",
     "primary_procedure", "alpha_spending", "fallback_rule",
