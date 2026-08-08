@@ -218,3 +218,11 @@ None — no external service configuration required.
 ---
 *Phase: 06-contract-extension-decision-record-paradigm-manifest*
 *Completed: 2026-08-08*
+
+## Self-Check: PASSED
+
+All 8 files verified present on disk (`dsx/__init__.py`, `.claude-plugin/plugin.json`,
+`.claude-plugin/marketplace.json`, `capabilities/dsx/capability.json`,
+`examples/good-ANALYSIS-SPEC.yaml`, `templates/ANALYSIS-SPEC.yaml`,
+`references/finding-codes.md`, this SUMMARY.md). Both commit hashes (`3b4f870`, `bf7b4c2`)
+verified present in `git log --oneline --all`.
