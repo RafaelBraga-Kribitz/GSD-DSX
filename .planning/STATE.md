@@ -70,14 +70,14 @@ progress:
 ## Current Position
 
 Phase: 06 (contract-extension-decision-record-paradigm-manifest) — EXECUTING
-Plan: 9 of 10
+Plan: 10 of 10
 Status: Ready to execute
-Last activity: 2026-08-07 — Phase 06 execution started
+Last activity: 2026-08-08 — 06-09 closed out after session-limit interruption; 9 of 10 plans complete
 
 ## Session
 
-**Last session:** 2026-08-07T23:21:11.762Z
-**Stopped at:** Completed 06-08-PLAN.md
+**Last session:** 2026-08-08T01:32:42+02:00
+**Stopped at:** Completed 06-09-PLAN.md (executor interrupted by session limit after its final task commit; SUMMARY and tracking reconciled by the orchestrator during /gsd-resume-work — all 9 of the plan's verification items re-run and passing)
 **Resume file:** None
 
 ## Performance Metrics
@@ -92,6 +92,7 @@ Last activity: 2026-08-07 — Phase 06 execution started
 | Phase 06 P06 | 20min | 3 tasks | 3 files |
 | Phase 06 P07 | 10min | 3 tasks | 6 files |
 | Phase 06 P08 | 30min | 3 tasks | 7 files |
+| Phase 06 P09 | ~10min | 3 tasks | 3 files |
 
 ## Decisions
 
@@ -113,3 +114,6 @@ Last activity: 2026-08-07 — Phase 06 execution started
 - [Phase ?]: 06-08: dsx validate (CRITICAL-only) confirmed as the acceptance bar for known-bad fixtures, not dsx gate ship — fixtures need no visuals/reproducibility/narrative sections
 - [Phase ?]: 06-08: both halves of Phase 9's atomic DSX-PAR-010/DSX-PAR-011 pair committed (D-06); frequentist reference value 0.142 at 5 looks matches dsx.mathx.inflation_from_peeking exactly; Bayesian post-mortem states the prior-averaged Ville bound (K=19, ~0.05) against the point-null formulation it is not
 - [Phase ?]: 06-08: Kohavi, Tang & Xu (2020) chapter locator for shared-budget interference flagged unverified, escalated for human confirmation rather than invented (T-6-16)
+- [Phase ?]: 06-09: `explain` carries no `--block-on` at all (argparse exits 2) rather than accepting-and-ignoring it — a block flag on a command that always passes is a lie in the help text (D-04)
+- [Phase ?]: 06-09: `add_common` gains keyword-only `include_block_on=True`, making "all four existing call sites unchanged" a property of the signature rather than a per-site re-verification
+- [Phase ?]: 06-09: gate-path trail write is a side channel — an unwritable trail directory leaves every gate exit code untouched; a trail that cannot be written is a missing trail, not a failed gate (D-16/D-18)
