@@ -146,7 +146,7 @@ REQ-P6-15, REQ-P6-16
      the `suppressions[]` migration path and the "a frame that lies passes" limit, version
      2.0.0, and a regenerated finding catalogue.
 
-**Plans:** 10/10 plans executed
+**Plans:** 13 plans — 10/10 executed, 3 gap-closure plans pending (wave 7)
 
 Plans:
 **Wave 1**
@@ -176,6 +176,12 @@ Plans:
 **Wave 6** *(blocked on Wave 5 completion)*
 
 - [x] 06-10-PLAN.md — version 2.0.0 across every manifest, catalogue regeneration, and the closing phase gate (wave 6)
+
+**Wave 7** *(gap closure — blocked on Wave 6 completion; closes `06-VERIFICATION.md`)*
+
+- [ ] 06-11-PLAN.md — BLOCKER: no decision-trail failure mode can change a gate exit code, `dsx explain` returns 0 by construction, WR-02 concurrency limitation documented (wave 7)
+- [ ] 06-12-PLAN.md — correct the known-bad corpus's false gate claim and pin the real guarantee with gate-level tests (wave 7)
+- [ ] 06-13-PLAN.md — boundary-safe D-05 allow-list, corrected `inference:` validation comment, collapsed dead branch in `_package_for` (wave 7)
 
 ### Phase 7: Validity frame checks (`DSX-VAL-*`)
 
