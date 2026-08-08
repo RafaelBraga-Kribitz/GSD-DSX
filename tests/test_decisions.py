@@ -109,6 +109,72 @@ class TestDecisions(unittest.TestCase):
             records = d.read_all(p)
             self.assertEqual(len(records), 2)
 
+    def test_read_all_does_not_raise_on_undecodable_tail_bytes(self):
+        # 06-11 Task 1 (D-08/CR-01 regression): a completed record followed by
+        # raw bytes that are not valid UTF-8 (the lead byte of a two-byte
+        # sequence with no continuation byte — the exact shape the reviewer
+        # and verifier reproduced against the live CLI) must not raise.
+        with tempfile.TemporaryDirectory() as tmp:
+            p = Path(tmp) / "DECISIONS.jsonl"
+            d.append(
+                p,
+                d.DecisionRecord(
+                    id="DEC-001", invocation_id="INV-0001", layer="deterministic", choice="x"
+                ),
+            )
+            with p.open("ab") as fh:
+                fh.write(b"caf\xc3")
+            records = d.read_all(p)
+            self.assertEqual([r["id"] for r in records], ["DEC-001"])
+
+    def test_read_all_preserves_records_written_after_an_undecodable_line(self):
+        # A middle line that is neither valid UTF-8 nor valid JSON must be
+        # disposed of deterministically regardless of decode-error strategy,
+        # while the records before and after it still survive in file order.
+        with tempfile.TemporaryDirectory() as tmp:
+            p = Path(tmp) / "DECISIONS.jsonl"
+            d.append(
+                p,
+                d.DecisionRecord(
+                    id="DEC-001", invocation_id="INV-0001", layer="deterministic", choice="x"
+                ),
+            )
+            with p.open("ab") as fh:
+                fh.write(b"\xff\xfe not json\n")
+            d.append(
+                p,
+                d.DecisionRecord(
+                    id="DEC-002", invocation_id="INV-0001", layer="deterministic", choice="y"
+                ),
+            )
+            records = d.read_all(p)
+            self.assertEqual([r["id"] for r in records], ["DEC-001", "DEC-002"])
+
+    def test_read_all_returns_empty_list_when_path_is_not_a_readable_file(self):
+        # A path that exists but is a directory rather than a readable file —
+        # not filesystem permission bits, which behave differently on Windows
+        # (06-09 Task 2's own reasoning for its unwritable-directory test).
+        with tempfile.TemporaryDirectory() as tmp:
+            p = Path(tmp) / "DECISIONS.jsonl"
+            p.mkdir()
+            self.assertEqual(d.read_all(p), [])
+
+    def test_next_invocation_id_unaffected_by_undecodable_bytes(self):
+        # The unit-level statement of why the gate path is affected at all:
+        # _write_decision_trail calls this function before it calls append.
+        with tempfile.TemporaryDirectory() as tmp:
+            p = Path(tmp) / "DECISIONS.jsonl"
+            d.append(
+                p,
+                d.InvocationHeader(
+                    invocation_id="INV-0001", gate_point="plan", dsx_version="x",
+                    frame_digest="y",
+                ),
+            )
+            with p.open("ab") as fh:
+                fh.write(b"caf\xc3")
+            self.assertEqual(d.next_invocation_id(p), "INV-0002")
+
     def test_read_all_missing_path_returns_empty_list(self):
         with tempfile.TemporaryDirectory() as tmp:
             p = Path(tmp) / "does-not-exist" / "DECISIONS.jsonl"

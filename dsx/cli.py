@@ -280,11 +280,22 @@ def _write_decision_trail(
     ``validate``/``check``/``audit`` are read-only inspection commands, not
     the plan-through-ship trail D-04 wants rendered.
 
-    Wrapped in ``try/except OSError`` and swallowed on failure: this is the
+    Wrapped in ``try/except Exception`` and swallowed on failure: this is the
     mirror of D-04, ``dsx explain``'s side of the same rule. A trail that
     cannot be written is a missing trail, not a failed gate — the write is a
     side channel, never part of the block contract, so it can never change
     ``point``'s exit code. Surfaced only under ``--verbose``.
+
+    The guard is deliberately ``Exception``, not ``OSError``: the invariant
+    this function documents is unconditional, so naming one exception class
+    makes the invariant conditional on the exception taxonomy of everything
+    this function calls transitively — ``next_invocation_id``, ``read_all``,
+    ``frame_digest``, ``collect_from_report``, ``append`` and the
+    ``DecisionRecord`` constructor. The constructor in particular raises
+    ``TypeError`` on any future shape drift in the producer-side decision
+    dicts, which an ``OSError``-only guard would not catch. The guard stops
+    at ``Exception`` — control-flow signals like ``KeyboardInterrupt`` and
+    ``SystemExit`` are deliberately left to propagate.
     """
     try:
         target = decisions_path(root)
@@ -303,7 +314,7 @@ def _write_decision_trail(
             fields["id"] = f"DEC-{n:03d}"
             fields["invocation_id"] = inv
             append_decision(target, DecisionRecord(**fields))
-    except OSError as exc:
+    except Exception as exc:
         if verbose:
             print(f"dsx: could not write decision trail — {exc}", file=sys.stderr)
 
@@ -394,15 +405,26 @@ def cmd_explain(args: argparse.Namespace) -> int:
     """Render the decision trail (D-04, REQ-P6-08). A pure reader over
     ``DECISIONS.jsonl``: never imports the block-contract primitives (the
     severity ladder, the per-gate threshold table, the report emitter) or
-    ``Report`` itself, never blocks, always returns 0 — modelled on
-    ``cmd_vocab``'s bare ``return 0``, not on ``cmd_validate``'s pattern of
-    returning the emitted report's exit code.
+    ``Report`` itself, never blocks, always returns 0 by construction rather
+    than by enumeration — modelled on ``cmd_vocab``'s bare ``return 0``, not
+    on ``cmd_validate``'s pattern of returning the emitted report's exit code.
 
     Root resolution is defensive by necessity, not by style: ``find_spec``
     raises ``CheckError`` on a missing explicit ``--spec`` path, and ``main()``
     maps that to exit 2 for every other subcommand. A missing spec is a
     missing trail here, not an error, so the exception is caught and root
-    falls back to ``--phase-dir`` (or cwd).
+    falls back to ``--phase-dir`` (or cwd). That ``CheckError`` guard is about
+    root resolution and is separately load-bearing; it is kept exactly as
+    written.
+
+    Everything from the trail read through the final print is additionally
+    wrapped in a guard over ``Exception`` — control-flow signals like
+    ``KeyboardInterrupt``/``SystemExit`` are deliberately left to propagate —
+    so no failure mode reachable from ``read_all`` or the render step can
+    escape this function. ``read_all`` itself no longer raises for any
+    on-disk state, but this guard is what makes the "always returns 0"
+    contract a structural property of ``cmd_explain`` rather than an
+    enumeration of the failure modes someone happened to test.
     """
     try:
         path = find_spec(args.spec, args.phase_dir)
@@ -410,28 +432,35 @@ def cmd_explain(args: argparse.Namespace) -> int:
     except CheckError:
         root = args.phase_dir or "."
 
-    records = read_all(decisions_path(root))
-    not_found_message = None
+    try:
+        records = read_all(decisions_path(root))
+        not_found_message = None
 
-    if args.invocation:
-        selected = [r for r in records if r.get("invocation_id") == args.invocation]
-        if not selected:
-            not_found_message = f"no decision trail found for invocation {args.invocation!r}"
-    else:
-        last_id = None
-        for record in records:
-            if record.get("record_type") == "invocation":
-                last_id = record.get("invocation_id")
-        selected = (
-            [r for r in records if r.get("invocation_id") == last_id] if last_id else []
-        )
+        if args.invocation:
+            selected = [r for r in records if r.get("invocation_id") == args.invocation]
+            if not selected:
+                not_found_message = (
+                    f"no decision trail found for invocation {args.invocation!r}"
+                )
+        else:
+            last_id = None
+            for record in records:
+                if record.get("record_type") == "invocation":
+                    last_id = record.get("invocation_id")
+            selected = (
+                [r for r in records if r.get("invocation_id") == last_id] if last_id else []
+            )
 
-    if args.json:
-        print(json.dumps(selected, indent=2, sort_keys=True))
-    elif not_found_message:
-        print(not_found_message)
-    else:
-        print(_render_decision_trail(selected))
+        if args.json:
+            print(json.dumps(selected, indent=2, sort_keys=True))
+        elif not_found_message:
+            print(not_found_message)
+        else:
+            print(_render_decision_trail(selected))
+    except Exception as exc:
+        print("dsx: no readable decision trail was found", file=sys.stdout)
+        if args.verbose:
+            print(f"dsx: {exc}", file=sys.stderr)
     return 0
 
 

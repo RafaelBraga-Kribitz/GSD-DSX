@@ -31,9 +31,21 @@ The append contract (D-19), normative for any future writer of this file:
   ``confidence`` and ``escalate`` for that case.
 - **Durability:** ``append()`` writes, ``flush()``es and ``os.fsync()``s the
   file descriptor per record, so a line that finished writing survives a
-  crashed run. ``read_all()`` is the other half of that guarantee: an
-  unparseable trailing line (the half-written tail of a crash) is skipped, not
-  fatal, so one crash never invalidates every record written before it.
+  crashed run. ``read_all()`` is the other half of that guarantee, and it
+  tolerates three distinct on-disk conditions, not just one: an unparseable
+  line (the half-written tail of a crash), an undecodable byte (a hand-edit,
+  filesystem-level corruption of an already-committed byte, or any future
+  non-ASCII write), and an unreadable path (a directory, a device node, a
+  revoked permission) — none of these is fatal, so one crash or one corrupted
+  byte never invalidates every record written before it, and never raises
+  into a caller that documents an unconditional "never blocks" contract.
+- **Concurrency (WR-02):** ``next_invocation_id()`` and the caller's
+  subsequent ``append()`` are a non-atomic read-then-write with no locking
+  between the two steps. Concurrent ``dsx gate`` invocations against a single
+  root are unsupported today — see ``next_invocation_id()``'s docstring for
+  the exact collision mechanism. No lock, lock file or platform-specific
+  advisory-locking import is introduced; serialising concurrent gate runs
+  against one root is the operator's responsibility.
 """
 
 from __future__ import annotations
@@ -108,13 +120,31 @@ def append(path: "str | Path", record: "DecisionRecord | InvocationHeader") -> N
 
 
 def read_all(path: "str | Path") -> "list[dict]":
-    """Return every parseable record. Missing file -> []. A truncated or
-    otherwise unparseable line is skipped, not fatal (tolerant reader)."""
+    """Return every parseable record. Never raises for any on-disk state of
+    ``path`` — it degrades rather than fails, and its callers (``cmd_explain``,
+    the gate-path ``next_invocation_id``) depend on that unconditionally:
+
+    - **Missing path** -> ``[]``.
+    - **Unreadable path** (a directory rather than a file, a device node, a
+      revoked permission) -> ``[]``, caught as ``OSError`` around the read.
+    - **Undecodable bytes** in the file (not valid UTF-8) -> ``errors="replace"``
+      on the decode, so the read itself cannot raise; a line degraded by
+      replacement characters then either still parses as JSON or falls into
+      the existing unparseable-line skip below.
+    - **An unparseable line** (JSON-level truncation, e.g. the half-written
+      tail of a crash, or arbitrary non-JSON content) is skipped, not fatal —
+      the tolerant-reader design this docstring's module-level durability
+      paragraph describes.
+    """
     p = Path(path)
     if not p.exists():
         return []
+    try:
+        text = p.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return []
     records: "list[dict]" = []
-    for line in p.read_text(encoding="utf-8").splitlines():
+    for line in text.splitlines():
         line = line.strip()
         if not line:
             continue
@@ -129,7 +159,20 @@ def next_invocation_id(path: "str | Path") -> str:
     """Deterministic, file-derived invocation identifier — never uuid, never a
     clock read, so identical input produces identical output. Named
     ``invocation_id``, not ``run_id`` (D-15): ``run_id`` is
-    ``visuals[].run_id``, checked by ``DSX-SMELL-013``."""
+    ``visuals[].run_id``, checked by ``DSX-SMELL-013``.
+
+    **Concurrency limitation (WR-02):** the identifier is derived by counting
+    existing invocation records; the caller appends the new header separately
+    (in ``dsx/cli.py::_write_decision_trail``), and nothing serialises the two
+    steps. Two ``dsx gate`` processes racing against one ``DECISIONS.jsonl``
+    can both derive the same identifier here and both append a header
+    carrying it, after which ``dsx explain``'s grouping — which keys purely
+    on invocation-id equality — would interleave two runs' records under one
+    header. Concurrent gate invocations against a single root are therefore
+    unsupported; serialising them (running one ``dsx gate`` at a time against
+    a given root) is the operator's responsibility today. No lock is taken
+    here — see the module docstring's append-contract note.
+    """
     records = read_all(path)
     n = sum(1 for r in records if r.get("record_type") == "invocation") + 1
     return f"INV-{n:04d}"
