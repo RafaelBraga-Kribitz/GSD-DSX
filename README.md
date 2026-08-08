@@ -321,6 +321,20 @@ vocabulary respected, every cross-field check satisfied — and still false,
 because nothing in the frame's shape can verify that "difference in 7-day
 activation rate" was the right question to ask in the first place.
 
+### Concurrent `dsx gate` invocations are not supported
+
+Run `dsx gate` points against one analysis directory sequentially, not in
+parallel. The per-invocation identifier in `DECISIONS.jsonl` is derived by
+reading and counting existing invocation headers, and nothing locks that
+read against a second process's write. Two concurrent `dsx gate` runs
+against the same directory can both derive the same invocation identifier
+and both append a header carrying it, merging their decision trails under
+one invocation in `dsx explain`'s output. This does not affect any gate's
+exit code — the trail stays a side channel — but it does corrupt the
+grouping guarantee the trail is supposed to provide for that one invocation.
+Serialising `dsx gate` runs against a given analysis directory is the
+operator's responsibility today.
+
 ### Two tiers of evidentiary rigour
 
 Not every finding code in the catalogue carries the same evidentiary bar.

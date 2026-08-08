@@ -39,6 +39,13 @@ The append contract (D-19), normative for any future writer of this file:
   revoked permission) — none of these is fatal, so one crash or one corrupted
   byte never invalidates every record written before it, and never raises
   into a caller that documents an unconditional "never blocks" contract.
+- **Concurrency (WR-02):** ``next_invocation_id()`` and the caller's
+  subsequent ``append()`` are a non-atomic read-then-write with no locking
+  between the two steps. Concurrent ``dsx gate`` invocations against a single
+  root are unsupported today — see ``next_invocation_id()``'s docstring for
+  the exact collision mechanism. No lock, lock file or platform-specific
+  advisory-locking import is introduced; serialising concurrent gate runs
+  against one root is the operator's responsibility.
 """
 
 from __future__ import annotations
@@ -152,7 +159,20 @@ def next_invocation_id(path: "str | Path") -> str:
     """Deterministic, file-derived invocation identifier — never uuid, never a
     clock read, so identical input produces identical output. Named
     ``invocation_id``, not ``run_id`` (D-15): ``run_id`` is
-    ``visuals[].run_id``, checked by ``DSX-SMELL-013``."""
+    ``visuals[].run_id``, checked by ``DSX-SMELL-013``.
+
+    **Concurrency limitation (WR-02):** the identifier is derived by counting
+    existing invocation records; the caller appends the new header separately
+    (in ``dsx/cli.py::_write_decision_trail``), and nothing serialises the two
+    steps. Two ``dsx gate`` processes racing against one ``DECISIONS.jsonl``
+    can both derive the same identifier here and both append a header
+    carrying it, after which ``dsx explain``'s grouping — which keys purely
+    on invocation-id equality — would interleave two runs' records under one
+    header. Concurrent gate invocations against a single root are therefore
+    unsupported; serialising them (running one ``dsx gate`` at a time against
+    a given root) is the operator's responsibility today. No lock is taken
+    here — see the module docstring's append-contract note.
+    """
     records = read_all(path)
     n = sum(1 for r in records if r.get("record_type") == "invocation") + 1
     return f"INV-{n:04d}"
