@@ -48,7 +48,24 @@ PREFIX_GROUPS = [
 # enforcement. This list grows only as each later v2.0.0 phase adds its own
 # new-in-this-milestone prefix (DSX-VAL-*, DSX-INT-*, ...) — never to exempt a
 # code this milestone introduces from its citation and reference-value obligations.
-_D05_ALLOWLIST_PREFIXES = ("DSX-PAR-", "DSX-SPEC-08")
+# Rule: every entry here must end in a hyphen, so it can only ever match a whole
+# code family (e.g. the entire DSX-PAR-* family) and never part of a numeric
+# suffix — a bare numeric-string prefix like "DSX-SPEC-08" would silently admit
+# any longer code sharing those digits (a future DSX-SPEC-0800, say) without a
+# human noticing the allow-list needs updating. A single code that lives inside a
+# pre-existing family — where a family prefix would drag the whole legacy family
+# into enforcement — is named individually in `_D05_ALLOWLIST_CODES` instead.
+_D05_ALLOWLIST_PREFIXES = ("DSX-PAR-",)
+
+# The individually-enumerated half of D-20's finite, visible boundary: exact
+# codes this milestone introduced inside a pre-existing family (DSX-SPEC-*),
+# where a family prefix is not usable without pulling in that family's 200+
+# pre-existing legacy codes. Measured against the real tree, not copied from
+# review prose — re-derive by enumerating `collect()`'s codes under the old
+# bare-prefix match if this set is ever suspected stale.
+_D05_ALLOWLIST_CODES = frozenset(
+    {"DSX-SPEC-080", "DSX-SPEC-081", "DSX-SPEC-082", "DSX-SPEC-085", "DSX-SPEC-086"}
+)
 
 _CITATION_RE = re.compile(r"^\s*Citation:\s*\S", re.MULTILINE)
 _REFVALUE_RE = re.compile(
@@ -235,11 +252,16 @@ def check_d05(
 ) -> list[str]:
     """D-05 enforcement: citation, reference value/structural criterion, linked test.
 
-    Only codes matching ``_D05_ALLOWLIST_PREFIXES`` (D-20) are checked — the 206
+    Only codes matching a hyphen-terminated family prefix in ``_D05_ALLOWLIST_PREFIXES``
+    or named exactly in ``_D05_ALLOWLIST_CODES`` (D-20) are checked — the 206
     pre-existing legacy codes must produce zero new failures. Reports every
     problem found rather than short-circuiting on the first.
     """
-    covered = [row for row in rows if row[0].startswith(_D05_ALLOWLIST_PREFIXES)]
+    covered = [
+        row
+        for row in rows
+        if row[0].startswith(_D05_ALLOWLIST_PREFIXES) or row[0] in _D05_ALLOWLIST_CODES
+    ]
     if not covered:
         return []
     docstrings = _resolve_docstrings(code_root)
