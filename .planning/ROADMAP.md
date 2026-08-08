@@ -146,7 +146,7 @@ REQ-P6-15, REQ-P6-16
      the `suppressions[]` migration path and the "a frame that lies passes" limit, version
      2.0.0, and a regenerated finding catalogue.
 
-**Plans:** 13 plans — 10/10 executed, 3 gap-closure plans pending (wave 7)
+**Plans:** 13/13 plans executed
 
 Plans:
 **Wave 1**
@@ -179,9 +179,9 @@ Plans:
 
 **Wave 7** *(gap closure — blocked on Wave 6 completion; closes `06-VERIFICATION.md`)*
 
-- [ ] 06-11-PLAN.md — BLOCKER: no decision-trail failure mode can change a gate exit code, `dsx explain` returns 0 by construction, WR-02 concurrency limitation documented (wave 7)
-- [ ] 06-12-PLAN.md — correct the known-bad corpus's false gate claim and pin the real guarantee with gate-level tests (wave 7)
-- [ ] 06-13-PLAN.md — boundary-safe D-05 allow-list, corrected `inference:` validation comment, collapsed dead branch in `_package_for` (wave 7)
+- [x] 06-11-PLAN.md — BLOCKER: no decision-trail failure mode can change a gate exit code, `dsx explain` returns 0 by construction, WR-02 concurrency limitation documented (wave 7)
+- [x] 06-12-PLAN.md — correct the known-bad corpus's false gate claim and pin the real guarantee with gate-level tests (wave 7)
+- [x] 06-13-PLAN.md — boundary-safe D-05 allow-list, corrected `inference:` validation comment, collapsed dead branch in `_package_for` (wave 7)
 
 ### Phase 7: Validity frame checks (`DSX-VAL-*`)
 
@@ -469,7 +469,7 @@ cases where absence permitted a false pass" is a debate, not a count.
 | 3. Storytelling + code reality | — | Complete | v1.3.0 |
 | 4. Analytical logic depth + stats extensions | — | Complete | v1.4.0 |
 | 5. Chart review + suppressions | — | Complete | v1.5.0 |
-| 6. Contract extension, decision record, paradigm manifest | 10/10 | In Progress|  |
+| 6. Contract extension, decision record, paradigm manifest | 13/13 | In Progress|  |
 | 7. Validity frame checks (`DSX-VAL-*`) | 0/TBD | Not started | - |
 | 8. Interference, triggering, stability (`DSX-INT-*`) | 0/TBD | Not started | - |
 | 9. Monitoring discipline, symmetric (`DSX-PAR-*`) | 0/TBD | Not started | - |
