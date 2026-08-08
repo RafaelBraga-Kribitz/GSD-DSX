@@ -56,8 +56,13 @@ either direction — neither cited source is one.
 `DSX-INT-010` (Phase 8) — no code in this codebase adjudicates
 `validity_frame.interference` today; Phase 6 only checks that the block is
 present and its fields are legal vocabulary members (`dsx/spec.py`'s
-`_validate_validity_frame_shape`), which is exactly why this fixture passes
-every gate at every severity threshold as of this phase. Phase 8 is scoped
-to block a declared `interference.risk` other than `none` when
-`interference.mitigation` is `none` and `residual_note` is blank — precisely
-the combination this fixture declares.
+`_validate_validity_frame_shape`), so nothing in this repository names the
+shared-budget interference defect today: the fixture clears `dsx validate`
+and both CRITICAL-threshold gate points, `dsx gate plan` and `dsx gate
+execute`, with no finding attributable to that defect. The fixture does
+block at `dsx gate verify` and `dsx gate ship` (both exit 1), on the
+corpus-completeness gaps named in the paired ANALYSIS-SPEC.yaml header —
+tracked as a corpus completeness gap, not as the documented interference
+defect. Phase 8 is scoped to block a declared `interference.risk` other than
+`none` when `interference.mitigation` is `none` and `residual_note` is
+blank — precisely the combination this fixture declares.
