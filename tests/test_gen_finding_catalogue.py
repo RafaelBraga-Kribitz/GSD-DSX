@@ -180,6 +180,58 @@ report.add("DSX-PAR-001", "HIGH", "t")
         ]
         self.assertEqual(unresolved, [])
 
+    def test_every_d05_allowlist_prefix_ends_in_a_hyphen(self):
+        # WR-03/D-20: a bare numeric-string prefix (no trailing hyphen) silently
+        # over-matches any longer code sharing its digits — every family-prefix
+        # entry must be hyphen-terminated so it can only ever match a whole
+        # family, never part of a numeric suffix.
+        for prefix in g._D05_ALLOWLIST_PREFIXES:
+            self.assertTrue(
+                prefix.endswith("-"), f"{prefix!r} is not hyphen-terminated"
+            )
+
+    def test_check_d05_does_not_cover_a_longer_numeric_neighbour_of_an_enforced_code(self):
+        enforced_code = next(iter(g._D05_ALLOWLIST_CODES))
+        neighbour_code = enforced_code + "9"  # an unenumerated longer neighbour
+        with tempfile.TemporaryDirectory() as code_dir, tempfile.TemporaryDirectory() as tests_dir:
+            # No citation, no reference value, no test marker for either code —
+            # a non-compliant docstring is what would surface a false-positive
+            # over-match if the neighbour were accidentally covered.
+            _write(
+                Path(code_dir),
+                "check.py",
+                '''
+def f(report):
+    """No citation or reference value here."""
+    report.add("{enforced}", "HIGH", "t")
+    report.add("{neighbour}", "HIGH", "t")
+'''.format(enforced=enforced_code, neighbour=neighbour_code),
+            )
+            _write(Path(tests_dir), "test_marker.py", f"# D-05: {enforced_code}\n")
+
+            neighbour_rows = [(neighbour_code, "HIGH", "t", "check")]
+            self.assertEqual(
+                g.check_d05(neighbour_rows, Path(code_dir), Path(tests_dir)),
+                [],
+                "an unenumerated longer numeric neighbour must not be covered",
+            )
+
+            enforced_rows = [(enforced_code, "HIGH", "t", "check")]
+            problems = g.check_d05(enforced_rows, Path(code_dir), Path(tests_dir))
+            self.assertTrue(
+                problems,
+                "the enforced code itself, with a non-compliant docstring, must "
+                "still produce a problem",
+            )
+
+    def test_d05_covered_code_set_on_the_real_tree_is_exactly_the_documented_set(self):
+        rows = g.collect()
+        prefixes = g._D05_ALLOWLIST_PREFIXES
+        codes = g._D05_ALLOWLIST_CODES
+        covered = {row[0] for row in rows if row[0].startswith(prefixes) or row[0] in codes}
+        family_matched = {row[0] for row in rows if row[0].startswith(prefixes)}
+        self.assertEqual(covered, family_matched | codes)
+
 
 # ── Task 2: enforcement proven against a committed violating fixture ───────────
 

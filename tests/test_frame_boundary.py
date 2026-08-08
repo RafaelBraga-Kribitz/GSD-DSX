@@ -47,10 +47,11 @@ def _package_for(path: "str | Path") -> str:
     resolved = Path(path).resolve()
     rel = resolved.relative_to(ROOT).with_suffix("")
     parts = list(rel.parts)
-    if parts and parts[-1] == "__init__":
-        parts = parts[:-1]
-    else:
-        parts = parts[:-1]
+    # Dropping the last path segment is correct for both inputs by construction: an
+    # __init__.py's package is its own directory (the path minus the __init__ segment),
+    # and a plain module's package is its containing directory (the path minus the
+    # module segment). Same operation, two derivations, one line.
+    parts = parts[:-1]
     return ".".join(parts)
 
 
