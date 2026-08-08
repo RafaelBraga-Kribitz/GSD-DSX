@@ -1708,6 +1708,26 @@ class TestDecisionTrailCLI(unittest.TestCase):
         shutil.copy(self.ROOT / "examples" / "good-ANALYSIS-SPEC.yaml", spec_path)
         return spec_path
 
+    def _append_undecodable_bytes(self, trail_path: "Path") -> None:
+        """06-11 Task 1: write the exact corrupting byte sequence the reviewer
+        and verifier used — the lead byte of a two-byte UTF-8 sequence whose
+        continuation byte never arrives."""
+        with trail_path.open("ab") as fh:
+            fh.write(b"caf\xc3")
+
+    def _control_exit_code(self, spec_source_name: str, point: str) -> int:
+        """06-11 Task 1: run ``point`` against a fresh copy of the named
+        ``examples/`` fixture in a clean temporary directory with no trail
+        file present at all, and return the exit code — the baseline a
+        corrupted-trail run must match."""
+        import shutil
+
+        with tempfile.TemporaryDirectory() as tmp:
+            spec_path = Path(tmp) / "ANALYSIS-SPEC.yaml"
+            shutil.copy(self.ROOT / "examples" / spec_source_name, spec_path)
+            code, _, _ = self._run(["gate", point, "--spec", str(spec_path), "--phase-dir", tmp])
+            return code
+
     def test_explain_names_the_invocation_id_the_gate_wrote(self):
         with tempfile.TemporaryDirectory() as tmp:
             spec_path = self._gated_spec(tmp)
@@ -1822,6 +1842,71 @@ class TestDecisionTrailCLI(unittest.TestCase):
             code, out, _ = self._run(["explain", "--phase-dir", tmp])
             self.assertEqual(code, 0)
             self.assertTrue(any(cf in out for cf in counterfactuals))
+
+    # ── 06-11 Task 1: CR-01 regression — a corrupted trail can never move a
+    #    gate verdict, and explain always exits 0 ─────────────────────────
+
+    def test_explain_exits_zero_when_trail_holds_an_undecodable_byte(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            spec_path = self._gated_spec(tmp)
+            self._run(["gate", "plan", "--spec", str(spec_path), "--phase-dir", tmp])
+            trail = Path(tmp) / "DECISIONS.jsonl"
+            self._append_undecodable_bytes(trail)
+
+            code, _, _ = self._run(["explain", "--phase-dir", tmp])
+            self.assertEqual(code, 0)
+
+    def test_explain_still_renders_surviving_records_past_an_undecodable_byte(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            spec_path = self._gated_spec(tmp)
+            self._run(["gate", "plan", "--spec", str(spec_path), "--phase-dir", tmp])
+            trail = Path(tmp) / "DECISIONS.jsonl"
+            header = json.loads(trail.read_text(encoding="utf-8").splitlines()[0])
+            self._append_undecodable_bytes(trail)
+
+            code, out, _ = self._run(["explain", "--phase-dir", tmp])
+            self.assertEqual(code, 0)
+            self.assertIn(header["invocation_id"], out)
+
+    def test_explain_exits_zero_when_trail_path_is_a_directory(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self._gated_spec(tmp)
+            trail = Path(tmp) / "DECISIONS.jsonl"
+            trail.mkdir()
+
+            code, _, _ = self._run(["explain", "--phase-dir", tmp])
+            self.assertEqual(code, 0)
+
+    def test_gate_pass_exit_code_matches_control_with_corrupted_trail(self):
+        control = self._control_exit_code("good-ANALYSIS-SPEC.yaml", "plan")
+        self.assertEqual(control, 0)
+        with tempfile.TemporaryDirectory() as tmp:
+            spec_path = self._gated_spec(tmp)
+            trail = Path(tmp) / "DECISIONS.jsonl"
+            trail.write_bytes(
+                b'{"record_type": "invocation", "invocation_id": "INV-0001", '
+                b'"gate_point": "plan", "dsx_version": "x", "frame_digest": "y"}\n'
+                b"caf\xc3"
+            )
+            code, _, _ = self._run(["gate", "plan", "--spec", str(spec_path), "--phase-dir", tmp])
+            self.assertEqual(code, control)
+
+    def test_gate_block_exit_code_matches_control_with_corrupted_trail(self):
+        control = self._control_exit_code("bad-ANALYSIS-SPEC.yaml", "plan")
+        self.assertEqual(control, 1)
+        with tempfile.TemporaryDirectory() as tmp:
+            import shutil
+
+            spec_path = Path(tmp) / "ANALYSIS-SPEC.yaml"
+            shutil.copy(self.ROOT / "examples" / "bad-ANALYSIS-SPEC.yaml", spec_path)
+            trail = Path(tmp) / "DECISIONS.jsonl"
+            trail.write_bytes(
+                b'{"record_type": "invocation", "invocation_id": "INV-0001", '
+                b'"gate_point": "plan", "dsx_version": "x", "frame_digest": "y"}\n'
+                b"caf\xc3"
+            )
+            code, _, _ = self._run(["gate", "plan", "--spec", str(spec_path), "--phase-dir", tmp])
+            self.assertEqual(code, control)
 
 
 # ── Phase 1: profiler, DQ, coherence, evidence ───────────────────────────────
