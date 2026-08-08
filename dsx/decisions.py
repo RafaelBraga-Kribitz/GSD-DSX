@@ -31,9 +31,14 @@ The append contract (D-19), normative for any future writer of this file:
   ``confidence`` and ``escalate`` for that case.
 - **Durability:** ``append()`` writes, ``flush()``es and ``os.fsync()``s the
   file descriptor per record, so a line that finished writing survives a
-  crashed run. ``read_all()`` is the other half of that guarantee: an
-  unparseable trailing line (the half-written tail of a crash) is skipped, not
-  fatal, so one crash never invalidates every record written before it.
+  crashed run. ``read_all()`` is the other half of that guarantee, and it
+  tolerates three distinct on-disk conditions, not just one: an unparseable
+  line (the half-written tail of a crash), an undecodable byte (a hand-edit,
+  filesystem-level corruption of an already-committed byte, or any future
+  non-ASCII write), and an unreadable path (a directory, a device node, a
+  revoked permission) — none of these is fatal, so one crash or one corrupted
+  byte never invalidates every record written before it, and never raises
+  into a caller that documents an unconditional "never blocks" contract.
 """
 
 from __future__ import annotations
@@ -108,13 +113,31 @@ def append(path: "str | Path", record: "DecisionRecord | InvocationHeader") -> N
 
 
 def read_all(path: "str | Path") -> "list[dict]":
-    """Return every parseable record. Missing file -> []. A truncated or
-    otherwise unparseable line is skipped, not fatal (tolerant reader)."""
+    """Return every parseable record. Never raises for any on-disk state of
+    ``path`` — it degrades rather than fails, and its callers (``cmd_explain``,
+    the gate-path ``next_invocation_id``) depend on that unconditionally:
+
+    - **Missing path** -> ``[]``.
+    - **Unreadable path** (a directory rather than a file, a device node, a
+      revoked permission) -> ``[]``, caught as ``OSError`` around the read.
+    - **Undecodable bytes** in the file (not valid UTF-8) -> ``errors="replace"``
+      on the decode, so the read itself cannot raise; a line degraded by
+      replacement characters then either still parses as JSON or falls into
+      the existing unparseable-line skip below.
+    - **An unparseable line** (JSON-level truncation, e.g. the half-written
+      tail of a crash, or arbitrary non-JSON content) is skipped, not fatal —
+      the tolerant-reader design this docstring's module-level durability
+      paragraph describes.
+    """
     p = Path(path)
     if not p.exists():
         return []
+    try:
+        text = p.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return []
     records: "list[dict]" = []
-    for line in p.read_text(encoding="utf-8").splitlines():
+    for line in text.splitlines():
         line = line.strip()
         if not line:
             continue
