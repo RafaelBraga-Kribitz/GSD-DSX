@@ -72,6 +72,31 @@ If you do not answer: <the default I will proceed with>
    one block. Present the one that blocks the work, take the answer, then move
    on to the next.
 
+9. **The recommendation is mandatory and must name exactly one option.** "It
+   depends" and "both have merit" are not recommendations — they hand the
+   decision back with extra reading attached. State the option and the single
+   reason it wins.
+
+10. **The recommendation and the default must agree.** If you recommend Option A
+    and would proceed with Option B in silence, one of the two is wrong. Fix it
+    before sending, rather than making the reader notice the contradiction.
+
+11. **If no option is safe to take by default, this is not a decision block.**
+    Stop and say plainly why proceeding either way is unsafe. A block whose
+    default you would not actually act on is worse than no block, because it
+    reads as though silence is handled when it is not.
+
+## Anti-patterns
+
+| Anti-pattern | Why it fails | Instead |
+|---|---|---|
+| "Option A: Postgres. Option B: SQLite." | Names products, not consequences | Fill in "In practice" and "This locks in" |
+| "Reversibility: depends how far you get" | Not one of the two values | Pick one; when unsure, `expensive to undo` |
+| "If you do not answer: I will ask again" | Silence stalls the work | Name the option you will take |
+| "My recommendation: both have merit" | Hands the decision back | Name one option and one reason |
+| Five options with two explained | The unexplained ones are noise | Cut to three, record what you dropped |
+| "Use the ORM for the DTO layer" | Unexpanded acronyms | Expand on first use |
+
 ## When not to use this
 
 Do not use a decision block for a choice that has an obvious conventional
