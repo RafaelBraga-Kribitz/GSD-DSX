@@ -1,20 +1,14 @@
 ---
-status: diagnosed
+status: complete
 phase: 06-contract-extension-decision-record-paradigm-manifest
 source: [06-VERIFICATION.md]
 started: 2026-08-08T12:00:00Z
-updated: 2026-08-10T00:00:00Z
+updated: 2026-08-10T12:00:00Z
 ---
 
 ## Current Test
 
-number: 4
-name: Bayesian post-mortem states the Ville's-inequality formulation without conflation
-expected: |
-  The Deng, Lu & Chen (2016) citation is real and Theorem 1 supports the stated bound at
-  K=19; the post-mortem's own text is internally consistent and does not slide into a
-  different formulation.
-awaiting: gap closure
+[testing complete]
 
 ## Tests
 
@@ -45,7 +39,7 @@ notes: |
 
 ### 4. Bayesian post-mortem states the Ville's-inequality formulation without conflation
 expected: The Deng, Lu & Chen (2016) citation is real and Theorem 1 supports the stated bound; the post-mortem does not conflate formulations.
-result: pending
+result: pass
 notes: |
   Originally failed. The formulation split (prior-averaged versus point-null /
   law-of-iterated-logarithm) was stated clearly and correctly, Deng, Lu & Chen (2016)
@@ -54,16 +48,18 @@ notes: |
   claim — see Gap G-01 below.
 
   G-01 has since been corrected and machine-guarded (commits 9fe5154, f4ae058,
-  c7ad54a). Reset to pending rather than passed: the corrected prose is new text that
-  the human validator has not yet read, and this item is a human-judgment check.
-  Re-validation is invited, not assumed.
+  c7ad54a). Re-validated by the human on 2026-08-10 against the corrected prose at
+  bayesian-continuous-monitoring-POSTMORTEM.md lines 35-67: Theorem 1 is stated as
+  1/(K+1), giving 1/20 = 0.05 exactly at K=19; the Ville 1/k form is named as a
+  separate result giving 1/19 ~ 0.0526 and explicitly not "0.05 rounded"; the
+  `## Source` block carries the same 1/(K+1) attribution. No conflation remains.
 
 ## Summary
 
 total: 4
-passed: 3
+passed: 4
 issues: 0
-pending: 1
+pending: 0
 skipped: 0
 blocked: 0
 
