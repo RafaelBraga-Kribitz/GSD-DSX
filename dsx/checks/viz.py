@@ -9,6 +9,8 @@ declared chart spec — no rendering required, so the check runs in a gate.
 from __future__ import annotations
 
 from ..findings import Report
+from ..input_types import canonical_id
+from ..input_types import get as input_type_record
 from ..spec import CHART_CAPABILITIES, DATA_INPUT_TYPES, as_number, is_blank, items, normalize
 
 # Relationship → admissible chart types. The first entry is the default choice.
@@ -146,20 +148,31 @@ def _check_input_type_matrix(
                 where=f"{where}.data_input_type",
             )
         return
-    dit = normalize(str(raw)).replace("_", "-")
-    if dit not in DATA_INPUT_TYPES:
-        report.add(
-            "DSX-VIZ-013",
-            "HIGH",
-            f"'{label}' chart type conflicts with data_input_type",
-            detail=f"Unrecognised data_input_type {raw!r}. Allowed: " + ", ".join(sorted(DATA_INPUT_TYPES)),
-            remedy="Pick a closed data_input_type id.",
-            where=f"{where}.data_input_type",
-        )
-        return
+    # An IT id from the IT001-IT040 inventory is accepted alongside the coarse
+    # family names, and is the more precise declaration of the two.
+    it_id = canonical_id(str(raw))
+    if it_id:
+        dit = it_id
+        admissible = frozenset(input_type_record(it_id)["admissible"])
+    else:
+        dit = normalize(str(raw)).replace("_", "-")
+        if dit not in DATA_INPUT_TYPES:
+            report.add(
+                "DSX-VIZ-013",
+                "HIGH",
+                f"'{label}' chart type conflicts with data_input_type",
+                detail=(
+                    f"Unrecognised data_input_type {raw!r}. Allowed: "
+                    + ", ".join(sorted(DATA_INPUT_TYPES))
+                    + "; or an inventory id IT001-IT040 (see `dsx charts --list`)."
+                ),
+                remedy="Pick a closed data_input_type id.",
+                where=f"{where}.data_input_type",
+            )
+            return
+        admissible = CHART_CAPABILITIES.get(dit, frozenset())
     if not chart_type:
         return
-    admissible = CHART_CAPABILITIES.get(dit, frozenset())
     # Accept both underscored and hyphenated mark aliases
     aliases = {chart_type, chart_type.replace("_", "-"), chart_type.replace("-", "_")}
     if not aliases & set(admissible) and chart_type not in admissible:

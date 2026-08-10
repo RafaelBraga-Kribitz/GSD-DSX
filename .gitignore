@@ -4,3 +4,4 @@ __pycache__/
 ._*
 .venv/
 *.egg-info/
+DECISIONS.jsonl

@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import argparse
 import ast
+import re
 import sys
 from pathlib import Path
 
@@ -39,7 +40,38 @@ PREFIX_GROUPS = [
     ("DSX-COH", "Coherence", "Question ↔ claim ↔ decision agreement."),
     ("DSX-FIG", "Figure seals", "Artifact paths and svg_sha256 hermetic seals."),
     ("DSX-SMELL", "Plot smells", "Declaration-based plot-construction smells."),
+    ("DSX-PAR", "Paradigm and monitoring discipline",
+     "The declared inferential paradigm manifest and its symmetric peeking-monitoring pair."),
 ]
+
+# D-20: the finite, visible exemption boundary for D-05 citation/reference-value
+# enforcement. This list grows only as each later v2.0.0 phase adds its own
+# new-in-this-milestone prefix (DSX-VAL-*, DSX-INT-*, ...) — never to exempt a
+# code this milestone introduces from its citation and reference-value obligations.
+# Rule: every entry here must end in a hyphen, so it can only ever match a whole
+# code family (e.g. the entire DSX-PAR-* family) and never part of a numeric
+# suffix — a bare numeric-string prefix like "DSX-SPEC-08" would silently admit
+# any longer code sharing those digits (a future DSX-SPEC-0800, say) without a
+# human noticing the allow-list needs updating. A single code that lives inside a
+# pre-existing family — where a family prefix would drag the whole legacy family
+# into enforcement — is named individually in `_D05_ALLOWLIST_CODES` instead.
+_D05_ALLOWLIST_PREFIXES = ("DSX-PAR-",)
+
+# The individually-enumerated half of D-20's finite, visible boundary: exact
+# codes this milestone introduced inside a pre-existing family (DSX-SPEC-*),
+# where a family prefix is not usable without pulling in that family's 200+
+# pre-existing legacy codes. Measured against the real tree, not copied from
+# review prose — re-derive by enumerating `collect()`'s codes under the old
+# bare-prefix match if this set is ever suspected stale.
+_D05_ALLOWLIST_CODES = frozenset(
+    {"DSX-SPEC-080", "DSX-SPEC-081", "DSX-SPEC-082", "DSX-SPEC-085", "DSX-SPEC-086"}
+)
+
+_CITATION_RE = re.compile(r"^\s*Citation:\s*\S", re.MULTILINE)
+_REFVALUE_RE = re.compile(
+    r"^\s*(?:Reference value|Structural criterion):\s*\S", re.MULTILINE
+)
+_TEST_MARKER_RE = re.compile(r"#\s*D-05:\s*(DSX-[A-Z]+-\d{3})")
 
 
 def _literal(node: ast.AST) -> str | None:
@@ -107,9 +139,10 @@ def extract_sql_rules(path: Path) -> list[tuple[str, str, str]]:
 
 def collect() -> list[tuple[str, str, str, str]]:
     rows: list[tuple[str, str, str, str]] = []
-    sources = sorted((ROOT / "dsx").rglob("*.py"))
+    dsx_root = ROOT / "dsx"
+    sources = sorted(dsx_root.rglob("*.py"))
     for source in sources:
-        module = source.stem if source.parent.name == "dsx" else f"checks/{source.stem}"
+        module = str(source.relative_to(dsx_root).with_suffix("")).replace("\\", "/")
         for code, severity, title in extract(source):
             rows.append((code, severity, title, module))
         if source.name == "metrics.py":
@@ -157,25 +190,123 @@ def render(rows: list[tuple[str, str, str, str]]) -> str:
     return "\n".join(lines)
 
 
+def _resolve_docstrings(code_root: Path) -> dict[str, str]:
+    """Map each ``DSX-`` finding code to its enclosing function's docstring.
+
+    Walks every ``*.py`` under ``code_root``, builds a child->parent map (the
+    ``ast`` module has no parent pointers), then for every ``report.add(...)``
+    call whose first argument is a ``DSX-`` string literal, walks upward to the
+    nearest ``FunctionDef``/``AsyncFunctionDef`` and takes its docstring, falling
+    back to the module docstring when no enclosing function is found (D-22).
+    """
+    docstrings: dict[str, str] = {}
+    for path in sorted(code_root.rglob("*.py")):
+        try:
+            tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+        except SyntaxError:
+            continue
+        parents: dict[ast.AST, ast.AST] = {}
+        for parent in ast.walk(tree):
+            for child in ast.iter_child_nodes(parent):
+                parents[child] = parent
+        module_doc = ast.get_docstring(tree) or ""
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Call):
+                continue
+            func = node.func
+            if not (isinstance(func, ast.Attribute) and func.attr == "add"):
+                continue
+            if not node.args:
+                continue
+            code = _literal(node.args[0])
+            if not (code and code.startswith("DSX-")):
+                continue
+            doc = module_doc
+            current: ast.AST = node
+            while current in parents:
+                current = parents[current]
+                if isinstance(current, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                    doc = ast.get_docstring(current) or ""
+                    break
+            docstrings[code] = doc
+    return docstrings
+
+
+def _collect_test_markers(tests_root: Path) -> set[str]:
+    """Codes named by a ``# D-05: <CODE>`` comment anywhere under ``tests_root``.
+
+    ``ast`` discards comments, so this is a raw-text regex pass, not an AST walk
+    — mirrors the rationale in ``dsx/suppressions.py::known_codes()`` for staying
+    text-level where AST cannot see what is needed.
+    """
+    markers: set[str] = set()
+    for path in sorted(tests_root.rglob("*.py")):
+        text = path.read_text(encoding="utf-8")
+        for match in _TEST_MARKER_RE.finditer(text):
+            markers.add(match.group(1))
+    return markers
+
+
+def check_d05(
+    rows: list[tuple[str, str, str, str]], code_root: Path, tests_root: Path
+) -> list[str]:
+    """D-05 enforcement: citation, reference value/structural criterion, linked test.
+
+    Only codes matching a hyphen-terminated family prefix in ``_D05_ALLOWLIST_PREFIXES``
+    or named exactly in ``_D05_ALLOWLIST_CODES`` (D-20) are checked — the 206
+    pre-existing legacy codes must produce zero new failures. Reports every
+    problem found rather than short-circuiting on the first.
+    """
+    covered = [
+        row
+        for row in rows
+        if row[0].startswith(_D05_ALLOWLIST_PREFIXES) or row[0] in _D05_ALLOWLIST_CODES
+    ]
+    if not covered:
+        return []
+    docstrings = _resolve_docstrings(code_root)
+    test_markers = _collect_test_markers(tests_root)
+    problems: list[str] = []
+    for code, *_rest in covered:
+        doc = docstrings.get(code, "")
+        if not _CITATION_RE.search(doc):
+            problems.append(f"{code}: missing 'Citation:' line in docstring")
+        if not _REFVALUE_RE.search(doc):
+            problems.append(
+                f"{code}: missing 'Reference value:'/'Structural criterion:' line in docstring"
+            )
+        if code not in test_markers:
+            problems.append(f"{code}: no '# D-05: {code}' test marker found under {tests_root}")
+    return problems
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--write", action="store_true")
     parser.add_argument("--check", action="store_true")
     args = parser.parse_args()
 
-    content = render(collect())
+    rows = collect()
+    content = render(rows)
     if args.write:
         TARGET.parent.mkdir(parents=True, exist_ok=True)
         TARGET.write_text(content, encoding="utf-8")
         print(f"wrote {TARGET.relative_to(ROOT)}")
         return 0
     if args.check:
+        exit_code = 0
         current = TARGET.read_text(encoding="utf-8") if TARGET.exists() else ""
         if current != content:
             print("finding catalogue is stale — run with --write", file=sys.stderr)
-            return 1
-        print("finding catalogue is current")
-        return 0
+            exit_code = 1
+        problems = check_d05(rows, ROOT / "dsx", ROOT / "tests")
+        for problem in problems:
+            print(f"D-05: {problem}", file=sys.stderr)
+        if problems:
+            exit_code = 1
+        if exit_code == 0:
+            print("finding catalogue is current")
+        return exit_code
     print(content)
     return 0
 

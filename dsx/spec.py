@@ -64,7 +64,14 @@ PEEKING_POLICIES = {
     "fixed_horizon": "One analysis at the pre-declared sample size. No interim looks.",
     "sequential_obf": "Interim looks against O'Brien-Fleming boundaries.",
     "sequential_pocock": "Interim looks against constant Pocock boundaries.",
-    "always_valid": "Anytime-valid inference (mSPRT / confidence sequences).",
+    "always_valid": (
+        "Error rate is controlled continuously via anytime-valid inference "
+        "(mSPRT / confidence sequences)."
+    ),
+    "uncontrolled_continuous": (
+        "Interim looks continue with no sequential correction and no anytime-valid method — "
+        "the error rate is not controlled."
+    ),
 }
 
 ML_TASKS = {
@@ -104,6 +111,11 @@ DATA_INPUT_TYPES = {
     "hierarchical",
     "matrix",
     "event-time",
+    # Shapes present in the IT001-IT040 inventory that the twelve above do not
+    # cover. See references/input-type-inventory.md.
+    "single-value",
+    "geospatial",
+    "financial-ohlc",
 }
 
 # Admissible chart types per data_input_type (dsx mark names, underscored).
@@ -130,11 +142,159 @@ CHART_CAPABILITIES: dict[str, frozenset[str]] = {
     "hierarchical": frozenset({"treemap", "sunburst", "icicle", "circle_pack"}),
     "matrix": frozenset({"heatmap", "chord"}),
     "event-time": frozenset({"line", "scatter", "timeline", "funnel", "gantt"}),
+    # A single number has no relationship to encode, so the honest marks are the
+    # ones that do not imply one. Gauges are excluded deliberately: the arc is a
+    # length-encoded channel with an arbitrary maximum.
+    "single-value": frozenset({"big_number", "bullet", "sparkline"}),
+    "geospatial": frozenset({"choropleth", "symbol_map", "cartogram", "hexbin"}),
+    "financial-ohlc": frozenset({"candlestick", "ohlc_bar", "line", "column_range"}),
 }
 
 RENDERERS = {"matplotlib", "plotly", "altair", "ggplot", "glyph", "other"}
 
 SERIES_ROLES = {"component", "scenario"}
+
+# ── Validity-frame / inference vocabularies (Phase 6, REQ-P6-06) ────────────
+# Every one is a name->description dict, no exceptions (D-04). No new vocabulary is
+# defined for dependence.method_family_required — it is typed against the existing
+# VARIANCE_ADJUSTMENTS set above (M-09).
+
+IDENTIFICATION_STRENGTHS = {
+    "strong": "The identification strategy rules out confounding by design (e.g. randomization).",
+    "moderate": (
+        "The identification strategy relies on an assumption that is plausible but not "
+        "verifiable from the data alone."
+    ),
+    "weak": "The identification strategy relies on covariate adjustment with no design-based support.",
+}
+
+CONSTRAINT_SOURCES = {
+    "none": "No external constraint informs the estimate beyond the observed data.",
+    "informative_priors": "A prior distribution encodes external information about the parameter.",
+    "penalisation": (
+        "A penalty term (e.g. ridge, lasso) shrinks the estimate toward a null or reference value."
+    ),
+    "design_restriction": (
+        "The study design itself restricts the parameter space "
+        "(e.g. a capped effect by construction)."
+    ),
+    "hierarchical_pooling": (
+        "Partial pooling across groups in a hierarchical model constrains group-level estimates."
+    ),
+}
+
+DEPENDENCE_STRUCTURES = {
+    "none": "Observations are independent; no dependence structure is declared.",
+    "clustered": "Observations are grouped into clusters that share unobserved factors.",
+    "repeated_measures": "The same unit is observed multiple times.",
+    "temporal": "Observations are ordered in time and adjacent observations are correlated.",
+    "spatial": "Observations are located in space and nearby observations are correlated.",
+    "hierarchical": "Observations are nested within multiple levels of grouping.",
+}
+
+INTERFERENCE_RISKS = {
+    "none": "Treatment of one unit does not plausibly affect another unit's outcome.",
+    "shared_budget": (
+        "Units compete for a shared, capacity-limited resource (e.g. a paid-media budget)."
+    ),
+    "marketplace": (
+        "Units interact through a two-sided market where one side's treatment shifts the "
+        "other side's outcomes."
+    ),
+    "geo_spillover": "Treatment effects in one geography leak into a nearby untreated geography.",
+    "social_graph": (
+        "Units are connected by a social or referral graph through which treatment can propagate."
+    ),
+    "shared_inventory": "Units draw from a shared, finite inventory of a physical or virtual good.",
+}
+
+INTERFERENCE_MITIGATIONS = {
+    "none": "No mitigation is applied; interference risk, if any, is unaddressed.",
+    "geo_split": "Randomization is performed at the geography level to contain spillover.",
+    "cluster_randomisation": "Randomization is performed at the cluster level rather than the individual level.",
+    "time_split": "Treatment and control are separated in time rather than concurrently.",
+    "budget_isolation": "Each arm draws from a separate, non-competing budget.",
+    "modelled": "Interference is estimated and adjusted for statistically rather than designed away.",
+}
+
+# Exactly four members, no "none" member (locked decision R-02): missingness is never
+# absent, only unassessed. Do not re-add a "none" member.
+MISSINGNESS_MECHANISMS = {
+    "MCAR": (
+        "Missing completely at random — missingness is independent of both observed and "
+        "unobserved data."
+    ),
+    "MAR": "Missing at random — missingness depends only on observed data.",
+    "MNAR": "Missing not at random — missingness depends on the unobserved value itself.",
+    "not_assessed": "The missingness mechanism has not been evaluated.",
+}
+
+ANALYSIS_POPULATIONS = {
+    "eligible": "The population that met eligibility criteria, regardless of subsequent engagement.",
+    "triggered": "The subset of the eligible population that actually triggered the analyzed event.",
+}
+
+DECLARATION_POINTS = {
+    "pre_data": "The inference plan was declared before the data was observed.",
+    "post_data": (
+        "The inference plan was declared after the data was observed — an unverifiable "
+        "operator self-declaration (Phase 10 REQ-P10-02 documents this limit)."
+    ),
+}
+
+PARADIGMS = {
+    "frequentist": "Inference based on the sampling distribution of a statistic under repeated sampling.",
+    "bayesian": "Inference based on a posterior distribution combining a prior with the observed data.",
+}
+
+# No description ranks one reason above another (D-12 symmetry).
+PARADIGM_JUSTIFICATIONS = {
+    "prior_information_available": "Credible external information exists to form an informative prior.",
+    "sequential_monitoring_required": (
+        "The analysis requires continuous or repeated looks at accumulating data."
+    ),
+    "decision_theoretic_loss_specified": (
+        "A decision rule with an explicit loss function drives the analysis."
+    ),
+    "small_sample_informative_prior": (
+        "The sample is too small for frequentist asymptotics to apply reliably."
+    ),
+    "regulatory_requirement": "A regulatory or compliance requirement mandates the paradigm.",
+    "team_convention": "The paradigm follows the team's established analytical convention.",
+    "vendor_constraint": "The paradigm is constrained by a third-party tool or vendor.",
+}
+
+# Single registry behind describe_vocabulary() (D-05, REQ-P6-06): the object each shape
+# validator imports is the exact object dumped here — one place to add a vocabulary, not two.
+# Deliberately excludes SPEC_VERSION, CAUSAL_VERBS, REQUIRED_TOP_LEVEL and
+# IMBALANCE_UNSAFE_METRICS — they are not vocabularies. chart_capabilities stays
+# special-cased in describe_vocabulary() below, exactly as before.
+_VOCABULARIES: "list[tuple[str, Any]]" = [
+    ("question_types", QUESTION_TYPES),
+    ("design_kinds", DESIGN_KINDS),
+    ("identification_strategies", IDENTIFICATION_STRATEGIES),
+    ("claim_types", CLAIM_TYPES),
+    ("multiplicity_corrections", MULTIPLICITY_CORRECTIONS),
+    ("peeking_policies", PEEKING_POLICIES),
+    ("ml_tasks", ML_TASKS),
+    ("split_strategies", SPLIT_STRATEGIES),
+    ("variance_adjustments", VARIANCE_ADJUSTMENTS),
+    ("metric_types", METRIC_TYPES),
+    ("data_input_types", DATA_INPUT_TYPES),
+    ("renderers", RENDERERS),
+    ("series_roles", SERIES_ROLES),
+    # New this phase (REQ-P6-06) — every one a name->description dict per D-04:
+    ("identification_strengths", IDENTIFICATION_STRENGTHS),
+    ("constraint_sources", CONSTRAINT_SOURCES),
+    ("dependence_structures", DEPENDENCE_STRUCTURES),
+    ("interference_risks", INTERFERENCE_RISKS),
+    ("interference_mitigations", INTERFERENCE_MITIGATIONS),
+    ("missingness_mechanisms", MISSINGNESS_MECHANISMS),
+    ("analysis_populations", ANALYSIS_POPULATIONS),
+    ("declaration_points", DECLARATION_POINTS),
+    ("paradigms", PARADIGMS),
+    ("paradigm_justifications", PARADIGM_JUSTIFICATIONS),
+]
 
 
 # ── Access helpers ───────────────────────────────────────────────────────────
@@ -247,6 +407,8 @@ def validate_structure(spec: dict) -> Report:
     _validate_design_shape(spec, report)
     _validate_model_shape(spec, report)
     _validate_claims_shape(spec, report)
+    _validate_validity_frame_shape(spec, report)
+    _validate_inference_shape(spec, report)
 
     from .suppressions import validate_suppressions
 
@@ -541,23 +703,255 @@ def _validate_claims_shape(spec: dict, report: Report) -> None:
     report.ok(f"{len(claims)} claim(s) declared")
 
 
-def describe_vocabulary() -> dict[str, Iterable[str]]:
-    """Machine-readable dump of every closed vocabulary — used by `dsx vocab`."""
-    return {
-        "question_types": sorted(QUESTION_TYPES),
-        "design_kinds": sorted(DESIGN_KINDS),
-        "identification_strategies": sorted(IDENTIFICATION_STRATEGIES),
-        "claim_types": sorted(CLAIM_TYPES),
-        "multiplicity_corrections": sorted(MULTIPLICITY_CORRECTIONS),
-        "peeking_policies": sorted(PEEKING_POLICIES),
-        "ml_tasks": sorted(ML_TASKS),
-        "split_strategies": sorted(SPLIT_STRATEGIES),
-        "variance_adjustments": sorted(VARIANCE_ADJUSTMENTS),
-        "metric_types": sorted(METRIC_TYPES),
-        "data_input_types": sorted(DATA_INPUT_TYPES),
-        "renderers": sorted(RENDERERS),
-        "series_roles": sorted(SERIES_ROLES),
-        "chart_capabilities": {
-            key: sorted(values) for key, values in sorted(CHART_CAPABILITIES.items())
-        },
+# ── validity_frame / inference structural validators (Phase 6, REQ-P6-02/03/04) ──
+# Locked by decision R-01. Diverges deliberately from research/PITFALLS.md Pitfall 2,
+# which placed `interference` in a conditional tier and `identification` in the
+# causal-only tier: REQ-P6-03 and ROADMAP Success Criterion 2 are the binding sources
+# and both put `interference` in the causal-only list below. Do not "fix" this back to
+# match PITFALLS.md.
+_VALIDITY_FRAME_ALWAYS_REQUIRED = (
+    "estimand", "units", "measurement", "dependence", "sampling_frame", "missingness",
+)
+_VALIDITY_FRAME_CAUSAL_REQUIRED = ("identification", "interference", "triggering", "stability")
+
+# (sub-block, sub-field, closed vocabulary). `dependence.method_family_required` reuses
+# VARIANCE_ADJUSTMENTS verbatim (M-09) — no parallel set is defined for it.
+_VALIDITY_FRAME_MEMBERSHIP: "tuple[tuple[str, str, Any], ...]" = (
+    ("identification", "strength", IDENTIFICATION_STRENGTHS),
+    ("identification", "constraint_source", CONSTRAINT_SOURCES),
+    ("dependence", "structure", DEPENDENCE_STRUCTURES),
+    ("dependence", "method_family_required", VARIANCE_ADJUSTMENTS),
+    ("interference", "risk", INTERFERENCE_RISKS),
+    ("interference", "mitigation", INTERFERENCE_MITIGATIONS),
+    ("triggering", "analysis_population", ANALYSIS_POPULATIONS),
+    ("missingness", "mechanism", MISSINGNESS_MECHANISMS),
+)
+
+
+def _validate_validity_frame_shape(spec: dict, report: Report) -> None:
+    """Requiredness, aggregation and membership shape of the ``validity_frame:`` block.
+
+    Codes DSX-SPEC-080 (block absent), DSX-SPEC-081 (required sub-block missing, one
+    finding per sub-block per D-11) and DSX-SPEC-082 (sub-field outside its closed
+    vocabulary).
+
+    Citation: Hernan, M.A. & Robins, J.M. (2020), *Causal Inference: What If*, Chapter 1
+    ("A Definition of Causal Effect") and Chapter 3 ("Observational Studies") — the
+    estimand and identification-condition vocabulary the `estimand` and `identification`
+    sub-blocks encode.
+    Citation: Little, R.J.A. & Rubin, D.B. (2019), *Statistical Analysis with Missing
+    Data*, 3rd ed., Chapter 1 ("Introduction") — the MCAR/MAR/MNAR missingness-mechanism
+    taxonomy this validator's membership check enforces via MISSINGNESS_MECHANISMS.
+    Citation: Imbens, G.W. & Rubin, D.B. (2015), *Causal Inference for Statistics,
+    Social, and Biomedical Sciences*, Chapter 1, Section 1.6 ("The Stable Unit Treatment
+    Value Assumption") — the interference/SUTVA vocabulary the `interference` sub-block
+    encodes.
+    Structural criterion: presence-and-membership test, not a numeric one. Requiredness
+    is a set-membership check against a question_type/design.kind-gated list of exactly
+    ten sub-block names; the aggregation rule (one finding per missing sub-block once the
+    block itself is present) and the eight per-field vocabulary memberships are D-11 and
+    D-04, respectively. No threshold, effect size or statistic is computed here.
+    """
+    from .decisions import DecisionRecord
+
+    frame = spec.get("validity_frame")
+    needs_causal_block = (
+        normalize(spec.get("question_type", "")) in ("causal", "prescriptive")
+        or normalize(get(spec, "design.kind", "")) == "experiment"
+    )
+    required = list(_VALIDITY_FRAME_ALWAYS_REQUIRED) + (
+        list(_VALIDITY_FRAME_CAUSAL_REQUIRED) if needs_causal_block else []
+    )
+
+    report.context.setdefault("decisions", []).append(
+        DecisionRecord(
+            id="",
+            invocation_id="",
+            layer="deterministic",
+            choice=f"validity_frame requires: {', '.join(required)}",
+            inputs=["question_type", "design.kind"],
+            rule=(
+                "R-01: question_type in ('causal', 'prescriptive') or design.kind == "
+                "'experiment' adds identification, interference, triggering and stability "
+                "to the six always-required sub-blocks (estimand, units, measurement, "
+                "dependence, sampling_frame, missingness)."
+            ),
+            citation="Hernan & Robins (2020), Causal Inference: What If, Ch. 1 and Ch. 3",
+            counterfactual=(
+                "If question_type were not 'causal'/'prescriptive' and design.kind were "
+                "not 'experiment', identification, interference, triggering and stability "
+                "would not be required."
+            ),
+        ).to_dict()
+    )
+
+    if not isinstance(frame, dict) or not frame:
+        report.add(
+            "DSX-SPEC-080",
+            "CRITICAL",
+            "validity_frame block is missing",
+            detail="Required sub-blocks: " + ", ".join(required),
+            remedy=(
+                "Add a validity_frame: block with the required sub-blocks. "
+                "See templates/ANALYSIS-SPEC.yaml."
+            ),
+            where="spec.validity_frame",
+        )
+        return
+
+    missing = [name for name in required if not frame.get(name) or not isinstance(frame.get(name), dict)]
+    if missing:
+        for name in missing:
+            report.add(
+                "DSX-SPEC-081",
+                "CRITICAL",
+                f"validity_frame.{name} is required and missing",
+                detail=f"question_type/design.kind requires: {', '.join(required)}",
+                remedy=f"Declare validity_frame.{name} with its required sub-fields.",
+                where=f"spec.validity_frame.{name}",
+            )
+    else:
+        report.ok("validity_frame required sub-blocks present")
+
+    for block_name, field_name, vocab in _VALIDITY_FRAME_MEMBERSHIP:
+        block = frame.get(block_name)
+        if not isinstance(block, dict):
+            continue
+        value = block.get(field_name)
+        if is_blank(value):
+            continue
+        # Case-insensitive membership: most vocabularies are already lowercase (normalize()
+        # is a no-op against their keys), but MISSINGNESS_MECHANISMS is a case-sensitive
+        # acronym set (MCAR/MAR/MNAR, per R-02) — comparing against normalized keys keeps
+        # exactly one comparison path instead of special-casing this one field.
+        if normalize(value) not in {normalize(k) for k in vocab}:
+            report.add(
+                "DSX-SPEC-082",
+                "HIGH",
+                f"validity_frame.{block_name}.{field_name} {value!r} is not recognised",
+                detail="Allowed: " + ", ".join(sorted(vocab)),
+                remedy=f"Set validity_frame.{block_name}.{field_name} to one of the allowed values.",
+                where=f"spec.validity_frame.{block_name}.{field_name}",
+            )
+
+
+# The six REQ-P6-04 field names — a machine-readable manifest pinning that requirement's
+# declared field list against drift. Its one consumer is the drift-guard test
+# tests/test_dsx.py::test_inference_fields_constant_matches_req_p6_04; the finding
+# catalogue does not read it.
+#
+# This tuple is not an enforced closed set: _validate_inference_shape vocabulary-checks
+# only three of these six fields (paradigm, paradigm_justification, declared_at, via
+# _INFERENCE_MEMBERSHIP below) and rejects exactly one non-member field, the one named by
+# _INFERENCE_REMOVED_FIELD. An unrecognised or misspelled key under inference: — e.g.
+# `inference: {paradgim: bayesian}` — is accepted silently today; there is no unknown-key
+# check for this block.
+#
+# M-02 removes `stopping_rule`: the stopping-rule concept lives in design.peeking_policy,
+# not here.
+_INFERENCE_FIELDS = (
+    "paradigm", "paradigm_justification", "declared_at",
+    "primary_procedure", "alpha_spending", "fallback_rule",
+)
+
+_INFERENCE_MEMBERSHIP: "tuple[tuple[str, Any], ...]" = (
+    ("paradigm", PARADIGMS),
+    ("paradigm_justification", PARADIGM_JUSTIFICATIONS),
+    ("declared_at", DECLARATION_POINTS),
+)
+
+# The field M-02 removed from inference: — declaring it is redirected, not silently
+# ignored. The concept it named (the stopping rule) lives in design.peeking_policy.
+_INFERENCE_REMOVED_FIELD = "stopping_rule"
+
+
+def _validate_inference_shape(spec: dict, report: Report) -> None:
+    """Shape validation of the optional ``inference:`` block.
+
+    Codes DSX-SPEC-085 (sub-field outside its closed vocabulary) and DSX-SPEC-086 (the
+    field M-02 removed is declared).
+
+    Citation: Deng, A., Lu, J. & Chen, S. (2016), "Continuous Monitoring of A/B Tests
+    without Pain: Optional Stopping in Bayesian Testing", IEEE DSAA 2016 — the primary
+    source establishing that a decision procedure's realised error rate depends on the
+    declared inferential paradigm and monitoring plan, which is why inference.paradigm
+    must be declared rather than assumed. The exact section/theorem locator within this
+    paper is unverified at time of writing and is flagged for human confirmation in the
+    06-06 plan summary; the author/year/title/venue anchor itself is not in doubt and
+    matches brief.md section 7.
+    Structural criterion: presence-and-membership test on three closed-vocabulary
+    sub-fields, plus a fourth check for the presence of a removed field name. No
+    numeric threshold is computed here.
+    """
+    inference = spec.get("inference")
+    if not isinstance(inference, dict) or not inference:
+        return
+
+    from .decisions import DecisionRecord
+
+    declared_paradigm = inference.get("paradigm")
+    report.context.setdefault("decisions", []).append(
+        DecisionRecord(
+            id="",
+            invocation_id="",
+            layer="deterministic",
+            choice=(
+                f"paradigm={declared_paradigm}" if not is_blank(declared_paradigm)
+                else "paradigm=undeclared"
+            ),
+            inputs=["inference.paradigm"],
+            rule=(
+                "inference.paradigm must be a member of PARADIGMS "
+                "(frequentist, bayesian) (REQ-P6-04)."
+            ),
+            citation="Deng, Lu & Chen (2016), Continuous Monitoring of A/B Tests without Pain",
+            counterfactual=(
+                "Declaring the other paradigm would route this analysis to that "
+                "paradigm's symmetric monitoring-discipline checks (Phase 9's "
+                "DSX-PAR-010/011 pair) instead of the ones this declaration selects."
+            ),
+        ).to_dict()
+    )
+
+    for field_name, vocab in _INFERENCE_MEMBERSHIP:
+        value = inference.get(field_name)
+        if is_blank(value):
+            continue
+        if normalize(value) not in vocab:
+            report.add(
+                "DSX-SPEC-085",
+                "HIGH",
+                f"inference.{field_name} {value!r} is not recognised",
+                detail="Allowed: " + ", ".join(sorted(vocab)),
+                remedy=f"Set inference.{field_name} to one of the allowed values.",
+                where=f"spec.inference.{field_name}",
+            )
+
+    if _INFERENCE_REMOVED_FIELD in inference:
+        report.add(
+            "DSX-SPEC-086",
+            "HIGH",
+            f"inference.{_INFERENCE_REMOVED_FIELD} is not a field under inference:",
+            detail=(
+                "No equivalent field exists under inference: — the stopping-rule "
+                "concept (M-02) lives in design.peeking_policy."
+            ),
+            remedy="Remove inference.stopping_rule; declare design.peeking_policy instead.",
+            where=f"spec.inference.{_INFERENCE_REMOVED_FIELD}",
+        )
+
+
+def describe_vocabulary() -> "dict[str, Any]":
+    """Machine-readable dump of every closed vocabulary — used by `dsx vocab`.
+
+    Registry-driven (D-05): a dict-backed vocabulary dumps as a key-sorted dict of its
+    descriptions; a set-backed vocabulary dumps as a sorted list. `chart_capabilities` stays
+    special-cased — it is not a vocabulary, it is a capability matrix keyed by vocabulary.
+    """
+    out: "dict[str, Any]" = {}
+    for name, obj in _VOCABULARIES:
+        out[name] = {k: obj[k] for k in sorted(obj)} if isinstance(obj, dict) else sorted(obj)
+    out["chart_capabilities"] = {
+        key: sorted(values) for key, values in sorted(CHART_CAPABILITIES.items())
     }
+    return out

@@ -132,6 +132,25 @@ claims:
 
 Run `dsx init` to scaffold it, `dsx vocab` to see every closed vocabulary.
 
+### Migrating a pre-v2.0.0 spec
+
+From v2.0.0, `validity_frame:` is required starting at the `plan` gate, at
+CRITICAL severity — so a spec written against v1.x begins blocking the moment
+you upgrade. The supported path is to fill the frame: `estimand`, `units`,
+`identification`, `dependence`, `interference`, `triggering`, `stability`,
+`sampling_frame`, `missingness`, `measurement`.
+
+The supported *interim* path is the existing `suppressions[]` mechanism (see
+[Finding suppressions](#finding-suppressions) below): declare the missing-frame
+findings there with a `reason` and an `authority` naming a real ADR or SPEC
+file. Suppressions apply after checks and before the blocking threshold, and
+an unknown code aborts the run with exit 2.
+
+Say this plainly: a suppression is an attributable, dated decision with a
+named authority, not a way to make the finding go away. A suppression with no
+resolvable `authority` reference already produces `DSX-SPEC-070` — the
+grandfather path is deliberate, not silent.
+
 ---
 
 ## What the gates actually catch
@@ -284,6 +303,64 @@ valid.
 pass every gate at every threshold; `examples/bad-ANALYSIS-SPEC.yaml` must be
 blocked by every gate. If a new check breaks the good fixture, either the check is
 wrong or the fixture has a real defect. Both are worth finding out.
+
+---
+
+## Known limits
+
+The gate checks declarations against declarations — **a frame that lies passes.**
+The insurance against a bad question is still a human who knows the domain
+reading the frame before the data is touched. What this changes is that the
+review becomes cheap, structured and repeatable, so it actually happens.
+
+This is a different failure from the one `dsx-ml-integrity-auditor` covers
+(see [Design notes](#design-notes) below): that audit catches a pipeline
+whose *code* misdeclares what it does. This is about a `validity_frame:`
+block that is internally coherent — every sub-field filled, every closed
+vocabulary respected, every cross-field check satisfied — and still false,
+because nothing in the frame's shape can verify that "difference in 7-day
+activation rate" was the right question to ask in the first place.
+
+### Concurrent `dsx gate` invocations are not supported
+
+Run `dsx gate` points against one analysis directory sequentially, not in
+parallel. The per-invocation identifier in `DECISIONS.jsonl` is derived by
+reading and counting existing invocation headers, and nothing locks that
+read against a second process's write. Two concurrent `dsx gate` runs
+against the same directory can both derive the same invocation identifier
+and both append a header carrying it, merging their decision trails under
+one invocation in `dsx explain`'s output. This does not affect any gate's
+exit code — the trail stays a side channel — but it does corrupt the
+grouping guarantee the trail is supposed to provide for that one invocation.
+Serialising `dsx gate` runs against a given analysis directory is the
+operator's responsibility today.
+
+### Two tiers of evidentiary rigour
+
+Not every finding code in the catalogue carries the same evidentiary bar.
+
+**Tier one — codes introduced in v2.0.0.** Every new finding code carries, in
+its docstring, a `Citation:` line naming author, year, work and the exact
+formulation, plus a `Reference value:` line (or `Structural criterion:` where
+the check is structural rather than numeric), plus a `# D-05: <CODE>` marker
+comment in `tests/` linking the code to the test that proves it fires. All
+three are enforced mechanically:
+
+```bash
+python3 scripts/gen-finding-catalogue.py --check
+```
+
+**Tier two — pre-existing codes.** The finding codes that predate this rule
+are carried on a finite allow-list inside `gen-finding-catalogue.py`. Many
+are structural (contract shape, SQL fan-out) with no primary statistical
+source to cite — forcing a citation there would manufacture exactly the fake
+authority the rule exists to prevent. The allow-list is designed to shrink:
+as an old code earns a citation, it comes off the list.
+
+The `# D-05: <CODE>` test-linkage convention isn't cosmetic bookkeeping — it
+is how every check family from here forward proves its citation is actually
+exercised by a test, not just quoted in a comment. It binds every later
+milestone phase from the moment it lands.
 
 ---
 

@@ -1,0 +1,191 @@
+# A known-bad ANALYSIS-SPEC (REQ-P6-13, D-06). This is the Bayesian half of
+# Phase 9's atomic monitoring pair (DSX-PAR-010/DSX-PAR-011 ship together or not
+# at all). The file is structurally valid — it parses, and it accepts dsx
+# validate and both CRITICAL-threshold gate points, dsx gate plan and dsx gate
+# execute (both exit 0) — but it asserts that a weakly informative prior alone
+# controls the false-positive rate while the posterior is checked continuously,
+# with no threshold calibration declared. It currently also blocks dsx gate verify
+# and dsx gate ship (both exit 1), on seven unrelated corpus-completeness
+# gaps — DSX-STA-041 (declared test outside the stats recommendation engine's
+# acceptable set), DSX-CLM-031 (evidence pointer does not resolve), DSX-COH-031
+# (an unchecked, unwaived assumption), DSX-MET-040 (a warehouse-like metric
+# with no sql), DSX-NAR-001 (no narrative.path), DSX-REP-001 (a stochastic
+# method with no random_seed) and DSX-REP-030 (no reproducibility.entrypoint)
+# — none of which is the false-positive-control defect this fixture exists to
+# encode; see tests/test_known_bad_corpus.py's _INCIDENTAL_GAP_CODES for the
+# full measured list. DSX-PAR-011 (Phase 9) is the code that will block this
+# pattern itself once it ships; nothing in this repository adjudicates it
+# today. See the paired POSTMORTEM.md.
+#
+# ── Formulation note (T-6-17) ────────────────────────────────────────────────
+# This fixture's defect is stated relative to the PRIOR-AVERAGED bound: Ville's
+# martingale inequality caps the probability of a posterior-odds ratio ever
+# crossing a fixed threshold k at roughly 1/k. At the P(B>A) > 0.95 decision
+# threshold used below, k = 19 and the bound is 0.05. This is NOT the
+# point-null / law-of-iterated-logarithm formulation, under which the error
+# rate over an unbounded horizon grows without a useful ceiling — both are
+# correct statements about different quantities (brief.md section 6.5). See
+# the paired POSTMORTEM.md for the full derivation and citation.
+#
+#   dsx validate --spec examples/known-bad/bayesian-continuous-monitoring-ANALYSIS-SPEC.yaml
+
+spec_version: 1
+title: "Does a weakly informative prior keep the false-positive rate controlled while a Bayesian A/B test is monitored continuously?"
+owner: "experimentation-platform"
+created: "2026-04-10"
+
+question_type: causal
+
+decision:
+  owner: "Head of Experimentation Platform"
+  decision_rule: >
+    Ship the treatment variant to 100% of traffic as soon as
+    P(treatment > control) crosses 0.95 on the daily-refreshed posterior.
+  action_if_null: "Keep the control variant; the posterior never crosses 0.95 within duration_days."
+  minimum_practical_effect: 0.01
+  reversible: true
+  deadline: "2026-05-10"
+
+metrics:
+  - name: conversion_rate
+    type: ratio
+    definition: "Share of sessions with a completed purchase"
+    grain: session
+    numerator: "count(distinct session_id) where purchased = true"
+    denominator: "count(distinct session_id)"
+    source: warehouse.fct_sessions
+    owner: experimentation-platform
+
+data:
+  - name: sessions
+    source: warehouse.fct_sessions
+    period: "2026-04-15..2026-05-10"
+    rows: 640210
+
+design:
+  kind: experiment
+  identification: randomized_experiment
+  randomization_unit: session
+  analysis_unit: session
+  arms: [control, treatment]
+  expected_allocation: [0.5, 0.5]
+  baseline_rate: 0.045
+  mde: 0.003
+  alpha: 0.05
+  power: 0.80
+  planned_n_per_arm: 300000
+  duration_days: 26
+  peeking_policy: uncontrolled_continuous
+
+analysis:
+  outcome_type: proportion
+  n_groups: 2
+  paired: false
+  test: bayesian_ab
+
+results:
+  observed_n: [305112, 304988]
+  interim_looks: 26
+  overall_effect: 0.004
+
+claims:
+  - text: >
+      A weakly informative prior on the conversion-rate difference keeps the
+      false-positive rate controlled even though the posterior is checked
+      daily, so crossing P(treatment > control) > 0.95 on any single day is
+      sufficient evidence to ship.
+    type: causal
+    evidence: "RESULTS.md#bayesian-conversion-readout"
+    population: "Sessions in the experiment window, 2026-04-15 to 2026-05-10"
+    identification: randomized_experiment
+
+assumptions:
+  - assumption: "A weakly informative prior on the effect size is sufficient to control the decision procedure's false-positive rate under continuous monitoring."
+    rationale: "The posterior itself is a valid summary of belief at every look, regardless of the stopping rule."
+    impact_if_wrong: "The posterior being valid at every look does not make the stop-when-crossed decision rule's error rate controlled; see the post-mortem's prior-averaged Ville bound."
+    checked: false
+
+limitations:
+  - "No threshold calibration (a pre-registered posterior-odds bound accounting for continuous peeking) was declared before monitoring began; the claim that a weakly informative prior alone controls the false-positive rate under continuous peeking is the defect this fixture encodes — see the prior-averaged formulation note above and in the post-mortem."
+
+# ── Validity frame (REQ-P6-02) ───────────────────────────────────────────────
+# question_type: causal + design.kind: experiment, so all ten sub-blocks are
+# required from plan onward (R-01 / M-06). The defect lives in inference below
+# and in the claims/limitations above, not in this block, which is clean.
+validity_frame:
+  estimand:
+    quantity: "difference in conversion rate"
+    population: "sessions in the experiment window, 2026-04-15 to 2026-05-10"
+    contrast: "treatment variant vs control variant"
+    time_window: "26 days, 2026-04-15 to 2026-05-10"
+    falsifier: "the posterior probability P(treatment > control) never crosses 0.95 within duration_days"
+
+  units:
+    observation: session
+    assignment: session
+    analysis: session
+
+  identification:
+    strength: strong               # strong | moderate | weak
+    evidence: "Assignment is randomized per session at first pageview."
+    constraint_source: informative_priors  # none | informative_priors | penalisation | design_restriction | hierarchical_pooling
+    constraint_justification: "A weakly informative prior on the effect size is placed on the conversion-rate difference."
+
+  dependence:
+    structure: none                # none | clustered | repeated_measures | temporal | spatial | hierarchical
+    cluster_var: ""
+    method_family_required: ""
+
+  interference:
+    risk: none                     # none | shared_budget | marketplace | geo_spillover | social_graph | shared_inventory
+    mechanism: ""
+    mitigation: none               # none | geo_split | cluster_randomisation | time_split | budget_isolation | modelled
+    residual_note: ""
+
+  triggering:
+    eligible_population: "all sessions in the experiment window"
+    triggered_definition: "reached the first pageview eligible for assignment"
+    analysis_population: eligible  # eligible | triggered
+    expected_trigger_rate: 1.0
+    dilution_adjusted: false
+
+  stability:
+    window: "26 days"
+    novelty_primacy_assessed: false
+    evidence: ""
+
+  sampling_frame:
+    source: "warehouse.fct_sessions, all regions"
+    claim_population: "all sessions in the experiment window"
+    known_exclusions: []
+    selection_risk: "none identified"
+
+  missingness:
+    mechanism: not_assessed        # MCAR | MAR | MNAR | not_assessed
+    rate: 0.0
+    method_implied: complete_case
+
+  measurement:
+    construct: "conversion"
+    operationalisation: "completed purchase event within the session"
+    known_gaps: "none identified"
+
+# ── Inference plan (REQ-P6-04) ───────────────────────────────────────────────
+# The defect: design.peeking_policy is uncontrolled_continuous (26 daily looks)
+# and inference.paradigm is bayesian, with no threshold calibration declared —
+# the fallback_rule below states plainly that none was pre-registered. The
+# claim above ("a weakly informative prior alone keeps the false-positive rate
+# controlled") is the single most load-bearing misconception this corpus
+# encodes (brief.md section 6.5): the posterior is valid under any stopping
+# rule, but the error rate of a decision procedure built on it is not, and a
+# weak prior only delays threshold crossing — it does not control the rate.
+inference:
+  paradigm: bayesian               # frequentist | bayesian
+  paradigm_justification: sequential_monitoring_required
+  declared_at: pre_data            # pre_data | post_data
+  primary_procedure: bayesian_ab
+  alpha_spending: null
+  fallback_rule: >
+    None declared — no posterior-odds threshold calibration or maximum
+    monitoring horizon was pre-registered before continuous monitoring
+    began, which is the defect this fixture encodes.

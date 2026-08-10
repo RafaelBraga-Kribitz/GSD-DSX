@@ -208,7 +208,7 @@ reproducibility:
     stochasticity_declaration: >
       Analysis outputs depend on data extracts and library versions recorded
       elsewhere in this block; this lock documents configuration, not byte-identical replay.
-    dsx_version: "1.5.0"
+    dsx_version: "2.0.0"
 
 narrative:
   path: good-NARRATIVE.md
@@ -289,3 +289,76 @@ limitations:
   - "Estimates the effect for new signups only; says nothing about reactivating dormant users."
   - "Measured over two weeks in June; seasonal cohorts may respond differently."
   - "Revenue effect is measured at 14 days and does not establish a durable LTV change."
+
+# ── Validity frame (REQ-P6-02) ───────────────────────────────────────────────
+# question_type: causal + design.kind: experiment, so all ten sub-blocks are
+# required from plan onward (R-01 / M-06). See dsx/spec.py's new vocabularies.
+validity_frame:
+  estimand:
+    quantity: "difference in 7-day activation rate"
+    population: "new non-bot signups, 2026-06-01 to 2026-06-14"
+    contrast: "onboarding checklist vs current onboarding"
+    time_window: "7 days from signup"
+    falsifier: "95% CI on the activation uplift includes zero, or its lower bound sits below +1.0pp"
+
+  units:
+    observation: session
+    assignment: user
+    analysis: user
+
+  identification:
+    strength: strong               # strong | moderate | weak
+    evidence: "Assignment is hashed on user_id and persisted server-side; see design.identification"
+    constraint_source: none        # none | informative_priors | penalisation | design_restriction | hierarchical_pooling
+    constraint_justification: ""
+
+  dependence:
+    structure: clustered           # none | clustered | repeated_measures | temporal | spatial | hierarchical
+    cluster_var: user_id
+    method_family_required: cluster_robust
+
+  interference:
+    risk: none                     # none | shared_budget | marketplace | geo_spillover | social_graph | shared_inventory
+    mechanism: ""
+    mitigation: none               # none | geo_split | cluster_randomisation | time_split | budget_isolation | modelled
+    residual_note: ""
+
+  triggering:
+    eligible_population: "all new signups in the test window"
+    triggered_definition: "reached the onboarding checklist"
+    analysis_population: eligible  # eligible | triggered
+    expected_trigger_rate: 1.0
+    dilution_adjusted: true
+
+  stability:
+    window: "14 days"
+    novelty_primacy_assessed: true
+    evidence: "RESULTS.md#activation-uplift"
+
+  sampling_frame:
+    source: "warehouse.fct_signups, no region filter"
+    claim_population: "all new signups, 2026-06-01 to 2026-06-14"
+    known_exclusions: ["bot-flagged traffic"]
+    selection_risk: "none identified"
+
+  missingness:
+    mechanism: MAR                 # MCAR | MAR | MNAR | not_assessed
+    rate: 0.0
+    method_implied: complete_case
+
+  measurement:
+    construct: "activation"
+    operationalisation: ">=1 key action within 7 days of signup"
+    known_gaps: "none identified"
+
+# ── Inference plan (REQ-P6-04) ───────────────────────────────────────────────
+# The stopping-rule concept lives in design.peeking_policy above, not here (M-02).
+inference:
+  paradigm: frequentist            # frequentist | bayesian
+  paradigm_justification: team_convention
+  declared_at: pre_data            # pre_data | post_data
+  primary_procedure: two_proportion_z
+  alpha_spending: null
+  fallback_rule: >
+    If any arm's observed n falls below 80% of planned_n_per_arm, extend to the
+    pre-declared duration_days ceiling before analysing; do not analyse early.

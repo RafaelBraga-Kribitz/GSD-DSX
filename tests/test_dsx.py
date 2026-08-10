@@ -6,6 +6,8 @@ Run:  python3 -m unittest discover -s tests -v
 from __future__ import annotations
 
 import io
+import json
+import re
 import sys
 import tempfile
 import unittest
@@ -18,7 +20,7 @@ from dsx import cli, mathx  # noqa: E402
 from dsx.checks import claims, design, metrics, ml, repro, stats, viz  # noqa: E402
 from dsx.findings import Report, Severity  # noqa: E402
 from dsx.loader import SpecParseError, _parse_yaml_subset, loads  # noqa: E402
-from dsx.spec import validate_structure  # noqa: E402
+from dsx.spec import PEEKING_POLICIES, describe_vocabulary, validate_structure  # noqa: E402
 
 
 def codes(report: Report) -> set[str]:
@@ -194,6 +196,28 @@ note: >
         data = _parse_yaml_subset('color: "#ff0000"\n', "<t>")
         self.assertEqual(data["color"], "#ff0000")
 
+    def test_bare_none_is_a_string_not_null(self):
+        self.assertEqual(_parse_yaml_subset("x: none\n", "<t>")["x"], "none")
+        self.assertEqual(
+            _parse_yaml_subset("x: [none, clustered]\n", "<t>")["x"], ["none", "clustered"]
+        )
+        self.assertIsNone(_parse_yaml_subset("x: null\n", "<t>")["x"])
+        self.assertIsNone(_parse_yaml_subset("x: ~\n", "<t>")["x"])
+        self.assertIsNone(_parse_yaml_subset("x:\n", "<t>")["x"])
+
+    def test_bare_none_matches_pyyaml(self):
+        try:
+            import yaml
+        except ImportError:  # pragma: no cover
+            self.skipTest("PyYAML not installed")
+        self.assertEqual(
+            _parse_yaml_subset("x: none\n", "<t>")["x"], yaml.safe_load("x: none\n")["x"]
+        )
+        self.assertEqual(
+            _parse_yaml_subset("x: [none, clustered]\n", "<t>")["x"],
+            yaml.safe_load("x: [none, clustered]\n")["x"],
+        )
+
 
 # ── spec structure ───────────────────────────────────────────────────────────
 
@@ -235,6 +259,347 @@ class TestSpecStructure(unittest.TestCase):
              "decision": {"decision_rule": "r", "owner": "o", "action_if_null": "n"}}
         )
         self.assertIn("DSX-SPEC-003", codes(report))
+
+    def test_vocabularies_registry_covers_the_dump(self):
+        from dsx import spec as spec_mod
+
+        out = describe_vocabulary()
+        for name, obj in spec_mod._VOCABULARIES:
+            self.assertIn(name, out, f"{name} missing from describe_vocabulary() output")
+            self.assertTrue(out[name], f"{name} maps to an empty container")
+        # identity, not equality — the registry holds the actual module constant
+        registry = dict(spec_mod._VOCABULARIES)
+        self.assertIs(registry["peeking_policies"], spec_mod.PEEKING_POLICIES)
+        self.assertIs(registry["variance_adjustments"], spec_mod.VARIANCE_ADJUSTMENTS)
+        self.assertIs(registry["paradigms"], spec_mod.PARADIGMS)
+        self.assertIs(registry["missingness_mechanisms"], spec_mod.MISSINGNESS_MECHANISMS)
+
+    def test_describe_vocabulary_dict_backed_are_sorted_dicts(self):
+        out = describe_vocabulary()
+        self.assertIsInstance(out["variance_adjustments"], list)
+        self.assertEqual(out["variance_adjustments"], sorted(out["variance_adjustments"]))
+
+    def test_describe_vocabulary_is_byte_stable(self):
+        a = json.dumps(describe_vocabulary(), indent=2)
+        b = json.dumps(describe_vocabulary(), indent=2)
+        self.assertEqual(a, b)
+
+    def test_peeking_policies_dump_is_a_description_dict(self):
+        out = describe_vocabulary()["peeking_policies"]
+        self.assertIsInstance(out, dict)
+        self.assertEqual(set(out), set(PEEKING_POLICIES))
+        self.assertTrue(out["always_valid"].strip())
+        self.assertTrue(out["uncontrolled_continuous"].strip())
+        self.assertNotEqual(out["always_valid"], out["uncontrolled_continuous"])
+
+    def test_uncontrolled_continuous_peeking_policy_exists(self):
+        self.assertIn("uncontrolled_continuous", PEEKING_POLICIES)
+        self.assertTrue(PEEKING_POLICIES["uncontrolled_continuous"].strip())
+        self.assertNotEqual(
+            PEEKING_POLICIES["uncontrolled_continuous"], PEEKING_POLICIES["always_valid"]
+        )
+
+    def test_missingness_mechanisms_has_exactly_four_members_no_none(self):
+        from dsx.spec import MISSINGNESS_MECHANISMS
+
+        self.assertEqual(set(MISSINGNESS_MECHANISMS), {"MCAR", "MAR", "MNAR", "not_assessed"})
+
+    def test_paradigms_and_paradigm_justifications(self):
+        from dsx.spec import PARADIGM_JUSTIFICATIONS, PARADIGMS, VARIANCE_ADJUSTMENTS
+
+        self.assertEqual(set(PARADIGMS), {"frequentist", "bayesian"})
+        self.assertEqual(len(PARADIGM_JUSTIFICATIONS), 7)
+        self.assertIsInstance(VARIANCE_ADJUSTMENTS, set)
+
+    # ── 06-05: validity_frame / inference round-trip (REQ-P6-02, REQ-P6-04, D-12) ──
+
+    def test_template_validity_frame_and_inference_round_trip(self):
+        from dsx.loader import load
+
+        template = Path(__file__).resolve().parent.parent / "templates" / "ANALYSIS-SPEC.yaml"
+        spec = load(str(template))
+        vf = spec["validity_frame"]
+        need = [
+            "estimand", "units", "identification", "dependence", "interference",
+            "triggering", "stability", "sampling_frame", "missingness", "measurement",
+        ]
+        missing = [k for k in need if not isinstance(vf.get(k), dict)]
+        self.assertEqual(missing, [], missing)
+        self.assertEqual(
+            set(spec["inference"]),
+            {
+                "paradigm", "paradigm_justification", "declared_at",
+                "primary_procedure", "alpha_spending", "fallback_rule",
+            },
+        )
+
+    def test_template_vocabulary_placeholders_are_legal_members(self):
+        from dsx.loader import load
+        from dsx.spec import (
+            ANALYSIS_POPULATIONS,
+            CONSTRAINT_SOURCES,
+            DECLARATION_POINTS,
+            DEPENDENCE_STRUCTURES,
+            IDENTIFICATION_STRENGTHS,
+            INTERFERENCE_MITIGATIONS,
+            INTERFERENCE_RISKS,
+            MISSINGNESS_MECHANISMS,
+            PARADIGM_JUSTIFICATIONS,
+            PARADIGMS,
+        )
+
+        template = Path(__file__).resolve().parent.parent / "templates" / "ANALYSIS-SPEC.yaml"
+        spec = load(str(template))
+        vf = spec["validity_frame"]
+        inf = spec["inference"]
+        self.assertIn(vf["identification"]["strength"], IDENTIFICATION_STRENGTHS)
+        self.assertIn(vf["identification"]["constraint_source"], CONSTRAINT_SOURCES)
+        self.assertIn(vf["dependence"]["structure"], DEPENDENCE_STRUCTURES)
+        self.assertIn(vf["interference"]["risk"], INTERFERENCE_RISKS)
+        self.assertIn(vf["interference"]["mitigation"], INTERFERENCE_MITIGATIONS)
+        self.assertIn(vf["triggering"]["analysis_population"], ANALYSIS_POPULATIONS)
+        self.assertIn(vf["missingness"]["mechanism"], MISSINGNESS_MECHANISMS)
+        self.assertIn(inf["paradigm"], PARADIGMS)
+        self.assertIn(inf["paradigm_justification"], PARADIGM_JUSTIFICATIONS)
+        self.assertIn(inf["declared_at"], DECLARATION_POINTS)
+
+    def test_good_fixture_none_frame_fields_round_trip_as_strings(self):
+        from dsx.loader import load
+
+        fixture = Path(__file__).resolve().parent.parent / "examples" / "good-ANALYSIS-SPEC.yaml"
+        vf = load(str(fixture))["validity_frame"]
+        self.assertEqual(vf["interference"]["risk"], "none")
+        self.assertEqual(vf["interference"]["mitigation"], "none")
+        self.assertEqual(vf["identification"]["constraint_source"], "none")
+
+    def test_no_shipped_spec_declares_removed_stopping_rule_field(self):
+        from dsx.loader import load
+
+        root = Path(__file__).resolve().parent.parent
+        bad = []
+        for p in list((root / "examples").rglob("*.yaml")) + list((root / "templates").rglob("*.yaml")):
+            if "ANALYSIS-SPEC" not in p.name:
+                continue
+            inf = load(str(p)).get("inference") or {}
+            if "stopping_rule" in inf:
+                bad.append(str(p))
+        self.assertEqual(bad, [])
+
+    # ── 06-06: validity_frame requiredness, aggregation, membership (REQ-P6-02/03) ──
+
+    def test_causal_spec_with_no_validity_frame_key_reports_one_critical_itemising_ten(self):
+        # D-05: DSX-SPEC-080
+        report = validate_structure(
+            {"spec_version": 1, "title": "t", "question_type": "causal", "decision": {"owner": "x"}}
+        )
+        found = [f for f in report.findings if f.code == "DSX-SPEC-080"]
+        self.assertEqual(len(found), 1)
+        detail = found[0].detail
+        for name in (
+            "estimand", "units", "measurement", "dependence", "sampling_frame", "missingness",
+            "identification", "interference", "triggering", "stability",
+        ):
+            self.assertIn(name, detail)
+
+    def test_descriptive_spec_with_no_validity_frame_key_names_only_six(self):
+        report = validate_structure(
+            {"spec_version": 1, "title": "t", "question_type": "descriptive", "decision": {"owner": "x"}}
+        )
+        found = [f for f in report.findings if f.code == "DSX-SPEC-080"]
+        self.assertEqual(len(found), 1)
+        detail = found[0].detail
+        for name in ("interference", "triggering", "stability", "identification"):
+            self.assertNotIn(name, detail)
+
+    def test_causal_spec_missing_three_sub_blocks_reports_three_findings(self):
+        # D-05: DSX-SPEC-081
+        base = {
+            "spec_version": 1, "title": "t", "question_type": "causal", "decision": {"owner": "x"},
+            "validity_frame": {
+                k: {"a": 1} for k in
+                ("estimand", "units", "measurement", "dependence", "sampling_frame",
+                 "missingness", "identification")
+            },
+        }
+        report = validate_structure(base)
+        found = [f for f in report.findings if f.code == "DSX-SPEC-081"]
+        self.assertEqual(len(found), 3, [f.where for f in found])
+        self.assertEqual(
+            {f.where for f in found},
+            {"spec.validity_frame.interference", "spec.validity_frame.triggering",
+             "spec.validity_frame.stability"},
+        )
+        self.assertTrue(all(f.severity == Severity.CRITICAL for f in found))
+
+    def test_descriptive_spec_with_only_six_always_required_produces_no_findings(self):
+        spec = {
+            "spec_version": 1, "title": "t", "question_type": "descriptive", "decision": {"owner": "x"},
+            "validity_frame": {
+                k: {"a": 1} for k in
+                ("estimand", "units", "measurement", "dependence", "sampling_frame", "missingness")
+            },
+        }
+        report = validate_structure(spec)
+        self.assertFalse([f for f in report.findings if f.code in ("DSX-SPEC-080", "DSX-SPEC-081")])
+
+    def test_descriptive_experiment_design_still_requires_interference(self):
+        spec = {
+            "spec_version": 1, "title": "t", "question_type": "descriptive", "decision": {"owner": "x"},
+            "design": {"kind": "experiment"},
+            "validity_frame": {
+                k: {"a": 1} for k in
+                ("estimand", "units", "measurement", "dependence", "sampling_frame", "missingness",
+                 "identification", "triggering", "stability")
+            },
+        }
+        report = validate_structure(spec)
+        found = [f for f in report.findings if f.code == "DSX-SPEC-081"]
+        self.assertEqual({f.where for f in found}, {"spec.validity_frame.interference"})
+
+    def test_out_of_vocabulary_sub_field_reports_high_with_allowed_members(self):
+        # D-05: DSX-SPEC-082
+        spec = {
+            "spec_version": 1, "title": "t", "question_type": "descriptive", "decision": {"owner": "x"},
+            "validity_frame": {
+                **{k: {"a": 1} for k in
+                   ("estimand", "units", "measurement", "sampling_frame", "missingness")},
+                "dependence": {"structure": "not_a_member"},
+            },
+        }
+        report = validate_structure(spec)
+        found = [f for f in report.findings if f.code == "DSX-SPEC-082"]
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0].severity, Severity.HIGH)
+        self.assertEqual(found[0].where, "spec.validity_frame.dependence.structure")
+        self.assertIn("clustered", found[0].detail)
+
+    def test_malformed_validity_frame_shapes_degrade_to_dsx_spec_080_not_a_crash(self):
+        for bad in ("a string", [], {}, None):
+            spec = {
+                "spec_version": 1, "title": "t", "question_type": "causal", "decision": {"owner": "x"},
+                "validity_frame": bad,
+            }
+            report = validate_structure(spec)  # must not raise
+            self.assertIn("DSX-SPEC-080", codes(report))
+
+    def test_good_fixture_produces_none_of_the_three_validity_frame_codes(self):
+        from dsx.loader import load
+
+        fixture = Path(__file__).resolve().parent.parent / "examples" / "good-ANALYSIS-SPEC.yaml"
+        spec = load(str(fixture))
+        report = validate_structure(spec)
+        self.assertFalse(
+            [f for f in report.findings if f.code in ("DSX-SPEC-080", "DSX-SPEC-081", "DSX-SPEC-082")]
+        )
+
+    # ── 06-06: inference block shape, removed-field redirect (REQ-P6-04) ──────────
+
+    def test_absent_inference_block_produces_no_finding(self):
+        spec = {
+            "spec_version": 1, "title": "t", "question_type": "descriptive", "decision": {"owner": "x"},
+        }
+        report = validate_structure(spec)
+        self.assertFalse([f for f in report.findings if f.code in ("DSX-SPEC-085", "DSX-SPEC-086")])
+
+    def test_inference_fields_constant_matches_req_p6_04(self):
+        from dsx.spec import _INFERENCE_FIELDS
+
+        self.assertEqual(
+            _INFERENCE_FIELDS,
+            ("paradigm", "paradigm_justification", "declared_at",
+             "primary_procedure", "alpha_spending", "fallback_rule"),
+        )
+
+    def test_inference_vocabulary_violations_report_three_high_findings(self):
+        # D-05: DSX-SPEC-085
+        base = {
+            "spec_version": 1, "title": "t", "question_type": "descriptive", "decision": {"owner": "x"},
+            "validity_frame": {
+                k: {"a": 1} for k in
+                ("estimand", "units", "measurement", "dependence", "sampling_frame", "missingness")
+            },
+        }
+        spec = dict(base, inference={
+            "paradigm": "freqentist", "paradigm_justification": "nope", "declared_at": "whenever",
+        })
+        report = validate_structure(spec)
+        found = [f for f in report.findings if f.code == "DSX-SPEC-085"]
+        self.assertEqual(len(found), 3, [f.where for f in found])
+        self.assertTrue(all(f.severity == Severity.HIGH for f in found))
+
+    def test_removed_stopping_rule_field_redirects_to_peeking_policy(self):
+        # D-05: DSX-SPEC-086
+        base = {
+            "spec_version": 1, "title": "t", "question_type": "descriptive", "decision": {"owner": "x"},
+            "validity_frame": {
+                k: {"a": 1} for k in
+                ("estimand", "units", "measurement", "dependence", "sampling_frame", "missingness")
+            },
+        }
+        spec = dict(base, inference={"paradigm": "frequentist", "stopping_rule": "fixed_horizon"})
+        report = validate_structure(spec)
+        found = [f for f in report.findings if f.code == "DSX-SPEC-086"]
+        self.assertEqual(len(found), 1)
+        self.assertIn("design.peeking_policy", found[0].remedy)
+
+    def test_good_fixture_produces_none_of_the_inference_codes(self):
+        from dsx.loader import load
+
+        fixture = Path(__file__).resolve().parent.parent / "examples" / "good-ANALYSIS-SPEC.yaml"
+        spec = load(str(fixture))
+        report = validate_structure(spec)
+        self.assertFalse([f for f in report.findings if f.code in ("DSX-SPEC-085", "DSX-SPEC-086")])
+
+    # ── 06-06: decision records from structural adjudications (D-13, D-19) ────────
+
+    def test_structural_adjudications_emit_deterministic_decision_records(self):
+        s = {
+            "spec_version": 1, "title": "t", "question_type": "causal", "decision": {"owner": "x"},
+            "validity_frame": {
+                k: {"a": 1} for k in
+                ("estimand", "units", "measurement", "dependence", "sampling_frame", "missingness",
+                 "identification", "interference", "triggering", "stability")
+            },
+            "inference": {"paradigm": "bayesian"},
+        }
+        report = validate_structure(s)
+        decisions = report.context["decisions"]
+        self.assertEqual(len(decisions), 2, decisions)
+        self.assertTrue(all(d["layer"] == "deterministic" for d in decisions))
+        self.assertTrue(all(d["id"] == "" and d["invocation_id"] == "" for d in decisions))
+        self.assertTrue(decisions[0]["counterfactual"].strip())
+        self.assertTrue(decisions[0]["rule"].strip())
+        self.assertEqual(set(decisions[0]["inputs"]), {"question_type", "design.kind"})
+        self.assertIn("inference.paradigm", decisions[1]["inputs"])
+
+    def test_collect_from_report_returns_both_decisions_in_order(self):
+        from dsx.decisions import collect_from_report
+        from dsx.findings import merge
+
+        s = {
+            "spec_version": 1, "title": "t", "question_type": "causal", "decision": {"owner": "x"},
+            "validity_frame": {
+                k: {"a": 1} for k in
+                ("estimand", "units", "measurement", "dependence", "sampling_frame", "missingness",
+                 "identification", "interference", "triggering", "stability")
+            },
+            "inference": {"paradigm": "bayesian"},
+        }
+        merged = merge("x", [validate_structure(s)])
+        collected = collect_from_report(merged)
+        self.assertEqual(len(collected), 2)
+        self.assertIn("question_type", collected[0]["inputs"])
+        self.assertIn("inference.paradigm", collected[1]["inputs"])
+
+    def test_no_check_module_appends_to_a_decisions_list(self):
+        pattern = re.compile(r'context(\[.decisions.\]|\.setdefault\(.decisions.)')
+        checks_dir = Path(__file__).resolve().parent.parent / "dsx" / "checks"
+        offenders = []
+        for path in sorted(checks_dir.glob("*.py")):
+            text = path.read_text(encoding="utf-8")
+            if pattern.search(text):
+                offenders.append(str(path))
+        self.assertEqual(offenders, [], offenders)
 
 
 # ── design ───────────────────────────────────────────────────────────────────
@@ -309,6 +674,20 @@ class TestDesign(unittest.TestCase):
                 "design": {**self.BASE["design"], "peeking_policy": "sequential_obf"},
                 "results": {"interim_looks": 5}}
         self.assertNotIn("DSX-EXP-060", codes(design.check(spec)))
+
+    def test_dsx_exp_060_fires_only_for_empty_and_fixed_horizon(self):
+        # D-08: pins the property, not just the current members — fails if _check_peeking
+        # is later widened to fire on a member it should not.
+        for policy in list(PEEKING_POLICIES) + [""]:
+            with self.subTest(policy=policy):
+                spec = {**self.BASE,
+                        "design": {**self.BASE["design"], "peeking_policy": policy},
+                        "results": {"interim_looks": 5}}
+                fires = "DSX-EXP-060" in codes(design.check(spec))
+                if policy in ("", "fixed_horizon"):
+                    self.assertTrue(fires, f"expected DSX-EXP-060 for peeking_policy={policy!r}")
+                else:
+                    self.assertFalse(fires, f"unexpected DSX-EXP-060 for peeking_policy={policy!r}")
 
     def test_uncorrected_multiplicity_flagged(self):
         spec = {**self.BASE,
@@ -1001,6 +1380,534 @@ class TestCLI(unittest.TestCase):
         second = self._run(["audit", "--spec", str(fixture), "--json"])
         self.assertEqual(first, second)
 
+    # ── 06-05: scaffolded template still passes its own structural gates ──────
+
+    def test_template_validity_frame_and_inference_pass_dsx_validate(self):
+        template = self.ROOT / "templates" / "ANALYSIS-SPEC.yaml"
+        code, _, err = self._run(["validate", "--spec", str(template)])
+        self.assertEqual(code, 0, err)
+
+    def test_template_validity_frame_and_inference_pass_gate_plan(self):
+        template = self.ROOT / "templates" / "ANALYSIS-SPEC.yaml"
+        code, _, err = self._run(["gate", "plan", "--spec", str(template)])
+        self.assertEqual(code, 0, err)
+
+    # ── 06-07: DSX-PAR-001 registered at all four default gate thresholds ─────
+    # (CRITICAL at plan/execute, HIGH at verify/ship) — REQ-P6-09's "cannot
+    # block at any gate threshold" is a claim about those four defaults, not
+    # an arbitrary operator --block-on override.
+
+    def test_paradigm_check_registered_in_every_gate_profile(self):
+        from dsx.cli import CHECKS, GATE_PROFILES
+        from dsx.frame import paradigm
+
+        self.assertIs(CHECKS["paradigm"], paradigm.check)
+        for point, checks in GATE_PROFILES.items():
+            with self.subTest(point=point):
+                self.assertIn("paradigm", checks)
+
+    def _bayesian_variant_spec_path(self, tmp: str) -> Path:
+        """Copy examples/ into tmp and flip inference.paradigm to bayesian on
+        the good fixture, in place — no second committed fixture, and the
+        good fixture's own paradigm is never edited. JSON round-tripping the
+        mutated dict back into the .yaml-named file works regardless of
+        whether PyYAML is installed: dsx.loader.loads() tries a JSON parse
+        before YAML/the bundled parser whenever the stripped text starts with
+        '{', independent of the .yaml suffix.
+        """
+        import json
+        import shutil
+
+        from dsx.loader import load
+
+        target = Path(tmp) / "examples"
+        shutil.copytree(self.ROOT / "examples", target)
+        spec_path = target / "good-ANALYSIS-SPEC.yaml"
+        spec = load(spec_path)
+        spec.setdefault("inference", {})["paradigm"] = "bayesian"
+        spec_path.write_text(json.dumps(spec), encoding="utf-8")
+        return spec_path
+
+    def test_bayesian_variant_exits_zero_at_every_gate_with_manifest_printed(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            variant = self._bayesian_variant_spec_path(tmp)
+            for point in ("plan", "execute", "verify", "ship"):
+                with self.subTest(point=point):
+                    code, out, err = self._run(["gate", point, "--spec", str(variant)])
+                    self.assertEqual(code, 0, f"gate {point} unexpectedly blocked:\n{err}")
+                    self.assertIn("DSX-PAR-001", out + err)
+
+    def test_bayesian_variant_audit_json_contains_dsx_par_001_at_info(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            variant = self._bayesian_variant_spec_path(tmp)
+            _, out, _ = self._run(["audit", "--spec", str(variant), "--json"])
+            payload = json.loads(out)
+            findings = [f for f in payload["findings"] if f["code"] == "DSX-PAR-001"]
+            self.assertEqual(len(findings), 1)
+            self.assertEqual(findings[0]["severity"], "INFO")
+
+    def test_bad_fixture_still_blocks_with_paradigm_registered(self):
+        fixture = self.ROOT / "examples" / "bad-ANALYSIS-SPEC.yaml"
+        for point in ("plan", "ship"):
+            with self.subTest(point=point):
+                code, _, _ = self._run(["gate", point, "--spec", str(fixture)])
+                self.assertEqual(code, 1)
+
+    # D-05: DSX-PAR-001
+    def test_every_dsx_par_code_reachable_from_a_gate_profile(self):
+        from dsx.cli import GATE_PROFILES
+        from dsx.suppressions import known_codes
+
+        par_codes = [c for c in known_codes() if c.startswith("DSX-PAR-")]
+        self.assertTrue(par_codes, "expected at least DSX-PAR-001 to be known")
+        reachable_checks = set().union(*GATE_PROFILES.values())
+        self.assertIn("paradigm", reachable_checks)
+
+    def test_suppressing_dsx_par_001_needs_zero_suppressions_py_changes(self):
+        from dsx.cli import run_checks
+        from dsx.loader import load
+
+        spec = load(self.ROOT / "examples" / "good-ANALYSIS-SPEC.yaml")
+        spec["suppressions"] = [
+            {
+                "code": "DSX-PAR-001",
+                "reason": "manifest is informational",
+                "authority": ".planning/ROADMAP.md",
+            }
+        ]
+        report = run_checks(spec, ("spec", "paradigm"), None, resolve_root="examples")
+        self.assertNotIn("DSX-PAR-001", {f.code for f in report.findings})
+
+    # ── 06-09 Task 1: `dsx explain` and the add_common refactor (D-18) ────────
+    # `dsx explain` is deliberately outside the block contract (D-04): it
+    # always exits 0 and carries no --block-on. Every case below proves a
+    # different failure mode still exits 0 rather than surfacing exit 2.
+
+    def test_explain_prints_no_trail_message_when_none_written(self):
+        import shutil
+
+        with tempfile.TemporaryDirectory() as tmp:
+            spec_path = Path(tmp) / "ANALYSIS-SPEC.yaml"
+            shutil.copy(self.ROOT / "examples" / "good-ANALYSIS-SPEC.yaml", spec_path)
+            code, out, _ = self._run(["explain", "--spec", str(spec_path)])
+            self.assertEqual(code, 0)
+            self.assertIn("no decision trail", (out).lower())
+
+    def test_explain_missing_spec_exits_zero_not_two(self):
+        code, out, err = self._run(["explain", "--spec", "/nonexistent/spec.yaml"])
+        self.assertEqual(code, 0)
+        self.assertIn("no decision trail", (out + err).lower())
+
+    def test_explain_no_args_from_dir_with_no_spec_exits_zero(self):
+        import os
+
+        with tempfile.TemporaryDirectory() as tmp:
+            cwd = os.getcwd()
+            try:
+                os.chdir(tmp)
+                code, _, _ = self._run(["explain"])
+            finally:
+                os.chdir(cwd)
+            self.assertEqual(code, 0)
+
+    def test_explain_empty_trail_file_exits_zero(self):
+        import shutil
+
+        with tempfile.TemporaryDirectory() as tmp:
+            spec_path = Path(tmp) / "ANALYSIS-SPEC.yaml"
+            shutil.copy(self.ROOT / "examples" / "good-ANALYSIS-SPEC.yaml", spec_path)
+            (Path(tmp) / "DECISIONS.jsonl").write_text("", encoding="utf-8")
+            code, out, _ = self._run(["explain", "--spec", str(spec_path)])
+            self.assertEqual(code, 0)
+            self.assertIn("no decision trail", out.lower())
+
+    def test_explain_truncated_tail_line_still_renders_intact_records(self):
+        import shutil
+
+        from dsx.decisions import InvocationHeader, append
+
+        with tempfile.TemporaryDirectory() as tmp:
+            spec_path = Path(tmp) / "ANALYSIS-SPEC.yaml"
+            shutil.copy(self.ROOT / "examples" / "good-ANALYSIS-SPEC.yaml", spec_path)
+            trail = Path(tmp) / "DECISIONS.jsonl"
+            append(
+                trail,
+                InvocationHeader(
+                    invocation_id="INV-0001", gate_point="plan", dsx_version="0.0.0",
+                    frame_digest="deadbeef",
+                ),
+            )
+            trail.write_text(
+                trail.read_text(encoding="utf-8") + '{"id": "DEC-9', encoding="utf-8"
+            )
+            code, out, _ = self._run(
+                ["explain", "--spec", str(spec_path), "--phase-dir", tmp]
+            )
+            self.assertEqual(code, 0)
+            self.assertIn("INV-0001", out)
+
+    def test_explain_unknown_invocation_id_exits_zero_and_reports_not_found(self):
+        import shutil
+
+        from dsx.decisions import InvocationHeader, append
+
+        with tempfile.TemporaryDirectory() as tmp:
+            spec_path = Path(tmp) / "ANALYSIS-SPEC.yaml"
+            shutil.copy(self.ROOT / "examples" / "good-ANALYSIS-SPEC.yaml", spec_path)
+            trail = Path(tmp) / "DECISIONS.jsonl"
+            append(
+                trail,
+                InvocationHeader(
+                    invocation_id="INV-0001", gate_point="plan", dsx_version="0.0.0",
+                    frame_digest="deadbeef",
+                ),
+            )
+            code, out, _ = self._run(
+                [
+                    "explain", "--spec", str(spec_path), "--phase-dir", tmp,
+                    "--invocation", "INV-9999",
+                ]
+            )
+            self.assertEqual(code, 0)
+            self.assertIn("INV-9999", out)
+
+    def test_explain_json_is_parseable(self):
+        fixture = self.ROOT / "examples" / "good-ANALYSIS-SPEC.yaml"
+        code, out, _ = self._run(["explain", "--spec", str(fixture), "--json"])
+        self.assertEqual(code, 0)
+        json.loads(out)
+
+    def test_explain_help_offers_no_block_on_flag(self):
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            with self.assertRaises(SystemExit):
+                cli.main(["explain", "--help"])
+        help_text = buf.getvalue()
+        self.assertIn("--spec", help_text)
+        self.assertIn("--phase-dir", help_text)
+        self.assertIn("--invocation", help_text)
+        self.assertIn("--json", help_text)
+        self.assertNotIn("--block-on", help_text)
+
+    def test_other_subcommands_still_accept_block_on(self):
+        for sub in ("validate", "check", "audit", "gate"):
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                with self.assertRaises(SystemExit):
+                    cli.main([sub, "--help"])
+            self.assertIn("--block-on", buf.getvalue(), sub)
+
+    # ── 06-09 Task 2: gate-path trail write (REQ-P6-07, D-14, D-16) ────────────
+
+    def test_gate_writes_one_header_and_sequential_decision_records(self):
+        import shutil
+
+        with tempfile.TemporaryDirectory() as tmp:
+            spec_path = Path(tmp) / "ANALYSIS-SPEC.yaml"
+            shutil.copy(self.ROOT / "examples" / "good-ANALYSIS-SPEC.yaml", spec_path)
+            code, _, err = self._run(["gate", "plan", "--phase-dir", tmp])
+            self.assertEqual(code, 0, err)
+            trail = Path(tmp) / "DECISIONS.jsonl"
+            self.assertTrue(trail.exists())
+            records = [
+                json.loads(line) for line in trail.read_text(encoding="utf-8").splitlines()
+                if line.strip()
+            ]
+            self.assertEqual(records[0]["record_type"], "invocation")
+            self.assertEqual(records[0]["gate_point"], "plan")
+            self.assertTrue(records[0]["frame_digest"])
+            inv = records[0]["invocation_id"]
+            body = records[1:]
+            self.assertTrue(body)
+            self.assertTrue(all(r["invocation_id"] == inv for r in body))
+            self.assertEqual([r["id"] for r in body], [f"DEC-{i+1:03d}" for i in range(len(body))])
+
+    def test_second_gate_run_appends_new_header_leaving_first_run_intact(self):
+        import shutil
+
+        with tempfile.TemporaryDirectory() as tmp:
+            spec_path = Path(tmp) / "ANALYSIS-SPEC.yaml"
+            shutil.copy(self.ROOT / "examples" / "good-ANALYSIS-SPEC.yaml", spec_path)
+            self._run(["gate", "plan", "--phase-dir", tmp])
+            trail = Path(tmp) / "DECISIONS.jsonl"
+            first_records = trail.read_text(encoding="utf-8").splitlines()
+            self._run(["gate", "plan", "--phase-dir", tmp])
+            second_records = trail.read_text(encoding="utf-8").splitlines()
+            self.assertGreater(len(second_records), len(first_records))
+            self.assertEqual(second_records[: len(first_records)], first_records)
+            headers = [
+                json.loads(line) for line in second_records
+                if json.loads(line).get("record_type") == "invocation"
+            ]
+            self.assertEqual(len(headers), 2)
+            self.assertNotEqual(headers[0]["invocation_id"], headers[1]["invocation_id"])
+
+    def test_decisions_jsonl_is_gitignored(self):
+        text = (self.ROOT / ".gitignore").read_text(encoding="utf-8")
+        self.assertIn("DECISIONS.jsonl", text)
+
+    def test_validate_check_audit_do_not_write_a_trail(self):
+        import shutil
+
+        with tempfile.TemporaryDirectory() as tmp:
+            spec_path = Path(tmp) / "ANALYSIS-SPEC.yaml"
+            shutil.copy(self.ROOT / "examples" / "good-ANALYSIS-SPEC.yaml", spec_path)
+            for sub in ("validate", "check", "audit"):
+                self._run([sub, "--phase-dir", tmp])
+            self.assertFalse((Path(tmp) / "DECISIONS.jsonl").exists())
+
+    def test_gate_every_point_still_exits_correctly_with_trail_write_added(self):
+        fixture = self.ROOT / "examples" / "good-ANALYSIS-SPEC.yaml"
+        for point in ("plan", "execute", "verify", "ship"):
+            code, _, err = self._run(["gate", point, "--spec", str(fixture)])
+            self.assertEqual(code, 0, f"gate {point} unexpectedly blocked:\n{err}")
+        bad = self.ROOT / "examples" / "bad-ANALYSIS-SPEC.yaml"
+        code, _, _ = self._run(["gate", "plan", "--spec", str(bad)])
+        self.assertEqual(code, 1)
+
+    def test_unwritable_trail_directory_does_not_change_exit_code(self):
+        import shutil
+
+        with tempfile.TemporaryDirectory() as tmp:
+            spec_path = Path(tmp) / "ANALYSIS-SPEC.yaml"
+            shutil.copy(self.ROOT / "examples" / "good-ANALYSIS-SPEC.yaml", spec_path)
+            control_code, _, control_err = self._run(["gate", "plan", "--spec", str(spec_path)])
+
+            # A regular file can never be a directory: DECISIONS.jsonl's parent
+            # cannot be created there, forcing an OSError on write, without
+            # relying on filesystem permission bits (which differ on Windows).
+            blocker = Path(tmp) / "not-a-directory"
+            blocker.write_text("x", encoding="utf-8")
+            unwritable_root = str(blocker / "nested")
+            code, _, err = self._run(
+                ["gate", "plan", "--spec", str(spec_path), "--phase-dir", unwritable_root]
+            )
+            self.assertEqual(code, control_code, err)
+
+
+class TestDecisionTrailCLI(unittest.TestCase):
+    """06-09 Task 3: end-to-end decision-trail round-trip at the CLI level
+    (REQ-P6-07, REQ-P6-08). Kept separate from ``TestCLI`` so the D-08
+    fixture tests and their harness stay untouched. Every test copies
+    ``examples/good-ANALYSIS-SPEC.yaml`` into a ``tempfile.TemporaryDirectory()``
+    and drives both ``gate`` and ``explain`` through ``--phase-dir``, so
+    nothing writes into ``examples/``."""
+
+    ROOT = Path(__file__).resolve().parent.parent
+
+    def _run(self, argv: "list[str]") -> "tuple[int, str, str]":
+        out, err = io.StringIO(), io.StringIO()
+        with redirect_stdout(out), redirect_stderr(err):
+            code = cli.main(argv)
+        return code, out.getvalue(), err.getvalue()
+
+    def _gated_spec(self, tmp: str) -> Path:
+        import shutil
+
+        spec_path = Path(tmp) / "ANALYSIS-SPEC.yaml"
+        shutil.copy(self.ROOT / "examples" / "good-ANALYSIS-SPEC.yaml", spec_path)
+        return spec_path
+
+    def _append_undecodable_bytes(self, trail_path: "Path") -> None:
+        """06-11 Task 1: write the exact corrupting byte sequence the reviewer
+        and verifier used — the lead byte of a two-byte UTF-8 sequence whose
+        continuation byte never arrives."""
+        with trail_path.open("ab") as fh:
+            fh.write(b"caf\xc3")
+
+    def _control_exit_code(self, spec_source_name: str, point: str) -> int:
+        """06-11 Task 1: run ``point`` against a fresh copy of the named
+        ``examples/`` fixture in a clean temporary directory with no trail
+        file present at all, and return the exit code — the baseline a
+        corrupted-trail run must match."""
+        import shutil
+
+        with tempfile.TemporaryDirectory() as tmp:
+            spec_path = Path(tmp) / "ANALYSIS-SPEC.yaml"
+            shutil.copy(self.ROOT / "examples" / spec_source_name, spec_path)
+            code, _, _ = self._run(["gate", point, "--spec", str(spec_path), "--phase-dir", tmp])
+            return code
+
+    def test_explain_names_the_invocation_id_the_gate_wrote(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            spec_path = self._gated_spec(tmp)
+            self._run(["gate", "plan", "--spec", str(spec_path), "--phase-dir", tmp])
+            trail = Path(tmp) / "DECISIONS.jsonl"
+            header = json.loads(trail.read_text(encoding="utf-8").splitlines()[0])
+            code, out, _ = self._run(["explain", "--phase-dir", tmp])
+            self.assertEqual(code, 0)
+            self.assertIn(header["invocation_id"], out)
+
+    def test_explain_renders_only_the_second_runs_records(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            spec_path = self._gated_spec(tmp)
+            self._run(["gate", "plan", "--spec", str(spec_path), "--phase-dir", tmp])
+            self._run(["gate", "plan", "--spec", str(spec_path), "--phase-dir", tmp])
+            trail = Path(tmp) / "DECISIONS.jsonl"
+            records = [
+                json.loads(line) for line in trail.read_text(encoding="utf-8").splitlines()
+                if line.strip()
+            ]
+            headers = [r for r in records if r["record_type"] == "invocation"]
+            second_id = headers[1]["invocation_id"]
+
+            code, out, _ = self._run(["explain", "--phase-dir", tmp])
+            self.assertEqual(code, 0)
+            self.assertIn(second_id, out)
+            self.assertNotIn(headers[0]["invocation_id"], out)
+
+    def test_explain_invocation_flag_selects_the_first_runs_records(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            spec_path = self._gated_spec(tmp)
+            self._run(["gate", "plan", "--spec", str(spec_path), "--phase-dir", tmp])
+            self._run(["gate", "plan", "--spec", str(spec_path), "--phase-dir", tmp])
+            trail = Path(tmp) / "DECISIONS.jsonl"
+            records = [
+                json.loads(line) for line in trail.read_text(encoding="utf-8").splitlines()
+                if line.strip()
+            ]
+            headers = [r for r in records if r["record_type"] == "invocation"]
+            first_id = headers[0]["invocation_id"]
+
+            code, out, _ = self._run(
+                ["explain", "--phase-dir", tmp, "--invocation", first_id]
+            )
+            self.assertEqual(code, 0)
+            self.assertIn(first_id, out)
+            self.assertNotIn(headers[1]["invocation_id"], out)
+
+    def test_truncated_tail_line_leaves_explain_at_exit_zero_with_survivors(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            spec_path = self._gated_spec(tmp)
+            self._run(["gate", "plan", "--spec", str(spec_path), "--phase-dir", tmp])
+            trail = Path(tmp) / "DECISIONS.jsonl"
+            before = trail.read_text(encoding="utf-8")
+            trail.write_text(before + '{"id": "DEC-9', encoding="utf-8")
+
+            code, out, _ = self._run(["explain", "--phase-dir", tmp])
+            self.assertEqual(code, 0)
+            header = json.loads(before.splitlines()[0])
+            self.assertIn(header["invocation_id"], out)
+
+    def test_non_json_tail_line_leaves_explain_at_exit_zero(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            spec_path = self._gated_spec(tmp)
+            self._run(["gate", "plan", "--spec", str(spec_path), "--phase-dir", tmp])
+            trail = Path(tmp) / "DECISIONS.jsonl"
+            with trail.open("a", encoding="utf-8") as fh:
+                fh.write("not json at all\n")
+
+            code, _, _ = self._run(["explain", "--phase-dir", tmp])
+            self.assertEqual(code, 0)
+
+    def test_explain_json_after_gate_emits_array_with_expected_record_keys(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            spec_path = self._gated_spec(tmp)
+            self._run(["gate", "plan", "--spec", str(spec_path), "--phase-dir", tmp])
+            code, out, _ = self._run(["explain", "--phase-dir", tmp, "--json"])
+            self.assertEqual(code, 0)
+            payload = json.loads(out)
+            self.assertIsInstance(payload, list)
+            self.assertTrue(payload)
+            header = next(r for r in payload if r["record_type"] == "invocation")
+            self.assertEqual(
+                set(header),
+                {"invocation_id", "gate_point", "dsx_version", "frame_digest", "record_type"},
+            )
+            decisions = [r for r in payload if r["record_type"] == "decision"]
+            self.assertTrue(decisions)
+            expected_keys = {
+                "id", "invocation_id", "layer", "choice", "inputs", "rule", "citation",
+                "counterfactual", "alternatives_rejected", "confidence", "escalate",
+                "record_type",
+            }
+            for record in decisions:
+                self.assertEqual(set(record), expected_keys)
+
+    def test_rendered_text_names_the_counterfactual_of_at_least_one_record(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            spec_path = self._gated_spec(tmp)
+            self._run(["gate", "plan", "--spec", str(spec_path), "--phase-dir", tmp])
+            trail = Path(tmp) / "DECISIONS.jsonl"
+            records = [
+                json.loads(line) for line in trail.read_text(encoding="utf-8").splitlines()
+                if line.strip()
+            ]
+            counterfactuals = [
+                r["counterfactual"] for r in records
+                if r["record_type"] == "decision" and r.get("counterfactual")
+            ]
+            self.assertTrue(counterfactuals)
+
+            code, out, _ = self._run(["explain", "--phase-dir", tmp])
+            self.assertEqual(code, 0)
+            self.assertTrue(any(cf in out for cf in counterfactuals))
+
+    # ── 06-11 Task 1: CR-01 regression — a corrupted trail can never move a
+    #    gate verdict, and explain always exits 0 ─────────────────────────
+
+    def test_explain_exits_zero_when_trail_holds_an_undecodable_byte(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            spec_path = self._gated_spec(tmp)
+            self._run(["gate", "plan", "--spec", str(spec_path), "--phase-dir", tmp])
+            trail = Path(tmp) / "DECISIONS.jsonl"
+            self._append_undecodable_bytes(trail)
+
+            code, _, _ = self._run(["explain", "--phase-dir", tmp])
+            self.assertEqual(code, 0)
+
+    def test_explain_still_renders_surviving_records_past_an_undecodable_byte(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            spec_path = self._gated_spec(tmp)
+            self._run(["gate", "plan", "--spec", str(spec_path), "--phase-dir", tmp])
+            trail = Path(tmp) / "DECISIONS.jsonl"
+            header = json.loads(trail.read_text(encoding="utf-8").splitlines()[0])
+            self._append_undecodable_bytes(trail)
+
+            code, out, _ = self._run(["explain", "--phase-dir", tmp])
+            self.assertEqual(code, 0)
+            self.assertIn(header["invocation_id"], out)
+
+    def test_explain_exits_zero_when_trail_path_is_a_directory(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self._gated_spec(tmp)
+            trail = Path(tmp) / "DECISIONS.jsonl"
+            trail.mkdir()
+
+            code, _, _ = self._run(["explain", "--phase-dir", tmp])
+            self.assertEqual(code, 0)
+
+    def test_gate_pass_exit_code_matches_control_with_corrupted_trail(self):
+        control = self._control_exit_code("good-ANALYSIS-SPEC.yaml", "plan")
+        self.assertEqual(control, 0)
+        with tempfile.TemporaryDirectory() as tmp:
+            spec_path = self._gated_spec(tmp)
+            trail = Path(tmp) / "DECISIONS.jsonl"
+            trail.write_bytes(
+                b'{"record_type": "invocation", "invocation_id": "INV-0001", '
+                b'"gate_point": "plan", "dsx_version": "x", "frame_digest": "y"}\n'
+                b"caf\xc3"
+            )
+            code, _, _ = self._run(["gate", "plan", "--spec", str(spec_path), "--phase-dir", tmp])
+            self.assertEqual(code, control)
+
+    def test_gate_block_exit_code_matches_control_with_corrupted_trail(self):
+        control = self._control_exit_code("bad-ANALYSIS-SPEC.yaml", "plan")
+        self.assertEqual(control, 1)
+        with tempfile.TemporaryDirectory() as tmp:
+            import shutil
+
+            spec_path = Path(tmp) / "ANALYSIS-SPEC.yaml"
+            shutil.copy(self.ROOT / "examples" / "bad-ANALYSIS-SPEC.yaml", spec_path)
+            trail = Path(tmp) / "DECISIONS.jsonl"
+            trail.write_bytes(
+                b'{"record_type": "invocation", "invocation_id": "INV-0001", '
+                b'"gate_point": "plan", "dsx_version": "x", "frame_digest": "y"}\n'
+                b"caf\xc3"
+            )
+            code, _, _ = self._run(["gate", "plan", "--spec", str(spec_path), "--phase-dir", tmp])
+            self.assertEqual(code, control)
+
 
 # ── Phase 1: profiler, DQ, coherence, evidence ───────────────────────────────
 
@@ -1600,6 +2507,104 @@ class TestPhase5Suppressions(unittest.TestCase):
                 },
                 report,
             )
+
+
+# ── Phase 6 (06-07): DSX-PAR-001 paradigm manifest (REQ-P6-09, D-10) ─────────
+
+
+class TestPhase6ParadigmManifest(unittest.TestCase):
+    """DSX-PAR-001 — the informational paradigm manifest.
+
+    Two of these tests are the honesty invariant the plan's prohibition exists
+    to enforce (T-6-14): every prefix the manifest calls 'applied' must have at
+    least one matching emitted code, and every prefix it calls 'not shipped'
+    must have none. ``known_codes()`` is imported here, in the test — never
+    inside ``dsx/frame/paradigm.py`` itself, since the gate path must not
+    AST-walk the package on every invocation.
+    """
+
+    def test_every_paradigm_and_undeclared_case_yields_exactly_one_info_finding(self):
+        from dsx.findings import Severity
+        from dsx.frame import paradigm
+        from dsx.spec import PARADIGMS
+
+        specs = [{"inference": {"paradigm": q}} for q in PARADIGMS] + [{}, {"inference": {}}]
+        for spec in specs:
+            with self.subTest(spec=spec):
+                report = paradigm.check(spec)
+                par = [f for f in report.findings if f.code == "DSX-PAR-001"]
+                self.assertEqual(len(par), 1)
+                self.assertEqual(par[0].severity, Severity.INFO)
+                self.assertTrue(par[0].detail.strip())
+
+    def test_undeclared_paradigm_names_the_gap_rather_than_assuming_frequentist(self):
+        from dsx.frame import paradigm
+
+        for spec in ({}, {"inference": {}}):
+            with self.subTest(spec=spec):
+                report = paradigm.check(spec)
+                finding = [f for f in report.findings if f.code == "DSX-PAR-001"][0]
+                combined = (finding.title + " " + finding.detail).lower()
+                self.assertIn("no", combined)
+                self.assertIn("paradigm", combined)
+                self.assertNotIn("frequentist", finding.title.lower())
+
+    def test_detail_names_an_applied_set_and_a_not_applied_set_with_reasons(self):
+        from dsx.frame import paradigm
+
+        report = paradigm.check({"inference": {"paradigm": "bayesian"}})
+        finding = [f for f in report.findings if f.code == "DSX-PAR-001"][0]
+        self.assertIn("applied", finding.detail.lower())
+        self.assertTrue(finding.data.get("applied"))
+        not_applied = finding.data.get("not_applied") or {}
+        self.assertTrue(not_applied)
+        for prefix, reason in not_applied.items():
+            self.assertTrue(reason.strip(), f"{prefix} has a blank reason")
+
+    def test_manifest_never_blocks_at_any_default_gate_threshold(self):
+        from dsx.cli import GATE_THRESHOLDS
+        from dsx.findings import Severity
+        from dsx.frame import paradigm
+
+        report = paradigm.check({"inference": {"paradigm": "bayesian"}})
+        for point, label in GATE_THRESHOLDS.items():
+            with self.subTest(point=point):
+                self.assertFalse(report.blocks(Severity.parse(label)))
+
+    def test_check_appends_one_deterministic_decision_record(self):
+        from dsx.frame import paradigm
+
+        report = paradigm.check({"inference": {"paradigm": "frequentist"}})
+        decisions = report.context.get("decisions") or []
+        self.assertEqual(len(decisions), 1)
+        self.assertEqual(decisions[0]["layer"], "deterministic")
+        self.assertEqual(decisions[0]["id"], "")
+        self.assertTrue(decisions[0]["counterfactual"].strip())
+
+    # D-05: DSX-PAR-001
+    def test_applied_prefixes_have_codes_and_not_shipped_prefixes_have_none(self):
+        from dsx.frame import paradigm
+        from dsx.spec import PARADIGMS
+        from dsx.suppressions import known_codes
+
+        known = known_codes()
+        for declared in list(PARADIGMS) + [""]:
+            spec = {"inference": {"paradigm": declared}} if declared else {}
+            with self.subTest(declared=declared or "undeclared"):
+                report = paradigm.check(spec)
+                finding = [f for f in report.findings if f.code == "DSX-PAR-001"][0]
+                for prefix in finding.data.get("applied", []):
+                    self.assertTrue(
+                        [c for c in known if c.startswith(prefix)],
+                        f"{prefix} reported applied but no known code starts with it",
+                    )
+                for prefix in finding.data.get("not_applied", {}):
+                    self.assertFalse(
+                        [c for c in known if c.startswith(prefix)],
+                        f"{prefix} reported not-shipped but a known code exists",
+                    )
+        for prefix in paradigm._NOT_SHIPPED:
+            self.assertFalse([c for c in known if c.startswith(prefix)], prefix)
 
 
 if __name__ == "__main__":

@@ -1,9 +1,9 @@
 {
   "id": "dsx",
   "role": "feature",
-  "version": "1.5.0",
+  "version": "2.0.0",
   "title": "Data science, analytics and BI rigour",
-  "description": "Turns the GSD phase loop into an expert analytics workflow: an ANALYSIS-SPEC contract written before the data is touched, specialist agents that fill it, and deterministic Python gates that block the loop when the statistics, the causal claims, the ML splits, the metric definitions, the data-quality profile, the chart seals, the narrative wording, the entrypoint fit order, decision replay, repro_lock or unauthorised findings do not hold up. v1.5 adds ADR/SPEC finding suppressions and scored CHART-REVIEW.md via dsx-chart-audit.",
+  "description": "Turns the GSD phase loop into an expert analytics workflow: an ANALYSIS-SPEC contract written before the data is touched, specialist agents that fill it, and deterministic Python gates that block the loop when the statistics, the causal claims, the ML splits, the metric definitions, the data-quality profile, the chart seals, the narrative wording, the entrypoint fit order, decision replay, repro_lock or unauthorised findings do not hold up. v1.5 adds ADR/SPEC finding suppressions and scored CHART-REVIEW.md via dsx-chart-audit. v2.0 restores the IT001-IT040 data-input-type inventory as a deterministic chart lookup (`dsx charts`), so chart choice is consulted rather than asked, and DSX-VIZ-013 blocks a mark the declared data shape does not admit.",
   "tier": "full",
   "requires": [],
   "engines": {

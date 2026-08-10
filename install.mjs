@@ -132,6 +132,9 @@ function install(args) {
 
   const overlayRoot = path.join(os.homedir(), '.gsd', 'capabilities', CAPABILITY_ID);
   const runtimeHome = resolveRuntimeHome(args.runtime, args.local);
+  const manifest = JSON.parse(
+    fs.readFileSync(path.join(ROOT, 'capabilities', CAPABILITY_ID, 'capability.json'), 'utf8'),
+  );
 
   console.log(`\ngsd-dsx — data science, analytics and BI rigour for GSD\n`);
   log(`python:   ${python.command} (${python.version})`);
@@ -167,10 +170,16 @@ function install(args) {
   // 3. Skills
   const skillsDir = path.join(runtimeHome, 'skills');
   fs.mkdirSync(skillsDir, { recursive: true });
+  // Only skills the manifest declares are projected. Sweeping the directory
+  // instead would install anything that happened to be sitting in skills/ —
+  // a working copy, a personal house-style skill — into the user's runtime.
+  // `--check` already verifies against manifest.skills; install now agrees.
   let skillCount = 0;
-  for (const entry of fs.readdirSync(path.join(ROOT, 'skills'))) {
+  for (const entry of manifest.skills) {
     const source = path.join(ROOT, 'skills', entry);
-    if (!fs.statSync(source).isDirectory()) continue;
+    if (!fs.existsSync(path.join(source, 'SKILL.md'))) {
+      throw new Error(`manifest declares skill '${entry}' but skills/${entry}/SKILL.md is missing`);
+    }
     removeIfPresent(path.join(skillsDir, entry));
     copyRecursive(source, path.join(skillsDir, entry));
     skillCount += 1;

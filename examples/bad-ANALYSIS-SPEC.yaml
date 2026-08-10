@@ -198,3 +198,45 @@ assumptions:
     rationale: "We looked at one quarter."
     impact_if_wrong: "Trend confounded with season."
     checked: false              # neither checked nor waived → COH-031
+
+# ── Validity frame: present but incomplete (D-11) ────────────────────────────
+# question_type: causal + design.kind: experiment, so all ten sub-blocks are
+# required (R-01 / M-06). Only four are declared here, on purpose.
+validity_frame:
+  estimand:
+    quantity: "change in churn rate"
+    population: "all customers"
+    contrast: "before vs after some change"       # vague — no declared treatment
+    time_window: "one quarter"
+    falsifier: ""                                 # blank — no honest falsifier declared
+
+  units:
+    observation: account
+    assignment: account
+    analysis: session           # finer than assignment, matches design's own mismatch above
+
+  identification:
+    strength: extremely_strong  # not an IDENTIFICATION_STRENGTHS member → DSX-SPEC-082
+    evidence: ""
+    constraint_source: none
+    constraint_justification: ""
+
+  interference:
+    risk: shared_budget         # both segments draw from one acquisition budget
+    mechanism: "shared acquisition budget across the compared segments"
+    mitigation: none            # risk declared, no mitigation applied
+    residual_note: ""
+
+  # dependence, sampling_frame, missingness, measurement omitted entirely
+  # (always-required six, minus estimand/units above) → DSX-SPEC-081 x4
+  # triggering, stability omitted entirely (causal-only four, minus
+  # identification/interference above) → DSX-SPEC-081 x2
+  # No peeking-axis defect here (D-07) — design.peeking_policy stays fixed_horizon.
+
+inference:
+  paradigm: frequentist
+  paradigm_justification: gut_feeling   # not a PARADIGM_JUSTIFICATIONS member → DSX-SPEC-085
+  declared_at: pre_data
+  primary_procedure: welch_t
+  alpha_spending: null
+  fallback_rule: ""

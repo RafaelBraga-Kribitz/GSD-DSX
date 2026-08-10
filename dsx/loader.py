@@ -29,7 +29,7 @@ class SpecParseError(ValueError):
 
 _TRUE = {"true", "yes", "on"}
 _FALSE = {"false", "no", "off"}
-_NULL = {"", "null", "~", "none"}
+_NULL = {"", "null", "~"}  # matches PyYAML/YAML 1.1 null semantics; "none" is a legitimate string
 _NUM_RE = re.compile(r"^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$")
 
 
