@@ -45,28 +45,45 @@ notes: |
 
 ### 4. Bayesian post-mortem states the Ville's-inequality formulation without conflation
 expected: The Deng, Lu & Chen (2016) citation is real and Theorem 1 supports the stated bound; the post-mortem does not conflate formulations.
-result: fail
+result: pending
 notes: |
-  Partial pass: the formulation split (prior-averaged versus point-null /
-  law-of-iterated-logarithm) is stated clearly and correctly. Deng, Lu & Chen (2016)
-  is a real paper. The frequentist fixture's Armitage (1969) reference and its
-  approximately 0.142 figure at five looks are real.
+  Originally failed. The formulation split (prior-averaged versus point-null /
+  law-of-iterated-logarithm) was stated clearly and correctly, Deng, Lu & Chen (2016)
+  is a real paper, and the frequentist fixture's Armitage (1969) reference and its
+  approximately 0.142 figure at five looks are real. The failure was the locator
+  claim — see Gap G-01 below.
 
-  The failure is the locator claim. See Gap G-01 below.
+  G-01 has since been corrected and machine-guarded (commits 9fe5154, f4ae058,
+  c7ad54a). Reset to pending rather than passed: the corrected prose is new text that
+  the human validator has not yet read, and this item is a human-judgment check.
+  Re-validation is invited, not assumed.
 
 ## Summary
 
 total: 4
 passed: 3
-issues: 1
-pending: 0
+issues: 0
+pending: 1
 skipped: 0
 blocked: 0
 
 ## Gaps
 
 ### G-01: Deng Theorem 1 locator misattributed in the Bayesian post-mortem
-status: failed
+status: resolved
+resolved_by: [9fe5154, cf22159, f4ae058, c7ad54a]
+resolved_scope: |
+  Corrected in the shipped fixture (post-mortem and paired spec comment), in
+  brief.md section 6.5, in REQUIREMENTS.md REQ-P9-02 and ROADMAP.md Phase 9, and in
+  06-08-PLAN.md's drafting guidance and acceptance assertion. Three regression guards
+  added in tests/test_known_bad_corpus.py, each demonstrated to fail when the defect
+  is reintroduced and pass when it is not.
+
+  Not rewritten: 06-08-SUMMARY.md, 06-CONTEXT.md, 06-RESEARCH.md and STATE.md still
+  contain the phrase "prior-averaged Ville bound". These are historical records of
+  what was decided and executed at the time, and 06-CONTEXT/06-RESEARCH carry the
+  correct 1/(K+1) arithmetic with only the name attached. Correcting a record of what
+  happened would defeat its purpose; the corrective record is this gap entry.
 severity: high
 source_test: 4
 files:
