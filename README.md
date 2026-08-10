@@ -282,6 +282,12 @@ gsd config set dsx.domain experimentation  # bias agent and reference loading
 | `dsx.domain` | `auto` | `experimentation` · `machine_learning` · `business_intelligence` · `marketing_science` · `research` |
 | `dsx.python` | `python3` | Interpreter for the CLI |
 
+The capability installs once and is then visible from every project on the
+machine; per-project configuration is separate. [docs/operating-guide.md](docs/operating-guide.md)
+covers that split, how to roll the setup out across several projects, how to
+pick a ceremony tier, and how the gates sit in the phase loop — with diagrams.
+Tier presets are in [docs/gsd-tiers.md](docs/gsd-tiers.md).
+
 ---
 
 ## Development
