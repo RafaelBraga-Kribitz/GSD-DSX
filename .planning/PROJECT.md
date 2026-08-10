@@ -46,6 +46,9 @@ written profile.
   decidable (DQ, evidence, coherence, viz/seals/smells, narrative/code, analytical
   logic / stats extensions including decision replay and repro_lock, plus scored
   CHART-REVIEW and ADR-authorised suppressions).
+- **v2.0.0 in progress** — Phase 6 (M1) complete 2026-08-10, 13/13 plans. Package
+  version is 2.0.0. The contract surface, decision trail and paradigm manifest
+  exist; Phases 7–12 (the check families that use them) are unblocked and unwritten.
 
 ## Current Milestone: v2.0.0 DSX Validity Frame
 
@@ -88,10 +91,11 @@ specs without it begin to block — a breaking contract change.
 - ✓ Narrative discipline, forbidden-claim SSOT, SQL anti-patterns, entrypoint smell scan — v1.3.0
 - ✓ Assumption checkoffs/waivers, TOST/CI/MDE, multiplicity family, repro_lock, decision replay — v1.4.0
 - ✓ ANALYSIS-SPEC `suppressions[]` with authority, scored CHART-REVIEW.md — v1.5.0
+- ✓ `validity_frame:`/`inference:` contract blocks, decision records + `dsx explain`, `DSX-PAR-001` paradigm manifest, `dsx/frame/` package with enforced D-03a boundary, mechanical D-05 citation enforcement, known-bad corpus — Phase 6 (REQ-P6-01 … REQ-P6-16)
 
 ### Active
 
-See `.planning/REQUIREMENTS.md` for the v2.0.0 requirement set (REQ-P6-* … REQ-P12-*).
+See `.planning/REQUIREMENTS.md` for the v2.0.0 requirement set (REQ-P7-* … REQ-P12-*). REQ-P6-* are complete.
 
 ### Out of Scope
 
@@ -132,22 +136,22 @@ See `.planning/REQUIREMENTS.md` for the v2.0.0 requirement set (REQ-P6-* … REQ
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
 | D-03 Extend DSX in place, one install/contract/gate/test suite/catalogue | Highest-value checks are cross-cutting; a check spanning two contracts cannot live cleanly in either of two plugins | — Pending |
-| D-03a Keep an extractable boundary: `dsx/frame/` imports only `Report`/`Finding` from `dsx/checks/` | If in six months there are no upward imports, extraction is a `git filter-repo` | — Pending |
-| D-04 Never block to teach — gates emit a decision record, `dsx explain` renders it | A gate that stops to explain is disabled on a deadline, losing guardrail and lesson both | — Pending |
-| D-05 Citation + published reference value per check | Prevents laundering model statistics knowledge into a blocking gate | — Pending |
-| D-10 An unsupported paradigm is never blocking on its own | Blocking on `paradigm: bayesian` makes typing `frequentist` the cheapest way past the gate | — Pending |
+| D-03a Keep an extractable boundary: `dsx/frame/` imports only `Report`/`Finding` from `dsx/checks/` | If in six months there are no upward imports, extraction is a `git filter-repo` | Delivered Phase 6 — `dsx/frame/` exists; `tests/test_frame_boundary.py` fails the suite on any upward import |
+| D-04 Never block to teach — gates emit a decision record, `dsx explain` renders it | A gate that stops to explain is disabled on a deadline, losing guardrail and lesson both | Delivered Phase 6 — `dsx/decisions.py` emits, `dsx explain` renders, always exit 0; the gate-path write is a guarded side channel |
+| D-05 Citation + published reference value per check | Prevents laundering model statistics knowledge into a blocking gate | Delivered Phase 6 — `check_d05` in `gen-finding-catalogue.py --check` fails the build on a missing `Citation:` line |
+| D-10 An unsupported paradigm is never blocking on its own | Blocking on `paradigm: bayesian` makes typing `frequentist` the cheapest way past the gate | Delivered Phase 6 — `DSX-PAR-001` is INFO (10); every default `GATE_THRESHOLDS` value is 40 or 50 |
 | D-11 Frame-layer checks never read `paradigm` | A prior does not save you from pseudo-replication; if a frame check branches on paradigm it is in the wrong layer | — Pending |
 | D-12/D-12a Paradigm-specific checks ship in symmetric pairs, and symmetry is the scoping rule | Asymmetric enforcement is how a tool silently steers method choice | — Pending |
 | D-13 Deferred checks carry an entry condition, not a wish | A trigger tied to a measured catch rate is falsifiable; a priority is not | — Pending |
 | D-14 Reversing a D-table decision requires a reversal record; evidence-free reversal logs as `SELF-001` | "Here is what would change my mind" is stronger than "here is what I chose" | — Pending |
 | **M-01** `DSX-PAR-010` ships as a distinct code, `DSX-EXP-060` untouched | Triggers are disjoint — undeclared looks under a fixed horizon vs a declared continuous design with no sequential method. Widening EXP-060 would silently broaden existing suppressions, against the spirit of D-06 | — Pending |
 | **M-02** No `inference.stopping_rule` field; `DSX-PAR-010/011` read the existing `design.peeking_policy` | One concept, one field. Avoids a permanent consistency check between two vocabularies for the same thing. Deviates from brief §5.2, which specified a new field | — Pending |
-| **M-03** `PEEKING_POLICIES` gains a value for uncontrolled continuous monitoring | Consequence of M-02: the existing vocabulary has `always_valid` (disciplined) but no value for "peeking continuously with no correction" — precisely what `DSX-PAR-010` must fire on | — Pending |
-| **M-04** Automated import test enforces the D-03a boundary from M1 | Enforces the boundary without scaffolding an empty `families.yaml`, which brief §6.6 warns accumulates speculative structure | — Pending |
-| **M-05** `SELF-001` stays a convention for v2.0.0; `REVERSALS.md` template seeded in M1 | Enforcement is a planning-process concern, not a gate concern; a subcommand adjudicating planning docs is outside the gate path | — Pending |
-| **M-06** `validity_frame` sub-block requiredness is gated by `question_type` from M1 | Requiring the whole block for descriptive/BI work forces reflexive `none` answers — the exact incentive distortion D-10 exists to prevent. Far cheaper decided in M1 than retrofitted after M2a/M2b are written against the wrong requiredness | — Pending |
-| **M-07** Existing `suppressions[]` with its authority requirement is the grandfather path for pre-v2.0.0 specs | Zero new code, and the ADR/SPEC authority requirement makes grandfathering deliberate and attributable rather than silent | — Pending |
-| **M-08** D-05 citation enforcement is automated in M1 via `scripts/gen-finding-catalogue.py` | D-05 says "if velocity pressure arrives, cut checks, never this" — an unenforced constraint is the first thing velocity pressure removes. It was the only major constraint nothing checked | — Pending |
+| **M-03** `PEEKING_POLICIES` gains a value for uncontrolled continuous monitoring | Consequence of M-02: the existing vocabulary has `always_valid` (disciplined) but no value for "peeking continuously with no correction" — precisely what `DSX-PAR-010` must fire on | Delivered Phase 6 — `uncontrolled_continuous` added (`dsx/spec.py:71`) |
+| **M-04** Automated import test enforces the D-03a boundary from M1 | Enforces the boundary without scaffolding an empty `families.yaml`, which brief §6.6 warns accumulates speculative structure | Delivered Phase 6 — AST scanner proven against three deliberately violating sources |
+| **M-05** `SELF-001` stays a convention for v2.0.0; `REVERSALS.md` template seeded in M1 | Enforcement is a planning-process concern, not a gate concern; a subcommand adjudicating planning docs is outside the gate path | Delivered Phase 6 — `REVERSALS.md` seeded with the four-field D-14 template; SELF-001 trigger stated. Human-validated (UAT 1) |
+| **M-06** `validity_frame` sub-block requiredness is gated by `question_type` from M1 | Requiring the whole block for descriptive/BI work forces reflexive `none` answers — the exact incentive distortion D-10 exists to prevent. Far cheaper decided in M1 than retrofitted after M2a/M2b are written against the wrong requiredness | Delivered Phase 6 — REQ-P6-03 |
+| **M-07** Existing `suppressions[]` with its authority requirement is the grandfather path for pre-v2.0.0 specs | Zero new code, and the ADR/SPEC authority requirement makes grandfathering deliberate and attributable rather than silent | Delivered Phase 6 — README states authority as a requirement (DSX-SPEC-070) and the "a frame that lies passes" known limit. Human-validated (UAT 2) |
+| **M-08** D-05 citation enforcement is automated in M1 via `scripts/gen-finding-catalogue.py` | D-05 says "if velocity pressure arrives, cut checks, never this" — an unenforced constraint is the first thing velocity pressure removes. It was the only major constraint nothing checked | Delivered Phase 6 — see D-05 |
 | **M-09** `dependence.method_family_required` reuses `VARIANCE_ADJUSTMENTS` | Same reasoning as M-02: one concept, one vocabulary. Consequence: the field holds a single member, so the brief's example `cluster_robust_or_mixed` is not expressible — carried as an open item for the M2a discuss rather than silently modelled as a disjunction | — Pending |
 
 ## Non-goals
@@ -181,4 +185,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-08-07 after starting milestone v2.0.0 DSX Validity Frame*
+*Last updated: 2026-08-10 after Phase 6*

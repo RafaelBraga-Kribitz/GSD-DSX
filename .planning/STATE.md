@@ -2,25 +2,25 @@
 gsd_state_version: 1.0
 milestone: v2.0.0
 milestone_name: DSX Validity Frame
-current_phase: 06
-current_phase_name: contract-extension-decision-record-paradigm-manifest
-status: executing
-stopped_at: Completed 06-08-PLAN.md
-last_updated: "2026-08-08T08:49:45.550Z"
-last_activity: 2026-08-08
-last_activity_desc: Phase 06 execution started
+current_phase: 7
+current_phase_name: "validity-frame-checks"
+status: planning
+stopped_at: Phase 06 complete — UAT 4/4 passed, verification passed, security verified (threats_open 0)
+last_updated: "2026-08-10T18:57:17.831Z"
+last_activity: 2026-08-10
+last_activity_desc: Phase 06 complete, transitioned to Phase 7
 progress:
-  total_phases: 1
-  completed_phases: 0
+  total_phases: 7
+  completed_phases: 1
   total_plans: 13
-  completed_plans: 10
-  percent: 0
+  completed_plans: 13
+  percent: 14
 ---
 
 # Project state
 
-**Status:** Executing Phase 06
-**Progress:** [████████░░] 80% (0/7 phases)  
+**Status:** Ready to plan Phase 7
+**Progress:** [███░░░░░░░] 14% (1/7 phases — Phase 6 complete, 13/13 plans)  
 **Locked decisions:** DQ = profile runner + hermetic gates; Glyph = hermetic svg_sha256 only (no MCP dep); forbidden claims = universal pack + optional phase YAML; repro_lock = ARS-style honest-null (not byte-replay); decision replay = structured thresholds only; suppressions = ADR/SPEC authority required (unknown codes → exit 2)  
 **v2.0.0 locked decisions:** DSX-PAR-010 is a distinct code, DSX-EXP-060 untouched (M-01); no `inference.stopping_rule` — PAR-010/011 read the existing `design.peeking_policy` (M-02); PEEKING_POLICIES gains an uncontrolled-continuous-monitoring value (M-03); automated import test enforces the D-03a boundary from M1 (M-04); SELF-001 stays a convention, REVERSALS.md template seeded in M1 (M-05); `validity_frame` sub-block requiredness gated by `question_type` (M-06); existing `suppressions[]` is the pre-v2.0.0 grandfather path (M-07); D-05 citation enforcement automated via `gen-finding-catalogue.py` (M-08); `dependence.method_family_required` reuses `VARIANCE_ADJUSTMENTS` (M-09)
 
@@ -34,11 +34,11 @@ progress:
 - Phase 5 (v1.5.0): ANALYSIS-SPEC `suppressions[]`, scored CHART-REVIEW.md (`dsx-chart-review-v1`), skill `dsx-chart-audit`, viz-critic writes CHART-REVIEW
 - v2.0.0 requirements defined (53 requirements, REQ-P6-* … REQ-P12-*)
 - v2.0.0 roadmap written — Phases 6–12, 53/53 requirements mapped, traceability populated
+- Phase 6 (M1, v2.0.0) — Contract extension, decision record, paradigm manifest. 13/13 plans, UAT 4/4, verification passed, security verified (35 threats, 0 open). Completed 2026-08-10.
 
 ## Next
 
-- Phase 6 (M1) — Contract extension, decision record, paradigm manifest. Blocks every other v2.0.0 phase.
-- Then Phases 7/8/9 (M2a/M2b/M2c) — no hard ordering among themselves; listed order is catastrophe-prevention value per unit of work.
+- Phases 7/8/9 (M2a/M2b/M2c) — no hard ordering among themselves; listed order is catastrophe-prevention value per unit of work. Phase 7 is next up.
 - Then Phase 10 (M3, soft-depends on 7), Phase 11 (M4, hard-depends on 7), Phase 12 (M5, terminal).
 - Deferred, unchanged: Parquet profiler, live Glyph MCP, NLP decision_rule — out of scope for core gates.
 
@@ -46,10 +46,8 @@ progress:
 
 **Hard ordering constraints carried into planning:**
 
-- Phase 6 blocks Phases 7–12.
-- Within Phase 6: the loader `_NULL` fix (REQ-P6-01) lands before the `validity_frame:` schema (REQ-P6-02) — four frame fields declare `none` as a legitimate value.
-- `DSX-PAR-001` (REQ-P6-09) ships in Phase 6, not Phase 9 — no window where `paradigm` exists without defined behaviour.
-- Phase 9's `DSX-PAR-010` and `DSX-PAR-011` are atomic (D-12): both ship or neither; the phase cannot close half-delivered.
+- Phase 6 blocks Phases 7–12. **Resolved** — Phase 6 complete 2026-08-10, so Phases 7–12 are unblocked.
+- Phase 9's `DSX-PAR-010` and `DSX-PAR-011` are atomic (D-12): both ship or neither; the phase cannot close half-delivered. Note: 06-08 already committed both halves.
 - Phase 7 precedes Phase 11 — admissibility is keyed on the dependence taxonomy.
 - Phase 12 is necessarily last.
 
@@ -58,7 +56,7 @@ progress:
 - Phase 7: `method_family_required` cannot express a disjunction under M-09's single-member reuse of `VARIANCE_ADJUSTMENTS`.
 - Phases 7, 8, 11: final numeric code assignments beyond those the brief fixes (D-06 makes numbering irreversible).
 - Phase 9: whether the pre-existing `inflation_from_peeking()` docstring is upgraded to a full D-05 citation.
-- Phase 6: research (ARCHITECTURE §4.3) recommends shipping the `PEEKING_POLICIES` addition with its consumer in Phase 9; REQ-P6-05 places it in Phase 6. Reconcile at Phase 6 discuss.
+- Phase 9: the "prior-averaged Ville bound" name is retired. Deng Theorem 1 gives `1/(K+1)` (0.05 at K=19); Ville's `1/k` (0.0526 at k=19) is a separate result. REQ-P9-02 and ROADMAP Phase 9 corrected; three regression guards in `tests/test_known_bad_corpus.py` hold the line (UAT gap G-01).
 
 **Standing per-phase deliverables:**
 
@@ -69,15 +67,22 @@ progress:
 
 ## Current Position
 
-Phase: 06 (contract-extension-decision-record-paradigm-manifest) — EXECUTING
-Plan: 1 of 13
-Status: Executing Phase 06
-Last activity: 2026-08-08 — Phase 06 execution started
+Phase: 7 — Validity frame checks (`DSX-VAL-*`)
+Plan: Not started
+Status: Ready to plan Phase 7 (no CONTEXT.md yet — discuss first)
+Last activity: 2026-08-10 — Phase 06 complete, transitioned to Phase 7
+
+## Project Reference
+
+See: .planning/PROJECT.md (updated 2026-08-10)
+
+**Core value:** Gate analytical work on validity before the data is touched.
+**Current focus:** Phase 7 — Validity frame checks (`DSX-VAL-*`)
 
 ## Session
 
-**Last session:** 2026-08-08T01:32:42+02:00
-**Stopped at:** Completed 06-09-PLAN.md (executor interrupted by session limit after its final task commit; SUMMARY and tracking reconciled by the orchestrator during /gsd-resume-work — all 9 of the plan's verification items re-run and passing)
+**Last session:** 2026-08-10
+**Stopped at:** Phase 6 complete, ready to plan Phase 7
 **Resume file:** None
 
 ## Performance Metrics

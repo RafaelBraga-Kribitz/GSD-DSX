@@ -74,22 +74,22 @@ in either direction — they cannot justify a check and cannot excuse skipping o
 
 ## Phase 6 (M1) — Contract extension, decision record, paradigm manifest
 
-- [ ] REQ-P6-01 Bundled YAML fallback parser no longer treats the literal `none` as null; `dsx/loader.py` `_NULL` drops `"none"`, and a test asserts the bundled parser and PyYAML agree on `none` for scalars and sequences
-- [ ] REQ-P6-02 `ANALYSIS-SPEC.yaml` accepts a `validity_frame:` block with `estimand`, `units`, `identification`, `dependence`, `interference`, `triggering`, `stability`, `sampling_frame`, `missingness` and `measurement` sub-blocks, and the extended spec round-trips
-- [ ] REQ-P6-03 `validity_frame` sub-block requiredness is gated by `question_type`: `estimand`, `units` and `measurement` are always required; `interference`, `triggering` and `stability` are required only for causal and experimental question types (M-06)
-- [ ] REQ-P6-04 `ANALYSIS-SPEC.yaml` accepts an `inference:` block with `paradigm`, `paradigm_justification`, `declared_at`, `primary_procedure`, `alpha_spending` and `fallback_rule`; the stopping-rule concept is read from the existing `design.peeking_policy`, and no `inference.stopping_rule` field is introduced (M-02)
-- [ ] REQ-P6-05 `PEEKING_POLICIES` gains a value denoting continuous monitoring with no sequential correction, distinct from `always_valid` (M-03)
-- [ ] REQ-P6-06 Every new closed vocabulary is registered in `dsx/spec.py` and dumped by `dsx vocab`; `dependence.method_family_required` reuses `VARIANCE_ADJUSTMENTS` rather than defining a parallel set (M-09)
-- [ ] REQ-P6-07 A decision-record schema and emitter exist as a top-level module, carrying `id`, `layer`, `choice`, `inputs`, `rule`, `citation`, `counterfactual`, `alternatives_rejected`, `confidence` and `escalate`; records serialise append-only and survive a crashed run
-- [ ] REQ-P6-08 `dsx explain` renders a readable decision trail from emitted records and always exits `0`, never participating in the block contract (D-04)
-- [ ] REQ-P6-09 `DSX-PAR-001` emits an informational paradigm manifest naming which check families applied and which did not, at INFO severity, and cannot block at any gate threshold (D-10)
-- [ ] REQ-P6-10 A `dsx/frame/` package exists and an automated AST-based test asserts it never imports from `dsx/checks/`, failing the suite on violation (D-03a, M-04)
-- [ ] REQ-P6-11 `scripts/gen-finding-catalogue.py` fails the build when a check lacks a citation marker in its docstring, making D-05 mechanical rather than review-only (M-08)
-- [ ] REQ-P6-12 `examples/good-ANALYSIS-SPEC.yaml` still passes every gate at every threshold and `examples/bad-ANALYSIS-SPEC.yaml` is still blocked by every gate, both extended rather than replaced (D-08)
-- [ ] REQ-P6-13 At least three real known-bad analyses are committed as fixtures with documented post-mortems, including at least one interference case and one Bayesian continuous-monitoring case
-- [ ] REQ-P6-14 `.planning/REVERSALS.md` exists with the D-14 reversal-record template and the `SELF-001` convention documented (M-05)
-- [ ] REQ-P6-15 The README documents `suppressions[]` with its authority requirement as the migration path for pre-v2.0.0 specs, and states the known limit that a frame which lies passes (M-07, brief §8)
-- [ ] REQ-P6-16 Package version is 2.0.0 and the finding catalogue is regenerated
+- [x] REQ-P6-01 Bundled YAML fallback parser no longer treats the literal `none` as null; `dsx/loader.py` `_NULL` drops `"none"`, and a test asserts the bundled parser and PyYAML agree on `none` for scalars and sequences
+- [x] REQ-P6-02 `ANALYSIS-SPEC.yaml` accepts a `validity_frame:` block with `estimand`, `units`, `identification`, `dependence`, `interference`, `triggering`, `stability`, `sampling_frame`, `missingness` and `measurement` sub-blocks, and the extended spec round-trips
+- [x] REQ-P6-03 `validity_frame` sub-block requiredness is gated by `question_type`: `estimand`, `units` and `measurement` are always required; `interference`, `triggering` and `stability` are required only for causal and experimental question types (M-06)
+- [x] REQ-P6-04 `ANALYSIS-SPEC.yaml` accepts an `inference:` block with `paradigm`, `paradigm_justification`, `declared_at`, `primary_procedure`, `alpha_spending` and `fallback_rule`; the stopping-rule concept is read from the existing `design.peeking_policy`, and no `inference.stopping_rule` field is introduced (M-02)
+- [x] REQ-P6-05 `PEEKING_POLICIES` gains a value denoting continuous monitoring with no sequential correction, distinct from `always_valid` (M-03)
+- [x] REQ-P6-06 Every new closed vocabulary is registered in `dsx/spec.py` and dumped by `dsx vocab`; `dependence.method_family_required` reuses `VARIANCE_ADJUSTMENTS` rather than defining a parallel set (M-09)
+- [x] REQ-P6-07 A decision-record schema and emitter exist as a top-level module, carrying `id`, `layer`, `choice`, `inputs`, `rule`, `citation`, `counterfactual`, `alternatives_rejected`, `confidence` and `escalate`; records serialise append-only and survive a crashed run
+- [x] REQ-P6-08 `dsx explain` renders a readable decision trail from emitted records and always exits `0`, never participating in the block contract (D-04)
+- [x] REQ-P6-09 `DSX-PAR-001` emits an informational paradigm manifest naming which check families applied and which did not, at INFO severity, and cannot block at any gate threshold (D-10)
+- [x] REQ-P6-10 A `dsx/frame/` package exists and an automated AST-based test asserts it never imports from `dsx/checks/`, failing the suite on violation (D-03a, M-04)
+- [x] REQ-P6-11 `scripts/gen-finding-catalogue.py` fails the build when a check lacks a citation marker in its docstring, making D-05 mechanical rather than review-only (M-08)
+- [x] REQ-P6-12 `examples/good-ANALYSIS-SPEC.yaml` still passes every gate at every threshold and `examples/bad-ANALYSIS-SPEC.yaml` is still blocked by every gate, both extended rather than replaced (D-08)
+- [x] REQ-P6-13 At least three real known-bad analyses are committed as fixtures with documented post-mortems, including at least one interference case and one Bayesian continuous-monitoring case
+- [x] REQ-P6-14 `.planning/REVERSALS.md` exists with the D-14 reversal-record template and the `SELF-001` convention documented (M-05)
+- [x] REQ-P6-15 The README documents `suppressions[]` with its authority requirement as the migration path for pre-v2.0.0 specs, and states the known limit that a frame which lies passes (M-07, brief §8)
+- [x] REQ-P6-16 Package version is 2.0.0 and the finding catalogue is regenerated
 
 ## Phase 7 (M2a) — Validity frame checks (`DSX-VAL-*`)
 

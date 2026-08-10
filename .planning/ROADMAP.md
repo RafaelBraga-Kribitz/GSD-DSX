@@ -11,7 +11,7 @@
 - [x] **Phase 3: Storytelling + code reality** - narrative discipline, forbidden-claim SSOT, SQL anti-patterns, entrypoint smells (v1.3.0)
 - [x] **Phase 4: Analytical logic depth + stats extensions** - assumption checkoffs, TOST/CI/MDE, multiplicity, repro_lock, decision replay (v1.4.0)
 - [x] **Phase 5: Chart review + suppressions** - ADR-authorised `suppressions[]`, scored CHART-REVIEW.md (v1.5.0)
-- [ ] **Phase 6: Contract extension, decision record, paradigm manifest** - `validity_frame:`/`inference:` blocks, decision records, `dsx explain`, `DSX-PAR-001`, D-05/D-03a enforcement (M1)
+- [x] **Phase 6: Contract extension, decision record, paradigm manifest** - `validity_frame:`/`inference:` blocks, decision records, `dsx explain`, `DSX-PAR-001`, D-05/D-03a enforcement (M1) — completed 2026-08-10
 - [ ] **Phase 7: Validity frame checks (`DSX-VAL-*`)** - estimand, unit triad, dependence, identification strength, sampling frame, missingness, measurement (M2a)
 - [ ] **Phase 8: Interference, triggering, stability (`DSX-INT-*`)** - SUTVA risk, shared-budget/marketplace patterns, triggered-vs-eligible dilution, novelty/primacy (M2b)
 - [ ] **Phase 9: Monitoring discipline, symmetric (`DSX-PAR-*`)** - the atomic `DSX-PAR-010`/`-011` pair plus `DSX-PAR-002` (M2c)
@@ -470,7 +470,7 @@ cases where absence permitted a false pass" is a debate, not a count.
 | 3. Storytelling + code reality | — | Complete | v1.3.0 |
 | 4. Analytical logic depth + stats extensions | — | Complete | v1.4.0 |
 | 5. Chart review + suppressions | — | Complete | v1.5.0 |
-| 6. Contract extension, decision record, paradigm manifest | 13/13 | In Progress|  |
+| 6. Contract extension, decision record, paradigm manifest | 13/13 | Complete | 2026-08-10 |
 | 7. Validity frame checks (`DSX-VAL-*`) | 0/TBD | Not started | - |
 | 8. Interference, triggering, stability (`DSX-INT-*`) | 0/TBD | Not started | - |
 | 9. Monitoring discipline, symmetric (`DSX-PAR-*`) | 0/TBD | Not started | - |

@@ -107,11 +107,35 @@ no prior SECURITY.md). Every plan carried a parseable threat model, so this is a
 | Audit Date | Threats Total | Closed | Open | Run By |
 |------------|---------------|--------|------|--------|
 | 2026-08-10 | 35 | 35 | 0 | /gsd-secure-phase 06 (orchestrator, ASVS L1) |
+| 2026-08-10 | 35 | 35 | 0 | /gsd-secure-phase 06 re-verification (State A audit, ASVS L1) |
 
 **Verification depth.** ASVS L1 (grep depth) per `workflow.security_asvs_level: 1`.
 All 8 high-severity threats were confirmed against named implementation sites and
 named passing tests, not against plan prose alone. Full suite re-run during this
 audit: **306 passed, 239 subtests passed in 6.40s.**
+
+**Re-verification (State A audit).** The register was re-derived from the 13 plan
+`<threat_model>` blocks and matched this file exactly — 35 threat IDs, no additions,
+no orphans. Closure evidence was re-checked against the live tree rather than
+against this file's own claims:
+
+- **T-6-01** `tests/test_frame_boundary.py:93` — `test_real_frame_modules_import_nothing_from_checks` present
+- **T-6-08 / T-6-29** `scripts/gen-finding-catalogue.py:58,66` — `_D05_ALLOWLIST_PREFIXES = ("DSX-PAR-",)` and the five-code `_D05_ALLOWLIST_CODES` frozenset both literal in-script
+- **T-6-11** `tests/test_dsx.py:1192,1198,1204` — all three fixture-gate tests present
+- **T-6-14** `dsx/frame/paradigm.py` present; `DSX-PAR-001` asserted at `tests/test_dsx.py:1395`
+- **T-6-16** `tests/test_known_bad_corpus.py` — 13 test functions, matching the claimed count
+- **T-6-17** `tests/test_known_bad_corpus.py:270,292,310` — all three bound-attribution guards present
+- **T-6-19** `dsx/cli.py` — `_write_decision_trail` body ends in `except Exception`, stderr only under `--verbose`
+- **T-6-19b** `dsx/decisions.py:142-144` — `errors="replace"` + `except OSError: return []`
+- **T-6-02 / T-6-02b** tolerant per-line `except json.JSONDecodeError: continue`; `cmd_explain` outer `except Exception` returning 0
+- **T-6-05** `dsx/decisions.py:118-119` — `flush()` + `os.fsync(fh.fileno())`
+- **T-6-20** `2.0.0` confirmed in `dsx/__init__.py:9`, `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`, `capabilities/dsx/capability.json`
+
+Gates re-run at re-verification time: full suite **306 passed, 239 subtests passed
+in 6.22s** (identical counts, timing variance only), and
+`python scripts/gen-finding-catalogue.py --check` → exit 0, "finding catalogue is
+current". No open threat at or above the `high` block threshold. Summaries still
+carry no `## Threat Flags` sections, so the register remains plan-sourced.
 
 **Register origin.** All 13 plans carried a `<threat_model>` block, so
 `register_authored_at_plan_time: true` and the audit verified mitigations rather
