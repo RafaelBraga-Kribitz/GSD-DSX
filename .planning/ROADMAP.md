@@ -311,9 +311,10 @@ depend on it.
 
   2. `examples/known-bad/bayesian-continuous-monitoring-ANALYSIS-SPEC.yaml` — the spec asserting
      that a weakly informative prior controls false positives while peeking — exits `1` naming
-     `DSX-PAR-011`, and a test asserts the prior-averaged Ville bound `1/(K+1)`: at the
+     `DSX-PAR-011`, and a test asserts the prior-averaged bound `1/(K+1)`: at the
      `P(B>A) > 0.95` threshold, `K = 19` and the bound is `0.05`, traced to Deng, Lu & Chen
-     (2016) Theorem 1.
+     (2016) Theorem 1 — whose likelihood-ratio argument is not Ville's inequality, which
+     gives the different bound `1/k` (`1/19 ≈ 0.0526`) and must not be substituted.
 
   3. The `DSX-PAR-011` docstring states explicitly that it asserts the prior-averaged
      formulation and **not** the point-null / law-of-iterated-logarithm formulation, and the

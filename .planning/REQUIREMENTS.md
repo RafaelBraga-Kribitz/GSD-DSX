@@ -115,7 +115,7 @@ in either direction — they cannot justify a check and cannot excuse skipping o
 ## Phase 9 (M2c) — Monitoring discipline, symmetric (`DSX-PAR-*`)
 
 - [ ] REQ-P9-01 `DSX-PAR-010` blocks a frequentist design declaring continuous or group-sequential monitoring with no alpha-spending or sequential method, reusing the existing `inflation_from_peeking()` table rather than introducing a second one
-- [ ] REQ-P9-02 `DSX-PAR-011` blocks a Bayesian design declaring continuous monitoring with neither threshold calibration nor a justified informative prior, asserting the prior-averaged Ville bound `1/(K+1)` — at the `P(B>A) > 0.95` threshold, `K=19` and the bound is `0.05` — citing Deng, Lu & Chen (2016) Theorem 1
+- [ ] REQ-P9-02 `DSX-PAR-011` blocks a Bayesian design declaring continuous monitoring with neither threshold calibration nor a justified informative prior, asserting the prior-averaged bound `1/(K+1)` — at the `P(B>A) > 0.95` threshold, `K=19` and the bound is `0.05` — citing Deng, Lu & Chen (2016) Theorem 1, whose likelihood-ratio argument is not Ville's inequality (Ville gives the different bound `1/k`)
 - [ ] REQ-P9-03 The `DSX-PAR-011` docstring states explicitly that it asserts the prior-averaged formulation and not the point-null/law-of-iterated-logarithm formulation, and the fixture traces to the specific theorem
 - [ ] REQ-P9-04 `DSX-PAR-002` validates `paradigm_justification` against the closed vocabulary, symmetric across both paradigms with no reason ranked above another
 - [ ] REQ-P9-05 Neither `DSX-PAR-010` nor `DSX-PAR-011` can be satisfied by switching the declared `paradigm` value, asserted by test in both directions

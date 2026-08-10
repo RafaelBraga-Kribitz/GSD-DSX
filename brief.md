@@ -405,9 +405,11 @@ justify a check and they cannot excuse skipping one.
 **Set up the simulation deliberately, because the two natural setups give different numbers.**
 Against a *point null* (B and A identical, unbounded horizon), the error rate of "stop when
 P(B>A) > 0.95" grows without a useful ceiling: the law of the iterated logarithm guarantees
-eventual crossing. Averaged over the *prior*, a martingale bound (Ville's inequality) caps the
-probability of ever crossing a posterior-odds threshold k at roughly 1/k, so the inflation is
-bounded and much smaller. Both are correct statements about different quantities. Decide which
+eventual crossing. Averaged over the *prior*, Deng, Lu & Chen (2016) Theorem 1 caps the
+false-discovery risk of stopping at a posterior-odds threshold K at 1/(K+1) — at K = 19, exactly
+0.05 — so the inflation is bounded and much smaller. Do not substitute Ville's inequality here:
+it gives the different bound 1/k (1/19 ≈ 0.0526 at the same threshold) and is not the argument
+Theorem 1 makes. Both are correct statements about different quantities. Decide which
 one `DSX-PAR-011` is asserting before writing the fixture, state it in the docstring, and
 choose the reference value to match. A fixture built against one formulation and checked
 against the other will look like an implementation bug for a day.
