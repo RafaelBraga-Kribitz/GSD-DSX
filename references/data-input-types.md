@@ -3,6 +3,22 @@
 Closed vocabulary for `visuals[].data_input_type`. When set, `visuals[].type`
 must be in the admissible set (`dsx vocab` → `chart_capabilities`).
 
+There are two levels of precision, and `data_input_type` accepts either:
+
+- **Coarse families** — the table below. Use when the column signature is
+  obvious and you only need the broad shape.
+- **Inventory ids `IT001`–`IT040`** — see
+  [input-type-inventory.md](input-type-inventory.md). Use when the shape is
+  specific enough to matter. This is the more precise declaration and narrows
+  the permitted marks further.
+
+Ask the lookup rather than guessing:
+
+```bash
+dsx charts IT005 --relationship comparison   # → bar, bullet, dot_plot, horizontal_bar
+dsx charts --list                            # → the whole catalogue
+```
+
 | ID | Typical signature | Primary marks (dsx names) |
 |---|---|---|
 | `bivariate-simple` | numeric × numeric | line, scatter, area, bar |

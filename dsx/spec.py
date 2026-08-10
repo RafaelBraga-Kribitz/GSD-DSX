@@ -111,6 +111,11 @@ DATA_INPUT_TYPES = {
     "hierarchical",
     "matrix",
     "event-time",
+    # Shapes present in the IT001-IT040 inventory that the twelve above do not
+    # cover. See references/input-type-inventory.md.
+    "single-value",
+    "geospatial",
+    "financial-ohlc",
 }
 
 # Admissible chart types per data_input_type (dsx mark names, underscored).
@@ -137,6 +142,12 @@ CHART_CAPABILITIES: dict[str, frozenset[str]] = {
     "hierarchical": frozenset({"treemap", "sunburst", "icicle", "circle_pack"}),
     "matrix": frozenset({"heatmap", "chord"}),
     "event-time": frozenset({"line", "scatter", "timeline", "funnel", "gantt"}),
+    # A single number has no relationship to encode, so the honest marks are the
+    # ones that do not imply one. Gauges are excluded deliberately: the arc is a
+    # length-encoded channel with an arbitrary maximum.
+    "single-value": frozenset({"big_number", "bullet", "sparkline"}),
+    "geospatial": frozenset({"choropleth", "symbol_map", "cartogram", "hexbin"}),
+    "financial-ohlc": frozenset({"candlestick", "ohlc_bar", "line", "column_range"}),
 }
 
 RENDERERS = {"matplotlib", "plotly", "altair", "ggplot", "glyph", "other"}

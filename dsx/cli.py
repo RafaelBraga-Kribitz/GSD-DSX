@@ -401,6 +401,65 @@ def cmd_vocab(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_charts(args: argparse.Namespace) -> int:
+    """Permitted chart types for a data shape. The lookup that replaces asking.
+
+    Deterministic: same shape and relationship in, same marks out. Exit 1 when
+    the shape is not in the catalogue, so a caller can branch on it.
+    """
+    from .input_types import UnknownShape, input_types, permitted
+
+    if args.list:
+        rows = [
+            {
+                "id": item["id"],
+                "name": item["name"],
+                "signature": item["signature"],
+                "columns": item["columns"],
+                "family": item["family"],
+                "admissible": item["admissible"],
+            }
+            for item in input_types()
+        ]
+        if args.json:
+            print(json.dumps(rows, indent=2))
+        else:
+            for row in rows:
+                print(f"{row['id']}  {row['name']}")
+                print(f"        signature: {row['signature']}  ({row['columns']} cols)")
+                print(f"        permitted: {', '.join(row['admissible'])}")
+        return 0
+
+    if not args.shape:
+        print("dsx charts: give a shape (e.g. IT007 or composition) or --list", file=sys.stderr)
+        return 1
+
+    try:
+        marks = permitted(args.shape, args.relationship)
+    except UnknownShape:
+        print(
+            f"dsx charts: unknown data shape {args.shape!r}. "
+            "Use an inventory id IT001-IT040 or a family name from `dsx vocab`.",
+            file=sys.stderr,
+        )
+        return 1
+
+    if args.json:
+        print(
+            json.dumps(
+                {
+                    "shape": args.shape,
+                    "relationship": args.relationship,
+                    "permitted": marks,
+                },
+                indent=2,
+            )
+        )
+    else:
+        print(", ".join(marks))
+    return 0
+
+
 def cmd_explain(args: argparse.Namespace) -> int:
     """Render the decision trail (D-04, REQ-P6-08). A pure reader over
     ``DECISIONS.jsonl``: never imports the block-contract primitives (the
@@ -650,6 +709,17 @@ def build_parser() -> argparse.ArgumentParser:
 
     p_vocab = sub.add_parser("vocab", help="dump every closed vocabulary as JSON")
     p_vocab.set_defaults(func=cmd_vocab)
+
+    p_charts = sub.add_parser(
+        "charts", help="permitted chart types for a data shape (IT001-IT040 or family)"
+    )
+    p_charts.add_argument("shape", nargs="?", help="inventory id (IT007) or family (composition)")
+    p_charts.add_argument(
+        "--relationship", help="narrow by relationship (comparison, trend, …)"
+    )
+    p_charts.add_argument("--list", action="store_true", help="print the whole catalogue")
+    p_charts.add_argument("--json", action="store_true", help="machine-readable output")
+    p_charts.set_defaults(func=cmd_charts)
 
     p_init = sub.add_parser("init", help="scaffold an ANALYSIS-SPEC from the template")
     p_init.add_argument("--output", "-o")
