@@ -37,13 +37,11 @@ fixture is built to encode.
 
 The reference value in this post-mortem is the **prior-averaged** bound, not
 the point-null / law-of-iterated-logarithm formulation, and the two are not
-interchangeable. Ville's martingale inequality states that for a nonnegative
-martingale starting at 1 (which a prior-averaged likelihood ratio process
-is), the probability it *ever* crosses a fixed threshold `k` is at most
-`1/k`. At the `P(B>A) > 0.95` decision threshold used in this spec, the
-corresponding posterior-odds threshold is `K = 19` (since `19/20 = 0.95`),
-and the prior-averaged Ville bound is `1/19 ≈ 0.0526`, commonly rounded and
-reported as **0.05**. That is the sense in which "the false-positive rate can
+interchangeable. Deng, Lu & Chen (2016) Theorem 1 bounds the false-discovery
+risk of stopping at a posterior-odds threshold `K` at `1/(K+1)`. At the
+`P(B>A) > 0.95` decision threshold used in this spec, the corresponding
+posterior-odds threshold is `K = 19` (since `19/20 = 0.95`), and the bound is
+`1/20 = 0.05` exactly. That is the sense in which "the false-positive rate can
 be bounded" under continuous monitoring — it requires a pre-registered,
 calibrated threshold analysis using this bound, which this fixture's
 `fallback_rule` explicitly states was never done. This is **not** the
@@ -56,16 +54,26 @@ minutes (brief.md section 6.5, T-6-17). The same formulation note is
 commented directly in the paired spec file so a future reader hits the
 formulation question immediately rather than debugging a number mismatch.
 
+**Do not substitute Ville's inequality for the theorem above.** Ville's
+martingale inequality separately states that a nonnegative martingale starting
+at 1 crosses a fixed threshold `k` with probability at most `1/k`, which at
+`k = 19` gives `1/19 ≈ 0.0526`. That is a different bound from a different
+result: `0.0526` is not `0.05` rounded, and Deng's Theorem 1 argues from the
+likelihood ratio and the Bayesian promise rather than invoking Ville by name.
+An earlier revision of this file attributed the `1/k` form to Theorem 1 and
+reconciled the resulting gap with the word "rounded". Both statements were
+individually true, which is why the conflation survived review — the defect
+was the attribution, not either bound.
+
 ## Source
 
 Deng, A., Lu, J. & Chen, S. (2016), "Continuous Monitoring of A/B Tests
 without Pain: Optional Stopping in Bayesian Testing", IEEE International
 Conference on Data Science and Advanced Analytics (DSAA) 2016, Theorem 1 —
-the martingale (Ville's inequality) argument bounding the probability that a
-prior-averaged posterior-odds process ever crosses a fixed threshold,
-establishing that a calibrated threshold — not the prior's informativeness
-alone — is what controls the false-positive rate under continuous
-monitoring.
+the likelihood-ratio / Bayesian-promise argument bounding the false-discovery
+risk of stopping at a posterior-odds threshold `K` at `1/(K+1)`, establishing
+that a calibrated threshold — not the prior's informativeness alone — is what
+controls the false-positive rate under continuous monitoring.
 
 Vendor blogs, Medium posts and tool marketing are inadmissible under D-05 in
 either direction — this source is not one; it is the same primary paper
@@ -78,6 +86,6 @@ combination of `inference.paradigm: bayesian` with continuous monitoring and
 no declared threshold calibration today; Phase 6 only checks that both
 blocks are present and their fields are legal vocabulary members. Phase 9's
 `DSX-PAR-011` is scoped to block exactly this combination via a seeded,
-reproducible simulation against the prior-averaged Ville bound documented
+reproducible simulation against the prior-averaged `1/(K+1)` bound documented
 above — that simulation lives under `tests/`, never on the gate path (D-02,
 REQ-P9-07), and is Phase 9's work, not this phase's.

@@ -18,10 +18,12 @@
 # today. See the paired POSTMORTEM.md.
 #
 # ── Formulation note (T-6-17) ────────────────────────────────────────────────
-# This fixture's defect is stated relative to the PRIOR-AVERAGED bound: Ville's
-# martingale inequality caps the probability of a posterior-odds ratio ever
-# crossing a fixed threshold k at roughly 1/k. At the P(B>A) > 0.95 decision
-# threshold used below, k = 19 and the bound is 0.05. This is NOT the
+# This fixture's defect is stated relative to the PRIOR-AVERAGED bound: Deng,
+# Lu & Chen (2016) Theorem 1 caps the false-discovery risk of stopping at a
+# posterior-odds threshold K at 1/(K+1). At the P(B>A) > 0.95 decision
+# threshold used below, K = 19 and the bound is 1/20 = 0.05 exactly. Do not
+# substitute Ville's inequality, which gives the different bound 1/k (1/19 ~
+# 0.0526 here) and is not the argument Theorem 1 makes. This is NOT the
 # point-null / law-of-iterated-logarithm formulation, under which the error
 # rate over an unbounded horizon grows without a useful ceiling — both are
 # correct statements about different quantities (brief.md section 6.5). See
@@ -102,7 +104,7 @@ claims:
 assumptions:
   - assumption: "A weakly informative prior on the effect size is sufficient to control the decision procedure's false-positive rate under continuous monitoring."
     rationale: "The posterior itself is a valid summary of belief at every look, regardless of the stopping rule."
-    impact_if_wrong: "The posterior being valid at every look does not make the stop-when-crossed decision rule's error rate controlled; see the post-mortem's prior-averaged Ville bound."
+    impact_if_wrong: "The posterior being valid at every look does not make the stop-when-crossed decision rule's error rate controlled; see the post-mortem's prior-averaged 1/(K+1) bound."
     checked: false
 
 limitations:
