@@ -5,7 +5,9 @@
     "created": "2026-06-23",
     "purpose": "Machine-readable data input type catalogue for deterministic chart selection",
     "generated_by": "scripts/gen-input-types.py",
-    "note": "id/name/signature/columns/example/use_for/pattern_code are copied verbatim from the inventory. family and admissible are added here."
+    "note": "id/name/signature/columns/example/use_for/pattern_code are copied verbatim from the inventory. family and admissible are added here.",
+    "use_for_vs_admissible": "use_for is descriptive (what people do with this shape); admissible is prescriptive (what passes a gate). Where the prescriptive list is narrower, the item carries a narrowed_from_use_for field giving the reason. A narrower prescriptive list is a decision, not a defect.",
+    "shared_signatures": "IT004, IT019 and IT025 all declare signature [numeric]. The lookup is keyed on shape, so they resolve to one identical answer. Generation fails if their admissible sets ever diverge, because that would make the lookup ambiguous at its own key."
   },
   "input_types": [
     {
@@ -438,7 +440,8 @@
         "big_number",
         "bullet",
         "sparkline"
-      ]
+      ],
+      "narrowed_from_use_for": "use_for names a gauge; gauge is excluded. A gauge encodes one number as arc length against a maximum the author picks, so the reader decodes a proportion that the data never asserted. big_number states the value without implying a scale; bullet states it against a target that has to be declared."
     },
     {
       "id": "IT026",

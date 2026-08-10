@@ -86,16 +86,16 @@
   "phase_naming": "sequential",
   "agent_skills": {
     "gsd-planner": [
-      "skills/plain-language",
-      "skills/decision-format"
+      ".claude/skills/plain-language",
+      ".claude/skills/decision-format"
     ],
     "gsd-executor": [
-      "skills/plain-language",
-      "skills/decision-format"
+      ".claude/skills/plain-language",
+      ".claude/skills/decision-format"
     ],
     "gsd-verifier": [
-      "skills/plain-language",
-      "skills/decision-format"
+      ".claude/skills/plain-language",
+      ".claude/skills/decision-format"
     ]
   },
   "claude_md_path": "./.claude/CLAUDE.md",

@@ -85,6 +85,29 @@ EXTRA_MARKS: dict[str, set[str]] = {
     "IT028": {"heatmap"},
 }
 
+# Where the permitted list is deliberately narrower than the catalogue's own
+# `use_for` text. The two fields do different jobs: `use_for` is descriptive —
+# what people do with this shape — and `admissible` is prescriptive — what this
+# tool will let through a gate. A prescriptive list being narrower than a
+# descriptive one is correct, not inconsistent. Recorded per item so the
+# difference reads as a decision rather than a defect.
+NARROWED: dict[str, str] = {
+    "IT025": (
+        "use_for names a gauge; gauge is excluded. A gauge encodes one number as "
+        "arc length against a maximum the author picks, so the reader decodes a "
+        "proportion that the data never asserted. big_number states the value "
+        "without implying a scale; bullet states it against a target that has to "
+        "be declared."
+    ),
+}
+
+# Signatures that more than one catalogue entry shares. The lookup is keyed on
+# the shape, so these collapse to one answer by construction — which is only
+# safe while their admissible sets are identical. Asserted at generation time.
+SHARED_SIGNATURE_GROUPS: list[list[str]] = [
+    ["IT004", "IT019", "IT025"],  # all [numeric]
+]
+
 
 def main() -> int:
     if not SOURCE.exists():
@@ -121,7 +144,26 @@ def main() -> int:
         record = dict(item)  # verbatim fields preserved
         record["family"] = family
         record["admissible"] = sorted(admissible)
+        if it_id in NARROWED:
+            record["narrowed_from_use_for"] = NARROWED[it_id]
         out.append(record)
+
+    # A shared signature must resolve to a single answer, or the lookup is
+    # ambiguous at its own key. Fail generation rather than ship the ambiguity.
+    by_id = {record["id"]: record for record in out}
+    for group in SHARED_SIGNATURE_GROUPS:
+        signatures = {by_id[i]["signature"] for i in group}
+        admissibles = {tuple(by_id[i]["admissible"]) for i in group}
+        if len(signatures) != 1:
+            print(f"{group}: expected one shared signature, got {signatures}", file=sys.stderr)
+            return 1
+        if len(admissibles) != 1:
+            print(
+                f"{group} share signature {signatures.pop()} but disagree on admissible marks: "
+                f"{admissibles}. Either give them a discriminating field or make them agree.",
+                file=sys.stderr,
+            )
+            return 1
 
     payload = {
         "metadata": {
@@ -131,6 +173,18 @@ def main() -> int:
             "note": (
                 "id/name/signature/columns/example/use_for/pattern_code are copied "
                 "verbatim from the inventory. family and admissible are added here."
+            ),
+            "use_for_vs_admissible": (
+                "use_for is descriptive (what people do with this shape); admissible "
+                "is prescriptive (what passes a gate). Where the prescriptive list is "
+                "narrower, the item carries a narrowed_from_use_for field giving the "
+                "reason. A narrower prescriptive list is a decision, not a defect."
+            ),
+            "shared_signatures": (
+                "IT004, IT019 and IT025 all declare signature [numeric]. The lookup is "
+                "keyed on shape, so they resolve to one identical answer. Generation "
+                "fails if their admissible sets ever diverge, because that would make "
+                "the lookup ambiguous at its own key."
             ),
         },
         "input_types": out,
