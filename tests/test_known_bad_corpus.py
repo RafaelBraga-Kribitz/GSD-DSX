@@ -70,6 +70,29 @@ _TARGET_CODE_FAMILIES = ("DSX-INT-", "DSX-PAR-01")
 # <!-- planner-discipline-allow: ... --> literals in 06-12-PLAN.md.
 _RETIRED_OVERCLAIMS = ("validate/gate checks pass it", "passes every gate")
 
+# The three drift markers retired by UAT gap G-01. The prior-averaged reference
+# value is Deng, Lu & Chen (2016) Theorem 1's `1/(K+1)` — exactly 0.05 at K = 19
+# — and NOT Ville's inequality's `1/k`, which gives 1/19 ~ 0.0526 at the same
+# threshold. Both bounds are individually correct statements about different
+# quantities, which is precisely why the conflation survived review: no sentence
+# was false on its own. The guard therefore names the misattributing phrasings
+# rather than the numbers, so corrected prose stays free to explain the
+# distinction (and must, to stop the error returning).
+_RETIRED_BOUND_MISATTRIBUTIONS = (
+    "prior-averaged Ville bound",
+    "martingale (Ville's inequality) argument",
+    "commonly rounded and reported as",
+)
+
+# Documents outside the corpus that carried the same drift. brief.md section 6.5
+# is what a Phase 9 planner reads before drafting DSX-PAR-011, so leaving it
+# unguarded is how this error would return after the fixture was corrected.
+_BOUND_CLAIM_DOCUMENTS = (
+    ROOT / "brief.md",
+    ROOT / ".planning" / "REQUIREMENTS.md",
+    ROOT / ".planning" / "ROADMAP.md",
+)
+
 
 def _slugs(pattern: str, suffix: str) -> set[str]:
     return {p.name[: -len(suffix)] for p in CORPUS_DIR.glob(pattern)}
@@ -243,6 +266,64 @@ class TestKnownBadCorpus(unittest.TestCase):
                         retired, normalized,
                         f"{path.name} still carries the retired gate over-claim {retired!r}",
                     )
+
+    def test_no_corpus_file_misattributes_the_prior_averaged_bound(self):
+        """No file under examples/known-bad/ may attribute Ville's inequality to
+        Deng Theorem 1, or reconcile the two bounds' different values with the
+        word "rounded". Deng Theorem 1 bounds false-discovery risk at 1/(K+1)
+        (0.05 at K = 19) by a likelihood-ratio argument; Ville's inequality is a
+        separate result giving 1/k (1/19 ~ 0.0526). 0.0526 is not 0.05 rounded.
+
+        Matched against whitespace-normalized text so a cosmetic line-wrap cannot
+        hide a reintroduced misattribution from a plain substring check.
+        """
+        files = [p for p in sorted(CORPUS_DIR.rglob("*")) if p.is_file()]
+        self.assertTrue(files, "no files found under examples/known-bad/")
+        for path in files:
+            normalized = " ".join(path.read_text(encoding="utf-8").split())
+            for retired in _RETIRED_BOUND_MISATTRIBUTIONS:
+                with self.subTest(file=path.name, retired=retired):
+                    self.assertNotIn(
+                        retired, normalized,
+                        f"{path.name} misattributes the prior-averaged bound: {retired!r}. "
+                        "Deng Theorem 1 gives 1/(K+1); Ville's inequality gives 1/k.",
+                    )
+
+    def test_no_planning_document_misattributes_the_prior_averaged_bound(self):
+        """The same guard over the documents that feed future phases' drafting.
+
+        Scoped deliberately wider than this module's name: the corpus fixture was
+        corrected once already, and the drift returned through the brief rather
+        than through the corpus. Guarding only examples/known-bad/ would leave the
+        actual source of the error unprotected.
+        """
+        for path in _BOUND_CLAIM_DOCUMENTS:
+            with self.subTest(document=path.name):
+                self.assertTrue(path.is_file(), f"{path} is missing")
+                normalized = " ".join(path.read_text(encoding="utf-8").split())
+                for retired in _RETIRED_BOUND_MISATTRIBUTIONS:
+                    self.assertNotIn(
+                        retired, normalized,
+                        f"{path.name} misattributes the prior-averaged bound: {retired!r}",
+                    )
+
+    def test_bayesian_postmortem_states_the_deng_bound_and_its_value(self):
+        """The negative guards above cannot tell a corrected file from one that
+        dropped the claim entirely, so assert the correct form positively too.
+        """
+        matches = sorted(CORPUS_DIR.glob(f"*bayesian*{POSTMORTEM_SUFFIX}"))
+        self.assertEqual(
+            len(matches), 1,
+            f"expected exactly one bayesian post-mortem, found {[p.name for p in matches]}",
+        )
+        normalized = " ".join(matches[0].read_text(encoding="utf-8").split())
+        for required in ("1/(K+1)", "1/20 = 0.05", "Theorem 1"):
+            with self.subTest(required=required):
+                self.assertIn(
+                    required, normalized,
+                    f"{matches[0].name} no longer states {required!r} — the corrected "
+                    "prior-averaged bound must remain stated, not merely un-misattributed",
+                )
 
 
 if __name__ == "__main__":
