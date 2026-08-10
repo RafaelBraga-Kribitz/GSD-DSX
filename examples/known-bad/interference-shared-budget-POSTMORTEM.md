@@ -31,14 +31,15 @@ residual interference note was recorded.
 ## Source
 
 Kohavi, R., Tang, D. & Xu, Y. (2020), *Trustworthy Online Controlled
-Experiments: A Practical Guide to A/B Testing*, Cambridge University Press —
-the book documents shared-resource interference (including shared
+Experiments: A Practical Guide to A/B Testing*, Cambridge University Press,
+Chapter 22 ("Leakage and Interference between Variants") — the chapter
+documents shared-resource interference (including shared
 advertising/marketing budgets) as a recurring, catastrophic threat to
-experiment trustworthiness and names it explicitly in the reference list
-this project anchors D-05 citations to (brief.md section 7). **The exact
-chapter number for this specific pattern could not be verified against the
-source text at authoring time and is flagged for human confirmation rather
-than invented** (per this plan's explicit instruction).
+experiment trustworthiness, and the book is named explicitly in the reference
+list this project anchors D-05 citations to (brief.md section 7). The chapter
+locator was confirmed against the published table of contents during Phase 6
+human verification; the authoring pass correctly declined to invent it rather
+than guessing.
 
 Imbens, G.W. & Rubin, D.B. (2015), *Causal Inference for Statistics, Social,
 and Biomedical Sciences*, Cambridge University Press, Chapter 1, Section 1.6
