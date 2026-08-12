@@ -233,7 +233,7 @@ assignments within `DSX-VAL-*` beyond those the brief fixes (D-06 makes numberin
   5. A test asserts that no `dsx/frame/val.py` code path reads `inference.paradigm` (D-11),
      failing the suite if one is introduced.
 
-**Plans:** 6/7 plans executed
+**Plans:** 7/7 plans executed
 
 Plans:
 **Wave 1**
@@ -259,7 +259,7 @@ Plans:
 
 **Wave 6** *(blocked on Wave 5 completion)*
 
-- [ ] 07-07-PLAN.md — the weak-identification fixture, its post-mortem, and the corpus-test conflict resolution (wave 6)
+- [x] 07-07-PLAN.md — the weak-identification fixture, its post-mortem, and the corpus-test conflict resolution (wave 6)
 
 ### Phase 8: Interference, triggering, stability (`DSX-INT-*`)
 
@@ -545,7 +545,7 @@ cases where absence permitted a false pass" is a debate, not a count.
 | 4. Analytical logic depth + stats extensions | — | Complete | v1.4.0 |
 | 5. Chart review + suppressions | — | Complete | v1.5.0 |
 | 6. Contract extension, decision record, paradigm manifest | 13/13 | Complete | 2026-08-10 |
-| 7. Validity frame checks (`DSX-VAL-*`) | 6/7 | In Progress|  |
+| 7. Validity frame checks (`DSX-VAL-*`) | 7/7 | In Progress|  |
 | 8. Interference, triggering, stability (`DSX-INT-*`) | 0/TBD | Not started | - |
 | 9. Monitoring discipline, symmetric (`DSX-PAR-*`) | 0/TBD | Not started | - |
 | 10. Pre-registered inference plan (`DSX-PRE-*`) | 0/TBD | Not started | - |
