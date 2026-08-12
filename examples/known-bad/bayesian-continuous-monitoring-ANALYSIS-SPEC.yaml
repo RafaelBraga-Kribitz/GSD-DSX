@@ -1,21 +1,29 @@
 # A known-bad ANALYSIS-SPEC (REQ-P6-13, D-06). This is the Bayesian half of
-# Phase 9's atomic monitoring pair (DSX-PAR-010/DSX-PAR-011 ship together or not
-# at all). The file is structurally valid — it parses, and it accepts dsx
-# validate and both CRITICAL-threshold gate points, dsx gate plan and dsx gate
-# execute (both exit 0) — but it asserts that a weakly informative prior alone
-# controls the false-positive rate while the posterior is checked continuously,
-# with no threshold calibration declared. It currently also blocks dsx gate verify
-# and dsx gate ship (both exit 1), on seven unrelated corpus-completeness
-# gaps — DSX-STA-041 (declared test outside the stats recommendation engine's
-# acceptable set), DSX-CLM-031 (evidence pointer does not resolve), DSX-COH-031
-# (an unchecked, unwaived assumption), DSX-MET-040 (a warehouse-like metric
-# with no sql), DSX-NAR-001 (no narrative.path), DSX-REP-001 (a stochastic
-# method with no random_seed) and DSX-REP-030 (no reproducibility.entrypoint)
-# — none of which is the false-positive-control defect this fixture exists to
-# encode; see tests/test_known_bad_corpus.py's _INCIDENTAL_GAP_CODES for the
-# full measured list. DSX-PAR-011 (Phase 9) is the code that will block this
-# pattern itself once it ships; nothing in this repository adjudicates it
-# today. See the paired POSTMORTEM.md.
+# Phase 9's atomic monitoring pair (DSX-PAR-010/DSX-PAR-011 shipped together,
+# not one without the other). The file is structurally valid — it parses, and
+# it accepts dsx validate — but it asserts that a weakly informative prior
+# alone controls the false-positive rate while the posterior is checked
+# continuously, with no threshold calibration declared. DSX-PAR-011
+# (CRITICAL) now exits 1 at both CRITICAL-threshold gate points, dsx gate plan
+# and dsx gate execute — no field in this fixture was changed to make that
+# happen; the design this fixture already declared was always the defect, and
+# only the tool's ability to see it changed. The declaration that would have
+# cleared DSX-PAR-011 while keeping the uncontrolled-continuous policy is a
+# non-blank inference.prior_justification or inference.threshold_calibration;
+# this fixture declares neither. The honest fix is a controlled
+# design.peeking_policy (sequential_obf, sequential_pocock, or always_valid) —
+# the only fix that actually controls the error rate a peeked test
+# accumulates, versus typing a clearing declaration alongside an unchanged
+# design. It currently also blocks dsx gate verify and dsx gate ship (both
+# exit 1), on seven unrelated corpus-completeness gaps — DSX-STA-041
+# (declared test outside the stats recommendation engine's acceptable set),
+# DSX-CLM-031 (evidence pointer does not resolve), DSX-COH-031 (an unchecked,
+# unwaived assumption), DSX-MET-040 (a warehouse-like metric with no sql),
+# DSX-NAR-001 (no narrative.path), DSX-REP-001 (a stochastic method with no
+# random_seed) and DSX-REP-030 (no reproducibility.entrypoint) — none of which
+# is the false-positive-control defect this fixture exists to encode; see
+# tests/test_known_bad_corpus.py's _INCIDENTAL_GAP_CODES for the full measured
+# list. See the paired POSTMORTEM.md.
 #
 # ── Formulation note (T-6-17) ────────────────────────────────────────────────
 # This fixture's defect is stated relative to the PRIOR-AVERAGED bound: Deng,
