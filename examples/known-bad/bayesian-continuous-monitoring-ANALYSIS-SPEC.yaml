@@ -153,8 +153,8 @@ validity_frame:
 
   stability:
     window: "26 days"
-    novelty_primacy_assessed: false
-    evidence: ""
+    novelty_primacy_assessed: true
+    evidence: "RESULTS.md#conversion-rate-uplift-by-week"
 
   sampling_frame:
     source: "warehouse.fct_sessions, all regions"
