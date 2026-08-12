@@ -296,9 +296,11 @@ validity_frame:
     assignment: "<user_id>"
     analysis: "<user_id>"
 
+  # strength below is an example to replace, not a default to keep: state the
+  # true strength of your own identification strategy.
   identification:
-    strength: weak                 # strong | moderate | weak
-    evidence: "<why this strength, e.g. randomisation or a VIF check>"
+    strength: strong                # strong | moderate | weak
+    evidence: "<the design-based support for this strength, e.g. randomisation at assignment>"
     constraint_source: none        # none | informative_priors | penalisation | design_restriction | hierarchical_pooling
     constraint_justification: "<required unless constraint_source is none>"
 

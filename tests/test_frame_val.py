@@ -8,15 +8,21 @@ from __future__ import annotations
 
 import copy
 import hashlib
+import io
+import json
 import sys
+import tempfile
 import unittest
+from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from dsx import cli  # noqa: E402
 from dsx.checks import design  # noqa: E402
 from dsx.findings import Report, Severity  # noqa: E402
 from dsx.frame import val  # noqa: E402
+from dsx.loader import load  # noqa: E402
 
 
 def codes(report: Report) -> set[str]:
@@ -296,6 +302,296 @@ class TestValUnits(unittest.TestCase):
                 self.assertNotIn("DSX-VAL-021", codes(report), path.name)
 
 
+# ── dependence and identification (DSX-VAL-030, DSX-VAL-040, DSX-VAL-041) ──
+
+
+class TestValDependenceIdentification(unittest.TestCase):
+    # D-05: DSX-VAL-030
+    def test_dependence_structure_with_blank_method_family_fires_critical_val_030(self):
+        report = val.check(
+            {
+                "validity_frame": {
+                    "dependence": {"structure": "clustered", "method_family_required": ""}
+                }
+            }
+        )
+        found = [f for f in report.findings if f.code == "DSX-VAL-030"]
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0].severity, Severity.CRITICAL)
+        self.assertEqual(found[0].where, "spec.validity_frame.dependence")
+
+    def test_dependence_structure_with_admissible_method_family_produces_no_val_030(self):
+        report = val.check(
+            {
+                "validity_frame": {
+                    "dependence": {
+                        "structure": "clustered",
+                        "method_family_required": "cluster_robust",
+                    }
+                }
+            }
+        )
+        self.assertNotIn("DSX-VAL-030", codes(report))
+
+    def test_dependence_structure_with_inadmissible_method_family_names_the_admissible_set(self):
+        report = val.check(
+            {
+                "validity_frame": {
+                    "dependence": {
+                        "structure": "clustered",
+                        "method_family_required": "delta_method",
+                    }
+                }
+            }
+        )
+        found = [f for f in report.findings if f.code == "DSX-VAL-030"]
+        self.assertEqual(len(found), 1)
+        for member in ("cluster_robust", "bootstrap_cluster", "mixed_effects"):
+            self.assertIn(member, found[0].detail)
+
+    def test_dependence_structure_none_with_blank_method_family_produces_no_val_030(self):
+        report = val.check(
+            {"validity_frame": {"dependence": {"structure": "none", "method_family_required": ""}}}
+        )
+        self.assertNotIn("DSX-VAL-030", codes(report))
+
+    def test_absent_dependence_subblock_produces_no_val_030(self):
+        report = val.check({"validity_frame": {"estimand": {}}})
+        self.assertNotIn("DSX-VAL-030", codes(report))
+
+    def test_out_of_vocabulary_dependence_structure_produces_no_val_030(self):
+        report = val.check(
+            {
+                "validity_frame": {
+                    "dependence": {"structure": "not_a_member", "method_family_required": ""}
+                }
+            }
+        )
+        self.assertNotIn("DSX-VAL-030", codes(report))
+
+    def test_every_dependence_admissible_map_structure_is_exercised_at_least_once(self):
+        from dsx.spec import DEPENDENCE_ADMISSIBLE_METHODS
+
+        for structure, admissible in DEPENDENCE_ADMISSIBLE_METHODS.items():
+            with self.subTest(structure=structure):
+                blocked = val.check(
+                    {
+                        "validity_frame": {
+                            "dependence": {"structure": structure, "method_family_required": ""}
+                        }
+                    }
+                )
+                self.assertIn("DSX-VAL-030", codes(blocked))
+
+                passing_method = sorted(admissible)[0]
+                passed = val.check(
+                    {
+                        "validity_frame": {
+                            "dependence": {
+                                "structure": structure,
+                                "method_family_required": passing_method,
+                            }
+                        }
+                    }
+                )
+                self.assertNotIn("DSX-VAL-030", codes(passed))
+
+    def test_malformed_dependence_subblock_produces_no_finding_and_does_not_raise(self):
+        for bad_dependence in ("s", [], None, 3):
+            with self.subTest(bad_dependence=bad_dependence):
+                report = val.check({"validity_frame": {"dependence": bad_dependence}})
+                self.assertNotIn("DSX-VAL-030", codes(report))
+
+    def test_dependence_judgment_point_appends_exactly_one_decision_record(self):
+        report = val.check(
+            {
+                "validity_frame": {
+                    "dependence": {"structure": "clustered", "method_family_required": ""}
+                }
+            }
+        )
+        decisions = report.context.get("decisions") or []
+        dependence_decisions = [d for d in decisions if d["choice"].startswith("dependence:")]
+        self.assertEqual(len(dependence_decisions), 1)
+        self.assertEqual(dependence_decisions[0]["layer"], "deterministic")
+        self.assertTrue(dependence_decisions[0]["counterfactual"].strip())
+
+    # D-05: DSX-VAL-040
+    def test_weak_identification_with_no_constraint_fires_critical_val_040_and_no_val_041(self):
+        report = val.check(
+            {
+                "validity_frame": {
+                    "identification": {"strength": "weak", "constraint_source": "none"}
+                }
+            }
+        )
+        found = [f for f in report.findings if f.code == "DSX-VAL-040"]
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0].severity, Severity.CRITICAL)
+        self.assertEqual(found[0].where, "spec.validity_frame.identification")
+        self.assertNotIn("DSX-VAL-041", codes(report))
+
+    def test_weak_identification_with_a_real_constraint_produces_neither_identification_code(self):
+        report = val.check(
+            {
+                "validity_frame": {
+                    "identification": {
+                        "strength": "weak",
+                        "constraint_source": "informative_priors",
+                    }
+                }
+            }
+        )
+        self.assertNotIn("DSX-VAL-040", codes(report))
+        self.assertNotIn("DSX-VAL-041", codes(report))
+
+    # D-05: DSX-VAL-041
+    def test_strong_identification_with_informative_priors_fires_high_val_041_and_no_val_040(self):
+        report = val.check(
+            {
+                "validity_frame": {
+                    "identification": {
+                        "strength": "strong",
+                        "constraint_source": "informative_priors",
+                    }
+                }
+            }
+        )
+        found = [f for f in report.findings if f.code == "DSX-VAL-041"]
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0].severity, Severity.HIGH)
+        self.assertNotIn("DSX-VAL-040", codes(report))
+
+    def test_strong_identification_with_each_parameter_scale_constraint_fires_val_041(self):
+        for constraint in ("penalisation", "design_restriction", "hierarchical_pooling"):
+            with self.subTest(constraint=constraint):
+                report = val.check(
+                    {
+                        "validity_frame": {
+                            "identification": {
+                                "strength": "strong",
+                                "constraint_source": constraint,
+                            }
+                        }
+                    }
+                )
+                self.assertIn("DSX-VAL-041", codes(report))
+
+    def test_strong_identification_with_constraint_source_none_produces_neither_identification_code(self):
+        report = val.check(
+            {
+                "validity_frame": {
+                    "identification": {"strength": "strong", "constraint_source": "none"}
+                }
+            }
+        )
+        self.assertNotIn("DSX-VAL-040", codes(report))
+        self.assertNotIn("DSX-VAL-041", codes(report))
+
+    def test_moderate_identification_produces_neither_identification_code_with_any_constraint(self):
+        for constraint in (
+            "none", "informative_priors", "penalisation", "design_restriction",
+            "hierarchical_pooling",
+        ):
+            with self.subTest(constraint=constraint):
+                report = val.check(
+                    {
+                        "validity_frame": {
+                            "identification": {
+                                "strength": "moderate",
+                                "constraint_source": constraint,
+                            }
+                        }
+                    }
+                )
+                self.assertNotIn("DSX-VAL-040", codes(report))
+                self.assertNotIn("DSX-VAL-041", codes(report))
+
+    def test_out_of_vocabulary_identification_strength_or_constraint_produces_neither_code(self):
+        report = val.check(
+            {
+                "validity_frame": {
+                    "identification": {
+                        "strength": "not_a_member",
+                        "constraint_source": "none",
+                    }
+                }
+            }
+        )
+        self.assertNotIn("DSX-VAL-040", codes(report))
+        self.assertNotIn("DSX-VAL-041", codes(report))
+        report = val.check(
+            {
+                "validity_frame": {
+                    "identification": {
+                        "strength": "weak",
+                        "constraint_source": "not_a_member",
+                    }
+                }
+            }
+        )
+        self.assertNotIn("DSX-VAL-040", codes(report))
+        self.assertNotIn("DSX-VAL-041", codes(report))
+
+    def test_blank_identification_strength_or_constraint_source_produces_neither_code(self):
+        report = val.check(
+            {"validity_frame": {"identification": {"strength": "", "constraint_source": "none"}}}
+        )
+        self.assertNotIn("DSX-VAL-040", codes(report))
+        self.assertNotIn("DSX-VAL-041", codes(report))
+        report = val.check(
+            {
+                "validity_frame": {
+                    "identification": {"strength": "weak", "constraint_source": ""}
+                }
+            }
+        )
+        self.assertNotIn("DSX-VAL-040", codes(report))
+        self.assertNotIn("DSX-VAL-041", codes(report))
+
+    def test_malformed_identification_subblock_produces_no_finding_and_does_not_raise(self):
+        for bad_identification in ("s", [], None, 3):
+            with self.subTest(bad_identification=bad_identification):
+                report = val.check({"validity_frame": {"identification": bad_identification}})
+                self.assertNotIn("DSX-VAL-040", codes(report))
+                self.assertNotIn("DSX-VAL-041", codes(report))
+
+    def test_identification_judgment_point_appends_one_decision_record_distinguishing_outcomes(self):
+        weak_report = val.check(
+            {
+                "validity_frame": {
+                    "identification": {"strength": "weak", "constraint_source": "none"}
+                }
+            }
+        )
+        weak_decisions = [
+            d
+            for d in (weak_report.context.get("decisions") or [])
+            if d["choice"].startswith("identification:")
+        ]
+        self.assertEqual(len(weak_decisions), 1)
+        self.assertIn("DSX-VAL-040", weak_decisions[0]["choice"])
+
+        strong_report = val.check(
+            {
+                "validity_frame": {
+                    "identification": {
+                        "strength": "strong",
+                        "constraint_source": "informative_priors",
+                    }
+                }
+            }
+        )
+        strong_decisions = [
+            d
+            for d in (strong_report.context.get("decisions") or [])
+            if d["choice"].startswith("identification:")
+        ]
+        self.assertEqual(len(strong_decisions), 1)
+        self.assertIn("DSX-VAL-041", strong_decisions[0]["choice"])
+        self.assertNotEqual(weak_decisions[0]["choice"], strong_decisions[0]["choice"])
+
+
 # ── disjointness (REQ-P7-03): DSX-VAL-020 and DSX-EXP-021 never both fire ──
 
 
@@ -417,6 +713,145 @@ class TestValExpUnitsDisjointness(unittest.TestCase):
             "dsx/checks/design.py was edited during Phase 7 — REQ-P7-03 requires it "
             "unmodified; if this is a deliberate change, update _DESIGN_PY_SHA256 in "
             "this test and say why in the commit message",
+        )
+
+
+# ── gate-level severity split (REQ-P7-05, ROADMAP success criterion 1) ─────
+#
+# Proves the roadmap's severity wording at the gate, not just at the unit
+# level: DSX-VAL-040 (CRITICAL) blocks from plan onward; DSX-VAL-041 (HIGH)
+# prints at plan without blocking, and blocks at verify and ship; neither
+# code runs at execute, because "val" is not in that gate profile.
+
+
+class TestValGateSeverity(unittest.TestCase):
+    ROOT = Path(__file__).resolve().parent.parent
+
+    def _run(self, argv: "list[str]") -> "tuple[int, str, str]":
+        out, err = io.StringIO(), io.StringIO()
+        with redirect_stdout(out), redirect_stderr(err):
+            code = cli.main(argv)
+        return code, out.getvalue(), err.getvalue()
+
+    def _write_identification_variant(self, tmp: str, identification: dict) -> str:
+        """Clone the good fixture into ``tmp``, replacing only its
+        validity_frame.identification block, so the spec is otherwise
+        complete and no unrelated defect blocks the gate and masks the
+        result under test. Written as JSON regardless of the .yaml suffix —
+        ``dsx.loader.loads()`` tries a JSON parse before YAML/the bundled
+        parser whenever the stripped text starts with '{' — matching the
+        precedent at ``tests/test_dsx.py``'s
+        ``_bayesian_variant_spec_path``.
+        """
+        spec = load(str(self.ROOT / "examples" / "good-ANALYSIS-SPEC.yaml"))
+        spec["validity_frame"]["identification"] = identification
+        path = Path(tmp) / "ANALYSIS-SPEC.yaml"
+        path.write_text(json.dumps(spec), encoding="utf-8")
+        return str(path)
+
+    def test_weak_no_constraint_spec_blocks_gate_plan_naming_val_040(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self._write_identification_variant(
+                tmp,
+                {
+                    "strength": "weak",
+                    "evidence": "covariate adjustment only, no design-based support",
+                    "constraint_source": "none",
+                    "constraint_justification": "",
+                },
+            )
+            code, _, err = self._run(["gate", "plan", "--spec", path])
+            self.assertEqual(code, 1)
+            self.assertIn("DSX-VAL-040", err)
+
+    def test_strong_informative_priors_spec_passes_gate_plan_but_still_prints_val_041(self):
+        """The behaviour most likely to be gotten wrong: a HIGH-severity
+        finding at the plan gate must be visible in the output and must not
+        flip the exit code. Asserting only the exit code would pass even if
+        the finding were silently dropped — assert both halves."""
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self._write_identification_variant(
+                tmp,
+                {
+                    "strength": "strong",
+                    "evidence": "Assignment is randomized per user at first pageview.",
+                    "constraint_source": "informative_priors",
+                    "constraint_justification": "A weakly informative prior on the effect size.",
+                },
+            )
+            code, out, err = self._run(["gate", "plan", "--spec", path])
+            self.assertEqual(code, 0, err)
+            # Passing output goes to stdout (dsx/findings.py::emit) — blocking
+            # output would go to stderr, but this gate does not block.
+            self.assertIn("DSX-VAL-041", out)
+
+    def test_strong_informative_priors_spec_blocks_gate_verify_and_gate_ship_naming_val_041(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self._write_identification_variant(
+                tmp,
+                {
+                    "strength": "strong",
+                    "evidence": "Assignment is randomized per user at first pageview.",
+                    "constraint_source": "informative_priors",
+                    "constraint_justification": "A weakly informative prior on the effect size.",
+                },
+            )
+            for point in ("verify", "ship"):
+                with self.subTest(point=point):
+                    code, _, err = self._run(["gate", point, "--spec", path])
+                    self.assertEqual(code, 1)
+                    self.assertIn("DSX-VAL-041", err)
+
+    def test_neither_identification_spec_produces_a_validity_frame_finding_at_gate_execute(self):
+        variants = (
+            {
+                "strength": "weak",
+                "evidence": "covariate adjustment only, no design-based support",
+                "constraint_source": "none",
+                "constraint_justification": "",
+            },
+            {
+                "strength": "strong",
+                "evidence": "Assignment is randomized per user at first pageview.",
+                "constraint_source": "informative_priors",
+                "constraint_justification": "A weakly informative prior on the effect size.",
+            },
+        )
+        for identification in variants:
+            with self.subTest(strength=identification["strength"]):
+                with tempfile.TemporaryDirectory() as tmp:
+                    path = self._write_identification_variant(tmp, identification)
+                    _, out, err = self._run(["gate", "execute", "--spec", path])
+                    combined = out + err
+                    self.assertNotIn("DSX-VAL-040", combined)
+                    self.assertNotIn("DSX-VAL-041", combined)
+
+    def test_val_check_is_reachable_from_at_least_one_gate_profile(self):
+        """The standing per-phase deliverable (STATE.md): every validity
+        frame code shipped so far is reachable from at least one gate
+        profile. Every DSX-VAL-* code fires through the single "val" check
+        dispatcher (dsx/frame/val.py::check), so proving "val" is a
+        registered check reachable from at least one gate profile proves
+        every code this module ships is reachable from that profile —
+        derived by intersecting the registered checks with the profile
+        tuples, not from a hand-written list of codes that would silently
+        stop holding once plan 07-06 adds three more.
+        """
+        from dsx.cli import CHECKS, GATE_PROFILES
+
+        self.assertIn("val", CHECKS)
+        self.assertIs(CHECKS["val"], val.check)
+
+        registered_checks = set(CHECKS)
+        reachable_profiles = [
+            point
+            for point, checks in GATE_PROFILES.items()
+            if "val" in (set(checks) & registered_checks)
+        ]
+        self.assertTrue(
+            reachable_profiles,
+            "val is registered in CHECKS but reachable from no gate profile — every "
+            "DSX-VAL-* code would then be unreachable from any gate",
         )
 
 

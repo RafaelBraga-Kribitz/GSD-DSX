@@ -56,6 +56,12 @@ _INCIDENTAL_GAP_CODES = {
     "DSX-REP-030",  # reproducibility.entrypoint is not declared
     "DSX-STA-041",  # bayesian fixture: declared analysis.test (bayesian_ab) is outside the stats
                     # recommendation engine's acceptable set for this outcome shape
+    "DSX-VAL-041",  # bayesian fixture: strength: strong with constraint_source:
+                    # informative_priors is a true, honest declaration (it is a Bayesian
+                    # analysis and does use informative priors) — a correct secondary
+                    # observation about a fixture built to demonstrate a different defect
+                    # (uncontrolled continuous monitoring), not the encoded defect itself
+                    # (plan 07-05, D-14)
 }
 
 # The code-family prefixes named in each post-mortem's "Which absent code would
