@@ -96,10 +96,10 @@ incoherent*.
 
 ### Dependence: `method_family_required` shape (Open Item 1, now resolved)
 
-- **D-04: The field stays single-valued and atomic against `VARIANCE_ADJUSTMENTS`
-  (`dsx/spec.py:96`). The structure→admissible-methods map lives in `dsx/spec.py` as a module
-  constant beside the vocabulary it references, excluded from `_VOCABULARIES` exactly as
-  `CAUSAL_VERBS` (`dsx/spec.py:53`) already is.** *(User decision.)*
+- **D-04: `method_family_required` stays single-valued; the admissible-methods map lives in `dsx/spec.py`.**
+  *(User decision.)* The field stays atomic against `VARIANCE_ADJUSTMENTS` (`dsx/spec.py:96`). The
+  structure→admissible-methods map sits in `dsx/spec.py` as a module constant beside the vocabulary
+  it references, excluded from `_VOCABULARIES` exactly as `CAUSAL_VERBS` (`dsx/spec.py:53`) already is.
 
   The brief's `cluster_robust_or_mixed` is a mini-language, not a vocabulary member, and it fails
   the naming rule `06-CONTEXT.md:337-341` records: an operator reads a `dsx vocab` dump under time
@@ -140,10 +140,10 @@ incoherent*.
   structured `metric`/`operator`/`threshold` falsifier (reopens the Phase 6 contract that shipped
   as a breaking release ten days ago).
 
-- **D-06: `DSX-VAL-050` (sampling frame) and `DSX-VAL-070` (measurement) adjudicate presence and
-  internal consistency only — no text comparison between `source` and `claim_population`, and none
-  between `measurement.construct` and the claim population.** Concretely: `claim_population` blank;
-  or `selection_risk` blank/placeholder while `known_exclusions` is non-empty; or
+- **D-06: `DSX-VAL-050` and `DSX-VAL-070` adjudicate presence and internal consistency only.**
+  No text comparison between `source` and `claim_population`, and none between
+  `measurement.construct` and the claim population. Concretely: `claim_population` blank; or
+  `selection_risk` blank/placeholder while `known_exclusions` is non-empty; or
   `operationalisation` blank while `construct` is declared.
 
   Forced by D-08: `examples/good-ANALYSIS-SPEC.yaml:339-342` declares
@@ -157,8 +157,8 @@ incoherent*.
   necessary condition is that a construct "occur in a nomological net, at least *some* of whose
   laws involve observables". A presence test on `operationalisation` is exactly that condition.
 
-- **D-07: `DSX-VAL-060` implements the missingness × method validity pairing as a lookup, with
-  complete-case analysis under missing-at-random (MAR) data at HIGH, not CRITICAL.** Missing-not-at-
+- **D-07: `DSX-VAL-060` is a lookup; complete-case under missing-at-random (MAR) is HIGH, not CRITICAL.**
+  It implements the missingness × method validity pairing as a table lookup. Missing-not-at-
   random (MNAR) with no mechanism model stays CRITICAL. White & Carlin (2010) document a real
   sub-case where complete-case analysis is unbiased under MAR — when missingness is independent of
   the outcome given the covariates — so a CRITICAL here would produce false positives on
@@ -211,8 +211,8 @@ incoherent*.
 
 ### Fixtures, template and build plumbing
 
-- **D-12: `templates/ANALYSIS-SPEC.yaml` placeholder *values* are amended so `dsx init` output
-  still clears `dsx gate plan`.** *(User decision.)* The `<...>` free-text placeholders stay; the
+- **D-12: `templates/ANALYSIS-SPEC.yaml` placeholder values are amended so `dsx init` still passes.**
+  *(User decision.)* The output must still clear `dsx gate plan`. The `<...>` free-text placeholders stay; the
   values that would trip the new checks change — `identification.strength` to `strong`, consistent
   `units` placeholders, `missingness.mechanism` to `MCAR`, and one concrete example falsifier.
   Add a comment stating the values are examples to replace.
@@ -227,8 +227,8 @@ incoherent*.
   **Check `tests/test_dsx.py:1239-1244`** (`test_template_validates_structurally_as_a_scaffold`,
   which asserts the template *fails* at ship) still proves what it claims after this edit.
 
-- **D-13: `examples/good-ANALYSIS-SPEC.yaml:347` changes `method_implied` from `complete_case` to
-  `multiple_imputation`.** The fixture declares `mechanism: MAR` with `rate: 0.0`, which
+- **D-13: The good fixture's `method_implied` changes from `complete_case` to `multiple_imputation`.**
+  At `examples/good-ANALYSIS-SPEC.yaml:347`. The fixture declares `mechanism: MAR` with `rate: 0.0`, which
   `DSX-VAL-060` would flag. Multiple imputation is valid under MAR, so this is the honest fix.
   **Rejected: a "rate is zero" exemption in the check** — that makes `rate: 0` the cheapest way past
   the missingness check, the reflexive-`none` escape hatch `research/PITFALLS.md:643` warns about.
@@ -247,8 +247,9 @@ incoherent*.
   `DSX-VAL-041` at HIGH — either edit the fixture or add an `_INCIDENTAL_GAP_CODES` entry, which is
   a deliberate call for the planner.
 
-- **D-15: `examples/known-bad/weak-identification-mmm-ANALYSIS-SPEC.yaml` is created in this
-  phase.** `ROADMAP.md:212-213` names it by filename in Success Criterion 1. **Verified absent** —
+- **D-15: The `weak-identification-mmm` known-bad fixture is created in this phase.**
+  Full path `examples/known-bad/weak-identification-mmm-ANALYSIS-SPEC.yaml`.
+  `ROADMAP.md:212-213` names it by filename in Success Criterion 1. **Verified absent** —
   `examples/known-bad/` holds only the three Phase 6 fixtures. It needs a sourced post-mortem like
   its three siblings.
 
@@ -265,8 +266,8 @@ incoherent*.
   `^\s*(?:Reference value|Structural criterion):\s*\S`, `#\s*D-05:\s*(DSX-[A-Z]+-\d{3})`
   (`scripts/gen-finding-catalogue.py:75-79`).
 
-- **D-17: `brief.md` §7 (`brief.md:434-451`) is extended with the six new sources before Phase 7
-  code lands**, and the two already listed get their editions pinned. §7 states "Anchor D-05
+- **D-17: `brief.md` §7 gains the six new sources before Phase 7 code lands.**
+  At `brief.md:434-451`, and the two already listed get their editions pinned. §7 states "Anchor D-05
   citations here rather than sprawling", and threat T-6-07 requires it. Missing: ICH E9(R1),
   Kish (1965), the Cochrane Handbook, Hernán & Robins (2016), Popper, Cronbach & Meehl.
   Unpinned: Lohr and Little & Rubin — section numbers differ across editions.

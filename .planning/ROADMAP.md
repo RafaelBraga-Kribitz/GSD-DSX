@@ -236,12 +236,29 @@ assignments within `DSX-VAL-*` beyond those the brief fixes (D-06 makes numberin
 **Plans:** 7 plans
 
 Plans:
+**Wave 1**
+
 - [ ] 07-01-PLAN.md — shared contract constants and the design-effect helper (wave 1)
 - [ ] 07-02-PLAN.md — citation ledger extension and the unpublished-number correction (wave 1)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 07-03-PLAN.md — `dsx/frame/val.py` lands with the estimand checks, all build plumbing and the no-paradigm-read invariant (wave 2)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
 - [ ] 07-04-PLAN.md — unit triad and unit drift, with the template and interference fixture repaired in the same commits (wave 3)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
 - [ ] 07-05-PLAN.md — dependence and identification, with the template repair and the documented corpus allow-list entry (wave 4)
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
 - [ ] 07-06-PLAN.md — sampling frame, missingness and measurement, with the good fixture repaired in the same commit (wave 5)
+
+**Wave 6** *(blocked on Wave 5 completion)*
+
 - [ ] 07-07-PLAN.md — the weak-identification fixture, its post-mortem, and the corpus-test conflict resolution (wave 6)
 
 ### Phase 8: Interference, triggering, stability (`DSX-INT-*`)
