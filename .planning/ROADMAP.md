@@ -387,7 +387,7 @@ depend on it.
      route is no weaker than the sequential-method requirement (D-12); the `DSX-PAR-011`
      simulation lives under `tests/`, seeded and reproducible, and never on the gate path (D-02).
 
-**Plans**: 3/5 plans executed
+**Plans**: 5/5 plans executed
 
 Plans:
 **Wave 1**
@@ -401,8 +401,8 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 09-04-PLAN.md — Known-bad corpus prose corrected, and a positive-content test under the symmetry audit (wave 3)
-- [ ] 09-05-PLAN.md — `DSX-PAR-002` requiredness and the fourteen-case symmetry proof (wave 3)
+- [x] 09-04-PLAN.md — Known-bad corpus prose corrected, and a positive-content test under the symmetry audit (wave 3)
+- [x] 09-05-PLAN.md — `DSX-PAR-002` requiredness and the fourteen-case symmetry proof (wave 3)
 
 **Wave note (atomicity, D-12):** `DSX-PAR-010` and `DSX-PAR-011` are both delivered by a single
 plan, 09-03, in a single commit at the identical severity `CRITICAL`. They cannot land separately.
@@ -547,7 +547,7 @@ cases where absence permitted a false pass" is a debate, not a count.
 | 6. Contract extension, decision record, paradigm manifest | 13/13 | Complete | 2026-08-10 |
 | 7. Validity frame checks (`DSX-VAL-*`) | 7/7 | In Progress|  |
 | 8. Interference, triggering, stability (`DSX-INT-*`) | 0/TBD | Not started | - |
-| 9. Monitoring discipline, symmetric (`DSX-PAR-*`) | 3/5 | In Progress|  |
+| 9. Monitoring discipline, symmetric (`DSX-PAR-*`) | 5/5 | In Progress|  |
 | 10. Pre-registered inference plan (`DSX-PRE-*`) | 0/TBD | Not started | - |
 | 11. Frequentist admissibility adjudicator (`DSX-ADM-*`) | 0/TBD | Not started | - |
 | 12. Calibration | 0/TBD | Not started | - |
