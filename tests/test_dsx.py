@@ -2717,11 +2717,19 @@ class TestPhase6ParadigmManifest(unittest.TestCase):
             self.assertTrue(reason.strip(), f"{prefix} has a blank reason")
 
     def test_manifest_never_blocks_at_any_default_gate_threshold(self):
+        # A non-blank paradigm_justification keeps DSX-PAR-002 (Phase 9,
+        # HIGH) silent so this test isolates what it names: DSX-PAR-001
+        # itself, INFO, never blocks. Without it this spec would also carry
+        # DSX-PAR-002's HIGH finding, which correctly blocks at verify/ship
+        # (09-05-PLAN.md's resolved_open_questions) — a fact this test must
+        # not obscure by picking a spec that happens to dodge it.
         from dsx.cli import GATE_THRESHOLDS
         from dsx.findings import Severity
         from dsx.frame import paradigm
 
-        report = paradigm.check({"inference": {"paradigm": "bayesian"}})
+        report = paradigm.check(
+            {"inference": {"paradigm": "bayesian", "paradigm_justification": "team_convention"}}
+        )
         for point, label in GATE_THRESHOLDS.items():
             with self.subTest(point=point):
                 self.assertFalse(report.blocks(Severity.parse(label)))
