@@ -6,12 +6,15 @@ Run:  python3 -m unittest tests.test_frame_val -v
 
 from __future__ import annotations
 
+import copy
+import hashlib
 import sys
 import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from dsx.checks import design  # noqa: E402
 from dsx.findings import Report, Severity  # noqa: E402
 from dsx.frame import val  # noqa: E402
 
@@ -124,6 +127,297 @@ class TestValEstimand(unittest.TestCase):
         self.assertEqual(decisions[0]["id"], "")
         self.assertEqual(decisions[0]["invocation_id"], "")
         self.assertTrue(decisions[0]["counterfactual"].strip())
+
+
+# ── units (DSX-VAL-020, DSX-VAL-021) ────────────────────────────────────────
+
+
+def _units_spec(
+    observation: object = "session",
+    assignment: object = "user",
+    method_family_required: object = "cluster_robust",
+    analysis: object = None,
+    design: "dict | None" = None,
+) -> dict:
+    """A minimal spec carrying only a units/dependence pair, isolating the
+    unit judgments from the estimand judgment (no `estimand` key at all, so
+    the estimand decision record does not also append). `analysis` is only
+    added to `units` when given, so DSX-VAL-021's tests can control it
+    independently of `observation`/`assignment` without disturbing the
+    DSX-VAL-020 tests, which never set it."""
+    units: dict = {"observation": observation, "assignment": assignment}
+    if analysis is not None:
+        units["analysis"] = analysis
+    spec: dict = {
+        "validity_frame": {
+            "units": units,
+            "dependence": {"method_family_required": method_family_required},
+        }
+    }
+    if design is not None:
+        spec["design"] = design
+    return spec
+
+
+class TestValUnits(unittest.TestCase):
+    # D-05: DSX-VAL-020
+    def test_finer_observation_with_no_method_family_fires_critical_units_020(self):
+        report = val.check(
+            _units_spec(observation="impression", assignment="user", method_family_required="")
+        )
+        found = [f for f in report.findings if f.code == "DSX-VAL-020"]
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0].severity, Severity.CRITICAL)
+        self.assertEqual(found[0].where, "spec.validity_frame.units")
+
+    def test_finer_observation_with_declared_method_family_produces_no_units_020(self):
+        report = val.check(
+            _units_spec(
+                observation="session", assignment="user", method_family_required="cluster_robust"
+            )
+        )
+        self.assertNotIn("DSX-VAL-020", codes(report))
+
+    def test_matching_observation_and_assignment_produces_no_units_020_regardless_of_method(self):
+        for method_family in ("", "cluster_robust", None):
+            with self.subTest(method_family=method_family):
+                report = val.check(
+                    _units_spec(
+                        observation="user", assignment="user",
+                        method_family_required=method_family,
+                    )
+                )
+                self.assertNotIn("DSX-VAL-020", codes(report))
+
+    def test_blank_observation_or_blank_assignment_produces_no_units_020(self):
+        report = val.check(
+            _units_spec(observation="", assignment="user", method_family_required="")
+        )
+        self.assertNotIn("DSX-VAL-020", codes(report))
+        report = val.check(
+            _units_spec(observation="impression", assignment="", method_family_required="")
+        )
+        self.assertNotIn("DSX-VAL-020", codes(report))
+
+    def test_same_unit_named_two_ways_fires_units_020_with_alignment_remedy(self):
+        report = val.check(
+            _units_spec(observation="user", assignment="user_id", method_family_required="")
+        )
+        found = [f for f in report.findings if f.code == "DSX-VAL-020"]
+        self.assertEqual(len(found), 1)
+        self.assertIn("align", found[0].remedy.lower())
+
+    def test_units_020_detail_carries_the_deff_formula_and_illustration_wording(self):
+        report = val.check(
+            _units_spec(observation="impression", assignment="user", method_family_required="")
+        )
+        found = [f for f in report.findings if f.code == "DSX-VAL-020"]
+        detail = found[0].detail
+        self.assertIn("1.576", detail)
+        self.assertIn("illustrat", detail.lower())
+
+    def test_malformed_units_subblock_produces_no_finding_and_does_not_raise(self):
+        for bad_units in ("s", [], None, 3):
+            with self.subTest(bad_units=bad_units):
+                report = val.check({"validity_frame": {"units": bad_units}})
+                self.assertNotIn("DSX-VAL-020", codes(report))
+
+    def test_unit_triad_judgment_point_appends_exactly_one_decision_record(self):
+        report = val.check(
+            _units_spec(observation="impression", assignment="user", method_family_required="")
+        )
+        decisions = report.context.get("decisions") or []
+        triad_decisions = [d for d in decisions if d["choice"].startswith("unit triad:")]
+        self.assertEqual(len(triad_decisions), 1)
+        self.assertEqual(triad_decisions[0]["layer"], "deterministic")
+        self.assertTrue(triad_decisions[0]["counterfactual"].strip())
+
+    # D-05: DSX-VAL-021
+    def test_assignment_vs_randomization_unit_disagreement_fires_high_units_021(self):
+        report = val.check(
+            _units_spec(assignment="user", design={"randomization_unit": "account"})
+        )
+        found = [f for f in report.findings if f.code == "DSX-VAL-021"]
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0].severity, Severity.HIGH)
+        for token in ("validity_frame.units.assignment", "design.randomization_unit",
+                      "user", "account"):
+            self.assertIn(token, found[0].detail)
+
+    def test_analysis_vs_design_analysis_unit_disagreement_fires_units_021(self):
+        report = val.check(
+            _units_spec(analysis="session", design={"analysis_unit": "user"})
+        )
+        self.assertIn("DSX-VAL-021", codes(report))
+
+    def test_both_pairs_agreeing_produces_no_units_021(self):
+        report = val.check(
+            _units_spec(
+                assignment="user", analysis="user",
+                design={"randomization_unit": "user", "analysis_unit": "user"},
+            )
+        )
+        self.assertNotIn("DSX-VAL-021", codes(report))
+
+    def test_blank_design_randomization_unit_produces_no_units_021(self):
+        report = val.check(_units_spec(assignment="user", design={"randomization_unit": ""}))
+        self.assertNotIn("DSX-VAL-021", codes(report))
+        report = val.check(_units_spec(assignment="user", design={}))
+        self.assertNotIn("DSX-VAL-021", codes(report))
+
+    def test_blank_validity_frame_assignment_produces_no_units_021(self):
+        report = val.check(
+            _units_spec(assignment="", design={"randomization_unit": "account"})
+        )
+        self.assertNotIn("DSX-VAL-021", codes(report))
+
+    def test_units_021_normalises_case_and_whitespace_before_comparing(self):
+        report = val.check(
+            _units_spec(assignment="  User ", design={"randomization_unit": "user"})
+        )
+        self.assertNotIn("DSX-VAL-021", codes(report))
+
+    def test_units_021_never_fires_on_the_canonical_or_corpus_fixtures(self):
+        import sys
+        from pathlib import Path
+
+        root = Path(__file__).resolve().parent.parent
+        sys.path.insert(0, str(root))
+        from dsx.loader import load  # noqa: E402
+
+        fixtures = [root / "examples" / "good-ANALYSIS-SPEC.yaml",
+                    root / "examples" / "bad-ANALYSIS-SPEC.yaml"]
+        fixtures += sorted((root / "examples" / "known-bad").glob("*-ANALYSIS-SPEC.yaml"))
+        self.assertGreaterEqual(len(fixtures), 5)
+        for path in fixtures:
+            with self.subTest(fixture=path.name):
+                spec = load(str(path))
+                report = val.check(spec)
+                self.assertNotIn("DSX-VAL-021", codes(report), path.name)
+
+
+# ── disjointness (REQ-P7-03): DSX-VAL-020 and DSX-EXP-021 never both fire ──
+
+
+def _all_fixture_paths() -> "list[Path]":
+    root = Path(__file__).resolve().parent.parent
+    paths = [
+        root / "examples" / "good-ANALYSIS-SPEC.yaml",
+        root / "examples" / "bad-ANALYSIS-SPEC.yaml",
+        root / "templates" / "ANALYSIS-SPEC.yaml",
+    ]
+    paths += sorted((root / "examples" / "known-bad").glob("*-ANALYSIS-SPEC.yaml"))
+    return paths
+
+
+# The content hash of dsx/checks/design.py (REQ-P7-03's other half — this
+# family must never be edited during Phase 7). Measured 2026-08-12 against
+# the file as it stood at the start of plan 07-04, over UTF-8 bytes with
+# CRLF normalised to LF before hashing (this repository checks out CRLF on
+# Windows, and a hash taken over raw bytes would differ between a Windows
+# and a Linux checkout for no real reason — see .claude/CLAUDE.md's line-
+# ending guidance). A deliberate future change to dsx/checks/design.py must
+# update this constant in the same commit and say why in the commit message
+# — this test is what forces that, rather than letting a silent edit pass.
+_DESIGN_PY_SHA256 = "b7807c3480da7515b8019cf50ea815af88954bde1f51f67e887a147c7292604a"
+
+
+def _design_py_hash() -> str:
+    root = Path(__file__).resolve().parent.parent
+    data = (root / "dsx" / "checks" / "design.py").read_bytes()
+    return hashlib.sha256(data.replace(b"\r\n", b"\n")).hexdigest()
+
+
+class TestValExpUnitsDisjointness(unittest.TestCase):
+    def test_bad_fixture_trips_exp_021_and_not_val_020(self):
+        from dsx.loader import load
+
+        root = Path(__file__).resolve().parent.parent
+        spec = load(str(root / "examples" / "bad-ANALYSIS-SPEC.yaml"))
+        design_codes = codes(design.check(spec))
+        val_codes = codes(val.check(spec))
+        self.assertIn("DSX-EXP-021", design_codes)
+        self.assertNotIn("DSX-VAL-020", val_codes)
+
+    def test_unit_triad_defect_with_agreeing_design_units_trips_val_020_and_not_exp_021(self):
+        spec = {
+            "question_type": "causal",
+            "design": {
+                "kind": "experiment",
+                "randomization_unit": "user",
+                "analysis_unit": "user",
+            },
+            "validity_frame": {
+                "units": {"observation": "impression", "assignment": "user"},
+                "dependence": {"method_family_required": ""},
+            },
+        }
+        design_codes = codes(design.check(spec))
+        val_codes = codes(val.check(spec))
+        self.assertIn("DSX-VAL-020", val_codes)
+        self.assertNotIn("DSX-EXP-021", design_codes)
+
+    def test_no_fixture_in_the_repository_trips_both_units_codes_at_once(self):
+        from dsx.loader import load
+
+        fixtures = _all_fixture_paths()
+        self.assertGreaterEqual(len(fixtures), 6)
+        for path in fixtures:
+            with self.subTest(fixture=path.name):
+                spec = load(str(path))
+                design_codes = codes(design.check(spec))
+                val_codes = codes(val.check(spec))
+                self.assertFalse(
+                    "DSX-EXP-021" in design_codes and "DSX-VAL-020" in val_codes,
+                    f"{path.name} trips both DSX-EXP-021 and DSX-VAL-020",
+                )
+
+    def test_editing_only_validity_frame_never_changes_which_design_codes_fire(self):
+        base = {
+            "question_type": "causal",
+            "design": {
+                "kind": "experiment",
+                "randomization_unit": "user",
+                "analysis_unit": "session",
+            },
+            "validity_frame": {
+                "units": {"observation": "user", "assignment": "user"},
+                "dependence": {"method_family_required": ""},
+            },
+        }
+        edited = copy.deepcopy(base)
+        edited["validity_frame"]["units"]["observation"] = "impression"
+        edited["validity_frame"]["dependence"]["method_family_required"] = ""
+        self.assertEqual(codes(val.check(base)), set())
+        self.assertIn("DSX-VAL-020", codes(val.check(edited)))
+        self.assertEqual(codes(design.check(base)), codes(design.check(edited)))
+
+    def test_editing_only_design_never_changes_which_validity_codes_fire(self):
+        base = {
+            "question_type": "causal",
+            "design": {
+                "kind": "experiment",
+                "randomization_unit": "user",
+                "analysis_unit": "session",
+            },
+            "validity_frame": {
+                "units": {"observation": "user", "assignment": "user"},
+                "dependence": {"method_family_required": ""},
+            },
+        }
+        edited = copy.deepcopy(base)
+        edited["design"]["analysis_unit"] = "user"
+        self.assertIn("DSX-EXP-021", codes(design.check(base)))
+        self.assertNotIn("DSX-EXP-021", codes(design.check(edited)))
+        self.assertEqual(codes(val.check(base)), codes(val.check(edited)))
+
+    def test_design_checks_py_content_is_unmodified_since_phase_start(self):
+        self.assertEqual(
+            _design_py_hash(), _DESIGN_PY_SHA256,
+            "dsx/checks/design.py was edited during Phase 7 — REQ-P7-03 requires it "
+            "unmodified; if this is a deliberate change, update _DESIGN_PY_SHA256 in "
+            "this test and say why in the commit message",
+        )
 
 
 if __name__ == "__main__":
