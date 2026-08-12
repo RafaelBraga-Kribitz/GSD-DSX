@@ -35,7 +35,9 @@ from ..decisions import DecisionRecord
 from ..findings import Report
 from ..mathx import design_effect
 from ..spec import (
+    CONSTRAINT_SOURCES,
     DEPENDENCE_ADMISSIBLE_METHODS,
+    IDENTIFICATION_STRENGTHS,
     falsifier_is_discriminating,
     get,
     is_blank,
@@ -93,6 +95,48 @@ _DEPENDENCE_CITATION = (
     "the internal locators were not. Do not invent either."
 )
 
+_IDENTIFICATION_CITATION = (
+    "Gelman, A., Simpson, D. & Betancourt, M. (2017), \"The Prior Can Often Only Be "
+    "Understood in the Context of the Likelihood\", Entropy 19(10), article 555, "
+    "section 3.3 (\"For complex models, certain aspects of the prior will always be "
+    "relevant\") and section 1.2 (\"Existing methods for setting priors already "
+    "depend on the likelihood\"). Whether the typeset MDPI journal version uses the "
+    "same section numbers as the arXiv final version is UNVERIFIED — cited by "
+    "section number and title together so the locator survives either. The "
+    "partition of CONSTRAINT_SOURCES this check tests against is project-defined; "
+    "no published source draws it."
+)
+
+# Constraint-source classification for DSX-VAL-041 (D-05): which constraint sources
+# carry information about the parameter's *scale*, as opposed to informing only
+# whether an effect exists at all. Derived from each member's own description text
+# in CONSTRAINT_SOURCES (dsx/spec.py):
+#   - informative_priors: "A prior distribution encodes external information about
+#     the parameter" — the prior is, by its own definition, parameter-scale
+#     information.
+#   - penalisation: "A penalty term ... shrinks the estimate toward a null or
+#     reference value" — the shrinkage target is a parameter-scale constraint.
+#   - design_restriction: "The study design itself restricts the parameter space"
+#     — a restriction on the parameter space is, definitionally, information about
+#     the parameter's scale.
+#   - hierarchical_pooling: "Partial pooling ... constrains group-level estimates"
+#     — pooling toward a shared distribution constrains the parameter's scale.
+# "none" is deliberately absent: its own description ("No external constraint
+# informs the estimate beyond the observed data") is the negation of membership.
+#
+# This four-against-one partition is PROJECT-DEFINED — no published source draws
+# it. Gelman, Simpson & Betancourt (2017) support the underlying premise (their
+# section 3.3 argues the prior is always relevant for complex models) and their
+# section 1.2 gives a prior taxonomy that lines up with two of these four members
+# (structural priors -> hierarchical_pooling; regularizing priors ->
+# penalisation), but they publish no such four-way partition, and
+# design_restriction has no counterpart in their paper at all. Say so in the
+# docstring too (D-05's whole point) — this comment is not a substitute for the
+# disclosure at the point of use.
+_PARAMETER_SCALE_CONSTRAINT_SOURCES: "frozenset[str]" = frozenset(
+    {"informative_priors", "penalisation", "design_restriction", "hierarchical_pooling"}
+)
+
 
 def check(spec: dict) -> Report:
     """Emit the validity-frame content findings (``DSX-VAL-*``).
@@ -119,6 +163,7 @@ def check(spec: dict) -> Report:
     _check_unit_triad(spec, frame, report)
     _check_unit_drift(spec, frame, report)
     _check_dependence(frame, report)
+    _check_identification(frame, report)
 
     estimand = frame.get("estimand")
     if isinstance(estimand, dict):
@@ -279,6 +324,55 @@ def check(spec: dict) -> Report:
                     "declared dependence structure, or declaring no dependence "
                     "structure (structure 'none' or absent), would have produced no "
                     "DSX-VAL-030."
+                ),
+            ).to_dict()
+        )
+
+    identification = frame.get("identification")
+    if isinstance(identification, dict):
+        strength = identification.get("strength")
+        constraint_source = identification.get("constraint_source")
+        normalized_strength = normalize(strength) if not is_blank(strength) else None
+        normalized_constraint = (
+            normalize(constraint_source) if not is_blank(constraint_source) else None
+        )
+        weak_blocked = normalized_strength == "weak" and normalized_constraint == "none"
+        strong_flagged = (
+            normalized_strength == "strong"
+            and normalized_constraint in _PARAMETER_SCALE_CONSTRAINT_SOURCES
+        )
+        if weak_blocked:
+            choice = "identification: blocked (DSX-VAL-040 — weak with no constraint)"
+        elif strong_flagged:
+            choice = (
+                "identification: flagged (DSX-VAL-041 — strong with a "
+                "parameter-scale constraint)"
+            )
+        else:
+            choice = "identification: passed"
+        report.context.setdefault("decisions", []).append(
+            DecisionRecord(
+                id="",
+                invocation_id="",
+                layer="deterministic",
+                choice=choice,
+                inputs=[
+                    "validity_frame.identification.strength",
+                    "validity_frame.identification.constraint_source",
+                ],
+                rule=(
+                    "DSX-VAL-040 fires when strength normalizes to 'weak' and "
+                    "constraint_source normalizes to 'none'; DSX-VAL-041 fires when "
+                    "strength normalizes to 'strong' and constraint_source "
+                    "normalizes to a member of _PARAMETER_SCALE_CONSTRAINT_SOURCES; "
+                    "a blank or out-of-vocabulary strength or constraint_source "
+                    "skips the check entirely."
+                ),
+                citation=_IDENTIFICATION_CITATION,
+                counterfactual=(
+                    "A weak declaration naming a real constraint, or a strong "
+                    "declaration with constraint_source none, would have produced "
+                    "neither code."
                 ),
             ).to_dict()
         )
@@ -627,3 +721,106 @@ def _check_dependence(frame: dict, report: Report) -> None:
         remedy=remedy,
         where="spec.validity_frame.dependence",
     )
+
+
+def _check_identification(frame: dict, report: Report) -> None:
+    """Emit DSX-VAL-040 when weak identification names no constraint at all,
+    and DSX-VAL-041 when strong identification also carries a constraint that
+    informs the parameter's scale.
+
+    Citation: Gelman, A., Simpson, D. & Betancourt, M. (2017), "The Prior Can
+    Often Only Be Understood in the Context of the Likelihood", Entropy
+    19(10), article 555, section 3.3 ("For complex models, certain aspects of
+    the prior will always be relevant") and section 1.2 ("Existing methods
+    for setting priors already depend on the likelihood"). Whether the
+    typeset MDPI journal version uses the same section numbers as the arXiv
+    final version is UNVERIFIED — cited by section number and title together
+    so the locator survives either.
+
+    Honesty disclosure (D-05's whole point): no published source partitions
+    CONSTRAINT_SOURCES into members that carry parameter-scale information
+    and members that do not. Gelman, Simpson & Betancourt support the
+    underlying premise, and their section 1.2 gives a prior taxonomy that
+    lines up with two of the four members classified here (structural priors
+    -> hierarchical_pooling; regularizing priors -> penalisation), but they
+    publish no such partition, and design_restriction has no counterpart in
+    their paper at all. This partition is project-defined.
+
+    Structural criterion: membership test against a project-defined partition
+    of the constraint-source vocabulary —
+    _PARAMETER_SCALE_CONSTRAINT_SOURCES, derived from each member's own
+    description text in dsx.spec.CONSTRAINT_SOURCES, not from any published
+    source. This partition is project-defined; repeating the disclosure here
+    so it survives being read in isolation from the paragraph above.
+
+    A blank strength or constraint_source, or either value outside its closed
+    vocabulary, is skipped without emitting — DSX-SPEC-082's territory, not
+    this check's. The two codes are mutually exclusive by construction: one
+    requires strength 'weak', the other strength 'strong'.
+    """
+    identification = frame.get("identification")
+    if not isinstance(identification, dict):
+        return
+
+    strength = identification.get("strength")
+    constraint_source = identification.get("constraint_source")
+    if is_blank(strength) or is_blank(constraint_source):
+        return
+
+    normalized_strength = normalize(strength)
+    normalized_constraint = normalize(constraint_source)
+    if normalized_strength not in IDENTIFICATION_STRENGTHS:
+        return
+    if normalized_constraint not in CONSTRAINT_SOURCES:
+        return
+
+    if normalized_strength == "weak" and normalized_constraint == "none":
+        detail = (
+            f"identification.strength is {strength!r} with "
+            f"identification.constraint_source {constraint_source!r} — an "
+            "identification strategy resting on covariate adjustment with no "
+            "design-based support and no external constraint gives an estimate "
+            "nothing anchors."
+        )
+        remedy = (
+            "Name the constraint that is actually doing the work "
+            "(informative_priors, penalisation, design_restriction or "
+            "hierarchical_pooling), or restate identification.strength honestly if "
+            "no such constraint applies."
+        )
+        report.add(
+            "DSX-VAL-040",
+            "CRITICAL",
+            "weak identification declared with no constraint",
+            detail=detail,
+            remedy=remedy,
+            where="spec.validity_frame.identification",
+        )
+        return
+
+    if (
+        normalized_strength == "strong"
+        and normalized_constraint in _PARAMETER_SCALE_CONSTRAINT_SOURCES
+    ):
+        detail = (
+            f"identification.strength is {strength!r} — a design described as "
+            f"ruling out confounding — but identification.constraint_source is "
+            f"{constraint_source!r}, which also informs the parameter's scale. "
+            "The two declarations are in tension. This is a prompt to reconcile "
+            "them, not an assertion that the analysis is wrong — the severity is "
+            "high rather than critical precisely because it may be neither."
+        )
+        remedy = (
+            "Say which declaration is load-bearing: if the design alone "
+            "identifies the effect, consider whether constraint_source should be "
+            f"none; if the {constraint_source!r} constraint is doing real work, "
+            "consider whether strength is better stated as moderate."
+        )
+        report.add(
+            "DSX-VAL-041",
+            "HIGH",
+            "strong identification also carries a parameter-scale constraint",
+            detail=detail,
+            remedy=remedy,
+            where="spec.validity_frame.identification",
+        )

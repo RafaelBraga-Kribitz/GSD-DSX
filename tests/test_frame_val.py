@@ -410,6 +410,181 @@ class TestValDependenceIdentification(unittest.TestCase):
         self.assertEqual(dependence_decisions[0]["layer"], "deterministic")
         self.assertTrue(dependence_decisions[0]["counterfactual"].strip())
 
+    # D-05: DSX-VAL-040
+    def test_weak_identification_with_no_constraint_fires_critical_val_040_and_no_val_041(self):
+        report = val.check(
+            {
+                "validity_frame": {
+                    "identification": {"strength": "weak", "constraint_source": "none"}
+                }
+            }
+        )
+        found = [f for f in report.findings if f.code == "DSX-VAL-040"]
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0].severity, Severity.CRITICAL)
+        self.assertEqual(found[0].where, "spec.validity_frame.identification")
+        self.assertNotIn("DSX-VAL-041", codes(report))
+
+    def test_weak_identification_with_a_real_constraint_produces_neither_identification_code(self):
+        report = val.check(
+            {
+                "validity_frame": {
+                    "identification": {
+                        "strength": "weak",
+                        "constraint_source": "informative_priors",
+                    }
+                }
+            }
+        )
+        self.assertNotIn("DSX-VAL-040", codes(report))
+        self.assertNotIn("DSX-VAL-041", codes(report))
+
+    # D-05: DSX-VAL-041
+    def test_strong_identification_with_informative_priors_fires_high_val_041_and_no_val_040(self):
+        report = val.check(
+            {
+                "validity_frame": {
+                    "identification": {
+                        "strength": "strong",
+                        "constraint_source": "informative_priors",
+                    }
+                }
+            }
+        )
+        found = [f for f in report.findings if f.code == "DSX-VAL-041"]
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0].severity, Severity.HIGH)
+        self.assertNotIn("DSX-VAL-040", codes(report))
+
+    def test_strong_identification_with_each_parameter_scale_constraint_fires_val_041(self):
+        for constraint in ("penalisation", "design_restriction", "hierarchical_pooling"):
+            with self.subTest(constraint=constraint):
+                report = val.check(
+                    {
+                        "validity_frame": {
+                            "identification": {
+                                "strength": "strong",
+                                "constraint_source": constraint,
+                            }
+                        }
+                    }
+                )
+                self.assertIn("DSX-VAL-041", codes(report))
+
+    def test_strong_identification_with_constraint_source_none_produces_neither_identification_code(self):
+        report = val.check(
+            {
+                "validity_frame": {
+                    "identification": {"strength": "strong", "constraint_source": "none"}
+                }
+            }
+        )
+        self.assertNotIn("DSX-VAL-040", codes(report))
+        self.assertNotIn("DSX-VAL-041", codes(report))
+
+    def test_moderate_identification_produces_neither_identification_code_with_any_constraint(self):
+        for constraint in (
+            "none", "informative_priors", "penalisation", "design_restriction",
+            "hierarchical_pooling",
+        ):
+            with self.subTest(constraint=constraint):
+                report = val.check(
+                    {
+                        "validity_frame": {
+                            "identification": {
+                                "strength": "moderate",
+                                "constraint_source": constraint,
+                            }
+                        }
+                    }
+                )
+                self.assertNotIn("DSX-VAL-040", codes(report))
+                self.assertNotIn("DSX-VAL-041", codes(report))
+
+    def test_out_of_vocabulary_identification_strength_or_constraint_produces_neither_code(self):
+        report = val.check(
+            {
+                "validity_frame": {
+                    "identification": {
+                        "strength": "not_a_member",
+                        "constraint_source": "none",
+                    }
+                }
+            }
+        )
+        self.assertNotIn("DSX-VAL-040", codes(report))
+        self.assertNotIn("DSX-VAL-041", codes(report))
+        report = val.check(
+            {
+                "validity_frame": {
+                    "identification": {
+                        "strength": "weak",
+                        "constraint_source": "not_a_member",
+                    }
+                }
+            }
+        )
+        self.assertNotIn("DSX-VAL-040", codes(report))
+        self.assertNotIn("DSX-VAL-041", codes(report))
+
+    def test_blank_identification_strength_or_constraint_source_produces_neither_code(self):
+        report = val.check(
+            {"validity_frame": {"identification": {"strength": "", "constraint_source": "none"}}}
+        )
+        self.assertNotIn("DSX-VAL-040", codes(report))
+        self.assertNotIn("DSX-VAL-041", codes(report))
+        report = val.check(
+            {
+                "validity_frame": {
+                    "identification": {"strength": "weak", "constraint_source": ""}
+                }
+            }
+        )
+        self.assertNotIn("DSX-VAL-040", codes(report))
+        self.assertNotIn("DSX-VAL-041", codes(report))
+
+    def test_malformed_identification_subblock_produces_no_finding_and_does_not_raise(self):
+        for bad_identification in ("s", [], None, 3):
+            with self.subTest(bad_identification=bad_identification):
+                report = val.check({"validity_frame": {"identification": bad_identification}})
+                self.assertNotIn("DSX-VAL-040", codes(report))
+                self.assertNotIn("DSX-VAL-041", codes(report))
+
+    def test_identification_judgment_point_appends_one_decision_record_distinguishing_outcomes(self):
+        weak_report = val.check(
+            {
+                "validity_frame": {
+                    "identification": {"strength": "weak", "constraint_source": "none"}
+                }
+            }
+        )
+        weak_decisions = [
+            d
+            for d in (weak_report.context.get("decisions") or [])
+            if d["choice"].startswith("identification:")
+        ]
+        self.assertEqual(len(weak_decisions), 1)
+        self.assertIn("DSX-VAL-040", weak_decisions[0]["choice"])
+
+        strong_report = val.check(
+            {
+                "validity_frame": {
+                    "identification": {
+                        "strength": "strong",
+                        "constraint_source": "informative_priors",
+                    }
+                }
+            }
+        )
+        strong_decisions = [
+            d
+            for d in (strong_report.context.get("decisions") or [])
+            if d["choice"].startswith("identification:")
+        ]
+        self.assertEqual(len(strong_decisions), 1)
+        self.assertIn("DSX-VAL-041", strong_decisions[0]["choice"])
+        self.assertNotEqual(weak_decisions[0]["choice"], strong_decisions[0]["choice"])
+
 
 # ── disjointness (REQ-P7-03): DSX-VAL-020 and DSX-EXP-021 never both fire ──
 
