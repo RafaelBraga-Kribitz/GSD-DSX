@@ -47,23 +47,39 @@ the finer (observation) unit would compute. Because the standard-error / CI half
 with `sqrt(variance)`, the naive interval is too narrow by a factor of `sqrt(DEFF)`, not `DEFF`
 itself — this is the precise relationship behind the brief's "3 to 10x too narrow" framing.
 
-**Worked published example:** ICC = 0.05, cluster size m = 50 → `DEFF = 1 + 49*0.05 = 3.45`
-(commonly reproduced in cluster-RCT methods texts, e.g. Donner & Klar, *Design and Analysis of
-Cluster Randomization Trials in Health Research*, 2000, and the Cochrane Handbook §16.3.4). At
-that DEFF, the naive interval is `sqrt(3.45) ≈ 1.86x` too narrow. To reach the brief's upper
-bound of "10x too narrow" (`sqrt(DEFF) = 10` → `DEFF = 100`) requires a high ICC/large-cluster
-combination — e.g. ICC = 0.5, m = 199 → DEFF = 100, or more realistically for repeated-measures
-account-level clustering with many sessions per account and high within-account correlation.
-The "3x too narrow" end of the range (`sqrt(DEFF)=3` → `DEFF=9`) is reached at, e.g., ICC=0.1,
-m=81.
+**Worked published example:** intraclass correlation (ICC) 0.02, average cluster size 29.8 →
+`DEFF = 1 + (29.8 - 1) * 0.02 = 1.576`, from Higgins, Eldridge & Li (2024), *Cochrane Handbook
+for Systematic Reviews of Interventions*, version 6.5, §23.1.4 and §23.1.4.1 — the formula and
+this worked value appear together in the same freely accessible, versioned subsection. At that
+DEFF, the naive interval is `sqrt(1.576) ≈ 1.26x` too narrow.
 
-**Testability:** `DEFF = 1 + (m-1)*ICC` is a pure arithmetic formula — the unit test is exact
-arithmetic assertion against the Kish/Cornfield-sourced worked example (ICC=0.05, m=50 → 3.45),
-not a simulation. **Fixed formula + fixed worked-example constant.**
+**Correction (decision D-10, 2026-08-12):** an earlier version of this section asserted a design
+effect of `3.45` (from ICC = 0.05, m = 50), attributed to a commonly cited cluster-randomized-
+trials methods text and to a Cochrane Handbook section reference. Research established that
+neither source actually prints that worked value — it was an unsourced computed illustration,
+correct in its arithmetic but not attributable to either cited text, which is precisely the
+failure decision D-05 exists to catch. The value has been retired under decision D-10 and
+replaced above with the Cochrane Handbook's own worked example, rather than corrected in place,
+so a reader who has seen `3.45` in an older document knows it was examined and rejected rather
+than merely overlooked.
+
+**Arithmetic illustration, not a published example:** to reach the brief's upper bound of "10x
+too narrow" (`sqrt(DEFF) = 10` → `DEFF = 100`) requires a high ICC/large-cluster combination —
+e.g. ICC = 0.5, m = 199 → DEFF = 100, or more realistically for repeated-measures account-level
+clustering with many sessions per account and high within-account correlation. The "3x too
+narrow" end of the range (`sqrt(DEFF)=3` → `DEFF=9`) is reached at, e.g., ICC=0.1, m=81. These
+two combinations are computed illustrations reasoning toward the brief's "3 to 10x too narrow"
+framing, not values printed in any cited source.
+
+**Testability:** `DEFF = 1 + (m-1)*ICC` is a pure arithmetic formula — the unit test is an exact
+arithmetic assertion against the Cochrane Handbook's own worked example (ICC=0.02, m=29.8 →
+1.576, Higgins, Eldridge & Li 2024, §23.1.4/§23.1.4.1), not a simulation. **Fixed formula + fixed
+worked-example constant.**
 
 **Confidence:** MEDIUM (formula independently confirmed across 3 sources: Kish's original
-formulation, a Cochrane/clinical-trials methods reference reproducing the m=50/ICC=0.05
-worked example, and Cornfield's independent statement of the consequence).
+formulation, the Cochrane Handbook's own m=29.8/ICC=0.02 worked example — verified directly in
+the handbook's freely accessible text rather than via a secondary reproduction — and Cornfield's
+independent statement of the consequence).
 
 **Implementation note:** `DSX-VAL-020/021` per D-02 does not compute DEFF from data — it
 adjudicates the **declaration** (`units.analysis` not finer than `units.assignment`,
@@ -425,7 +441,7 @@ day" — already encoded in this repo's own `references/experiment-pitfalls.md`)
 
 | Feature | Why Expected | Complexity | Notes |
 |---|---|---|---|
-| Unit-triad declaration check (`DSX-VAL-020/021`) reusing DEFF citation | Pseudo-replication is the single most common Class A failure named in the brief; the primary source (Kish 1965, Cornfield 1978) and worked example (ICC=0.05,m=50→3.45) are settled | LOW | Declaration-only; DEFF formula lives in docstring/fixture, not gate code |
+| Unit-triad declaration check (`DSX-VAL-020/021`) reusing DEFF citation | Pseudo-replication is the single most common Class A failure named in the brief; the primary source (Kish 1965, Cornfield 1978) and worked example (ICC=0.02,m=29.8→1.576, D-10) are settled | LOW | Declaration-only; DEFF formula lives in docstring/fixture, not gate code |
 | Dilution declaration check (`DSX-INT-030`) for additive metrics | Kohavi/Tang/Xu name this as one of the two operating-context-specific failures; additive-metric formula is settled and exact | LOW | Ratio-metric formula is UNSOURCED — restrict the check's worked-example fixture to additive metrics until re-derived |
 | `DSX-PAR-010` reusing `inflation_from_peeking()` | Already implemented, already cited, already tested — this is the one item requiring zero new research | LOW | Anti-feature to build a second table; see §3 |
 | `DSX-PAR-011` asserting the `1/(K+1)` Ville's-inequality bound | This is D-05's hardest test — the brief explicitly names it "the single most important constraint," and only this formulation of the paper's result yields a fixed testable number | MEDIUM | Requires the point-null/prior-averaged distinction to be stated in the docstring, not just implemented silently |
