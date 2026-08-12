@@ -64,38 +64,82 @@ _INCIDENTAL_GAP_CODES = {
                     # (plan 07-05, D-14)
 }
 
-# The code-family prefixes named in each post-mortem's "Which absent code would
-# have caught it" section — the codes each fixture exists to motivate (DSX-INT-010
-# for the interference fixture, DSX-PAR-010/DSX-PAR-011 for the atomic monitoring
-# pair, D-06). "DSX-PAR-01" deliberately excludes DSX-PAR-001 (the unrelated,
-# already-shipped INFO-severity paradigm-manifest finding, REQ-P6-09).
+# Per-fixture target-defect map (D-15 structural rewrite, plan 08-02): for each fixture
+# slug (filename with "-ANALYSIS-SPEC.yaml" stripped, matching `_slugs`), the finding
+# code that fixture exists to demonstrate, keyed by the gate point at which it is
+# expected to block. A fixture absent from this map — or absent at a given gate point
+# — defaults to "clears that gate point cleanly", which is today's behaviour for every
+# fixture and is preserved exactly. Replaces the old family-prefix allow-list and the
+# old plan-only expected-blocker dict: a family-prefix string can express at most one
+# code per family, and Phase 8 is the first phase to ship four codes in one family
+# (`DSX-INT-*`), so a family prefix can no longer distinguish the code a fixture exists
+# to demonstrate from an unrelated code from the same family the fixture happens to
+# also trip — see test_incidental_allowlist_names_no_slugs_own_target_code below.
 #
-# "DSX-VAL-040" (plan 07-07) is listed as the exact code, not the family prefix
-# "DSX-VAL-". The weak-identification-mmm fixture is the first fixture in this
-# corpus whose target code ships in the same phase as the fixture, so its target
-# code lives here (never in _INCIDENTAL_GAP_CODES — see
-# test_ship_gate_findings_are_all_documented_incidental_corpus_gaps's amended
-# docstring) and is also the sole entry in _EXPECTED_PLAN_BLOCKERS below. A family
-# prefix here would also make illegal the DSX-VAL-041 entry plan 07-05 already
-# added to _INCIDENTAL_GAP_CODES, under
-# test_incidental_allowlist_names_no_target_family_code, which asserts that no
-# allow-listed code starts with any entry in this tuple.
-_TARGET_CODE_FAMILIES = ("DSX-INT-", "DSX-PAR-01", "DSX-VAL-040")
-
-# Named-exception set for fixtures whose target code has already shipped in the
-# same milestone as the fixture (plan 07-07, D-15, Option A of that plan's
-# recorded decision). A fixture listed here cannot honestly claim to clear the
-# plan gate that its own target code blocks — so rather than weakening or
-# deleting the corpus's blanket "every fixture clears plan and execute" guarantee
-# (test_every_spec_passes_the_critical_threshold_gate_points), this dictionary
-# converts the lost assertion into a stronger one: a listed fixture MUST block
-# `dsx gate plan` with its mapped code among the CRITICAL findings, and MUST still
-# clear `dsx gate execute` (the "val" check that emits every DSX-VAL-* code is not
-# in the execute gate profile — dsx/cli.py's GATE_PROFILES — so half of the usual
-# guarantee survives untouched even for a listed fixture).
-_EXPECTED_PLAN_BLOCKERS = {
-    "weak-identification-mmm-ANALYSIS-SPEC.yaml": "DSX-VAL-040",
+# weak-identification-mmm -> DSX-VAL-040 already ships in this milestone (Phase 7,
+# plan 07-07) — the first fixture in this corpus whose target code lands in the same
+# milestone as the fixture itself. This entry replaces the old plan-only expected-
+# blocker dict that previously encoded it (07-07, D-15 Option A); the per-fixture map
+# generalises that single-purpose mechanism without changing the guarantee it made —
+# still plan-only, still MUST block with the mapped code among the CRITICAL findings,
+# `dsx gate execute` is untouched because the "val" check is not in the execute gate
+# profile (dsx/cli.py::GATE_PROFILES).
+#
+# Plan 08-03 adds interference-shared-budget -> {"plan": "DSX-INT-010"}.
+# Plan 08-04 adds triggering-dilution -> {"plan": "DSX-INT-030"}.
+# A later Phase 9 plan adds the two monitoring fixtures for its own atomic pair
+# (DSX-PAR-010/DSX-PAR-011).
+#
+# Fragility note (measured 2026-08-12, plan 08-02): both bayesian-continuous-monitoring
+# and frequentist-uncontrolled-continuous declare validity_frame.triggering with
+# analysis_population: eligible and dilution_adjusted: false — two of DSX-INT-030's
+# three trigger conditions. Both escape only because each declares a single metric of
+# type: ratio, outside the additive partition {count, sum, average}. Adding a metric of
+# type count, sum or average to either fixture will make it block dsx gate plan on
+# DSX-INT-030 and will require an entry in this map.
+_TARGET_DEFECT_CODES: "dict[str, dict[str, str]]" = {
+    "weak-identification-mmm": {"plan": "DSX-VAL-040"},
 }
+
+
+def _classify_target_defect(
+    slug: str,
+    point: str,
+    exit_code: int,
+    findings: list[dict],
+    target_map: "dict[str, dict[str, str]]",
+) -> list[str]:
+    """Classify one (slug, point) gate result against `target_map` and return a list of
+    problem strings (empty when the result matches the map's expectation).
+
+    Exactly two rules: when `target_map` has no code for `slug` at `point`, `exit_code`
+    must be 0. When it has one, `exit_code` must be 1 and that code must appear among
+    `findings` whose severity is CRITICAL. `target_map` is a parameter, never the module
+    constant read directly — that is what lets a synthetic map exercise this function
+    without touching the filesystem or the gate (the second of the two proofs this
+    module's rewrite owes, matching tests/test_frame_boundary.py's discipline).
+    """
+    expected = target_map.get(slug, {}).get(point)
+    critical = [f["code"] for f in findings if f.get("severity") == "CRITICAL"]
+    problems: list[str] = []
+    if expected is None:
+        if exit_code != 0:
+            problems.append(
+                f"{slug!r} has no target code at {point!r} but exited {exit_code} "
+                f"(CRITICAL findings: {critical})"
+            )
+        return problems
+    if exit_code != 1:
+        problems.append(
+            f"{slug!r} is mapped to {expected!r} at {point!r} but exited {exit_code}, "
+            "not 1"
+        )
+    if expected not in critical:
+        problems.append(
+            f"{slug!r} is mapped to {expected!r} at {point!r} but that code is not "
+            f"among the CRITICAL findings: {critical}"
+        )
+    return problems
 
 # The two retired, false gate-behaviour claims this plan (06-12) removed from
 # every committed file under examples/known-bad/ — named identically to the two
@@ -216,95 +260,87 @@ class TestKnownBadCorpus(unittest.TestCase):
                     f"{path.name} names no DSX-<LETTERS>-<digits> finding code",
                 )
 
-    def test_every_spec_passes_the_critical_threshold_gate_points(self):
-        """The corpus's positive gate guarantee, as it now stands: every fixture
-        NOT listed in `_EXPECTED_PLAN_BLOCKERS` clears both CRITICAL-threshold
-        gate points, `plan` and `execute`, today. A fixture listed in
-        `_EXPECTED_PLAN_BLOCKERS` is required to do the opposite at `plan` — it
-        MUST block, with its mapped code among the CRITICAL findings — because
-        its target code ships in the same milestone as the fixture; it is still
-        required to clear `execute`, so half of the original guarantee survives
-        intact for a listed fixture too (plan 07-07, D-15)."""
+    def test_every_spec_blocks_only_on_its_target_defect_at_critical_threshold_points(self):
+        """The corpus's positive gate guarantee, as it now stands: at each of
+        `_CRITICAL_THRESHOLD_POINTS` (`plan`, `execute`), a fixture with no entry
+        in `_TARGET_DEFECT_CODES` for that point clears it (exit 0) — today's
+        behaviour, preserved exactly. A fixture with an entry for that point MUST
+        block (exit 1) with its mapped code among the CRITICAL findings — a
+        positive proof the fixture is caught by the code it exists to
+        demonstrate, not merely the absence of a negative. Replaces the old
+        blanket "every fixture clears plan and execute" assertion, which a
+        family-prefix allow-list could not express once a family ships more than
+        one code (plan 08-02, D-15)."""
         specs = self._spec_paths()
         self.assertTrue(specs, "no known-bad specs found to gate")
         for path in specs:
-            expected_blocker = _EXPECTED_PLAN_BLOCKERS.get(path.name)
+            slug = path.name[: -len(SPEC_SUFFIX)]
             for point in _CRITICAL_THRESHOLD_POINTS:
                 with self.subTest(spec=path.name, point=point):
                     code, findings = self._gate_findings(path, point)
-                    critical = [f["code"] for f in findings if f["severity"] == "CRITICAL"]
-                    if expected_blocker is not None and point == "plan":
-                        self.assertEqual(
-                            code, 1,
-                            f"{path.name} was expected to block dsx gate plan on "
-                            f"{expected_blocker!r} but exited {code}: {critical}",
-                        )
-                        self.assertIn(
-                            expected_blocker, critical,
-                            f"{path.name} blocked dsx gate plan, but its expected code "
-                            f"{expected_blocker!r} is not among the CRITICAL findings: {critical}",
-                        )
-                    else:
-                        self.assertEqual(
-                            code, 0,
-                            f"{path.name} failed dsx gate {point} (CRITICAL threshold): {critical}",
-                        )
+                    problems = _classify_target_defect(
+                        slug, point, code, findings, _TARGET_DEFECT_CODES
+                    )
+                    self.assertEqual(problems, [], "; ".join(problems))
 
     def test_ship_gate_findings_are_all_documented_incidental_corpus_gaps(self):
         """Every CRITICAL/HIGH finding `dsx gate ship` produces against a fixture
         is either a member of the documented `_INCIDENTAL_GAP_CODES` allow-list,
-        or — for a fixture listed in `_EXPECTED_PLAN_BLOCKERS` — is that
-        fixture's own mapped target code (plan 07-07, D-15).
+        or one of that fixture's own codes in `_TARGET_DEFECT_CODES`.
 
         This test failing after a later phase ships a new check is the intended
         signal, not a defect: when the code a fixture was built to motivate (e.g.
-        DSX-INT-010, DSX-PAR-010/DSX-PAR-011) finally fires against its fixture,
-        that code moves from "not shipped" to "shipped and blocking", and the
-        corpus documentation (this module's constants, the fixture headers, the
+        DSX-INT-010, DSX-VAL-040) finally fires against its fixture, that code
+        moves from "not shipped" to "shipped and blocking", and the corpus
+        documentation (this module's constants, the fixture headers, the
         post-mortems) must move that code from incidental-gap to caught-defect.
         This assertion is what forces that edit instead of letting it rot.
 
-        A fixture's mapped target code is excluded from the undocumented set
-        here, rather than added to `_INCIDENTAL_GAP_CODES`, because it is that
-        fixture's encoded defect, not a corpus-completeness gap — putting it in
-        the incidental allow-list would be exactly the misuse
-        `test_incidental_allowlist_names_no_target_family_code` exists to forbid.
+        A fixture's own target code is now recognised by looking it up in
+        `_TARGET_DEFECT_CODES`, rather than excluded by a family prefix, and is
+        excluded from the undocumented set here rather than added to
+        `_INCIDENTAL_GAP_CODES` — it is that fixture's encoded defect, not a
+        corpus-completeness gap, and putting it in the incidental allow-list
+        would be exactly the misuse
+        `test_incidental_allowlist_names_no_slugs_own_target_code` exists to
+        forbid.
         """
         specs = self._spec_paths()
         self.assertTrue(specs, "no known-bad specs found to gate")
         for path in specs:
+            slug = path.name[: -len(SPEC_SUFFIX)]
             with self.subTest(spec=path.name):
                 _code, findings = self._gate_findings(path, "ship")
                 blocking = {
                     f["code"] for f in findings if f["severity"] in ("CRITICAL", "HIGH")
                 }
-                allowed = set(_INCIDENTAL_GAP_CODES)
-                expected_blocker = _EXPECTED_PLAN_BLOCKERS.get(path.name)
-                if expected_blocker is not None:
-                    allowed = allowed | {expected_blocker}
+                own_targets = set(_TARGET_DEFECT_CODES.get(slug, {}).values())
+                allowed = set(_INCIDENTAL_GAP_CODES) | own_targets
                 undocumented = blocking - allowed
                 self.assertEqual(
                     undocumented, set(),
                     f"{path.name} blocks dsx gate ship on undocumented codes: "
                     f"{sorted(undocumented)} — add each to _INCIDENTAL_GAP_CODES with its "
-                    "cause, or if it is a target-family code, the corpus's guarantee has "
-                    "changed and the header/post-mortem prose must be updated to match",
+                    "cause, or if it is this fixture's own target code, add it to "
+                    "_TARGET_DEFECT_CODES and update the header/post-mortem prose to match",
                 )
 
-    def test_incidental_allowlist_names_no_target_family_code(self):
-        """The machine-checkable form of the corpus's real guarantee: the
-        fixtures block only on completeness gaps, never on the semantic defect
-        they exist to encode. Holds without asserting that any unshipped code
-        fires, so the module's standing no-code-specific-assertion rule survives
-        intact."""
-        for code in sorted(_INCIDENTAL_GAP_CODES):
-            for family in _TARGET_CODE_FAMILIES:
-                with self.subTest(code=code, family=family):
-                    self.assertFalse(
-                        code.startswith(family),
-                        f"{code} is in the incidental-gap allow-list but belongs to target "
-                        f"family {family!r} — a fixture would then never block on the "
-                        "defect it exists to encode even after that code ships",
+    def test_incidental_allowlist_names_no_slugs_own_target_code(self):
+        """The machine-checkable form of the corpus's real guarantee: a fixture's
+        own encoded defect can never be laundered into `_INCIDENTAL_GAP_CODES`.
+        Checked per-fixture, per-gate-point against `_TARGET_DEFECT_CODES` rather
+        than by a family-prefix string, so a genuinely incidental code from the
+        same family as another fixture's target — the case a family prefix could
+        not express once a family ships more than one code — is not wrongly
+        forbidden."""
+        for slug, points in _TARGET_DEFECT_CODES.items():
+            for point, code in points.items():
+                with self.subTest(slug=slug, point=point, code=code):
+                    self.assertNotIn(
+                        code, _INCIDENTAL_GAP_CODES,
+                        f"{code} is {slug}'s own target code at {point!r} but also "
+                        "appears in _INCIDENTAL_GAP_CODES — a fixture's intended "
+                        "defect must never be laundered into the incidental allow-list",
                     )
 
     def test_no_corpus_file_repeats_a_retired_gate_overclaim(self):
@@ -387,6 +423,36 @@ class TestKnownBadCorpus(unittest.TestCase):
                     f"{matches[0].name} no longer states {required!r} — the corrected "
                     "prior-averaged bound must remain stated, not merely un-misattributed",
                 )
+
+
+class TestClassifyTargetDefectHelper(unittest.TestCase):
+    """Proves `_classify_target_defect` fires against fabricated inputs, independent
+    of the filesystem and the real gate — the module's own two-proofs discipline
+    (tests/test_frame_boundary.py::TestFrameImportBoundary): a test that only ever
+    scans real fixtures can never fail while the map is empty of a given code, and
+    therefore enforces nothing on its own."""
+
+    def test_classify_target_defect_fires_when_the_targeted_code_is_absent(self):
+        fake_map = {"fixture-a": {"plan": "DSX-XXX-010"}}
+        present = [{"code": "DSX-XXX-010", "severity": "CRITICAL"}]
+        self.assertEqual(
+            _classify_target_defect("fixture-a", "plan", 1, present, fake_map), []
+        )
+        absent = [{"code": "DSX-YYY-001", "severity": "CRITICAL"}]
+        problems = _classify_target_defect("fixture-a", "plan", 1, absent, fake_map)
+        self.assertNotEqual(problems, [])
+
+    def test_classify_target_defect_permits_a_same_family_incidental_code_on_an_untargeted_fixture(self):
+        fake_map = {"fixture-a": {"plan": "DSX-XXX-010"}}
+        # DSX-XXX-040 shares fixture-a's family prefix "DSX-XXX-", but fixture-b has
+        # no entry in fake_map at "plan" — it must clear cleanly (exit 0), and the
+        # finding list is irrelevant to that classification. This is the precise case
+        # a family-prefix string list could not express: it can only ever forbid or
+        # permit a whole family, never distinguish one fixture's target from another
+        # fixture's incidental finding in the same family.
+        findings = [{"code": "DSX-XXX-040", "severity": "CRITICAL"}]
+        problems = _classify_target_defect("fixture-b", "plan", 0, findings, fake_map)
+        self.assertEqual(problems, [])
 
 
 if __name__ == "__main__":
