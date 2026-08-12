@@ -624,6 +624,178 @@ def _design_py_hash() -> str:
     return hashlib.sha256(data.replace(b"\r\n", b"\n")).hexdigest()
 
 
+class TestValSamplingMissingnessMeasurement(unittest.TestCase):
+    # D-05: DSX-VAL-050
+    def test_blank_claim_population_fires_high_val_050_naming_the_field(self):
+        report = val.check(
+            {
+                "validity_frame": {
+                    "sampling_frame": {
+                        "claim_population": "",
+                        "known_exclusions": [],
+                        "selection_risk": "none identified",
+                    }
+                }
+            }
+        )
+        found = [f for f in report.findings if f.code == "DSX-VAL-050"]
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0].severity, Severity.HIGH)
+        self.assertEqual(found[0].where, "spec.validity_frame.sampling_frame.claim_population")
+
+    def test_sampling_frame_known_exclusions_with_blank_selection_risk_fires_val_050(self):
+        report = val.check(
+            {
+                "validity_frame": {
+                    "sampling_frame": {
+                        "claim_population": "all new signups",
+                        "known_exclusions": ["bots"],
+                        "selection_risk": "",
+                    }
+                }
+            }
+        )
+        self.assertIn("DSX-VAL-050", codes(report))
+
+    def test_sampling_frame_known_exclusions_with_a_stated_selection_risk_produces_no_finding(
+        self,
+    ):
+        # The good fixture's own configuration (examples/good-ANALYSIS-SPEC.yaml:338-342).
+        report = val.check(
+            {
+                "validity_frame": {
+                    "sampling_frame": {
+                        "claim_population": "all new signups, 2026-06-01 to 2026-06-14",
+                        "known_exclusions": ["bot-flagged traffic"],
+                        "selection_risk": "none identified",
+                    }
+                }
+            }
+        )
+        self.assertNotIn("DSX-VAL-050", codes(report))
+
+    def test_sampling_frame_no_exclusions_and_blank_selection_risk_produces_no_finding(self):
+        report = val.check(
+            {
+                "validity_frame": {
+                    "sampling_frame": {
+                        "claim_population": "all new signups",
+                        "known_exclusions": [],
+                        "selection_risk": "",
+                    }
+                }
+            }
+        )
+        self.assertNotIn("DSX-VAL-050", codes(report))
+
+    def test_placeholder_claim_population_produces_no_val_050(self):
+        # The template's own configuration (templates/ANALYSIS-SPEC.yaml:330-334) — plain
+        # blankness only, never the placeholder detector (D-06).
+        report = val.check(
+            {
+                "validity_frame": {
+                    "sampling_frame": {
+                        "claim_population": "<the population the claim will be made about>",
+                        "known_exclusions": [],
+                        "selection_risk": (
+                            "<how it could differ systematically from the claim population>"
+                        ),
+                    }
+                }
+            }
+        )
+        self.assertNotIn("DSX-VAL-050", codes(report))
+
+    # D-05: DSX-VAL-070
+    def test_measurement_construct_with_blank_operationalisation_fires_high_val_070(self):
+        report = val.check(
+            {
+                "validity_frame": {
+                    "measurement": {"construct": "activation", "operationalisation": ""}
+                }
+            }
+        )
+        found = [f for f in report.findings if f.code == "DSX-VAL-070"]
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0].severity, Severity.HIGH)
+        self.assertEqual(
+            found[0].where, "spec.validity_frame.measurement.operationalisation"
+        )
+
+    def test_blank_measurement_construct_produces_no_val_070_whatever_operationalisation_says(
+        self,
+    ):
+        for operationalisation in ("", "some rule", "<placeholder>"):
+            with self.subTest(operationalisation=operationalisation):
+                report = val.check(
+                    {
+                        "validity_frame": {
+                            "measurement": {
+                                "construct": "",
+                                "operationalisation": operationalisation,
+                            }
+                        }
+                    }
+                )
+                self.assertNotIn("DSX-VAL-070", codes(report))
+
+    def test_placeholder_measurement_construct_and_operationalisation_produce_no_finding(self):
+        # The template's own configuration (templates/ANALYSIS-SPEC.yaml:341-344).
+        report = val.check(
+            {
+                "validity_frame": {
+                    "measurement": {
+                        "construct": "<the concept being measured>",
+                        "operationalisation": "<the exact rule that turns the construct into a number>",
+                    }
+                }
+            }
+        )
+        self.assertNotIn("DSX-VAL-070", codes(report))
+
+    def test_malformed_sampling_frame_and_measurement_subblocks_produce_no_finding_and_do_not_raise(
+        self,
+    ):
+        for malformed in ("a string", ["a", "list"], None, 5):
+            with self.subTest(malformed=malformed):
+                report = val.check(
+                    {
+                        "validity_frame": {
+                            "sampling_frame": malformed,
+                            "measurement": malformed,
+                        }
+                    }
+                )
+                self.assertNotIn("DSX-VAL-050", codes(report))
+                self.assertNotIn("DSX-VAL-070", codes(report))
+
+    def test_sampling_frame_and_measurement_judgment_points_each_append_one_decision_record(
+        self,
+    ):
+        report = val.check(
+            {
+                "validity_frame": {
+                    "sampling_frame": {
+                        "claim_population": "",
+                        "known_exclusions": [],
+                        "selection_risk": "",
+                    },
+                    "measurement": {"construct": "activation", "operationalisation": ""},
+                }
+            }
+        )
+        decisions = report.context["decisions"]
+        by_choice_prefix = {
+            prefix: [d for d in decisions if d["choice"].startswith(prefix)]
+            for prefix in ("sampling frame:", "measurement:")
+        }
+        for prefix, matches in by_choice_prefix.items():
+            self.assertEqual(len(matches), 1, prefix)
+            record = matches[0]
+            self.assertEqual(record["layer"], "deterministic")
+            self.assertTrue(record["counterfactual"])
+
+
 class TestValExpUnitsDisjointness(unittest.TestCase):
     def test_bad_fixture_trips_exp_021_and_not_val_020(self):
         from dsx.loader import load
