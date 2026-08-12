@@ -1174,5 +1174,101 @@ class TestValGateSeverity(unittest.TestCase):
         )
 
 
+# ── fixture matrix (REQ-P7-*, whole family): every spec file in the repo ───
+#
+# Discovers every analysis-spec fixture using the same glob idiom
+# tests/test_known_bad_corpus.py uses (never a hardcoded filename list), so a
+# fixture added by a later phase is picked up structurally rather than by
+# someone remembering to list it. _all_fixture_paths() (defined above) is
+# already that discovery: examples/good-ANALYSIS-SPEC.yaml,
+# examples/bad-ANALYSIS-SPEC.yaml, templates/ANALYSIS-SPEC.yaml, and every
+# *-ANALYSIS-SPEC.yaml under examples/known-bad/.
+
+# Measured 2026-08-12 against the fixtures as they stand after plan 07-06:
+# loaded each path in _all_fixture_paths() via dsx.loader.load(), ran
+# dsx.frame.val.check(spec), and recorded {f.code for f in report.findings}.
+# A constant that looks derived but was actually guessed is worse than no
+# constant — the same discipline tests/test_known_bad_corpus.py's own
+# measured allow-list documents.
+_EXPECTED_VAL_CODES: "dict[str, set[str]]" = {
+    "good-ANALYSIS-SPEC.yaml": set(),
+    "bad-ANALYSIS-SPEC.yaml": {"DSX-VAL-011"},
+    "ANALYSIS-SPEC.yaml": {"DSX-VAL-011"},
+    "bayesian-continuous-monitoring-ANALYSIS-SPEC.yaml": {"DSX-VAL-041"},
+    "frequentist-uncontrolled-continuous-ANALYSIS-SPEC.yaml": set(),
+    "interference-shared-budget-ANALYSIS-SPEC.yaml": set(),
+}
+
+
+class TestValFixtureMatrix(unittest.TestCase):
+    # Behaviour 1
+    def test_every_discovered_fixture_loads_and_checks_without_raising(self):
+        fixtures = _all_fixture_paths()
+        self.assertGreaterEqual(len(fixtures), 6)
+        for path in fixtures:
+            with self.subTest(fixture=path.name):
+                spec = load(str(path))
+                val.check(spec)  # must not raise
+
+    # Behaviour 3: the guard that makes this class worth having — a fixture
+    # discovered by glob with no expectation must fail loudly, not skip
+    # silently, so a fixture added later cannot slip through unexamined.
+    def test_discovered_fixture_set_equals_the_expected_dictionarys_key_set(self):
+        discovered = {path.name for path in _all_fixture_paths()}
+        expected = set(_EXPECTED_VAL_CODES)
+        missing = discovered - expected
+        self.assertEqual(
+            missing,
+            set(),
+            "Fixture(s) discovered by glob with no entry in _EXPECTED_VAL_CODES: "
+            f"{sorted(missing)}. Add an entry naming the DSX-VAL-* codes this fixture "
+            "is expected to produce (an empty set if none), measured by running "
+            "dsx.frame.val.check() against the loaded fixture — do not guess it.",
+        )
+        stale = expected - discovered
+        self.assertEqual(
+            stale,
+            set(),
+            f"_EXPECTED_VAL_CODES names file(s) no longer discovered by glob: "
+            f"{sorted(stale)}. Remove the stale entry.",
+        )
+
+    # Behaviour 2
+    def test_each_fixture_produces_exactly_its_expected_val_code_set(self):
+        for path in _all_fixture_paths():
+            with self.subTest(fixture=path.name):
+                expected = _EXPECTED_VAL_CODES.get(path.name)
+                if expected is None:
+                    continue  # the guard test above already fails this case loudly
+                spec = load(str(path))
+                report = val.check(spec)
+                self.assertEqual(codes(report), expected, path.name)
+
+    # Behaviour 4
+    def test_good_fixture_expected_val_code_set_is_empty(self):
+        self.assertEqual(_EXPECTED_VAL_CODES["good-ANALYSIS-SPEC.yaml"], set())
+
+    # Behaviour 5: closes the decision-trail obligation for the family as a
+    # whole in one place, rather than repeating a partial assertion in every
+    # per-code test.
+    def test_every_decision_record_the_family_produces_has_the_standard_shape(self):
+        saw_at_least_one_decision = False
+        for path in _all_fixture_paths():
+            with self.subTest(fixture=path.name):
+                spec = load(str(path))
+                report = val.check(spec)
+                decisions = report.context.get("decisions") or []
+                for decision in decisions:
+                    saw_at_least_one_decision = True
+                    self.assertEqual(decision["id"], "")
+                    self.assertEqual(decision["invocation_id"], "")
+                    self.assertEqual(decision["layer"], "deterministic")
+                    self.assertTrue(decision["counterfactual"].strip())
+        self.assertTrue(
+            saw_at_least_one_decision,
+            "no fixture in the repository reached any validity-frame judgment point",
+        )
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
