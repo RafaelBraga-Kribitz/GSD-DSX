@@ -126,6 +126,36 @@ _BOUND_CLAIM_DOCUMENTS = (
 )
 
 
+# Per-fixture expected-caught-defect map (D-03): keyed by fixture slug — the same
+# value _slugs() produces, the spec filename with -ANALYSIS-SPEC.yaml stripped —
+# mapping to the set of CRITICAL finding codes that fixture's own target check is
+# now expected to catch at dsx gate plan/execute.
+#
+# An empty set means the code this fixture exists to motivate has not shipped yet,
+# so the fixture must still clear both CRITICAL-threshold gate points exactly like
+# every other fixture (test_every_spec_passes_the_critical_threshold_gate_points'
+# ordinary exit-0 branch). An entry gains codes in the same commit that ships the
+# check catching that fixture — never before, and never silently left behind
+# afterwards: test_expected_caught_defects_keys_match_the_corpus_on_disk requires
+# every fixture on disk to have a key here, and
+# test_ship_gate_findings_are_all_documented_incidental_corpus_gaps requires a
+# fixture's own target-family code to be accounted for here rather than laundered
+# into _INCIDENTAL_GAP_CODES once it ships.
+#
+# Distinct from _EXPECTED_PLAN_BLOCKERS above: that dict is a narrower, single-code,
+# plan-only exception for a fixture whose target check already fires only at `plan`
+# (its check family is absent from the `execute` GATE_PROFILES entry). This dict is
+# the general per-fixture, both-critical-points form D-03 specifies, for target
+# checks — like Phase 9's DSX-PAR-010/DSX-PAR-011 pair — whose check family is
+# registered at every gate point and so is expected to catch at both.
+_EXPECTED_CAUGHT_DEFECTS: "dict[str, frozenset[str]]" = {
+    "bayesian-continuous-monitoring": frozenset(),
+    "frequentist-uncontrolled-continuous": frozenset(),
+    "interference-shared-budget": frozenset(),
+    "weak-identification-mmm": frozenset(),
+}
+
+
 def _slugs(pattern: str, suffix: str) -> set[str]:
     return {p.name[: -len(suffix)] for p in CORPUS_DIR.glob(pattern)}
 
@@ -217,18 +247,25 @@ class TestKnownBadCorpus(unittest.TestCase):
                 )
 
     def test_every_spec_passes_the_critical_threshold_gate_points(self):
-        """The corpus's positive gate guarantee, as it now stands: every fixture
-        NOT listed in `_EXPECTED_PLAN_BLOCKERS` clears both CRITICAL-threshold
-        gate points, `plan` and `execute`, today. A fixture listed in
-        `_EXPECTED_PLAN_BLOCKERS` is required to do the opposite at `plan` — it
-        MUST block, with its mapped code among the CRITICAL findings — because
-        its target code ships in the same milestone as the fixture; it is still
-        required to clear `execute`, so half of the original guarantee survives
-        intact for a listed fixture too (plan 07-07, D-15)."""
+        """The corpus's per-fixture contract, as it now stands, rather than a
+        blanket pass: a fixture with no expected catch (neither
+        `_EXPECTED_PLAN_BLOCKERS` nor a non-empty `_EXPECTED_CAUGHT_DEFECTS`
+        entry) clears both CRITICAL-threshold gate points, `plan` and
+        `execute`, today. A fixture listed in `_EXPECTED_PLAN_BLOCKERS` is
+        required to do the opposite at `plan` only — it MUST block, with its
+        mapped code among the CRITICAL findings — because its target code
+        ships in the same milestone as the fixture but its check family is
+        absent from the `execute` gate profile (plan 07-07, D-15). A fixture
+        with a non-empty `_EXPECTED_CAUGHT_DEFECTS` entry MUST block at every
+        CRITICAL-threshold point, with every expected code among the CRITICAL
+        findings, because its target check's family is registered at both
+        `plan` and `execute` (D-03)."""
         specs = self._spec_paths()
         self.assertTrue(specs, "no known-bad specs found to gate")
         for path in specs:
+            slug = path.name[: -len(SPEC_SUFFIX)]
             expected_blocker = _EXPECTED_PLAN_BLOCKERS.get(path.name)
+            expected_caught = _EXPECTED_CAUGHT_DEFECTS.get(slug, frozenset())
             for point in _CRITICAL_THRESHOLD_POINTS:
                 with self.subTest(spec=path.name, point=point):
                     code, findings = self._gate_findings(path, point)
@@ -243,6 +280,18 @@ class TestKnownBadCorpus(unittest.TestCase):
                             expected_blocker, critical,
                             f"{path.name} blocked dsx gate plan, but its expected code "
                             f"{expected_blocker!r} is not among the CRITICAL findings: {critical}",
+                        )
+                    elif expected_caught:
+                        self.assertEqual(
+                            code, 1,
+                            f"{path.name} was expected to block dsx gate {point} on "
+                            f"{sorted(expected_caught)} but exited {code}: {critical}",
+                        )
+                        missing = expected_caught - set(critical)
+                        self.assertFalse(
+                            missing,
+                            f"{path.name} blocked dsx gate {point}, but expected codes "
+                            f"{sorted(missing)} are not among the CRITICAL findings: {critical}",
                         )
                     else:
                         self.assertEqual(
@@ -274,11 +323,14 @@ class TestKnownBadCorpus(unittest.TestCase):
         self.assertTrue(specs, "no known-bad specs found to gate")
         for path in specs:
             with self.subTest(spec=path.name):
+                slug = path.name[: -len(SPEC_SUFFIX)]
                 _code, findings = self._gate_findings(path, "ship")
                 blocking = {
                     f["code"] for f in findings if f["severity"] in ("CRITICAL", "HIGH")
                 }
-                allowed = set(_INCIDENTAL_GAP_CODES)
+                allowed = set(_INCIDENTAL_GAP_CODES) | _EXPECTED_CAUGHT_DEFECTS.get(
+                    slug, frozenset()
+                )
                 expected_blocker = _EXPECTED_PLAN_BLOCKERS.get(path.name)
                 if expected_blocker is not None:
                     allowed = allowed | {expected_blocker}
@@ -306,6 +358,20 @@ class TestKnownBadCorpus(unittest.TestCase):
                         f"family {family!r} — a fixture would then never block on the "
                         "defect it exists to encode even after that code ships",
                     )
+
+    def test_expected_caught_defects_keys_match_the_corpus_on_disk(self):
+        """A fixture added later without an `_EXPECTED_CAUGHT_DEFECTS` entry must
+        fail loudly here rather than silently falling through
+        `test_every_spec_passes_the_critical_threshold_gate_points`'s exit-0
+        branch as if its target check would never be expected to catch it."""
+        disk_slugs = _slugs(f"*{SPEC_SUFFIX}", SPEC_SUFFIX)
+        map_slugs = set(_EXPECTED_CAUGHT_DEFECTS)
+        self.assertEqual(
+            map_slugs, disk_slugs,
+            f"_EXPECTED_CAUGHT_DEFECTS keys and the corpus on disk disagree: "
+            f"{sorted(map_slugs ^ disk_slugs)} — every fixture must have an entry "
+            "(even an empty frozenset()) and every key must name a real fixture",
+        )
 
     def test_no_corpus_file_repeats_a_retired_gate_overclaim(self):
         """Neither retired over-claim — the header clause asserting today's gate

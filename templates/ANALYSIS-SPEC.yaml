@@ -356,6 +356,12 @@ inference:
   primary_procedure: "<the test or model that will be run, e.g. two_proportion_z>"
   alpha_spending: null
   fallback_rule: "<what happens if an assumption fails, e.g. switch to a bootstrap>"
+  # The next three fields clear DSX-PAR-010 (frequentist) / DSX-PAR-011 (bayesian)
+  # monitoring discipline when design.peeking_policy is uncontrolled_continuous —
+  # see references/paradigm-symmetry.md for the full clearing-condition table.
+  threshold_calibration: null       # DSX-PAR-010 / DSX-PAR-011: non-blank clears either
+  prior_justification: null         # DSX-PAR-011: non-blank clears the Bayesian check
+  decision_threshold: "<the posterior-probability decision rule, e.g. P(B>A) > 0.95 — recorded, never parsed>"
 
 # ── Suppressions (optional) ──────────────────────────────────────────────────
 # ADR/SPEC-backed waivers for known HIGH/CRITICAL findings. Each row removes

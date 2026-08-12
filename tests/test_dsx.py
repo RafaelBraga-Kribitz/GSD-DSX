@@ -350,6 +350,7 @@ class TestSpecStructure(unittest.TestCase):
             {
                 "paradigm", "paradigm_justification", "declared_at",
                 "primary_procedure", "alpha_spending", "fallback_rule",
+                "threshold_calibration", "prior_justification", "decision_threshold",
             },
         )
 
@@ -522,12 +523,40 @@ class TestSpecStructure(unittest.TestCase):
         self.assertFalse([f for f in report.findings if f.code in ("DSX-SPEC-085", "DSX-SPEC-086")])
 
     def test_inference_fields_constant_matches_req_p6_04(self):
+        # D-05: DSX-PAR-010, DSX-PAR-011
         from dsx.spec import _INFERENCE_FIELDS
 
         self.assertEqual(
             _INFERENCE_FIELDS,
             ("paradigm", "paradigm_justification", "declared_at",
-             "primary_procedure", "alpha_spending", "fallback_rule"),
+             "primary_procedure", "alpha_spending", "fallback_rule",
+             "threshold_calibration", "prior_justification", "decision_threshold"),
+        )
+
+    def test_describe_vocabulary_inference_fields_matches_the_constant(self):
+        # D-05: DSX-PAR-010, DSX-PAR-011
+        from dsx.spec import _INFERENCE_FIELDS
+
+        out = describe_vocabulary()
+        self.assertIn("inference_fields", out)
+        self.assertEqual(out["inference_fields"], sorted(_INFERENCE_FIELDS))
+        for name in ("threshold_calibration", "prior_justification", "decision_threshold"):
+            self.assertIn(name, out["inference_fields"])
+
+    def test_new_inference_fields_produce_no_shape_findings(self):
+        # D-05: DSX-PAR-010, DSX-PAR-011
+        base = {
+            "spec_version": 1, "title": "t", "question_type": "descriptive", "decision": {"owner": "x"},
+        }
+        spec = dict(base, inference={
+            "paradigm": "bayesian",
+            "threshold_calibration": "simulated via 10k-trial FPR sweep at K=19",
+            "prior_justification": "prior_information_available",
+            "decision_threshold": "P(B>A) > 0.95",
+        })
+        report = validate_structure(spec)
+        self.assertFalse(
+            [f for f in report.findings if f.code in ("DSX-SPEC-085", "DSX-SPEC-086")]
         )
 
     def test_inference_vocabulary_violations_report_three_high_findings(self):
