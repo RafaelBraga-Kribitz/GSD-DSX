@@ -8,15 +8,21 @@ from __future__ import annotations
 
 import copy
 import hashlib
+import io
+import json
 import sys
+import tempfile
 import unittest
+from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from dsx import cli  # noqa: E402
 from dsx.checks import design  # noqa: E402
 from dsx.findings import Report, Severity  # noqa: E402
 from dsx.frame import val  # noqa: E402
+from dsx.loader import load  # noqa: E402
 
 
 def codes(report: Report) -> set[str]:
@@ -707,6 +713,145 @@ class TestValExpUnitsDisjointness(unittest.TestCase):
             "dsx/checks/design.py was edited during Phase 7 — REQ-P7-03 requires it "
             "unmodified; if this is a deliberate change, update _DESIGN_PY_SHA256 in "
             "this test and say why in the commit message",
+        )
+
+
+# ── gate-level severity split (REQ-P7-05, ROADMAP success criterion 1) ─────
+#
+# Proves the roadmap's severity wording at the gate, not just at the unit
+# level: DSX-VAL-040 (CRITICAL) blocks from plan onward; DSX-VAL-041 (HIGH)
+# prints at plan without blocking, and blocks at verify and ship; neither
+# code runs at execute, because "val" is not in that gate profile.
+
+
+class TestValGateSeverity(unittest.TestCase):
+    ROOT = Path(__file__).resolve().parent.parent
+
+    def _run(self, argv: "list[str]") -> "tuple[int, str, str]":
+        out, err = io.StringIO(), io.StringIO()
+        with redirect_stdout(out), redirect_stderr(err):
+            code = cli.main(argv)
+        return code, out.getvalue(), err.getvalue()
+
+    def _write_identification_variant(self, tmp: str, identification: dict) -> str:
+        """Clone the good fixture into ``tmp``, replacing only its
+        validity_frame.identification block, so the spec is otherwise
+        complete and no unrelated defect blocks the gate and masks the
+        result under test. Written as JSON regardless of the .yaml suffix —
+        ``dsx.loader.loads()`` tries a JSON parse before YAML/the bundled
+        parser whenever the stripped text starts with '{' — matching the
+        precedent at ``tests/test_dsx.py``'s
+        ``_bayesian_variant_spec_path``.
+        """
+        spec = load(str(self.ROOT / "examples" / "good-ANALYSIS-SPEC.yaml"))
+        spec["validity_frame"]["identification"] = identification
+        path = Path(tmp) / "ANALYSIS-SPEC.yaml"
+        path.write_text(json.dumps(spec), encoding="utf-8")
+        return str(path)
+
+    def test_weak_no_constraint_spec_blocks_gate_plan_naming_val_040(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self._write_identification_variant(
+                tmp,
+                {
+                    "strength": "weak",
+                    "evidence": "covariate adjustment only, no design-based support",
+                    "constraint_source": "none",
+                    "constraint_justification": "",
+                },
+            )
+            code, _, err = self._run(["gate", "plan", "--spec", path])
+            self.assertEqual(code, 1)
+            self.assertIn("DSX-VAL-040", err)
+
+    def test_strong_informative_priors_spec_passes_gate_plan_but_still_prints_val_041(self):
+        """The behaviour most likely to be gotten wrong: a HIGH-severity
+        finding at the plan gate must be visible in the output and must not
+        flip the exit code. Asserting only the exit code would pass even if
+        the finding were silently dropped — assert both halves."""
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self._write_identification_variant(
+                tmp,
+                {
+                    "strength": "strong",
+                    "evidence": "Assignment is randomized per user at first pageview.",
+                    "constraint_source": "informative_priors",
+                    "constraint_justification": "A weakly informative prior on the effect size.",
+                },
+            )
+            code, out, err = self._run(["gate", "plan", "--spec", path])
+            self.assertEqual(code, 0, err)
+            # Passing output goes to stdout (dsx/findings.py::emit) — blocking
+            # output would go to stderr, but this gate does not block.
+            self.assertIn("DSX-VAL-041", out)
+
+    def test_strong_informative_priors_spec_blocks_gate_verify_and_gate_ship_naming_val_041(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self._write_identification_variant(
+                tmp,
+                {
+                    "strength": "strong",
+                    "evidence": "Assignment is randomized per user at first pageview.",
+                    "constraint_source": "informative_priors",
+                    "constraint_justification": "A weakly informative prior on the effect size.",
+                },
+            )
+            for point in ("verify", "ship"):
+                with self.subTest(point=point):
+                    code, _, err = self._run(["gate", point, "--spec", path])
+                    self.assertEqual(code, 1)
+                    self.assertIn("DSX-VAL-041", err)
+
+    def test_neither_identification_spec_produces_a_validity_frame_finding_at_gate_execute(self):
+        variants = (
+            {
+                "strength": "weak",
+                "evidence": "covariate adjustment only, no design-based support",
+                "constraint_source": "none",
+                "constraint_justification": "",
+            },
+            {
+                "strength": "strong",
+                "evidence": "Assignment is randomized per user at first pageview.",
+                "constraint_source": "informative_priors",
+                "constraint_justification": "A weakly informative prior on the effect size.",
+            },
+        )
+        for identification in variants:
+            with self.subTest(strength=identification["strength"]):
+                with tempfile.TemporaryDirectory() as tmp:
+                    path = self._write_identification_variant(tmp, identification)
+                    _, out, err = self._run(["gate", "execute", "--spec", path])
+                    combined = out + err
+                    self.assertNotIn("DSX-VAL-040", combined)
+                    self.assertNotIn("DSX-VAL-041", combined)
+
+    def test_val_check_is_reachable_from_at_least_one_gate_profile(self):
+        """The standing per-phase deliverable (STATE.md): every validity
+        frame code shipped so far is reachable from at least one gate
+        profile. Every DSX-VAL-* code fires through the single "val" check
+        dispatcher (dsx/frame/val.py::check), so proving "val" is a
+        registered check reachable from at least one gate profile proves
+        every code this module ships is reachable from that profile —
+        derived by intersecting the registered checks with the profile
+        tuples, not from a hand-written list of codes that would silently
+        stop holding once plan 07-06 adds three more.
+        """
+        from dsx.cli import CHECKS, GATE_PROFILES
+
+        self.assertIn("val", CHECKS)
+        self.assertIs(CHECKS["val"], val.check)
+
+        registered_checks = set(CHECKS)
+        reachable_profiles = [
+            point
+            for point, checks in GATE_PROFILES.items()
+            if "val" in (set(checks) & registered_checks)
+        ]
+        self.assertTrue(
+            reachable_profiles,
+            "val is registered in CHECKS but reachable from no gate profile — every "
+            "DSX-VAL-* code would then be unreachable from any gate",
         )
 
 
