@@ -233,7 +233,7 @@ assignments within `DSX-VAL-*` beyond those the brief fixes (D-06 makes numberin
   5. A test asserts that no `dsx/frame/val.py` code path reads `inference.paradigm` (D-11),
      failing the suite if one is introduced.
 
-**Plans:** 3/7 plans executed
+**Plans:** 4/7 plans executed
 
 Plans:
 **Wave 1**
@@ -247,7 +247,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 07-04-PLAN.md — unit triad and unit drift, with the template and interference fixture repaired in the same commits (wave 3)
+- [x] 07-04-PLAN.md — unit triad and unit drift, with the template and interference fixture repaired in the same commits (wave 3)
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
@@ -361,6 +361,7 @@ depend on it.
 **Plans**: 5 plans
 
 Plans:
+
 - [ ] 09-01-PLAN.md — Symmetry audit written first, plus the three new `inference:` fields the pair reads (wave 1)
 - [ ] 09-02-PLAN.md — `inflation_from_peeking()` citation upgrade and the seeded, off-gate-path simulation (wave 1)
 - [ ] 09-03-PLAN.md — The atomic pair `DSX-PAR-010` and `DSX-PAR-011`, both halves in one commit at CRITICAL (wave 2)
@@ -508,7 +509,7 @@ cases where absence permitted a false pass" is a debate, not a count.
 | 4. Analytical logic depth + stats extensions | — | Complete | v1.4.0 |
 | 5. Chart review + suppressions | — | Complete | v1.5.0 |
 | 6. Contract extension, decision record, paradigm manifest | 13/13 | Complete | 2026-08-10 |
-| 7. Validity frame checks (`DSX-VAL-*`) | 3/7 | In Progress|  |
+| 7. Validity frame checks (`DSX-VAL-*`) | 4/7 | In Progress|  |
 | 8. Interference, triggering, stability (`DSX-INT-*`) | 0/TBD | Not started | - |
 | 9. Monitoring discipline, symmetric (`DSX-PAR-*`) | 0/TBD | Not started | - |
 | 10. Pre-registered inference plan (`DSX-PRE-*`) | 0/TBD | Not started | - |
