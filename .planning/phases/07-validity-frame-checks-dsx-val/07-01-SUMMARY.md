@@ -142,3 +142,14 @@ None - no external service configuration required. D-01 holds: only the Python 3
 ---
 *Phase: 07-validity-frame-checks-dsx-val*
 *Completed: 2026-08-12*
+
+## Self-Check: PASSED
+
+- FOUND: dsx/spec.py
+- FOUND: dsx/mathx.py
+- FOUND: tests/test_dsx.py
+- FOUND: .planning/phases/07-validity-frame-checks-dsx-val/07-01-SUMMARY.md
+- FOUND commit 7a25b5f (Task 1)
+- FOUND commit 5b2169c (Task 2)
+- FOUND commit bc42bfe (Task 3)
+- FOUND commit 910b89b (this SUMMARY.md)
