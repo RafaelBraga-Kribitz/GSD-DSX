@@ -387,13 +387,13 @@ depend on it.
      route is no weaker than the sequential-method requirement (D-12); the `DSX-PAR-011`
      simulation lives under `tests/`, seeded and reproducible, and never on the gate path (D-02).
 
-**Plans**: 5 plans
+**Plans**: 2/5 plans executed
 
 Plans:
 **Wave 1**
 
-- [ ] 09-01-PLAN.md — Symmetry audit written first, plus the three new `inference:` fields the pair reads (wave 1)
-- [ ] 09-02-PLAN.md — `inflation_from_peeking()` citation upgrade and the seeded, off-gate-path simulation (wave 1)
+- [x] 09-01-PLAN.md — Symmetry audit written first, plus the three new `inference:` fields the pair reads (wave 1)
+- [x] 09-02-PLAN.md — `inflation_from_peeking()` citation upgrade and the seeded, off-gate-path simulation (wave 1)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -547,7 +547,7 @@ cases where absence permitted a false pass" is a debate, not a count.
 | 6. Contract extension, decision record, paradigm manifest | 13/13 | Complete | 2026-08-10 |
 | 7. Validity frame checks (`DSX-VAL-*`) | 7/7 | In Progress|  |
 | 8. Interference, triggering, stability (`DSX-INT-*`) | 0/TBD | Not started | - |
-| 9. Monitoring discipline, symmetric (`DSX-PAR-*`) | 0/TBD | Not started | - |
+| 9. Monitoring discipline, symmetric (`DSX-PAR-*`) | 2/5 | In Progress|  |
 | 10. Pre-registered inference plan (`DSX-PRE-*`) | 0/TBD | Not started | - |
 | 11. Frequentist admissibility adjudicator (`DSX-ADM-*`) | 0/TBD | Not started | - |
 | 12. Calibration | 0/TBD | Not started | - |

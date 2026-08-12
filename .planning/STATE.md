@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v2.0.0
 milestone_name: DSX Validity Frame
-current_phase: 07
-current_phase_name: validity-frame-checks-dsx-val
+current_phase: 09
+current_phase_name: monitoring-discipline-symmetric-dsx-par
 status: executing
 stopped_at: Phase 9 context gathered (assumptions mode)
-last_updated: "2026-08-12T17:47:34.429Z"
+last_updated: "2026-08-12T21:08:31.316Z"
 last_activity: 2026-08-12
-last_activity_desc: Phase 07 execution started
+last_activity_desc: Phase 09 execution started
 progress:
   total_phases: 4
   completed_phases: 2
@@ -19,7 +19,7 @@ progress:
 
 # Project state
 
-**Status:** Ready to execute
+**Status:** Executing Phase 09
 **Progress:** [███████░░░] 65% (1/7 phases — Phase 6 complete, 13/13 plans)  
 **Locked decisions:** DQ = profile runner + hermetic gates; Glyph = hermetic svg_sha256 only (no MCP dep); forbidden claims = universal pack + optional phase YAML; repro_lock = ARS-style honest-null (not byte-replay); decision replay = structured thresholds only; suppressions = ADR/SPEC authority required (unknown codes → exit 2)  
 **v2.0.0 locked decisions:** DSX-PAR-010 is a distinct code, DSX-EXP-060 untouched (M-01); no `inference.stopping_rule` — PAR-010/011 read the existing `design.peeking_policy` (M-02); PEEKING_POLICIES gains an uncontrolled-continuous-monitoring value (M-03); automated import test enforces the D-03a boundary from M1 (M-04); SELF-001 stays a convention, REVERSALS.md template seeded in M1 (M-05); `validity_frame` sub-block requiredness gated by `question_type` (M-06); existing `suppressions[]` is the pre-v2.0.0 grandfather path (M-07); D-05 citation enforcement automated via `gen-finding-catalogue.py` (M-08); `dependence.method_family_required` reuses `VARIANCE_ADJUSTMENTS` (M-09)
@@ -68,17 +68,17 @@ progress:
 
 ## Current Position
 
-Phase: 07 (validity-frame-checks-dsx-val) — EXECUTING
-Plan: 1 of 7
-Status: Ready to execute
-Last activity: 2026-08-12 — Phase 07 execution started
+Phase: 09 (monitoring-discipline-symmetric-dsx-par) — EXECUTING
+Plan: 1 of 5
+Status: Executing Phase 09
+Last activity: 2026-08-12 — Phase 09 execution started
 
 ## Project Reference
 
 See: .planning/PROJECT.md (updated 2026-08-10)
 
 **Core value:** Gate analytical work on validity before the data is touched.
-**Current focus:** Phase 07 — validity-frame-checks-dsx-val
+**Current focus:** Phase 09 — monitoring-discipline-symmetric-dsx-par
 
 ## Session
 
