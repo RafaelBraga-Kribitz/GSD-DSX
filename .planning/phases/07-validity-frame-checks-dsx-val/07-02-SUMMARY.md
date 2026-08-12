@@ -144,6 +144,16 @@ None - no external service configuration required.
 - `dsx/mathx.py::design_effect()` (owned by plan 07-01, run in parallel) should assert `design_effect(29.8, 0.02) == 1.576` to match the value now anchored in both `brief.md` and `.planning/research/FEATURES.md` — this plan did not verify that function directly because plan 07-01 executes in a separate worktree and the function did not yet exist in this worktree at execution time; the value itself was taken from the plan's own specification, which both plans share.
 - Full suite green: `python3 -m unittest discover -s tests` -> 306 tests OK; `python3 scripts/gen-finding-catalogue.py --check` -> exit 0.
 
+## Self-Check: PASSED
+
+- `brief.md` — FOUND
+- `.planning/research/FEATURES.md` — FOUND
+- `scripts/check_brief_refs.py` — FOUND
+- `.planning/phases/07-validity-frame-checks-dsx-val/07-02-SUMMARY.md` — FOUND
+- Commit `2b12c80` (Task 1) — FOUND in `git log --oneline --all`
+- Commit `1a0b16c` (Task 2) — FOUND in `git log --oneline --all`
+- Commit `39dfd28` (this SUMMARY) — FOUND in `git log --oneline --all`
+
 ---
 *Phase: 07-validity-frame-checks-dsx-val*
 *Completed: 2026-08-12*
