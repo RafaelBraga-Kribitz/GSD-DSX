@@ -1197,6 +1197,12 @@ _EXPECTED_VAL_CODES: "dict[str, set[str]]" = {
     "bayesian-continuous-monitoring-ANALYSIS-SPEC.yaml": {"DSX-VAL-041"},
     "frequentist-uncontrolled-continuous-ANALYSIS-SPEC.yaml": set(),
     "interference-shared-budget-ANALYSIS-SPEC.yaml": set(),
+    # Measured 2026-08-12 (plan 07-07) against the fixture as committed in this
+    # plan: loaded via dsx.loader.load(), ran dsx.frame.val.check(spec), recorded
+    # {f.code for f in report.findings}. identification.strength: weak paired with
+    # constraint_source: none is the fixture's sole encoded defect (DSX-VAL-040);
+    # every other validity_frame sub-block is clean.
+    "weak-identification-mmm-ANALYSIS-SPEC.yaml": {"DSX-VAL-040"},
 }
 
 
@@ -1268,6 +1274,44 @@ class TestValFixtureMatrix(unittest.TestCase):
             saw_at_least_one_decision,
             "no fixture in the repository reached any validity-frame judgment point",
         )
+
+
+# ── gate integration for the weak-identification-mmm fixture (REQ-P7-05, ────
+# ROADMAP Success Criterion 1, plan 07-07) ──────────────────────────────────
+#
+# The other TestValGateSeverity tests above prove the plan/verify/ship/execute
+# split against synthetic identification-block variants cloned from the good
+# fixture. This class proves the roadmap's own success criterion directly,
+# against the real committed corpus fixture the roadmap names by filename —
+# the end-to-end edge plan 07-07's threat model calls out: the fixture must
+# block at one gate point and clear another, in the same repository,
+# discovered by the same glob tests/test_known_bad_corpus.py uses.
+
+
+class TestValGateIntegration(unittest.TestCase):
+    ROOT = Path(__file__).resolve().parent.parent
+    FIXTURE = ROOT / "examples" / "known-bad" / "weak-identification-mmm-ANALYSIS-SPEC.yaml"
+
+    def _run(self, argv: "list[str]") -> "tuple[int, str, str]":
+        out, err = io.StringIO(), io.StringIO()
+        with redirect_stdout(out), redirect_stderr(err):
+            code = cli.main(argv)
+        return code, out.getvalue(), err.getvalue()
+
+    def test_weak_identification_mmm_fixture_exists(self):
+        self.assertTrue(
+            self.FIXTURE.is_file(),
+            f"{self.FIXTURE} does not exist — ROADMAP Success Criterion 1 names this exact path",
+        )
+
+    def test_weak_identification_mmm_fixture_blocks_gate_plan_naming_val_040(self):
+        code, _out, err = self._run(["gate", "plan", "--spec", str(self.FIXTURE)])
+        self.assertEqual(code, 1, f"expected dsx gate plan to block; stderr: {err}")
+        self.assertIn("DSX-VAL-040", err)
+
+    def test_weak_identification_mmm_fixture_clears_gate_execute(self):
+        code, _out, err = self._run(["gate", "execute", "--spec", str(self.FIXTURE)])
+        self.assertEqual(code, 0, f"expected dsx gate execute to pass; stderr: {err}")
 
 
 if __name__ == "__main__":

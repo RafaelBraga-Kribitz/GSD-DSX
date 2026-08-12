@@ -69,7 +69,33 @@ _INCIDENTAL_GAP_CODES = {
 # for the interference fixture, DSX-PAR-010/DSX-PAR-011 for the atomic monitoring
 # pair, D-06). "DSX-PAR-01" deliberately excludes DSX-PAR-001 (the unrelated,
 # already-shipped INFO-severity paradigm-manifest finding, REQ-P6-09).
-_TARGET_CODE_FAMILIES = ("DSX-INT-", "DSX-PAR-01")
+#
+# "DSX-VAL-040" (plan 07-07) is listed as the exact code, not the family prefix
+# "DSX-VAL-". The weak-identification-mmm fixture is the first fixture in this
+# corpus whose target code ships in the same phase as the fixture, so its target
+# code lives here (never in _INCIDENTAL_GAP_CODES — see
+# test_ship_gate_findings_are_all_documented_incidental_corpus_gaps's amended
+# docstring) and is also the sole entry in _EXPECTED_PLAN_BLOCKERS below. A family
+# prefix here would also make illegal the DSX-VAL-041 entry plan 07-05 already
+# added to _INCIDENTAL_GAP_CODES, under
+# test_incidental_allowlist_names_no_target_family_code, which asserts that no
+# allow-listed code starts with any entry in this tuple.
+_TARGET_CODE_FAMILIES = ("DSX-INT-", "DSX-PAR-01", "DSX-VAL-040")
+
+# Named-exception set for fixtures whose target code has already shipped in the
+# same milestone as the fixture (plan 07-07, D-15, Option A of that plan's
+# recorded decision). A fixture listed here cannot honestly claim to clear the
+# plan gate that its own target code blocks — so rather than weakening or
+# deleting the corpus's blanket "every fixture clears plan and execute" guarantee
+# (test_every_spec_passes_the_critical_threshold_gate_points), this dictionary
+# converts the lost assertion into a stronger one: a listed fixture MUST block
+# `dsx gate plan` with its mapped code among the CRITICAL findings, and MUST still
+# clear `dsx gate execute` (the "val" check that emits every DSX-VAL-* code is not
+# in the execute gate profile — dsx/cli.py's GATE_PROFILES — so half of the usual
+# guarantee survives untouched even for a listed fixture).
+_EXPECTED_PLAN_BLOCKERS = {
+    "weak-identification-mmm-ANALYSIS-SPEC.yaml": "DSX-VAL-040",
+}
 
 # The two retired, false gate-behaviour claims this plan (06-12) removed from
 # every committed file under examples/known-bad/ — named identically to the two
@@ -191,23 +217,44 @@ class TestKnownBadCorpus(unittest.TestCase):
                 )
 
     def test_every_spec_passes_the_critical_threshold_gate_points(self):
-        """The corpus's positive gate guarantee: every fixture clears both
-        CRITICAL-threshold gate points, `plan` and `execute`, today."""
+        """The corpus's positive gate guarantee, as it now stands: every fixture
+        NOT listed in `_EXPECTED_PLAN_BLOCKERS` clears both CRITICAL-threshold
+        gate points, `plan` and `execute`, today. A fixture listed in
+        `_EXPECTED_PLAN_BLOCKERS` is required to do the opposite at `plan` — it
+        MUST block, with its mapped code among the CRITICAL findings — because
+        its target code ships in the same milestone as the fixture; it is still
+        required to clear `execute`, so half of the original guarantee survives
+        intact for a listed fixture too (plan 07-07, D-15)."""
         specs = self._spec_paths()
         self.assertTrue(specs, "no known-bad specs found to gate")
         for path in specs:
+            expected_blocker = _EXPECTED_PLAN_BLOCKERS.get(path.name)
             for point in _CRITICAL_THRESHOLD_POINTS:
                 with self.subTest(spec=path.name, point=point):
                     code, findings = self._gate_findings(path, point)
                     critical = [f["code"] for f in findings if f["severity"] == "CRITICAL"]
-                    self.assertEqual(
-                        code, 0,
-                        f"{path.name} failed dsx gate {point} (CRITICAL threshold): {critical}",
-                    )
+                    if expected_blocker is not None and point == "plan":
+                        self.assertEqual(
+                            code, 1,
+                            f"{path.name} was expected to block dsx gate plan on "
+                            f"{expected_blocker!r} but exited {code}: {critical}",
+                        )
+                        self.assertIn(
+                            expected_blocker, critical,
+                            f"{path.name} blocked dsx gate plan, but its expected code "
+                            f"{expected_blocker!r} is not among the CRITICAL findings: {critical}",
+                        )
+                    else:
+                        self.assertEqual(
+                            code, 0,
+                            f"{path.name} failed dsx gate {point} (CRITICAL threshold): {critical}",
+                        )
 
     def test_ship_gate_findings_are_all_documented_incidental_corpus_gaps(self):
         """Every CRITICAL/HIGH finding `dsx gate ship` produces against a fixture
-        is a member of the documented `_INCIDENTAL_GAP_CODES` allow-list.
+        is either a member of the documented `_INCIDENTAL_GAP_CODES` allow-list,
+        or — for a fixture listed in `_EXPECTED_PLAN_BLOCKERS` — is that
+        fixture's own mapped target code (plan 07-07, D-15).
 
         This test failing after a later phase ships a new check is the intended
         signal, not a defect: when the code a fixture was built to motivate (e.g.
@@ -216,6 +263,12 @@ class TestKnownBadCorpus(unittest.TestCase):
         corpus documentation (this module's constants, the fixture headers, the
         post-mortems) must move that code from incidental-gap to caught-defect.
         This assertion is what forces that edit instead of letting it rot.
+
+        A fixture's mapped target code is excluded from the undocumented set
+        here, rather than added to `_INCIDENTAL_GAP_CODES`, because it is that
+        fixture's encoded defect, not a corpus-completeness gap — putting it in
+        the incidental allow-list would be exactly the misuse
+        `test_incidental_allowlist_names_no_target_family_code` exists to forbid.
         """
         specs = self._spec_paths()
         self.assertTrue(specs, "no known-bad specs found to gate")
@@ -225,7 +278,11 @@ class TestKnownBadCorpus(unittest.TestCase):
                 blocking = {
                     f["code"] for f in findings if f["severity"] in ("CRITICAL", "HIGH")
                 }
-                undocumented = blocking - _INCIDENTAL_GAP_CODES
+                allowed = set(_INCIDENTAL_GAP_CODES)
+                expected_blocker = _EXPECTED_PLAN_BLOCKERS.get(path.name)
+                if expected_blocker is not None:
+                    allowed = allowed | {expected_blocker}
+                undocumented = blocking - allowed
                 self.assertEqual(
                     undocumented, set(),
                     f"{path.name} blocks dsx gate ship on undocumented codes: "
