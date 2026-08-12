@@ -128,6 +128,26 @@ class TestMath(unittest.TestCase):
         with self.assertRaises(ValueError):
             mathx.chi2_sf(1.0, 0)
 
+    # D-05: DSX-VAL-020
+    def test_design_effect_matches_cochrane_worked_example(self):
+        self.assertAlmostEqual(mathx.design_effect(29.8, 0.02), 1.576, places=3)
+
+    def test_design_effect_cluster_of_one_inflates_nothing(self):
+        self.assertEqual(mathx.design_effect(1, 0.5), 1.0)
+
+    def test_design_effect_zero_icc_inflates_nothing(self):
+        self.assertEqual(mathx.design_effect(50, 0.0), 1.0)
+
+    def test_design_effect_cluster_size_below_one_raises(self):
+        with self.assertRaises(ValueError):
+            mathx.design_effect(0.5, 0.1)
+
+    def test_design_effect_icc_out_of_range_raises(self):
+        with self.assertRaises(ValueError):
+            mathx.design_effect(30, -0.1)
+        with self.assertRaises(ValueError):
+            mathx.design_effect(30, 1.1)
+
 
 # ── loader ───────────────────────────────────────────────────────────────────
 

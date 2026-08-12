@@ -432,6 +432,27 @@ def inflation_from_peeking(total_looks: int, alpha: float = 0.05) -> float:
     return min(1.0, value * alpha / 0.05)
 
 
+def design_effect(m: float, icc: float) -> float:
+    """The factor by which the variance of an estimate is inflated when observations
+    inside a cluster are correlated and the analysis is run at a level finer than the
+    true dependence unit.
+
+    Citation: Kish, L. (1965), Survey Sampling, page 258 (design-effect definition)
+    and pages 161-162 (intraclass correlation); Higgins, J.P.T., Eldridge, S. and Li,
+    T. (2024), Cochrane Handbook for Systematic Reviews of Interventions version 6.5,
+    sections 23.1.4 and 23.1.4.1.
+    The section number inside Kish for the formula itself is UNVERIFIED — the page
+    numbers above were confirmed, the section number was not. Do not invent one.
+    Reference value: an intraclass correlation of 0.02 and an average cluster size of
+    29.8 yield 1.576 — the Cochrane Handbook's own published worked example.
+    """
+    if m < 1:
+        raise ValueError(f"m (average cluster size) must be >= 1, got {m!r}")
+    if not 0.0 <= icc <= 1.0:
+        raise ValueError(f"icc (intraclass correlation) must be in [0, 1], got {icc!r}")
+    return 1.0 + (m - 1.0) * icc
+
+
 # ── Sample ratio mismatch ────────────────────────────────────────────────────
 
 
