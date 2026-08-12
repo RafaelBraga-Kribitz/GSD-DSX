@@ -101,6 +101,13 @@ limitations:
 # declared as shared_budget with mitigation: none and an empty residual_note —
 # a declared, unaddressed interference risk. DSX-INT-010 (Phase 8) is the code
 # that will block this once it ships.
+#
+# units.observation (impression) is finer than units.assignment (user), which
+# is a real, honestly-declared clustered dependence — impressions nest inside
+# users — so dependence.structure is clustered, cluster_var is user, and
+# method_family_required is cluster_robust (Phase 7 D-14). That combination
+# is exactly DSX-VAL-020's non-firing case: this fixture blocks on its own
+# encoded interference defect, not on pseudo-replication.
 validity_frame:
   estimand:
     quantity: "difference in 24-hour signup rate among ad-exposed users"
@@ -121,9 +128,9 @@ validity_frame:
     constraint_justification: ""
 
   dependence:
-    structure: none                # none | clustered | repeated_measures | temporal | spatial | hierarchical
-    cluster_var: ""
-    method_family_required: ""
+    structure: clustered           # none | clustered | repeated_measures | temporal | spatial | hierarchical
+    cluster_var: user
+    method_family_required: cluster_robust
 
   interference:
     risk: shared_budget            # none | shared_budget | marketplace | geo_spillover | social_graph | shared_inventory

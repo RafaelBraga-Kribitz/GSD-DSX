@@ -287,10 +287,14 @@ validity_frame:
     time_window: "<the window over which the effect is measured>"
     falsifier: "<the observation that would prove this wrong>"
 
+  # The values below are an example to replace, not a default to keep: all
+  # three must name the same unit — the finest-grained row in the source
+  # data, the unit treatment/exposure is assigned at, and the unit the
+  # analysis is run at, all sitting at the same grain (e.g. "user_id").
   units:
-    observation: "<the finest-grained row in the source data>"
-    assignment: "<the unit treatment/exposure is assigned at>"
-    analysis: "<the unit the analysis is run at>"
+    observation: "<user_id>"
+    assignment: "<user_id>"
+    analysis: "<user_id>"
 
   identification:
     strength: weak                 # strong | moderate | weak

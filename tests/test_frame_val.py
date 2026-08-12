@@ -126,5 +126,101 @@ class TestValEstimand(unittest.TestCase):
         self.assertTrue(decisions[0]["counterfactual"].strip())
 
 
+# ── units (DSX-VAL-020, DSX-VAL-021) ────────────────────────────────────────
+
+
+def _units_spec(
+    observation: object = "session",
+    assignment: object = "user",
+    method_family_required: object = "cluster_robust",
+    design: "dict | None" = None,
+) -> dict:
+    """A minimal spec carrying only a units/dependence pair, isolating the
+    unit-triad judgment from the estimand judgment (no `estimand` key at all,
+    so the estimand decision record does not also append)."""
+    spec: dict = {
+        "validity_frame": {
+            "units": {"observation": observation, "assignment": assignment},
+            "dependence": {"method_family_required": method_family_required},
+        }
+    }
+    if design is not None:
+        spec["design"] = design
+    return spec
+
+
+class TestValUnits(unittest.TestCase):
+    # D-05: DSX-VAL-020
+    def test_finer_observation_with_no_method_family_fires_critical_units_020(self):
+        report = val.check(
+            _units_spec(observation="impression", assignment="user", method_family_required="")
+        )
+        found = [f for f in report.findings if f.code == "DSX-VAL-020"]
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0].severity, Severity.CRITICAL)
+        self.assertEqual(found[0].where, "spec.validity_frame.units")
+
+    def test_finer_observation_with_declared_method_family_produces_no_units_020(self):
+        report = val.check(
+            _units_spec(
+                observation="session", assignment="user", method_family_required="cluster_robust"
+            )
+        )
+        self.assertNotIn("DSX-VAL-020", codes(report))
+
+    def test_matching_observation_and_assignment_produces_no_units_020_regardless_of_method(self):
+        for method_family in ("", "cluster_robust", None):
+            with self.subTest(method_family=method_family):
+                report = val.check(
+                    _units_spec(
+                        observation="user", assignment="user",
+                        method_family_required=method_family,
+                    )
+                )
+                self.assertNotIn("DSX-VAL-020", codes(report))
+
+    def test_blank_observation_or_blank_assignment_produces_no_units_020(self):
+        report = val.check(
+            _units_spec(observation="", assignment="user", method_family_required="")
+        )
+        self.assertNotIn("DSX-VAL-020", codes(report))
+        report = val.check(
+            _units_spec(observation="impression", assignment="", method_family_required="")
+        )
+        self.assertNotIn("DSX-VAL-020", codes(report))
+
+    def test_same_unit_named_two_ways_fires_units_020_with_alignment_remedy(self):
+        report = val.check(
+            _units_spec(observation="user", assignment="user_id", method_family_required="")
+        )
+        found = [f for f in report.findings if f.code == "DSX-VAL-020"]
+        self.assertEqual(len(found), 1)
+        self.assertIn("align", found[0].remedy.lower())
+
+    def test_units_020_detail_carries_the_deff_formula_and_illustration_wording(self):
+        report = val.check(
+            _units_spec(observation="impression", assignment="user", method_family_required="")
+        )
+        found = [f for f in report.findings if f.code == "DSX-VAL-020"]
+        detail = found[0].detail
+        self.assertIn("1.576", detail)
+        self.assertIn("illustrat", detail.lower())
+
+    def test_malformed_units_subblock_produces_no_finding_and_does_not_raise(self):
+        for bad_units in ("s", [], None, 3):
+            with self.subTest(bad_units=bad_units):
+                report = val.check({"validity_frame": {"units": bad_units}})
+                self.assertNotIn("DSX-VAL-020", codes(report))
+
+    def test_units_judgment_point_appends_exactly_one_decision_record(self):
+        report = val.check(
+            _units_spec(observation="impression", assignment="user", method_family_required="")
+        )
+        decisions = report.context.get("decisions") or []
+        self.assertEqual(len(decisions), 1)
+        self.assertEqual(decisions[0]["layer"], "deterministic")
+        self.assertTrue(decisions[0]["counterfactual"].strip())
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
