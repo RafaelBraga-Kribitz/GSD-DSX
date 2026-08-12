@@ -15,12 +15,20 @@ code prefix and its own module, added as its phase ships:
 
 D-03a boundary (enforced mechanically by ``tests/test_frame_boundary.py``):
 a module under ``dsx/frame/`` may import from ``dsx.findings``, ``dsx.spec``,
-``dsx.loader`` and ``dsx.decisions`` — and never from ``dsx.checks``. The rule
-exists so this package stays an extractable, self-contained boundary: if a
-future extraction ever pulls ``dsx/frame/`` into its own package, no upward
-import into ``dsx/checks/`` has to be untangled first. The boundary is proven,
-not assumed — the test scans every real ``dsx/frame/*.py`` module and is
-itself shown to fail against three deliberately violating import forms.
+``dsx.loader``, ``dsx.decisions`` and ``dsx.mathx`` — and never from
+``dsx.checks``. ``dsx.mathx`` is a pure-computation helper module (stdlib-only
+numeric kernels, no I/O, no checks of its own) — permitted for the same
+reason the other four are: it carries nothing upward into ``dsx/checks/``.
+Phase 9's ``dsx/frame/paradigm.py::_check_monitoring_discipline`` is the
+first frame module to import it, reusing ``inflation_from_peeking()`` rather
+than coining a second table (REQ-P9-01). The rule exists so this package
+stays an extractable, self-contained boundary: if a future extraction ever
+pulls ``dsx/frame/`` into its own package, no upward import into
+``dsx/checks/`` has to be untangled first — the forbidden direction is
+strictly upward into ``dsx.checks``, never a pure computation helper like
+``dsx.mathx``. The boundary is proven, not assumed — the test scans every
+real ``dsx/frame/*.py`` module and is itself shown to fail against three
+deliberately violating import forms.
 """
 
 from __future__ import annotations

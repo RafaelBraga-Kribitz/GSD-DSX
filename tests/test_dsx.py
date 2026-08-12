@@ -2738,6 +2738,22 @@ class TestPhase6ParadigmManifest(unittest.TestCase):
 
     # D-05: DSX-PAR-001
     def test_applied_prefixes_have_codes_and_not_shipped_prefixes_have_none(self):
+        """A prefix reported 'not applied' is not applied for one of two
+        distinct reasons, conflated before Phase 9 shipped its first
+        paradigm-conditional code alongside a still-unshipped one:
+
+        - **not shipped** (the reason came from ``_NOT_SHIPPED``): no known
+          code may start with that prefix — the original, still-valid half
+          of this test.
+        - **not selected for the declared paradigm** (the other paradigm's
+          own conditional family, now that it has shipped): a known code
+          *must* start with that prefix — a shipped-but-currently-unselected
+          prefix is not the same thing as an unshipped one, and asserting
+          the same "resolves to zero known codes" property against it would
+          be wrong now that DSX-PAR-010/DSX-PAR-011 exist. This positive half
+          is strictly additive: it proves the reverse direction the original
+          test never checked, it does not weaken the original assertion.
+        """
         from dsx.frame import paradigm
         from dsx.spec import PARADIGMS
         from dsx.suppressions import known_codes
@@ -2753,13 +2769,259 @@ class TestPhase6ParadigmManifest(unittest.TestCase):
                         [c for c in known if c.startswith(prefix)],
                         f"{prefix} reported applied but no known code starts with it",
                     )
-                for prefix in finding.data.get("not_applied", {}):
-                    self.assertFalse(
-                        [c for c in known if c.startswith(prefix)],
-                        f"{prefix} reported not-shipped but a known code exists",
-                    )
+                for prefix, reason in finding.data.get("not_applied", {}).items():
+                    has_known_code = bool([c for c in known if c.startswith(prefix)])
+                    if reason == "not selected for the declared paradigm":
+                        self.assertTrue(
+                            has_known_code,
+                            f"{prefix} reported not-selected-for-paradigm but no "
+                            "known code starts with it — a shipped-but-unselected "
+                            "prefix must still resolve to a real code",
+                        )
+                    else:
+                        self.assertFalse(
+                            has_known_code,
+                            f"{prefix} reported not-shipped but a known code exists",
+                        )
         for prefix in paradigm._NOT_SHIPPED:
             self.assertFalse([c for c in known if c.startswith(prefix)], prefix)
+
+
+# ── Phase 9 (09-03): DSX-PAR-010/DSX-PAR-011 symmetric monitoring pair ───────
+# (REQ-P9-01, REQ-P9-02, REQ-P9-03, REQ-P9-05, brief D-12). See
+# references/paradigm-symmetry.md for the locked clearing-condition contract
+# this class asserts against — the same table the implementation is required
+# to match exactly.
+
+
+class TestPhase9MonitoringDiscipline(unittest.TestCase):
+    """DSX-PAR-010 (frequentist) / DSX-PAR-011 (bayesian) — the atomic,
+    symmetric monitoring-discipline pair. Both trigger on exactly one
+    condition, design.peeking_policy normalizing to uncontrolled_continuous,
+    and are cleared by non-blank free-text declarations evaluated by one
+    shared predicate.
+    """
+
+    ROOT = Path(__file__).resolve().parent.parent
+
+    UNCONTROLLED_DESIGN = {"peeking_policy": "uncontrolled_continuous", "alpha": 0.05}
+
+    def _spec(self, paradigm=None, **inference_fields):
+        inference = dict(inference_fields)
+        if paradigm is not None:
+            inference["paradigm"] = paradigm
+        return {"design": dict(self.UNCONTROLLED_DESIGN), "inference": inference}
+
+    def _gate_plan(self, spec_path):
+        with tempfile.TemporaryDirectory() as tmp:
+            out, err = io.StringIO(), io.StringIO()
+            with redirect_stdout(out), redirect_stderr(err):
+                code = cli.main(
+                    ["gate", "plan", "--spec", str(spec_path), "--phase-dir", tmp, "--json"]
+                )
+            raw = err.getvalue() or out.getvalue()
+            report = json.loads(raw)
+        return code, report["findings"]
+
+    def _retype_and_gate(self, source_slug, other_paradigm):
+        from dsx.loader import load
+
+        source = self.ROOT / "examples" / "known-bad" / f"{source_slug}-ANALYSIS-SPEC.yaml"
+        spec = load(str(source))
+        spec.setdefault("inference", {})["paradigm"] = other_paradigm
+        with tempfile.TemporaryDirectory() as tmp:
+            retyped = Path(tmp) / "retyped-ANALYSIS-SPEC.json"
+            retyped.write_text(json.dumps(spec), encoding="utf-8")
+            out, err = io.StringIO(), io.StringIO()
+            with redirect_stdout(out), redirect_stderr(err):
+                code = cli.main(
+                    ["gate", "plan", "--spec", str(retyped), "--phase-dir", tmp, "--json"]
+                )
+            raw = err.getvalue() or out.getvalue()
+            report = json.loads(raw)
+        return code, report["findings"]
+
+    # ── unit-level: clearing conditions and symmetry ────────────────────────
+
+    def test_dsx_par_010_fires_for_frequentist_with_both_clearing_fields_blank(self):
+        from dsx.frame import paradigm
+
+        report = paradigm.check(
+            self._spec(paradigm="frequentist", alpha_spending="", threshold_calibration="")
+        )
+        found = [f for f in report.findings if f.code == "DSX-PAR-010"]
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0].severity, Severity.CRITICAL)
+
+    def test_dsx_par_011_fires_for_bayesian_with_both_clearing_fields_blank(self):
+        from dsx.frame import paradigm
+
+        report = paradigm.check(
+            self._spec(paradigm="bayesian", prior_justification="", threshold_calibration="")
+        )
+        found = [f for f in report.findings if f.code == "DSX-PAR-011"]
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0].severity, Severity.CRITICAL)
+
+    def test_declaring_alpha_spending_clears_only_the_frequentist_half(self):
+        from dsx.frame import paradigm
+
+        spec = self._spec(alpha_spending="a spending function", threshold_calibration="")
+        found = codes(paradigm.check(spec))
+        self.assertNotIn("DSX-PAR-010", found)
+        self.assertIn("DSX-PAR-011", found)  # undeclared paradigm: bayesian half still open
+
+    def test_declaring_prior_justification_clears_only_the_bayesian_half(self):
+        from dsx.frame import paradigm
+
+        spec = self._spec(prior_justification="a stated prior", threshold_calibration="")
+        found = codes(paradigm.check(spec))
+        self.assertIn("DSX-PAR-010", found)
+        self.assertNotIn("DSX-PAR-011", found)
+
+    def test_declaring_threshold_calibration_clears_both_halves(self):
+        from dsx.frame import paradigm
+
+        spec = self._spec(threshold_calibration="a calibration procedure")
+        found = codes(paradigm.check(spec))
+        self.assertNotIn("DSX-PAR-010", found)
+        self.assertNotIn("DSX-PAR-011", found)
+
+    def test_undeclared_paradigm_can_fire_both_codes(self):
+        from dsx.frame import paradigm
+
+        found = codes(paradigm.check(self._spec()))
+        self.assertIn("DSX-PAR-010", found)
+        self.assertIn("DSX-PAR-011", found)
+
+    def test_declaring_either_paradigm_never_increases_the_finding_count(self):
+        from dsx.frame import paradigm
+
+        undeclared = {c for c in codes(paradigm.check(self._spec())) if c.startswith("DSX-PAR-01")}
+        for member in ("frequentist", "bayesian"):
+            with self.subTest(paradigm=member):
+                declared = {
+                    c for c in codes(paradigm.check(self._spec(paradigm=member)))
+                    if c.startswith("DSX-PAR-01")
+                }
+                self.assertLessEqual(len(declared), len(undeclared))
+
+    def test_neither_code_fires_for_a_non_uncontrolled_peeking_policy(self):
+        from dsx.frame import paradigm
+
+        for policy in list(PEEKING_POLICIES) + ["", None]:
+            if policy == "uncontrolled_continuous":
+                continue
+            with self.subTest(policy=policy):
+                spec = {"design": {"peeking_policy": policy}, "inference": {}}
+                found = codes(paradigm.check(spec))
+                self.assertNotIn("DSX-PAR-010", found)
+                self.assertNotIn("DSX-PAR-011", found)
+
+    def test_neither_code_fires_with_no_design_block(self):
+        from dsx.frame import paradigm
+
+        found = codes(paradigm.check({"inference": {}}))
+        self.assertNotIn("DSX-PAR-010", found)
+        self.assertNotIn("DSX-PAR-011", found)
+
+    def test_dsx_par_010_and_dsx_exp_060_are_disjoint_across_every_peeking_policy(self):
+        # D-08-style guard, inherited from TestDesign's parametrised peeking test:
+        # the two peeking codes must never both fire against the same spec.
+        from dsx.checks import design as design_check
+        from dsx.frame import paradigm
+
+        for policy in list(PEEKING_POLICIES) + [""]:
+            with self.subTest(policy=policy):
+                spec = {
+                    "question_type": "causal",
+                    "design": {"kind": "experiment", "peeking_policy": policy, "alpha": 0.05},
+                    "inference": {"paradigm": "frequentist"},
+                    "results": {"interim_looks": 5},
+                }
+                exp_codes = codes(design_check.check(spec))
+                par_codes = codes(paradigm.check(spec))
+                self.assertFalse(
+                    "DSX-PAR-010" in par_codes and "DSX-EXP-060" in exp_codes,
+                    f"policy={policy!r} produced both DSX-PAR-010 and DSX-EXP-060",
+                )
+
+    def test_monitoring_discipline_map_is_symmetric_across_paradigms(self):
+        from dsx.frame import paradigm
+        from dsx.spec import PARADIGMS
+
+        self.assertEqual(set(paradigm._MONITORING_DISCIPLINE), set(PARADIGMS))
+        lengths = {len(fields) for _code, fields in paradigm._MONITORING_DISCIPLINE.values()}
+        self.assertEqual(len(lengths), 1, "every row must have the same clearing-tuple length")
+        for _code, fields in paradigm._MONITORING_DISCIPLINE.values():
+            self.assertIn("threshold_calibration", fields)
+
+    def test_arbitrary_decision_threshold_string_produces_identical_finding_text(self):
+        # T-9-01: nothing on the gate path parses or computes over a
+        # decision_threshold string — proven behaviourally, not by inspection.
+        from dsx.frame import paradigm
+
+        blank_spec = self._spec(paradigm="bayesian", decision_threshold="")
+        weird_spec = self._spec(
+            paradigm="bayesian",
+            decision_threshold="{P(B>A)} > 0.95%; `rm -rf /` ${HOME}",
+        )
+        blank_findings = [f for f in paradigm.check(blank_spec).findings if f.code == "DSX-PAR-011"]
+        weird_findings = [f for f in paradigm.check(weird_spec).findings if f.code == "DSX-PAR-011"]
+        self.assertEqual(len(blank_findings), 1)
+        self.assertEqual(len(weird_findings), 1)
+        blank_finding, weird_finding = blank_findings[0], weird_findings[0]
+        self.assertEqual(blank_finding.title, weird_finding.title)
+        self.assertEqual(blank_finding.detail, weird_finding.detail)
+        self.assertEqual(blank_finding.remedy, weird_finding.remedy)
+        self.assertEqual(blank_finding.where, weird_finding.where)
+
+    def test_dsx_par_010_reference_values_reuse_inflation_from_peeking(self):
+        # No second inflation table exists (REQ-P9-01) — this pins the same
+        # anchors dsx.mathx.inflation_from_peeking() itself is pinned against.
+        self.assertAlmostEqual(mathx.inflation_from_peeking(5, 0.05), 0.142, places=3)
+        self.assertAlmostEqual(mathx.inflation_from_peeking(20, 0.05), 0.248, places=3)
+        # D-05: DSX-PAR-010
+
+    def test_dsx_par_011_reference_value_boundary_arithmetic(self):
+        self.assertEqual(1 / (19 + 1), 0.05)
+        self.assertEqual(1 / (24 + 1), 0.04)
+        self.assertEqual(1 / (15 + 1), 0.0625)
+        # D-05: DSX-PAR-011
+
+    # ── end-to-end: both known-bad fixtures, both retype directions ─────────
+
+    def test_frequentist_known_bad_fixture_blocks_plan_with_dsx_par_010(self):
+        path = (
+            self.ROOT / "examples" / "known-bad"
+            / "frequentist-uncontrolled-continuous-ANALYSIS-SPEC.yaml"
+        )
+        code, findings = self._gate_plan(path)
+        self.assertEqual(code, 1)
+        self.assertIn("DSX-PAR-010", {f["code"] for f in findings})
+
+    def test_bayesian_known_bad_fixture_blocks_plan_with_dsx_par_011(self):
+        path = (
+            self.ROOT / "examples" / "known-bad"
+            / "bayesian-continuous-monitoring-ANALYSIS-SPEC.yaml"
+        )
+        code, findings = self._gate_plan(path)
+        self.assertEqual(code, 1)
+        self.assertIn("DSX-PAR-011", {f["code"] for f in findings})
+
+    def test_retyping_frequentist_fixture_to_bayesian_yields_dsx_par_011_not_010(self):
+        code, findings = self._retype_and_gate("frequentist-uncontrolled-continuous", "bayesian")
+        self.assertEqual(code, 1)
+        found = {f["code"] for f in findings}
+        self.assertIn("DSX-PAR-011", found)
+        self.assertNotIn("DSX-PAR-010", found)
+
+    def test_retyping_bayesian_fixture_to_frequentist_yields_dsx_par_010_not_011(self):
+        code, findings = self._retype_and_gate("bayesian-continuous-monitoring", "frequentist")
+        self.assertEqual(code, 1)
+        found = {f["code"] for f in findings}
+        self.assertIn("DSX-PAR-010", found)
+        self.assertNotIn("DSX-PAR-011", found)
 
 
 if __name__ == "__main__":

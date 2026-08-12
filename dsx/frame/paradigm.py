@@ -1,23 +1,31 @@
-"""DSX-PAR-001 — the informational paradigm manifest.
+"""DSX-PAR-001 — the informational paradigm manifest — and DSX-PAR-010/011 —
+the symmetric monitoring-discipline pair.
 
-For every gate run, names which check families applied given the declared
-``inference.paradigm`` (or its absence) and which did not — and why. Never
-blocks (D-10): an unsupported or undeclared paradigm must not be the cheapest
-way past the gate, so an operator's honest ``bayesian`` never costs more than
-a dishonest ``frequentist`` would have.
+DSX-PAR-001, for every gate run, names which check families applied given the
+declared ``inference.paradigm`` (or its absence) and which did not — and why.
+Never blocks (D-10): an unsupported or undeclared paradigm must not be the
+cheapest way past the gate, so an operator's honest ``bayesian`` never costs
+more than a dishonest ``frequentist`` would have.
 
 Applicability is modelled as data, not as an if/else on one paradigm value
 (the promote decision this module implements — see 06-07-PLAN.md's
 ``<assumption_delta_decision>``): ``_PARADIGM_CONDITIONAL`` is keyed by every
 member of ``PARADIGMS``, computed by the same code path regardless of which
-one is declared.
+one is declared. ``_MONITORING_DISCIPLINE`` (Phase 9, 09-03-PLAN.md) is the
+same idiom applied to DSX-PAR-010/DSX-PAR-011: a dict keyed by every member of
+``PARADIGMS``, this time a CRITICAL, gate-blocking pair rather than an
+informational manifest, and this is the module that ships both halves
+together at identical severity (brief D-12) — see
+``references/paradigm-symmetry.md`` for the locked clearing-condition
+contract.
 """
 
 from __future__ import annotations
 
 from ..decisions import DecisionRecord
 from ..findings import Report
-from ..spec import PARADIGMS, get, is_blank, normalize
+from ..mathx import inflation_from_peeking
+from ..spec import PARADIGMS, as_number, get, is_blank, normalize
 
 # Frame/contract families that apply regardless of the declared paradigm
 # (D-11: frame-layer checks never branch on paradigm). DSX-PAR-002 is this
@@ -50,10 +58,237 @@ _NOT_SHIPPED: "dict[str, str]" = {
     "DSX-INT-": "Phase 8 ships DSX-INT-* (interference/SUTVA, triggering, dilution).",
     "DSX-PRE-": "Phase 10 ships DSX-PRE-* (pre-registered inference plan).",
     "DSX-PAR-002": "Phase 9 ships DSX-PAR-002 alongside the symmetric monitoring pair.",
-    "DSX-PAR-010": "Phase 9 ships DSX-PAR-010 (frequentist monitoring discipline).",
-    "DSX-PAR-011": "Phase 9 ships DSX-PAR-011 (bayesian monitoring discipline).",
     "DSX-ADM-": "Phase 11 ships DSX-ADM-* (frequentist procedure admissibility).",
 }
+
+# The single member of PEEKING_POLICIES both halves of the DSX-PAR-010/011
+# pair trigger on. Neither half reads results.interim_looks (D-04): at
+# `dsx gate plan` no results: block exists yet, and a trigger depending on it
+# would silently become verify/ship-only, making ROADMAP Success Criterion 1
+# false.
+_UNCONTROLLED_POLICY = "uncontrolled_continuous"
+
+# The primary representation for DSX-PAR-010/DSX-PAR-011 (CONTEXT.md D-06,
+# promoted per the 09-03-PLAN.md <assumption_delta_decision>): a dict keyed by
+# every member of PARADIGMS, each row naming that paradigm's finding code and
+# its tuple of clearing declarations. A contract test asserts
+# set(_MONITORING_DISCIPLINE) == set(PARADIGMS), that every clearing tuple has
+# the same length, and that "threshold_calibration" is in every one — a
+# future PARADIGMS member added without a matching row here fails loudly.
+#
+# Three structural facts make the table symmetric (references/paradigm-symmetry.md):
+#   1. Exactly two clearing declarations per row — never one, never three,
+#      the same count on both sides.
+#   2. Exactly one of the two, threshold_calibration, is shared by both rows —
+#      the same field, checked by the same predicate, on either side.
+#   3. Each row's one paradigm-specific declaration (alpha_spending for
+#      frequentist, prior_justification for bayesian) is a non-blank free-text
+#      scalar evaluated by the same blank-check predicate as the shared field —
+#      no field on either side carries a stronger evidentiary bar than the
+#      other.
+_MONITORING_DISCIPLINE: "dict[str, tuple[str, tuple[str, ...]]]" = {
+    "frequentist": ("DSX-PAR-010", ("alpha_spending", "threshold_calibration")),
+    "bayesian": ("DSX-PAR-011", ("prior_justification", "threshold_calibration")),
+}
+
+
+def _blank_clearing_declarations(
+    inference: dict, fields: "tuple[str, ...]"
+) -> "list[str]":
+    """Return the subset of ``fields`` that are blank under ``inference``.
+
+    The mechanical proof of cost symmetry (brief D-12): every clearing
+    declaration for every paradigm in ``_MONITORING_DISCIPLINE`` is evaluated
+    by this one function — no per-paradigm and no per-field code path exists
+    anywhere in the pair.
+    """
+    return [name for name in fields if is_blank(inference.get(name))]
+
+
+def _check_monitoring_discipline(spec: dict, report: Report) -> None:
+    """Emit DSX-PAR-010 (frequentist) and DSX-PAR-011 (bayesian) — the atomic,
+    symmetric monitoring-discipline pair (REQ-P9-01, REQ-P9-02, brief D-12).
+
+    Both codes trigger on exactly one condition: ``design.peeking_policy``
+    normalizes to ``uncontrolled_continuous``. Per D-04, ``results.interim_looks``
+    is never read here — at ``dsx gate plan`` no ``results:`` block exists
+    yet, and a trigger depending on it would silently become verify/ship-only,
+    making ROADMAP Success Criterion 1 false. Disjointness from
+    ``DSX-EXP-060`` (``dsx/checks/design.py::_check_peeking``) follows by
+    construction: that check only fires for the empty and ``fixed_horizon``
+    policies and reads ``results.interim_looks``, neither of which this
+    function touches.
+
+    The row for the declared paradigm applies when one is declared and is a
+    member of ``PARADIGMS``; every row applies when the paradigm is blank,
+    absent, or not a member — closing the undeclared-paradigm escape at
+    CRITICAL without spending a new code number (``dsx/cli.py``'s
+    ``GATE_THRESHOLDS`` is CRITICAL at ``plan`` and ``execute``). Declaring a
+    paradigm therefore never adds a finding, it only ever removes one (brief
+    D-10) — this is also why ``DSX-PAR-002`` (HIGH, plan 09-05) does not need
+    to block at ``plan`` on its own: the uncontrolled design is already
+    blocked regardless of whether a paradigm was declared.
+
+    Citation: (DSX-PAR-010) Armitage, P., McPherson, C. K. & Rowe, B. C.
+    (1969), "Repeated Significance Tests on Accumulating Data", Journal of
+    the Royal Statistical Society, Series A (General), volume 132, issue 2,
+    pages 235-244, DOI 10.2307/2343787. Same unverified-locator flag as
+    ``dsx.mathx.inflation_from_peeking()``, which this check reuses directly
+    (no second table, REQ-P9-01): the full text is subscriber-only at Oxford
+    University Press, Wiley and JSTOR, and no table or page number within the
+    paper was verified — naming one would be the fabricated locator brief D-05
+    exists to prevent.
+    Reference value: (DSX-PAR-010) at a nominal alpha of 0.05, the true
+    type-I error is 0.142 at five interim looks and 0.248 at twenty (the same
+    anchors ``inflation_from_peeking()`` itself is pinned against). Because
+    the number of looks is by definition undeclared and unbounded under an
+    uncontrolled-continuous policy, these two named anchors are the honest
+    form of the figure — a range, not a single realised count, which is also
+    what distinguishes this finding from ``DSX-EXP-060`` at a glance (that
+    finding names an exact realised look count).
+
+    Citation: (DSX-PAR-011) Deng, A., Lu, J. & Chen, S. (2016), "Continuous
+    Monitoring of A/B Tests without Pain: Optional Stopping in Bayesian
+    Testing", IEEE DSAA 2016. Theorem 1 states the optional-stopping equality
+    that licenses this figure under known prior odds; the bound itself — "the
+    risk of false discovery at most 1/(1+K)" — is unnumbered prose
+    immediately following Theorem 1 and again in the paper's Section 3.2, so
+    citing Theorem 1 alone for the number 1/(K+1) would be a locator error.
+    Reference value: (DSX-PAR-011) 1/(K+1) is exactly 0.05 at K = 19, the
+    posterior odds implied by a P(B>A) > 0.95 decision threshold. This check
+    asserts the prior-averaged formulation, and explicitly not the point-null
+    / law-of-iterated-logarithm formulation — under which type-I error tends
+    to one as the horizon grows and no fixed ceiling exists, which is exactly
+    why that formulation cannot be encoded as a reference value. 1/(K+1)
+    equals 1-p identically, so at p = 0.95 the bound 0.05 is just 1-p; the
+    non-trivial content Theorem 1 supplies is that this identity survives
+    evaluation at a random stopping time, under known prior odds — a declared
+    posterior probability computed off a flat prior is not the operator's
+    real false-discovery risk, a matter for the remedy text and human review,
+    never something the gate can adjudicate. Type-I error (the chance of
+    false rejection when the null is true) and false-discovery risk (the
+    chance of false rejection given that rejection was decided) are different
+    conditioning events with no simple relationship between them — that
+    difference is the signature of the different denominator, 1/(K+1) versus
+    1/k. Ville's inequality gives the different bound 1/k, about 0.0526 at
+    k = 19, and is never a substitute; Deng, Lu and Chen never cite Ville.
+    Structural criterion: presence only, for both codes. The blocking
+    decision is a set-membership computation over the data-driven
+    ``_MONITORING_DISCIPLINE`` map, evaluated by one shared predicate
+    (``_blank_clearing_declarations``) — no statistic, posterior, or
+    arithmetic over any operator-declared value (including
+    ``inference.decision_threshold``, which is never read here) is computed
+    on the gate path.
+    """
+    policy = normalize(get(spec, "design.peeking_policy") or "")
+    if policy != _UNCONTROLLED_POLICY:
+        return
+
+    inference = spec.get("inference")
+    if not isinstance(inference, dict):
+        inference = {}
+
+    declared = get(spec, "inference.paradigm")
+    paradigm = normalize(declared) if not is_blank(declared) else ""
+
+    if paradigm in _MONITORING_DISCIPLINE:
+        rows: "dict[str, tuple[str, tuple[str, ...]]]" = {
+            paradigm: _MONITORING_DISCIPLINE[paradigm]
+        }
+    else:
+        rows = dict(_MONITORING_DISCIPLINE)
+
+    for _row_paradigm, (code, clearing_fields) in rows.items():
+        blank = _blank_clearing_declarations(inference, clearing_fields)
+        if len(blank) < len(clearing_fields):
+            continue  # at least one clearing declaration is non-blank
+
+        if code == "DSX-PAR-010":
+            alpha = as_number(get(spec, "design.alpha")) or 0.05
+            five = inflation_from_peeking(5, alpha)
+            twenty = inflation_from_peeking(20, alpha)
+            report.add(
+                "DSX-PAR-010",
+                "CRITICAL",
+                "Uncontrolled continuous monitoring under a frequentist "
+                "paradigm with no monitoring discipline declared",
+                detail=(
+                    "design.peeking_policy is uncontrolled_continuous: interim "
+                    "looks continue with no sequential correction and no "
+                    "anytime-valid method. The number of looks under this "
+                    "policy is by definition undeclared and unbounded, so the "
+                    "honest figure is a range at named anchors: at a nominal "
+                    f"alpha of {alpha:.2f}, the true type-I error is "
+                    f"approximately {five:.3f} at five interim looks and "
+                    f"{twenty:.3f} at twenty "
+                    "(dsx.mathx.inflation_from_peeking; no second table)."
+                ),
+                remedy=(
+                    "Declare a non-blank inference.alpha_spending or "
+                    "inference.threshold_calibration to satisfy this check "
+                    "structurally (presence, not quality). The honest fix is "
+                    "to change design.peeking_policy to sequential_obf, "
+                    "sequential_pocock, or always_valid, which is the only "
+                    "fix that actually controls the error rate a peeked test "
+                    "accumulates."
+                ),
+                where="spec.design.peeking_policy",
+                inflated_alpha_at_5_looks=round(five, 4),
+                inflated_alpha_at_20_looks=round(twenty, 4),
+            )
+        else:  # DSX-PAR-011
+            report.add(
+                "DSX-PAR-011",
+                "CRITICAL",
+                "Uncontrolled continuous monitoring under a bayesian "
+                "paradigm with no monitoring discipline declared",
+                detail=(
+                    "design.peeking_policy is uncontrolled_continuous: interim "
+                    "looks continue with no sequential correction and no "
+                    "anytime-valid method. Under the prior-averaged "
+                    "formulation (Deng, Lu & Chen 2016, Theorem 1), the risk "
+                    "of false discovery at a P(B>A) > 0.95 decision threshold "
+                    "is bounded by 1/(K+1) = 1/20 = 0.05 at K = 19 — a fixed "
+                    "reference anchor, never a computation over any "
+                    "operator-declared value."
+                ),
+                remedy=(
+                    "Declare a non-blank inference.prior_justification or "
+                    "inference.threshold_calibration to satisfy this check "
+                    "structurally (presence, not quality — prior-justification "
+                    "quality is DSX-PAR-020's job, deferred to a later "
+                    "milestone). The honest fix is to change "
+                    "design.peeking_policy to sequential_obf, "
+                    "sequential_pocock, or always_valid."
+                ),
+                where="spec.design.peeking_policy",
+            )
+
+        report.context.setdefault("decisions", []).append(
+            DecisionRecord(
+                id="",
+                invocation_id="",
+                layer="deterministic",
+                choice=f"{code} fired: paradigm={paradigm or 'undeclared'}",
+                inputs=["design.peeking_policy", "inference.paradigm", *clearing_fields],
+                rule=(
+                    "design.peeking_policy == 'uncontrolled_continuous' and "
+                    "every clearing declaration in "
+                    "_MONITORING_DISCIPLINE[paradigm] is blank."
+                ),
+                citation=(
+                    "Armitage, McPherson & Rowe (1969), Repeated Significance "
+                    "Tests on Accumulating Data"
+                    if code == "DSX-PAR-010"
+                    else "Deng, Lu & Chen (2016), Continuous Monitoring of "
+                    "A/B Tests without Pain"
+                ),
+                counterfactual=(
+                    f"Declaring a non-blank {' or '.join(clearing_fields)} "
+                    f"would have cleared {code}."
+                ),
+            ).to_dict()
+        )
 
 
 def check(spec: dict) -> Report:
@@ -86,6 +321,14 @@ def check(spec: dict) -> Report:
     selected: "set[str]" = set(_PARADIGM_INDEPENDENT)
     if paradigm in _PARADIGM_CONDITIONAL:
         selected.update(_PARADIGM_CONDITIONAL[paradigm])
+    elif not paradigm:
+        # Undeclared: select every paradigm-conditional family's prefixes
+        # (the union), not none of them. Declaring a paradigm never adds a
+        # finding, it only ever removes one (brief D-10) — this is what
+        # closes the undeclared-paradigm escape from DSX-PAR-010/DSX-PAR-011
+        # at CRITICAL without spending a new code (09-03-PLAN.md, Question 1).
+        for prefixes in _PARADIGM_CONDITIONAL.values():
+            selected.update(prefixes)
 
     applied = sorted(selected - set(_NOT_SHIPPED))
     not_applied_prefixes = sorted(universe - set(applied))
@@ -101,7 +344,12 @@ def check(spec: dict) -> Report:
     detail = (
         f"applied: {applied_text}\n"
         f"not applied: {not_applied_text}"
-        + ("" if paradigm else "\nno paradigm-conditional family was selected")
+        + (
+            ""
+            if paradigm
+            else "\nno paradigm is declared, so every paradigm-conditional "
+            "family applies until one is"
+        )
     )
     remedy = (
         "Informational only — naming the gap plainly is what removes the "
@@ -138,8 +386,10 @@ def check(spec: dict) -> Report:
     else:
         choice = "paradigm=undeclared"
         counterfactual = (
-            "Declaring any member of PARADIGMS would select that paradigm's "
-            "conditional family set in place of none."
+            "Declaring any member of PARADIGMS would select only that "
+            "paradigm's conditional family set, dropping the other "
+            "paradigm's family that currently applies because none is "
+            "declared."
         )
 
     report.context.setdefault("decisions", []).append(
@@ -158,5 +408,7 @@ def check(spec: dict) -> Report:
             counterfactual=counterfactual,
         ).to_dict()
     )
+
+    _check_monitoring_discipline(spec, report)
 
     return report
