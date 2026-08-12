@@ -350,6 +350,7 @@ class TestSpecStructure(unittest.TestCase):
             {
                 "paradigm", "paradigm_justification", "declared_at",
                 "primary_procedure", "alpha_spending", "fallback_rule",
+                "threshold_calibration", "prior_justification", "decision_threshold",
             },
         )
 

@@ -929,23 +929,41 @@ def _validate_validity_frame_shape(spec: dict, report: Report) -> None:
             )
 
 
-# The six REQ-P6-04 field names — a machine-readable manifest pinning that requirement's
-# declared field list against drift. Its one consumer is the drift-guard test
-# tests/test_dsx.py::test_inference_fields_constant_matches_req_p6_04; the finding
-# catalogue does not read it.
+# The nine inference: field names this contract recognises, split across two
+# requirements. A machine-readable manifest pinning the declared field list against
+# drift; its one consumer is the drift-guard test
+# tests/test_dsx.py::test_inference_fields_constant_matches_req_p6_04, plus
+# describe_vocabulary()'s inference_fields key below.
+#
+# The first six are the REQ-P6-04 manifest. The last three —
+# threshold_calibration, prior_justification, decision_threshold — are REQ-P9's
+# monitoring-discipline clearing declarations (D-05): threshold_calibration and
+# prior_justification are DSX-PAR-011's disjunctive clearing pair (alongside
+# alpha_spending), and threshold_calibration alone is also DSX-PAR-010's
+# alternative to alpha_spending. decision_threshold is recorded and never parsed
+# by any check (T-9-01) — it exists so an operator's stated posterior-probability
+# decision rule (e.g. P(B>A) > 0.95) is on record next to the fields that gate on
+# it. All three new fields are deliberately free-text scalars, not a
+# {method:, sims:, fpr:} sub-dict: giving every clearing declaration on both
+# paradigms the same shape is what makes the brief-D-12 cost-symmetry argument
+# mechanically provable by one shared blank-check predicate instead of by
+# inspection (references/paradigm-symmetry.md).
 #
 # This tuple is not an enforced closed set: _validate_inference_shape vocabulary-checks
-# only three of these six fields (paradigm, paradigm_justification, declared_at, via
+# only three of these nine fields (paradigm, paradigm_justification, declared_at, via
 # _INFERENCE_MEMBERSHIP below) and rejects exactly one non-member field, the one named by
 # _INFERENCE_REMOVED_FIELD. An unrecognised or misspelled key under inference: — e.g.
 # `inference: {paradgim: bayesian}` — is accepted silently today; there is no unknown-key
-# check for this block.
+# check for this block. `dsx vocab`'s inference_fields key and this template's scaffold
+# are therefore the only two mechanisms by which an operator can discover or correct a
+# misspelled field name (D-05).
 #
 # M-02 removes `stopping_rule`: the stopping-rule concept lives in design.peeking_policy,
 # not here.
 _INFERENCE_FIELDS = (
     "paradigm", "paradigm_justification", "declared_at",
     "primary_procedure", "alpha_spending", "fallback_rule",
+    "threshold_calibration", "prior_justification", "decision_threshold",
 )
 
 _INFERENCE_MEMBERSHIP: "tuple[tuple[str, Any], ...]" = (
@@ -1041,6 +1059,11 @@ def describe_vocabulary() -> "dict[str, Any]":
     Registry-driven (D-05): a dict-backed vocabulary dumps as a key-sorted dict of its
     descriptions; a set-backed vocabulary dumps as a sorted list. `chart_capabilities` stays
     special-cased — it is not a vocabulary, it is a capability matrix keyed by vocabulary.
+    `inference_fields` is a second special case (D-05, REQ-P9): the flat, sorted list of
+    every `inference:` field name this contract recognises, not a vocabulary of values. It
+    exists because there is no unknown-key check under `inference:` — `dsx vocab` and the
+    template scaffold are the only two mechanisms by which an operator can discover or
+    correct a misspelled field name.
     """
     out: "dict[str, Any]" = {}
     for name, obj in _VOCABULARIES:
@@ -1048,4 +1071,5 @@ def describe_vocabulary() -> "dict[str, Any]":
     out["chart_capabilities"] = {
         key: sorted(values) for key, values in sorted(CHART_CAPABILITIES.items())
     }
+    out["inference_fields"] = sorted(_INFERENCE_FIELDS)
     return out
