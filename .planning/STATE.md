@@ -5,16 +5,16 @@ milestone_name: DSX Validity Frame
 current_phase: 7
 current_phase_name: validity-frame-checks
 status: planning
-stopped_at: Phase 7 planned — 7 plans, 6 waves, all nine requirements mapped
-last_updated: "2026-08-12T13:20:00.000Z"
+stopped_at: Phase 9 context gathered (assumptions mode)
+last_updated: "2026-08-12T13:27:45.465Z"
 last_activity: 2026-08-12
-last_activity_desc: Phase 7 planned (7 plans, 6 waves); Phase 8 context also gathered
+last_activity_desc: Phase 7 planned; plan-checker passed, decision coverage 17/17
 progress:
-  total_phases: 3
+  total_phases: 4
   completed_phases: 1
   total_plans: 20
   completed_plans: 13
-  percent: 33
+  percent: 25
 ---
 
 # Project state
@@ -55,8 +55,9 @@ progress:
 
 - Phase 7: `method_family_required` cannot express a disjunction under M-09's single-member reuse of `VARIANCE_ADJUSTMENTS`.
 - Phases 7, 8, 11: final numeric code assignments beyond those the brief fixes (D-06 makes numbering irreversible).
-- Phase 9: whether the pre-existing `inflation_from_peeking()` docstring is upgraded to a full D-05 citation.
-- Phase 9: the "prior-averaged Ville bound" name is retired. Deng Theorem 1 gives `1/(K+1)` (0.05 at K=19); Ville's `1/k` (0.0526 at k=19) is a separate result. REQ-P9-02 and ROADMAP Phase 9 corrected; three regression guards in `tests/test_known_bad_corpus.py` hold the line (UAT gap G-01).
+- ~~Phase 9: whether the pre-existing `inflation_from_peeking()` docstring is upgraded to a full D-05 citation.~~ **Resolved 2026-08-12 at discuss** — yes, with an explicit unverified-locator flag (09-CONTEXT D-13). D-05 does not mechanically reach the function (no `report.add` call site), so this is elective; it is done because leaving it uncited puts a seam where a v2.0.0 check depends on a v1.5.0 computation. Anchor values verified by independent quadrature + Monte Carlo; the 1969 paper itself remains inaccessible, so **no table or page may be cited**.
+- Phase 9: the "prior-averaged Ville bound" name is retired. **Corrected further 2026-08-12** — Deng Theorem 1 does **not** state `1/(K+1)`; it states an optional-stopping equality. The bound is unnumbered prose, §3.2 in its operational form. Verified against the arXiv LaTeX source (09-CONTEXT D-10). Ville's `1/k` remains a separate result, and Ville is never cited in Deng et al. at all (D-12). **REQ-P9-02/03 and ROADMAP Phase 9 SC 2/SC 3 still carry the old attribution and must be amended during planning.** The three regression guards in `tests/test_known_bad_corpus.py` hold the Deng-vs-Ville line and should be re-read, not assumed stale (UAT gap G-01).
+- Phase 9: **new, surfaced at discuss** — omitting `inference.paradigm` (or the whole `inference:` block) produces no finding today (`dsx/spec.py:886-888`, `:917-919`), which becomes the cheapest escape from both halves of the pair the moment it ships. Mechanism preferred in 09-CONTEXT D-07; the severity question it raises is explicitly left for planning.
 
 **Standing per-phase deliverables:**
 
@@ -81,9 +82,9 @@ See: .planning/PROJECT.md (updated 2026-08-10)
 
 ## Session
 
-**Last session:** 2026-08-12T13:20:00.000Z
-**Stopped at:** Phase 7 planned — 7 plans, 6 waves, all nine requirements mapped
-**Resume file:** .planning/phases/07-validity-frame-checks-dsx-val/07-01-PLAN.md
+**Last session:** 2026-08-12T13:27:45.455Z
+**Stopped at:** Phase 9 context gathered (assumptions mode)
+**Resume file:** .planning/phases/09-monitoring-discipline-symmetric-dsx-par/09-CONTEXT.md
 
 Note: a Phase 8 discuss ran concurrently on 2026-08-12 and produced
 `.planning/phases/08-interference-triggering-stability-dsx-int/08-CONTEXT.md`. Phase 8 is
