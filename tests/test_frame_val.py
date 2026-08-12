@@ -296,6 +296,121 @@ class TestValUnits(unittest.TestCase):
                 self.assertNotIn("DSX-VAL-021", codes(report), path.name)
 
 
+# ── dependence and identification (DSX-VAL-030, DSX-VAL-040, DSX-VAL-041) ──
+
+
+class TestValDependenceIdentification(unittest.TestCase):
+    # D-05: DSX-VAL-030
+    def test_dependence_structure_with_blank_method_family_fires_critical_val_030(self):
+        report = val.check(
+            {
+                "validity_frame": {
+                    "dependence": {"structure": "clustered", "method_family_required": ""}
+                }
+            }
+        )
+        found = [f for f in report.findings if f.code == "DSX-VAL-030"]
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0].severity, Severity.CRITICAL)
+        self.assertEqual(found[0].where, "spec.validity_frame.dependence")
+
+    def test_dependence_structure_with_admissible_method_family_produces_no_val_030(self):
+        report = val.check(
+            {
+                "validity_frame": {
+                    "dependence": {
+                        "structure": "clustered",
+                        "method_family_required": "cluster_robust",
+                    }
+                }
+            }
+        )
+        self.assertNotIn("DSX-VAL-030", codes(report))
+
+    def test_dependence_structure_with_inadmissible_method_family_names_the_admissible_set(self):
+        report = val.check(
+            {
+                "validity_frame": {
+                    "dependence": {
+                        "structure": "clustered",
+                        "method_family_required": "delta_method",
+                    }
+                }
+            }
+        )
+        found = [f for f in report.findings if f.code == "DSX-VAL-030"]
+        self.assertEqual(len(found), 1)
+        for member in ("cluster_robust", "bootstrap_cluster", "mixed_effects"):
+            self.assertIn(member, found[0].detail)
+
+    def test_dependence_structure_none_with_blank_method_family_produces_no_val_030(self):
+        report = val.check(
+            {"validity_frame": {"dependence": {"structure": "none", "method_family_required": ""}}}
+        )
+        self.assertNotIn("DSX-VAL-030", codes(report))
+
+    def test_absent_dependence_subblock_produces_no_val_030(self):
+        report = val.check({"validity_frame": {"estimand": {}}})
+        self.assertNotIn("DSX-VAL-030", codes(report))
+
+    def test_out_of_vocabulary_dependence_structure_produces_no_val_030(self):
+        report = val.check(
+            {
+                "validity_frame": {
+                    "dependence": {"structure": "not_a_member", "method_family_required": ""}
+                }
+            }
+        )
+        self.assertNotIn("DSX-VAL-030", codes(report))
+
+    def test_every_dependence_admissible_map_structure_is_exercised_at_least_once(self):
+        from dsx.spec import DEPENDENCE_ADMISSIBLE_METHODS
+
+        for structure, admissible in DEPENDENCE_ADMISSIBLE_METHODS.items():
+            with self.subTest(structure=structure):
+                blocked = val.check(
+                    {
+                        "validity_frame": {
+                            "dependence": {"structure": structure, "method_family_required": ""}
+                        }
+                    }
+                )
+                self.assertIn("DSX-VAL-030", codes(blocked))
+
+                passing_method = sorted(admissible)[0]
+                passed = val.check(
+                    {
+                        "validity_frame": {
+                            "dependence": {
+                                "structure": structure,
+                                "method_family_required": passing_method,
+                            }
+                        }
+                    }
+                )
+                self.assertNotIn("DSX-VAL-030", codes(passed))
+
+    def test_malformed_dependence_subblock_produces_no_finding_and_does_not_raise(self):
+        for bad_dependence in ("s", [], None, 3):
+            with self.subTest(bad_dependence=bad_dependence):
+                report = val.check({"validity_frame": {"dependence": bad_dependence}})
+                self.assertNotIn("DSX-VAL-030", codes(report))
+
+    def test_dependence_judgment_point_appends_exactly_one_decision_record(self):
+        report = val.check(
+            {
+                "validity_frame": {
+                    "dependence": {"structure": "clustered", "method_family_required": ""}
+                }
+            }
+        )
+        decisions = report.context.get("decisions") or []
+        dependence_decisions = [d for d in decisions if d["choice"].startswith("dependence:")]
+        self.assertEqual(len(dependence_decisions), 1)
+        self.assertEqual(dependence_decisions[0]["layer"], "deterministic")
+        self.assertTrue(dependence_decisions[0]["counterfactual"].strip())
+
+
 # ── disjointness (REQ-P7-03): DSX-VAL-020 and DSX-EXP-021 never both fire ──
 
 

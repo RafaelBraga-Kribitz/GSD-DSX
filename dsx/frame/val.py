@@ -11,13 +11,15 @@ and firing a ``DSX-VAL-*`` code on top of that would double-report a single
 defect.
 
 Two of the family's nine planned codes shipped in plan 07-03 (``DSX-VAL-010``,
-``DSX-VAL-011``, both about the ``estimand`` sub-block). This plan (07-04)
-adds two more: ``DSX-VAL-020`` (the unit triad — ``units.observation`` finer
-than ``units.assignment`` with no method family declared) and
-``DSX-VAL-021`` (unit drift — the validity frame's own unit declarations
-disagreeing with ``design:``'s). Plans 07-05 and 07-06 add the remaining
-five private helpers behind the same ``check()`` dispatcher — each new
-helper is one call added to ``check()``, not a restructure.
+``DSX-VAL-011``, both about the ``estimand`` sub-block), and two more shipped
+in plan 07-04 (``DSX-VAL-020``, the unit triad; ``DSX-VAL-021``, unit drift).
+This plan (07-05) adds three more: ``DSX-VAL-030`` (dependence — a declared
+dependence structure with no admissible method family) and the identification
+pair ``DSX-VAL-040``/``DSX-VAL-041`` (weak identification naming no
+constraint; strong identification also carrying a constraint that informs the
+parameter's scale). Plan 07-06 adds the remaining two private helpers behind
+the same ``check()`` dispatcher — each new helper is one call added to
+``check()``, not a restructure.
 
 D-11 (mechanically proven by ``tests/test_frame_boundary.py``'s
 ``TestFrameParadigmReadBoundary``): no code path in this module reads the
@@ -33,6 +35,7 @@ from ..decisions import DecisionRecord
 from ..findings import Report
 from ..mathx import design_effect
 from ..spec import (
+    DEPENDENCE_ADMISSIBLE_METHODS,
     falsifier_is_discriminating,
     get,
     is_blank,
@@ -79,6 +82,17 @@ _UNIT_DRIFT_CITATION = (
     "section 1.2 (\"Average causal effects\")"
 )
 
+_DEPENDENCE_CITATION = (
+    "Cameron, A.C. & Miller, D.L. (2015), \"A Practitioner's Guide to Cluster-Robust "
+    "Inference\", Journal of Human Resources 50(2):317-372, for the clustered, "
+    "repeated_measures, temporal and spatial pairings; Gelman, A. & Hill, J. (2007), "
+    "Data Analysis Using Regression and Multilevel/Hierarchical Models, Cambridge "
+    "University Press, for the hierarchical pairing. The exact section locator "
+    "inside Cameron and Miller and the exact chapter locator inside Gelman and Hill "
+    "are both UNVERIFIED — author, year, title and venue were confirmed for each; "
+    "the internal locators were not. Do not invent either."
+)
+
 
 def check(spec: dict) -> Report:
     """Emit the validity-frame content findings (``DSX-VAL-*``).
@@ -104,6 +118,7 @@ def check(spec: dict) -> Report:
     _check_estimand_falsifiability(frame, report)
     _check_unit_triad(spec, frame, report)
     _check_unit_drift(spec, frame, report)
+    _check_dependence(frame, report)
 
     estimand = frame.get("estimand")
     if isinstance(estimand, dict):
@@ -221,6 +236,49 @@ def check(spec: dict) -> Report:
                     "A spec where the validity frame's assignment and analysis units "
                     "agree with design.randomization_unit and design.analysis_unit "
                     "respectively would have produced no DSX-VAL-021."
+                ),
+            ).to_dict()
+        )
+
+    dependence = frame.get("dependence")
+    if isinstance(dependence, dict):
+        structure = dependence.get("structure")
+        method_family = dependence.get("method_family_required")
+        normalized_structure = normalize(structure) if not is_blank(structure) else None
+        dependence_blocked = (
+            normalized_structure is not None
+            and normalized_structure != "none"
+            and normalized_structure in DEPENDENCE_ADMISSIBLE_METHODS
+            and (
+                is_blank(method_family)
+                or normalize(method_family)
+                not in DEPENDENCE_ADMISSIBLE_METHODS[normalized_structure]
+            )
+        )
+        report.context.setdefault("decisions", []).append(
+            DecisionRecord(
+                id="",
+                invocation_id="",
+                layer="deterministic",
+                choice="dependence: " + ("blocked" if dependence_blocked else "passed"),
+                inputs=[
+                    "validity_frame.dependence.structure",
+                    "validity_frame.dependence.method_family_required",
+                ],
+                rule=(
+                    "DSX-VAL-030 fires when dependence.structure names a member of "
+                    "dsx.spec.DEPENDENCE_ADMISSIBLE_METHODS and "
+                    "dependence.method_family_required is blank under is_blank() or "
+                    "not a normalize()d member of that structure's admissible set; a "
+                    "blank structure, structure 'none', or a structure outside the "
+                    "closed vocabulary skips the check entirely."
+                ),
+                citation=_DEPENDENCE_CITATION,
+                counterfactual=(
+                    "A spec declaring an admissible method_family_required for its "
+                    "declared dependence structure, or declaring no dependence "
+                    "structure (structure 'none' or absent), would have produced no "
+                    "DSX-VAL-030."
                 ),
             ).to_dict()
         )
@@ -497,3 +555,75 @@ def _check_unit_drift(spec: dict, frame: dict, report: Report) -> None:
             ),
             where="spec.validity_frame.units.analysis",
         )
+
+
+def _check_dependence(frame: dict, report: Report) -> None:
+    """Emit DSX-VAL-030 when a declared dependence structure has no admissible
+    method family accounting for it.
+
+    Citation: Cameron, A.C. & Miller, D.L. (2015), "A Practitioner's Guide to
+    Cluster-Robust Inference", Journal of Human Resources 50(2):317-372, for
+    the clustered, repeated_measures, temporal and spatial pairings; Gelman,
+    A. & Hill, J. (2007), Data Analysis Using Regression and
+    Multilevel/Hierarchical Models, Cambridge University Press, for the
+    hierarchical pairing. The exact section locator inside Cameron and Miller
+    and the exact chapter locator inside Gelman and Hill are both UNVERIFIED —
+    author, year, title and venue were confirmed for each; the internal
+    locators were not. Do not invent either.
+
+    Structural criterion: membership of the declared, normalize()d method
+    family in dsx.spec.DEPENDENCE_ADMISSIBLE_METHODS[structure], the
+    admissible set for the declared, normalize()d dependence structure.
+
+    A blank structure, a structure that normalizes to 'none' (a declared
+    independence — the nothing-to-validate case, not a defect), or a
+    structure outside the closed vocabulary (DSX-SPEC-082's territory — a
+    shape defect, not this check's) are all skipped without emitting, so one
+    defect never earns two codes.
+    """
+    dependence = frame.get("dependence")
+    if not isinstance(dependence, dict):
+        return
+
+    structure = dependence.get("structure")
+    if is_blank(structure):
+        return
+
+    normalized_structure = normalize(structure)
+    if normalized_structure == "none":
+        return
+    if normalized_structure not in DEPENDENCE_ADMISSIBLE_METHODS:
+        return
+
+    admissible = DEPENDENCE_ADMISSIBLE_METHODS[normalized_structure]
+    admissible_listed = ", ".join(sorted(admissible))
+    method_family = dependence.get("method_family_required")
+
+    if is_blank(method_family):
+        detail = (
+            f"dependence.structure is {structure!r}, but no "
+            "dependence.method_family_required was declared. Admissible method "
+            f"families for {structure!r}: {admissible_listed}."
+        )
+    elif normalize(method_family) not in admissible:
+        detail = (
+            f"dependence.structure is {structure!r}, but the declared "
+            f"dependence.method_family_required {method_family!r} does not address "
+            f"it. Admissible method families for {structure!r}: {admissible_listed}."
+        )
+    else:
+        return
+
+    remedy = (
+        "Declare validity_frame.dependence.method_family_required as one of "
+        f"{admissible_listed} to account for the dependence introduced by the "
+        f"{structure!r} structure."
+    )
+    report.add(
+        "DSX-VAL-030",
+        "CRITICAL",
+        "dependence structure declared with no admissible method family",
+        detail=detail,
+        remedy=remedy,
+        where="spec.validity_frame.dependence",
+    )
