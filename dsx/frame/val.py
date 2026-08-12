@@ -13,13 +13,17 @@ defect.
 Two of the family's nine planned codes shipped in plan 07-03 (``DSX-VAL-010``,
 ``DSX-VAL-011``, both about the ``estimand`` sub-block), and two more shipped
 in plan 07-04 (``DSX-VAL-020``, the unit triad; ``DSX-VAL-021``, unit drift).
-This plan (07-05) adds three more: ``DSX-VAL-030`` (dependence — a declared
+Plan 07-05 added three more: ``DSX-VAL-030`` (dependence — a declared
 dependence structure with no admissible method family) and the identification
 pair ``DSX-VAL-040``/``DSX-VAL-041`` (weak identification naming no
 constraint; strong identification also carrying a constraint that informs the
-parameter's scale). Plan 07-06 adds the remaining two private helpers behind
-the same ``check()`` dispatcher — each new helper is one call added to
-``check()``, not a restructure.
+parameter's scale). This plan (07-06) adds the last three: ``DSX-VAL-050``
+(sampling frame — presence and internal consistency between declared
+exclusions and the declared selection risk), ``DSX-VAL-060`` (missingness —
+a declared mechanism paired with an implied method the mechanism does not
+license, at HIGH or CRITICAL depending on the pairing), and ``DSX-VAL-070``
+(measurement — a construct declared with no operationalisation). All nine
+planned codes now exist behind the same ``check()`` dispatcher.
 
 D-11 (mechanically proven by ``tests/test_frame_boundary.py``'s
 ``TestFrameParadigmReadBoundary``): no code path in this module reads the
@@ -137,6 +141,18 @@ _PARAMETER_SCALE_CONSTRAINT_SOURCES: "frozenset[str]" = frozenset(
     {"informative_priors", "penalisation", "design_restriction", "hierarchical_pooling"}
 )
 
+_SAMPLING_FRAME_CITATION = (
+    "Lohr, S.L. (2021), Sampling: Design and Analysis, 3rd edition, Chapter 1, "
+    "sections 1.2, 1.3 and 1.3.4 (\"Undercoverage\"); Chapter 16, section 16.1 "
+    "(\"Coverage Error\")."
+)
+
+_MEASUREMENT_CITATION = (
+    "Cronbach, L.J. & Meehl, P.E. (1955), \"Construct Validity in Psychological "
+    "Tests\", Psychological Bulletin 52(4):281-302, the nomological net "
+    "discussion at page 290."
+)
+
 
 def check(spec: dict) -> Report:
     """Emit the validity-frame content findings (``DSX-VAL-*``).
@@ -164,6 +180,8 @@ def check(spec: dict) -> Report:
     _check_unit_drift(spec, frame, report)
     _check_dependence(frame, report)
     _check_identification(frame, report)
+    _check_sampling_frame(frame, report)
+    _check_measurement(frame, report)
 
     estimand = frame.get("estimand")
     if isinstance(estimand, dict):
@@ -373,6 +391,67 @@ def check(spec: dict) -> Report:
                     "A weak declaration naming a real constraint, or a strong "
                     "declaration with constraint_source none, would have produced "
                     "neither code."
+                ),
+            ).to_dict()
+        )
+
+    sampling_frame = frame.get("sampling_frame")
+    if isinstance(sampling_frame, dict):
+        claim_population = sampling_frame.get("claim_population")
+        known_exclusions = sampling_frame.get("known_exclusions")
+        selection_risk = sampling_frame.get("selection_risk")
+        sampling_frame_blocked = is_blank(claim_population) or (
+            not is_blank(known_exclusions) and is_blank(selection_risk)
+        )
+        report.context.setdefault("decisions", []).append(
+            DecisionRecord(
+                id="",
+                invocation_id="",
+                layer="deterministic",
+                choice="sampling frame: " + ("blocked" if sampling_frame_blocked else "passed"),
+                inputs=[
+                    "validity_frame.sampling_frame.claim_population",
+                    "validity_frame.sampling_frame.known_exclusions",
+                    "validity_frame.sampling_frame.selection_risk",
+                ],
+                rule=(
+                    "DSX-VAL-050 fires when claim_population is blank under "
+                    "is_blank(), or when known_exclusions is a non-empty "
+                    "collection and selection_risk is blank under is_blank(); "
+                    "at most one finding per sub-block."
+                ),
+                citation=_SAMPLING_FRAME_CITATION,
+                counterfactual=(
+                    "A spec naming a non-blank claim_population, with a non-blank "
+                    "selection_risk whenever known_exclusions is non-empty, would "
+                    "have produced no DSX-VAL-050."
+                ),
+            ).to_dict()
+        )
+
+    measurement = frame.get("measurement")
+    if isinstance(measurement, dict):
+        construct = measurement.get("construct")
+        operationalisation = measurement.get("operationalisation")
+        measurement_blocked = not is_blank(construct) and is_blank(operationalisation)
+        report.context.setdefault("decisions", []).append(
+            DecisionRecord(
+                id="",
+                invocation_id="",
+                layer="deterministic",
+                choice="measurement: " + ("blocked" if measurement_blocked else "passed"),
+                inputs=[
+                    "validity_frame.measurement.construct",
+                    "validity_frame.measurement.operationalisation",
+                ],
+                rule=(
+                    "DSX-VAL-070 fires when construct is non-blank under "
+                    "is_blank() and operationalisation is blank under is_blank()."
+                ),
+                citation=_MEASUREMENT_CITATION,
+                counterfactual=(
+                    "A spec declaring an operationalisation whenever a construct "
+                    "is declared would have produced no DSX-VAL-070."
                 ),
             ).to_dict()
         )
@@ -824,3 +903,121 @@ def _check_identification(frame: dict, report: Report) -> None:
             remedy=remedy,
             where="spec.validity_frame.identification",
         )
+
+
+def _check_sampling_frame(frame: dict, report: Report) -> None:
+    """Emit DSX-VAL-050 when the sampling frame's claim population is blank,
+    or when a declared known exclusion has no accompanying selection-risk
+    assessment.
+
+    Citation: Lohr, S.L. (2021), Sampling: Design and Analysis, 3rd edition,
+    Chapter 1, sections 1.2, 1.3 and 1.3.4 ("Undercoverage"); Chapter 16,
+    section 16.1 ("Coverage Error").
+
+    Structural criterion: presence and internal consistency between the
+    declared exclusions and the declared selection risk — not a comparison
+    of the frame against the claim population. D-06 defers that comparison:
+    the good fixture declares a source with no region filter against a
+    claim population naming no region, with a selection risk of "none
+    identified", and any rule strong enough to catch a frame that quietly
+    excludes part of its claim population would also fail that fixture,
+    which must pass at every threshold.
+
+    Uses is_blank() only, never is_placeholder_or_refusal() — this is
+    load-bearing, not incidental (D-06). The template's claim_population is
+    an angle-bracket placeholder and no decision authorises changing it; a
+    placeholder-aware check here would trip the template and widen the
+    repair list beyond what any decision covers. This check emits at most
+    one finding per sub-block, so an author with both problems is not told
+    the same thing twice.
+    """
+    sampling_frame = frame.get("sampling_frame")
+    if not isinstance(sampling_frame, dict):
+        return
+
+    claim_population = sampling_frame.get("claim_population")
+    known_exclusions = sampling_frame.get("known_exclusions")
+    selection_risk = sampling_frame.get("selection_risk")
+
+    if is_blank(claim_population):
+        detail = (
+            "sampling_frame.claim_population is blank — no population is named "
+            "for the frame to be judged against."
+        )
+        where = "spec.validity_frame.sampling_frame.claim_population"
+    elif not is_blank(known_exclusions) and is_blank(selection_risk):
+        detail = (
+            f"sampling_frame.known_exclusions names {known_exclusions!r}, but "
+            "sampling_frame.selection_risk is blank — an exclusion nobody has "
+            "assessed is a coverage gap nobody has assessed."
+        )
+        where = "spec.validity_frame.sampling_frame.selection_risk"
+    else:
+        return
+
+    remedy = (
+        "Name the population the claim will be made about in claim_population; "
+        "whenever known_exclusions is non-empty, also state selection_risk — how "
+        "the excluded rows could make the sample differ systematically from the "
+        "claim population, or 'none identified' if the risk was assessed and "
+        "found negligible."
+    )
+    report.add(
+        "DSX-VAL-050",
+        "HIGH",
+        "sampling frame is not internally consistent",
+        detail=detail,
+        remedy=remedy,
+        where=where,
+    )
+
+
+# Unadjudicated (D-06, REQ-P7-08's second clause): a measurement whose known
+# gaps contradict the claim population is not adjudicated by this check, or
+# by any check in this phase. This is decision D-06's text-comparison
+# deferral rather than an oversight, and the known-gaps field is therefore
+# read by no check in this phase.
+def _check_measurement(frame: dict, report: Report) -> None:
+    """Emit DSX-VAL-070 when a declared construct has no operationalisation
+    naming an observable.
+
+    Citation: Cronbach, L.J. & Meehl, P.E. (1955), "Construct Validity in
+    Psychological Tests", Psychological Bulletin 52(4):281-302, the
+    nomological net discussion at page 290.
+
+    Structural criterion: a construct with no operationalisation naming an
+    observable is rejected. Uses is_blank() only, never
+    is_placeholder_or_refusal() — the template's construct and
+    operationalisation are both angle-bracket placeholders and this check
+    must not trip them (D-06), the same asymmetry _check_sampling_frame
+    documents. A blank construct produces no finding whatever the
+    operationalisation says — there is nothing to demand an operationalisation
+    for, and an absent construct is Phase 6's DSX-SPEC-081 territory.
+    """
+    measurement = frame.get("measurement")
+    if not isinstance(measurement, dict):
+        return
+
+    construct = measurement.get("construct")
+    operationalisation = measurement.get("operationalisation")
+    if is_blank(construct) or not is_blank(operationalisation):
+        return
+
+    detail = (
+        f"measurement.construct is {construct!r}, but measurement.operationalisation "
+        "is blank — the construct names a concept but no rule turns it into a number."
+    )
+    remedy = (
+        "A construct is scientifically admissible only if it occurs in a network of "
+        "laws at least some of which involve observables (Cronbach & Meehl, 1955, "
+        f"p. 290) — name the exact rule that turns {construct!r} into a number, e.g. "
+        "'>=1 key action within 7 days of signup'."
+    )
+    report.add(
+        "DSX-VAL-070",
+        "HIGH",
+        "measurement construct declared with no operationalisation",
+        detail=detail,
+        remedy=remedy,
+        where="spec.validity_frame.measurement.operationalisation",
+    )

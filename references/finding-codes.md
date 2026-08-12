@@ -13,7 +13,7 @@ a suppression or a reference in a review stays valid across versions.
 **Gate thresholds.** `plan` and `execute` block at CRITICAL; `verify` and
 `ship` block at HIGH.
 
-**Total: 218 codes.**
+**Total: 220 codes.**
 
 ## Contract structure — `DSX-SPEC-*`
 
@@ -365,3 +365,5 @@ Estimand, unit triad, dependence, identification, sampling frame, missingness an
 | `DSX-VAL-030` | CRITICAL | dependence structure declared with no admissible method family |
 | `DSX-VAL-040` | CRITICAL | weak identification declared with no constraint |
 | `DSX-VAL-041` | HIGH | strong identification also carries a parameter-scale constraint |
+| `DSX-VAL-050` | HIGH | sampling frame is not internally consistent |
+| `DSX-VAL-070` | HIGH | measurement construct declared with no operationalisation |
