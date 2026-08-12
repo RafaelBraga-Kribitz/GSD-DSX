@@ -117,3 +117,11 @@ None beyond the anticipated UNVERIFIED-input-pair branch documented above under 
 ---
 *Phase: 08-interference-triggering-stability-dsx-int*
 *Completed: 2026-08-12*
+
+## Self-Check: PASSED
+
+- FOUND: dsx/mathx.py
+- FOUND: tests/test_dsx.py
+- FOUND: .planning/phases/08-interference-triggering-stability-dsx-int/08-01-SUMMARY.md
+- FOUND commit: d8f1183 (feat(08-01): add diluted_effect to math kernel with counterexample test)
+- FOUND commit: a957e1f (docs(08-01): complete dilution math kernel plan)
