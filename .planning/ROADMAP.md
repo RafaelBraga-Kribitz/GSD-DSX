@@ -313,6 +313,7 @@ Plans:
 
 - [ ] 08-01-PLAN.md — the published dilution formula in the math kernel, with its
       counterexample test and range validation (wave 1)
+
 - [ ] 08-02-PLAN.md — corpus prophylaxis: honest stability declarations, the per-fixture
       target-defect map, and the new triggering-dilution fixture pair (wave 1)
 
@@ -389,10 +390,17 @@ depend on it.
 **Plans**: 5 plans
 
 Plans:
+**Wave 1**
 
 - [ ] 09-01-PLAN.md — Symmetry audit written first, plus the three new `inference:` fields the pair reads (wave 1)
 - [ ] 09-02-PLAN.md — `inflation_from_peeking()` citation upgrade and the seeded, off-gate-path simulation (wave 1)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 09-03-PLAN.md — The atomic pair `DSX-PAR-010` and `DSX-PAR-011`, both halves in one commit at CRITICAL (wave 2)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
 - [ ] 09-04-PLAN.md — Known-bad corpus prose corrected, and a positive-content test under the symmetry audit (wave 3)
 - [ ] 09-05-PLAN.md — `DSX-PAR-002` requiredness and the fourteen-case symmetry proof (wave 3)
 

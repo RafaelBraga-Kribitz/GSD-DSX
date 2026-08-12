@@ -65,8 +65,8 @@ Requirements: REQ-P9-01 … REQ-P9-07 (7 requirements, see `.planning/REQUIREMEN
 
 ### Module layout, severity, gate registration
 
-- **D-01: All three codes ship inside the existing `dsx/frame/paradigm.py`. No new module, and
-  no `GATE_PROFILES` edit ships in Phase 9.** `paradigm.py` is 163 lines — nowhere near needing a
+- **D-01:** All three codes ship inside the existing `dsx/frame/paradigm.py`. No new module, and
+  no `GATE_PROFILES` edit ships in Phase 9. `paradigm.py` is 163 lines — nowhere near needing a
   split. `"paradigm"` is already registered at all four gate points (`dsx/cli.py:88-101`,
   **verified**), which is exactly the footprint the pair needs; `"design"` is absent from the
   `execute` profile, so a new module would need four separate profile edits to match. `_NOT_SHIPPED`
@@ -84,8 +84,8 @@ Requirements: REQ-P9-01 … REQ-P9-07 (7 requirements, see `.planning/REQUIREMEN
   nearest sibling `DSX-SPEC-085` (`dsx/spec.py:921-928`) and keeps a missing *justification* from
   blocking plan the way a genuinely uncontrolled *design* does.
 
-- **D-03: `tests/test_known_bad_corpus.py` is restructured in this phase — three tests going red is
-  the designed forcing edit, not a defect.** `test_every_spec_passes_the_critical_threshold_gate_points`
+- **D-03:** `tests/test_known_bad_corpus.py` is restructured in this phase — three tests going red is
+  the designed forcing edit, not a defect. `test_every_spec_passes_the_critical_threshold_gate_points`
   (lines 187-200) asserts *every* known-bad fixture exits `0` at plan and execute; both monitoring
   fixtures declare `peeking_policy: uncontrolled_continuous`. `test_ship_gate_findings_are_all_documented_incidental_corpus_gaps`
   (202-229) fails on any new blocking code, and `test_incidental_allowlist_names_no_target_family_code`
@@ -98,8 +98,8 @@ Requirements: REQ-P9-01 … REQ-P9-07 (7 requirements, see `.planning/REQUIREMEN
 
 ### Triggers, disjointness, and both escapes
 
-- **D-04: Both halves trigger on `design.peeking_policy == "uncontrolled_continuous"` alone. Neither
-  reads `results.interim_looks`. No change to `dsx/checks/design.py`.** `_check_peeking` returns
+- **D-04:** Both halves trigger on `design.peeking_policy == "uncontrolled_continuous"` alone. Neither
+  reads `results.interim_looks`. No change to `dsx/checks/design.py`. `_check_peeking` returns
   early when `results.interim_looks` is absent (`dsx/checks/design.py:446-449`, **verified**) and
   only fires for `policy in ("", "fixed_horizon")` (`:451`) — structurally unreachable on either
   monitoring fixture. Decisively: **at `dsx gate plan` there is no `results:` block at all**, so a
@@ -107,9 +107,9 @@ Requirements: REQ-P9-01 … REQ-P9-07 (7 requirements, see `.planning/REQUIREMEN
   Disjointness from `DSX-EXP-060` is therefore by construction, and the Phase 6 parametrised test
   (`tests/test_dsx.py:678-690`) is inherited as the guard against double-firing.
 
-- **D-05: Phase 9 coins three new `inference:` fields — `threshold_calibration`,
+- **D-05:** Phase 9 coins three new `inference:` fields — `threshold_calibration`,
   `prior_justification`, `decision_threshold` — and extends `_INFERENCE_FIELDS`, its drift-guard
-  test, `templates/ANALYSIS-SPEC.yaml` and `dsx vocab`.** Repo-wide grep finds these names only in
+  test, `templates/ANALYSIS-SPEC.yaml` and `dsx vocab`. Repo-wide grep finds these names only in
   `brief.md:209-213` (commented out) and the research files — never in `dsx/spec.py`, the template,
   or any fixture. Without them **`DSX-PAR-011` has no satisfaction path at all**: its only possible
   trigger would be "paradigm is bayesian and policy is uncontrolled_continuous", which is
@@ -123,16 +123,16 @@ Requirements: REQ-P9-01 … REQ-P9-07 (7 requirements, see `.planning/REQUIREMEN
   - **Apply the collision habit before coining** (see `<specifics>`): grep `dsx/`, `tests/`,
     `examples/`, `references/`, `templates/` for each of the three names first.
 
-- **D-06: The paradigm-retype escape is closed structurally, by exhaustive `PARADIGMS` coverage —
-  not by two hand-written `if` branches.** `PARADIGMS` has exactly two members
+- **D-06:** The paradigm-retype escape is closed structurally, by exhaustive `PARADIGMS` coverage —
+  not by two hand-written `if` branches. `PARADIGMS` has exactly two members
   (`dsx/spec.py:245-248`, **verified**), and `_PARADIGM_CONDITIONAL` (`dsx/frame/paradigm.py:38-41`)
   already establishes the house idiom: a dict keyed by every member with a set-equality test. The
   property to make provable is *"for every member of `PARADIGMS`, an uncontrolled-continuous design
   resolves to some blocking code."* REQ-P9-05's both-directions test then falls out of the structure
   rather than being two bespoke assertions.
 
-- **D-07: The *undeclared*-paradigm escape is real, currently open, and must be closed in this phase
-  — but the planner verifies the mechanism before writing it.**
+- **D-07:** The *undeclared*-paradigm escape is real, currently open, and must be closed in this phase
+  — but the planner verifies the mechanism before writing it.
   **Verified during discuss:** `_validate_inference_shape` returns early when `inference:` is absent
   or empty (`dsx/spec.py:886-888`), and skips blank values inside the membership loop
   (`dsx/spec.py:917-919`). So **today, omitting `inference.paradigm` — or the whole `inference:`
@@ -156,8 +156,8 @@ Requirements: REQ-P9-01 … REQ-P9-07 (7 requirements, see `.planning/REQUIREMEN
 
 ### `DSX-PAR-002` scope
 
-- **D-08: `PARADIGM_JUSTIFICATIONS` already exists — Phase 9 coins no vocabulary. `DSX-PAR-002` owns
-  *requiredness and symmetry*; `DSX-SPEC-085` keeps *membership*.** The vocabulary is at
+- **D-08:** `PARADIGM_JUSTIFICATIONS` already exists — Phase 9 coins no vocabulary. `DSX-PAR-002` owns
+  *requiredness and symmetry*; `DSX-SPEC-085` keeps *membership*. The vocabulary is at
   `dsx/spec.py:251-265` (**verified**) with all seven brief §5.2 members and the comment "No
   description ranks one reason above another (D-12 symmetry)" at `:250`. It is in `_VOCABULARIES`
   (`:296`) so `dsx vocab` already dumps it, and `_INFERENCE_MEMBERSHIP` (`:857-861`) already
@@ -171,8 +171,8 @@ Requirements: REQ-P9-01 … REQ-P9-07 (7 requirements, see `.planning/REQUIREMEN
     fact per code. Removing the row from `_INFERENCE_MEMBERSHIP` to avoid that would turn
     `tests/test_dsx.py:527` red and silently narrow a shipped code. **Do neither.**
 
-- **D-09: "No reason ranked above another" is enforced mechanically — one membership path, no
-  per-member branching and no per-paradigm branching, proven by a 7×2 parametrised test.**
+- **D-09:** "No reason ranked above another" is enforced mechanically — one membership path, no
+  per-member branching and no per-paradigm branching, proven by a 7×2 parametrised test.
   `dsx/spec.py:250` states the property as a comment with nothing enforcing it. The failure mode
   brief D-12 names is that `team_convention` or `vendor_constraint` quietly acquires a "weaker
   reason" code path later and nothing catches it. `PITFALLS.md:421-467` is the argument that D-12
@@ -180,8 +180,8 @@ Requirements: REQ-P9-01 … REQ-P9-07 (7 requirements, see `.planning/REQUIREMEN
 
 ### Citations — external research applied, and a requirement correction
 
-- **D-10: REQ-P9-02 and REQ-P9-03 misattribute the bound, and their wording is corrected here.
-  Deng et al.'s Theorem 1 does NOT state `1/(K+1)`.**
+- **D-10:** REQ-P9-02 and REQ-P9-03 misattribute the bound, and their wording is corrected here.
+  Deng et al.'s Theorem 1 does NOT state `1/(K+1)`.
   Verified against the arXiv LaTeX source (`arxiv.org/e-print/1602.05549`, `KDD2015-Submission.tex`),
   read directly because ar5iv **garbles Table 1** for this paper (it transposes the Type-I and
   Early-Stop-Rate rows). The paper contains exactly **one** numbered theorem and **no** corollary,
@@ -204,8 +204,8 @@ Requirements: REQ-P9-01 … REQ-P9-07 (7 requirements, see `.planning/REQUIREMEN
     to a citation and must be **written into `REQUIREMENTS.md` REQ-P9-02/03 and ROADMAP Phase 9
     SC 2/SC 3**, not just noted here.
 
-- **D-11: `K` is the posterior odds. `K = p/(1-p)` is a legitimate derivation, but the docstring must
-  state that `1/(K+1) = 1-p` identically — otherwise the check reads as circular.**
+- **D-11:** `K` is the posterior odds. `K = p/(1-p)` is a legitimate derivation, but the docstring must
+  state that `1/(K+1) = 1-p` identically — otherwise the check reads as circular.
   The paper says "posterior odds K" in both prose occurrences and in §3.2's rule. Posterior odds
   equals the Bayes factor **only when prior odds are 1:1**, which the paper states at §3.1 and §5.1 —
   that is why its Table 1 simulation can call K=9 a Bayes-factor threshold. At p=0.95: K=19 and
@@ -220,8 +220,8 @@ Requirements: REQ-P9-01 … REQ-P9-07 (7 requirements, see `.planning/REQUIREMEN
     reporting the operator's false-discovery risk. Worth a `remedy` line; **not** something the gate
     can adjudicate (brief D-02).
 
-- **D-12: The Ville distinction is confirmed and is stronger than the repo assumed — Ville is never
-  cited in Deng et al. at all** (zero occurrences in the full source). Their proof (§5) is the
+- **D-12:** The Ville distinction is confirmed and is stronger than the repo assumed — Ville is never
+  cited in Deng et al. at all (zero occurrences in the full source). Their proof (§5) is the
   **likelihood-ratio identity / change of measure**, an equality, not a maximal inequality. Ville
   gives `P(sup_t M_t ≥ k) ≤ 1/k` for a test martingale — `1/19 ≈ 0.0526` at k=19.
   - **The five-minute readable distinction, in the paper's own words (§6.2):** Type-I error is "the
@@ -240,8 +240,8 @@ Requirements: REQ-P9-01 … REQ-P9-07 (7 requirements, see `.planning/REQUIREMEN
     `dsx/spec.py:878-881` (**verified present**) — but only if replaced with a locator that does not
     claim Theorem 1 states `1/(K+1)`.
 
-- **D-13: `inflation_from_peeking()`'s docstring IS upgraded to a full brief-D-05 citation, carrying
-  an explicit unverified-locator flag.** This resolves the STATE.md open item.
+- **D-13:** `inflation_from_peeking()`'s docstring IS upgraded to a full brief-D-05 citation, carrying
+  an explicit unverified-locator flag. This resolves the STATE.md open item.
   - **Mechanically, brief D-05 does not reach this function.** `check_d05()` resolves citations per
     finding code by walking up from each `report.add(...)` call site
     (`scripts/gen-finding-catalogue.py:193-232, 250-280`), and `dsx/mathx.py:411-432` contains no
@@ -271,8 +271,8 @@ Requirements: REQ-P9-01 … REQ-P9-07 (7 requirements, see `.planning/REQUIREMEN
 
 ### Evidence artifacts
 
-- **D-14: The REQ-P9-07 simulation is a stdlib-only, `random.Random(seed)` unittest under `tests/`,
-  asserting two different things about two different formulations.** A **monotone-trend** assertion
+- **D-14:** The REQ-P9-07 simulation is a stdlib-only, `random.Random(seed)` unittest under `tests/`,
+  asserting two different things about two different formulations. A **monotone-trend** assertion
   under the point null (formulation (a) — no ceiling exists, so a fixed number cannot be asserted),
   and a **fixed `1/(K+1)` ceiling** assertion under the prior-averaged setup (formulation (b)).
   Swapping them produces a test that passes at one horizon and fails at another — the "implementation
@@ -286,8 +286,8 @@ Requirements: REQ-P9-01 … REQ-P9-07 (7 requirements, see `.planning/REQUIREMEN
     or excluded from discovery stops running, and then it rots. Budget it sub-second (a few thousand
     trials); resolution is not the point, reproducibility is.
 
-- **D-15: The REQ-P9-06 symmetry audit ships as `references/paradigm-symmetry.md` — with the tool,
-  not only in `.planning/`.** ROADMAP SC 5 requires a *committed* audit of the cheapest dishonest
+- **D-15:** The REQ-P9-06 symmetry audit ships as `references/paradigm-symmetry.md` — with the tool,
+  not only in `.planning/`. ROADMAP SC 5 requires a *committed* audit of the cheapest dishonest
   satisfaction path per half. `.planning/` is filtered out of PR branches by the `gsd-pr-branch`
   workflow, so a `.planning/phases/09-*/` location would hide the brief-D-12 symmetry argument from
   every external reader of the shipped tool. `references/` already holds check-reference material and
