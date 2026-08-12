@@ -334,7 +334,7 @@ validity_frame:
     selection_risk: "<how the sample could differ systematically from the claim population>"
 
   missingness:
-    mechanism: not_assessed        # MCAR | MAR | MNAR | not_assessed
+    mechanism: MCAR                # MCAR | MAR | MNAR | not_assessed — example value to replace
     rate: null
     method_implied: "<how missing rows are handled, e.g. complete_case>"
 

@@ -753,6 +753,153 @@ class TestValSamplingMissingnessMeasurement(unittest.TestCase):
         )
         self.assertNotIn("DSX-VAL-070", codes(report))
 
+    # D-05: DSX-VAL-060
+    def test_missingness_mar_mechanism_with_complete_case_fires_high_val_060(self):
+        report = val.check(
+            {
+                "validity_frame": {
+                    "missingness": {"mechanism": "MAR", "method_implied": "complete_case"}
+                }
+            }
+        )
+        found = [f for f in report.findings if f.code == "DSX-VAL-060"]
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0].severity, Severity.HIGH)
+
+    def test_missingness_mar_mechanism_with_available_case_fires_val_060(self):
+        report = val.check(
+            {
+                "validity_frame": {
+                    "missingness": {"mechanism": "MAR", "method_implied": "available_case"}
+                }
+            }
+        )
+        found = [f for f in report.findings if f.code == "DSX-VAL-060"]
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0].severity, Severity.HIGH)
+
+    def test_mar_mechanism_with_multiple_imputation_produces_no_missingness_finding(self):
+        report = val.check(
+            {
+                "validity_frame": {
+                    "missingness": {"mechanism": "MAR", "method_implied": "multiple_imputation"}
+                }
+            }
+        )
+        self.assertNotIn("DSX-VAL-060", codes(report))
+
+    def test_mcar_mechanism_with_complete_case_produces_no_missingness_finding(self):
+        report = val.check(
+            {
+                "validity_frame": {
+                    "missingness": {"mechanism": "MCAR", "method_implied": "complete_case"}
+                }
+            }
+        )
+        self.assertNotIn("DSX-VAL-060", codes(report))
+
+    def test_missingness_mnar_mechanism_with_complete_case_fires_critical_val_060(self):
+        report = val.check(
+            {
+                "validity_frame": {
+                    "missingness": {"mechanism": "MNAR", "method_implied": "complete_case"}
+                }
+            }
+        )
+        found = [f for f in report.findings if f.code == "DSX-VAL-060"]
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0].severity, Severity.CRITICAL)
+
+    def test_missingness_mnar_mechanism_with_an_explicit_mechanism_model_produces_no_finding(self):
+        for method in ("mechanism_model", "selection_model", "pattern_mixture_model"):
+            with self.subTest(method=method):
+                report = val.check(
+                    {
+                        "validity_frame": {
+                            "missingness": {"mechanism": "MNAR", "method_implied": method}
+                        }
+                    }
+                )
+                self.assertNotIn("DSX-VAL-060", codes(report))
+
+    def test_missingness_mnar_mechanism_with_an_unrecognised_method_fires_critical_val_060(self):
+        report = val.check(
+            {
+                "validity_frame": {
+                    "missingness": {
+                        "mechanism": "MNAR",
+                        "method_implied": "some_novel_approach",
+                    }
+                }
+            }
+        )
+        found = [f for f in report.findings if f.code == "DSX-VAL-060"]
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0].severity, Severity.CRITICAL)
+
+    def test_missingness_mar_mechanism_with_an_unrecognised_method_produces_no_finding(self):
+        report = val.check(
+            {
+                "validity_frame": {
+                    "missingness": {
+                        "mechanism": "MAR",
+                        "method_implied": "some_novel_approach",
+                    }
+                }
+            }
+        )
+        self.assertNotIn("DSX-VAL-060", codes(report))
+
+    def test_not_assessed_missingness_mechanism_produces_no_finding_for_any_method(self):
+        for method_implied in (
+            "complete_case", "available_case", "multiple_imputation", "", None,
+        ):
+            with self.subTest(method_implied=method_implied):
+                report = val.check(
+                    {
+                        "validity_frame": {
+                            "missingness": {
+                                "mechanism": "not_assessed",
+                                "method_implied": method_implied,
+                            }
+                        }
+                    }
+                )
+                self.assertNotIn("DSX-VAL-060", codes(report))
+
+    def test_missingness_rate_is_never_read_by_the_check(self):
+        baseline = None
+        for rate in (0, 0.4, None, "not_a_number"):
+            with self.subTest(rate=rate):
+                missingness = {"mechanism": "MAR", "method_implied": "complete_case"}
+                if rate is not None:
+                    missingness["rate"] = rate
+                report = val.check({"validity_frame": {"missingness": missingness}})
+                found = [
+                    (f.code, f.severity) for f in report.findings if f.code == "DSX-VAL-060"
+                ]
+                if baseline is None:
+                    baseline = found
+                    self.assertEqual(len(baseline), 1)
+                else:
+                    self.assertEqual(found, baseline)
+
+    def test_malformed_missingness_subblock_produces_no_finding_and_does_not_raise(self):
+        for malformed in ("a string", ["a", "list"], None, 5):
+            with self.subTest(malformed=malformed):
+                report = val.check({"validity_frame": {"missingness": malformed}})
+                self.assertNotIn("DSX-VAL-060", codes(report))
+
+    def test_missingness_known_bad_corpus_fixtures_never_fire_val_060(self):
+        root = Path(__file__).resolve().parent.parent
+        fixtures = sorted((root / "examples" / "known-bad").glob("*-ANALYSIS-SPEC.yaml"))
+        self.assertGreaterEqual(len(fixtures), 3)
+        for path in fixtures:
+            with self.subTest(fixture=path.name):
+                spec = load(str(path))
+                report = val.check(spec)
+                self.assertNotIn("DSX-VAL-060", codes(report), path.name)
+
     def test_malformed_sampling_frame_and_measurement_subblocks_produce_no_finding_and_do_not_raise(
         self,
     ):

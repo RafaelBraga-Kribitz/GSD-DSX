@@ -42,6 +42,7 @@ from ..spec import (
     CONSTRAINT_SOURCES,
     DEPENDENCE_ADMISSIBLE_METHODS,
     IDENTIFICATION_STRENGTHS,
+    MISSINGNESS_MECHANISMS,
     falsifier_is_discriminating,
     get,
     is_blank,
@@ -153,6 +154,48 @@ _MEASUREMENT_CITATION = (
     "discussion at page 290."
 )
 
+_MISSINGNESS_CITATION = (
+    "Little, R.J.A. & Rubin, D.B. (2019), Statistical Analysis with Missing Data, "
+    "3rd edition, Chapter 3 (\"Complete-Case and Available-Case Analysis, Including "
+    "Weighting Methods\"), section 3.2; White, I.R. & Carlin, J.B. (2010), "
+    "\"Bias and efficiency of multiple imputation compared with complete-case "
+    "analysis for missing covariate values\", Statistics in Medicine 29(28):2920-2931, "
+    "DOI 10.1002/sim.3944."
+)
+
+# The mechanism x implied-method pairing table (D-07). This is NOT a printed table
+# from any source — research confirmed no such table appears in Little & Rubin's
+# third edition. It is assembled from Chapter 3 section 3.2's stated conditions for
+# complete-case and available-case analysis, plus White & Carlin (2010)'s documented
+# sub-case in which complete-case analysis is unbiased under missing-at-random
+# missingness (missingness independent of the outcome given the covariates).
+# REQUIREMENTS.md's phrase "the Rubin MCAR/MAR/MNAR validity table" names the
+# concept this table encodes, not a citable artifact — do not describe this table,
+# in any docstring or comment, as reproducing a printed source.
+#
+# Each entry: (mode, methods, severity).
+#   - mode "deny": `methods` are the implied methods this mechanism does NOT
+#     license; anything outside `methods` is licensed (missing_at_random).
+#   - mode "allow": `methods` are the ONLY implied methods this mechanism
+#     licenses; anything outside `methods` is not licensed (missing_not_at_random).
+# missing_completely_at_random has no entry: it denies nothing, so it is handled
+# by the absence of a key, not by an explicit empty deny set.
+# not_assessed also has no entry — that absence is what makes the mechanism a
+# skip: an author who has declared they have not evaluated the mechanism has not
+# made the claim this check judges.
+_MISSINGNESS_METHOD_VALIDITY: "dict[str, tuple[str, frozenset[str], str]]" = {
+    "mar": (
+        "deny",
+        frozenset({"complete_case", "available_case"}),
+        "HIGH",
+    ),
+    "mnar": (
+        "allow",
+        frozenset({"mechanism_model", "selection_model", "pattern_mixture_model"}),
+        "CRITICAL",
+    ),
+}
+
 
 def check(spec: dict) -> Report:
     """Emit the validity-frame content findings (``DSX-VAL-*``).
@@ -181,6 +224,7 @@ def check(spec: dict) -> Report:
     _check_dependence(frame, report)
     _check_identification(frame, report)
     _check_sampling_frame(frame, report)
+    _check_missingness(frame, report)
     _check_measurement(frame, report)
 
     estimand = frame.get("estimand")
@@ -425,6 +469,60 @@ def check(spec: dict) -> Report:
                     "A spec naming a non-blank claim_population, with a non-blank "
                     "selection_risk whenever known_exclusions is non-empty, would "
                     "have produced no DSX-VAL-050."
+                ),
+            ).to_dict()
+        )
+
+    missingness = frame.get("missingness")
+    if isinstance(missingness, dict):
+        mechanism = missingness.get("mechanism")
+        method_implied = missingness.get("method_implied")
+        normalized_mechanism = (
+            normalize(mechanism)
+            if not is_blank(mechanism)
+            and normalize(mechanism) in {normalize(k) for k in MISSINGNESS_MECHANISMS}
+            else None
+        )
+        entry = (
+            _MISSINGNESS_METHOD_VALIDITY.get(normalized_mechanism)
+            if normalized_mechanism is not None
+            else None
+        )
+        if entry is not None:
+            mode, methods, _severity = entry
+            normalized_method = (
+                normalize(method_implied) if not is_blank(method_implied) else None
+            )
+            if mode == "deny":
+                missingness_blocked = normalized_method is not None and normalized_method in methods
+            else:
+                missingness_blocked = normalized_method is None or normalized_method not in methods
+        else:
+            missingness_blocked = False
+        report.context.setdefault("decisions", []).append(
+            DecisionRecord(
+                id="",
+                invocation_id="",
+                layer="deterministic",
+                choice="missingness: " + ("blocked" if missingness_blocked else "passed"),
+                inputs=[
+                    "validity_frame.missingness.mechanism",
+                    "validity_frame.missingness.method_implied",
+                ],
+                rule=(
+                    "DSX-VAL-060 fires when the normalize()d mechanism has an entry in "
+                    "_MISSINGNESS_METHOD_VALIDITY and the normalize()d method_implied "
+                    "fails that entry's pairing test; a blank or out-of-vocabulary "
+                    "mechanism, or a mechanism with no table entry "
+                    "(missing_completely_at_random or not_assessed), skips the check "
+                    "entirely. The missingness.rate field is never read."
+                ),
+                citation=_MISSINGNESS_CITATION,
+                counterfactual=(
+                    "A missing-at-random mechanism paired with a method other than "
+                    "complete-case or available-case analysis, or a missing-not-at-random "
+                    "mechanism paired with an explicit mechanism model, would have "
+                    "produced no DSX-VAL-060."
                 ),
             ).to_dict()
         )
@@ -970,6 +1068,112 @@ def _check_sampling_frame(frame: dict, report: Report) -> None:
         remedy=remedy,
         where=where,
     )
+
+
+def _check_missingness(frame: dict, report: Report) -> None:
+    """Emit DSX-VAL-060 when a declared missingness mechanism is paired with
+    an implied method the mechanism does not license.
+
+    Citation: Little, R.J.A. & Rubin, D.B. (2019), Statistical Analysis with
+    Missing Data, 3rd edition, Chapter 3 ("Complete-Case and Available-Case
+    Analysis, Including Weighting Methods"), section 3.2; White, I.R. &
+    Carlin, J.B. (2010), "Bias and efficiency of multiple imputation compared
+    with complete-case analysis for missing covariate values", Statistics in
+    Medicine 29(28):2920-2931, DOI 10.1002/sim.3944.
+
+    Honesty disclosure (D-05's whole point): the (mechanism, method) pairing
+    tested here — ``_MISSINGNESS_METHOD_VALIDITY`` — is not a printed table
+    from either cited source; it is assembled from Chapter 3 section 3.2's
+    stated conditions plus White & Carlin's documented sub-case in which
+    complete-case analysis is unbiased under missing-at-random missingness
+    (missingness independent of the outcome given the covariates). No such
+    table appears in Little & Rubin's third edition. "The Rubin MCAR/MAR/MNAR
+    validity table" names the concept this table encodes, not a citable
+    artifact — do not describe this table, in any docstring or comment, as
+    reproducing a printed source.
+
+    Structural criterion: membership of the declared (mechanism, method) pair
+    against the project-assembled table _MISSINGNESS_METHOD_VALIDITY, keyed
+    by the normalize()d mechanism — the table is assembled from the cited
+    conditions rather than reproduced from a printed table. A blank
+    mechanism, a mechanism outside the closed vocabulary (DSX-SPEC-082's
+    territory), or a mechanism with no entry in the table
+    (missing_completely_at_random, which denies nothing, or not_assessed, an
+    honestly declared absence of evaluation) are all skipped without
+    emitting. The missingness.rate field is never read by this check — not to
+    exempt, not to soften a severity, not to add to the detail text — because
+    a rate of zero must not become the cheapest way past it.
+    """
+    missingness = frame.get("missingness")
+    if not isinstance(missingness, dict):
+        return
+
+    mechanism = missingness.get("mechanism")
+    if is_blank(mechanism):
+        return
+
+    normalized_mechanism = normalize(mechanism)
+    if normalized_mechanism not in {normalize(k) for k in MISSINGNESS_MECHANISMS}:
+        return
+
+    entry = _MISSINGNESS_METHOD_VALIDITY.get(normalized_mechanism)
+    if entry is None:
+        return
+
+    mode, methods, severity = entry
+    method_implied = missingness.get("method_implied")
+    normalized_method = normalize(method_implied) if not is_blank(method_implied) else None
+
+    if mode == "deny":
+        valid = normalized_method is None or normalized_method not in methods
+    else:
+        valid = normalized_method is not None and normalized_method in methods
+
+    if valid:
+        return
+
+    detail = (
+        f"missingness.mechanism is {mechanism!r}, but missingness.method_implied is "
+        f"{method_implied!r} — a pairing this project-assembled table does not license."
+    )
+    # Severity is written as a literal string in each branch, not passed through as the
+    # `severity` variable, because scripts/gen-finding-catalogue.py's AST-based catalogue
+    # extractor (`extract()`) only recognises a `report.add(CODE, SEVERITY, TITLE, ...)`
+    # call whose second argument is itself a string literal — a variable there would make
+    # DSX-VAL-060 invisible to the generated catalogue (D-16).
+    if severity == "HIGH":
+        remedy = (
+            "White & Carlin (2010) document a real sub-case in which complete-case "
+            "analysis is unbiased under a missing-at-random mechanism: when missingness "
+            "is independent of the outcome given the covariates in the analysis model. "
+            "If that sub-case genuinely applies here, say so explicitly in the spec's "
+            "documentation; otherwise declare a method_implied this mechanism licenses, "
+            "such as multiple imputation."
+        )
+        report.add(
+            "DSX-VAL-060",
+            "HIGH",
+            "missingness mechanism paired with a method it does not license",
+            detail=detail,
+            remedy=remedy,
+            where="spec.validity_frame.missingness",
+        )
+    else:
+        remedy = (
+            "A mechanism that depends on the unobserved value itself licenses no "
+            "standard method without an explicit model of that mechanism — declare "
+            "method_implied as mechanism_model, selection_model or "
+            "pattern_mixture_model, or reconsider whether the mechanism is actually "
+            "missing_not_at_random."
+        )
+        report.add(
+            "DSX-VAL-060",
+            "CRITICAL",
+            "missingness mechanism paired with a method it does not license",
+            detail=detail,
+            remedy=remedy,
+            where="spec.validity_frame.missingness",
+        )
 
 
 # Unadjudicated (D-06, REQ-P7-08's second clause): a measurement whose known

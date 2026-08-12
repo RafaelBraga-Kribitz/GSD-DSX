@@ -344,7 +344,7 @@ validity_frame:
   missingness:
     mechanism: MAR                 # MCAR | MAR | MNAR | not_assessed
     rate: 0.0
-    method_implied: complete_case
+    method_implied: multiple_imputation
 
   measurement:
     construct: "activation"
