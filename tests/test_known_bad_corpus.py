@@ -25,11 +25,23 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from dsx import cli  # noqa: E402
+from dsx.frame.paradigm import _MONITORING_DISCIPLINE  # noqa: E402
 from dsx.loader import load  # noqa: E402
 
 CORPUS_DIR = ROOT / "examples" / "known-bad"
 SPEC_SUFFIX = "-ANALYSIS-SPEC.yaml"
 POSTMORTEM_SUFFIX = "-POSTMORTEM.md"
+SYMMETRY_AUDIT_PATH = ROOT / "references" / "paradigm-symmetry.md"
+
+# The three controlled design.peeking_policy values REQ-P9-01 names as "the
+# honest fix" — asserted by name so the audit cannot silently drop one while
+# still reading as complete prose.
+_CONTROLLED_PEEKING_POLICIES = ("sequential_obf", "sequential_pocock", "always_valid")
+
+# The two reference-value anchors the audit's "Reference values and their
+# sources" section commits to: DSX-PAR-010's 0.05 nominal alpha and
+# DSX-PAR-011's 1/(K+1) = 0.05 bound at K = 19.
+_SYMMETRY_AUDIT_REFERENCE_VALUES = ("0.142", "0.05")
 
 # The catch-attribution shape Phase 12 (REQ-P12-02) will formalise into structured tags.
 _FINDING_CODE_RE = re.compile(r"\bDSX-[A-Z]+-\d+\b")
@@ -452,6 +464,57 @@ class TestKnownBadCorpus(unittest.TestCase):
                     required, normalized,
                     f"{matches[0].name} no longer states {required!r} — the corrected "
                     "prior-averaged bound must remain stated, not merely un-misattributed",
+                )
+
+    def test_paradigm_symmetry_audit_enumerates_both_halves(self):
+        """The negative drift guards elsewhere in this module can tell a
+        corrected file from a misattributing one, but none of them can tell a
+        corrected document from one that dropped the symmetry claim entirely.
+        Prose asserting that DSX-PAR-010/DSX-PAR-011 are equally cheap to
+        satisfy dishonestly, with nothing underneath it, is exactly the
+        failure mode brief D-12 does not survive (D-15).
+
+        This test reads references/paradigm-symmetry.md and compares it
+        against dsx.frame.paradigm._MONITORING_DISCIPLINE — the code's real
+        clearing conditions — rather than against a hard-coded literal, so a
+        clearing declaration added to the code without being added to the
+        audit fails here instead of leaving the audit a quietly false claim
+        about the tool's behaviour.
+        """
+        self.assertTrue(SYMMETRY_AUDIT_PATH.is_file(), f"{SYMMETRY_AUDIT_PATH} is missing")
+        normalized = " ".join(SYMMETRY_AUDIT_PATH.read_text(encoding="utf-8").split())
+
+        for paradigm, (code, clearing_fields) in _MONITORING_DISCIPLINE.items():
+            with self.subTest(paradigm=paradigm, required=code):
+                self.assertIn(
+                    code, normalized,
+                    f"{SYMMETRY_AUDIT_PATH.name} no longer names {code!r}, the finding "
+                    f"code _MONITORING_DISCIPLINE maps to paradigm {paradigm!r}",
+                )
+            for field in clearing_fields:
+                with self.subTest(paradigm=paradigm, required=field):
+                    self.assertIn(
+                        field, normalized,
+                        f"{SYMMETRY_AUDIT_PATH.name} no longer names the clearing "
+                        f"declaration {field!r} for paradigm {paradigm!r} — a clearing "
+                        "declaration added to the code without being added to the audit "
+                        "is exactly the drift this test exists to catch",
+                    )
+
+        for honest_fix in _CONTROLLED_PEEKING_POLICIES:
+            with self.subTest(required=honest_fix):
+                self.assertIn(
+                    honest_fix, normalized,
+                    f"{SYMMETRY_AUDIT_PATH.name} no longer names {honest_fix!r} as one "
+                    "of the three controlled peeking policies the honest fix names",
+                )
+
+        for reference_value in _SYMMETRY_AUDIT_REFERENCE_VALUES:
+            with self.subTest(required=reference_value):
+                self.assertIn(
+                    reference_value, normalized,
+                    f"{SYMMETRY_AUDIT_PATH.name} no longer states the reference value "
+                    f"{reference_value!r}",
                 )
 
 
