@@ -48,32 +48,54 @@ Task IDs are assigned when PLAN.md files are written; the requirement→test map
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| TBD | TBD | TBD | REQ-P8-01 | T-8-01 | Malformed `interference` sub-block degrades to a finding, never a crash | unit + gate-level (copy-mutate temp fixture) | `python3 -m unittest tests.test_frame_interference -v -k risk` | ❌ W0 | ⬜ pending |
-| TBD | TBD | TBD | REQ-P8-02 | — | N/A | unit, table-driven over the risk→mitigation map | `python3 -m unittest tests.test_frame_interference -v -k mitigation` | ❌ W0 | ⬜ pending |
-| TBD | TBD | TBD | REQ-P8-03 | T-8-03 | Dilution function raises on an out-of-range trigger rate rather than returning a plausible wrong number | unit (`mathx`) + unit (`interference.check`) | `python3 -m unittest tests.test_dsx -v -k dilution` and `tests.test_frame_interference -v -k triggering` | ❌ W0 | ⬜ pending |
-| TBD | TBD | TBD | REQ-P8-04 | — | N/A | unit + documentation-content test | `python3 -m unittest tests.test_frame_interference -v -k ratio_scope` plus a new corpus-module doc test | ❌ W0 | ⬜ pending |
-| TBD | TBD | TBD | REQ-P8-05 | T-8-02 | Malformed `stability` sub-block degrades to a finding | unit + gate-level severity pinning (HIGH, not CRITICAL) | `python3 -m unittest tests.test_frame_interference -v -k stability` | ❌ W0 | ⬜ pending |
-| TBD | TBD | TBD | REQ-P8-06 | — | N/A | boundary scanner over `dsx/frame/*.py` | `python3 -m unittest tests.test_frame_boundary -v` | ⚠️ ordering-dependent | ⬜ pending |
+| 08-03 T1 | 08-03 | 2 | REQ-P8-01 | T-8-01, T-8-08 | Malformed `interference` sub-block degrades to no finding, never a crash; the Kohavi citation claims only what was read | unit + gate-level (copy-mutate temp fixture) | `python3 -m unittest tests.test_frame_interference -v -k risk` | ❌ W0 | ⬜ pending |
+| 08-03 T1 | 08-03 | 2 | REQ-P8-02 | T-8-08 | Cell-level admissibility is attributed to the structural criterion, not to the unread chapter | unit, table-driven over `_RISK_MITIGATION_MAP` | `python3 -m unittest tests.test_frame_interference -v -k mitigation` | ❌ W0 | ⬜ pending |
+| 08-01 T1 · 08-04 T1 | 08-01, 08-04 | 1, 3 | REQ-P8-03 | T-8-03, T-8-04 | Dilution function raises on an out-of-range trigger rate rather than returning a plausible wrong number; the input pair is read, never back-solved | unit (`mathx`) + unit (`interference.check`) | `python3 -m unittest tests.test_dsx -v -k dilut` and `python3 -m unittest tests.test_frame_interference -v -k triggering` | ❌ W0 | ⬜ pending |
+| 08-04 T1 · 08-04 T2 · 08-06 T1 | 08-04, 08-06 | 3, 5 | REQ-P8-04 | T-8-11 | The section 6.5 entry condition cannot be softened without a red test | unit + documentation-content test | `python3 -m unittest tests.test_frame_interference -v -k ratio_scope` and `python3 -m unittest tests.test_known_bad_corpus -v` | ❌ W0 | ⬜ pending |
+| 08-05 T1 · 08-05 T2 | 08-05 | 4 | REQ-P8-05 | T-8-02, T-8-12, T-8-13 | Malformed `stability` sub-block degrades to no finding; severity alone selects the gate point and `GATE_THRESHOLDS` is provably unedited | unit + gate-level severity pinning (HIGH, not CRITICAL) | `python3 -m unittest tests.test_frame_interference -v -k stability` | ❌ W0 | ⬜ pending |
+| 08-03 T2 | 08-03 | 2 | REQ-P8-06 | — | N/A | boundary scanner over `dsx/frame/*.py` | `python3 -m unittest tests.test_frame_boundary -v` | ✅ exists | ⬜ pending |
+| 08-05 T2 | 08-05 | 4 | (cross-cutting) | T-8-01, T-8-02 | Twenty-five malformed shapes across four sub-blocks raise nothing and find nothing; no exception handler exists in the module | unit sweep + abstract-syntax-tree assertion | `python3 -m unittest tests.test_frame_interference -v -k malformed` | ❌ W0 | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
-**REQ-P8-06 is ordering-dependent and must be planned as check-then-branch, not as an assumption.**
-Phase 7's plan `07-03` Task 2 designs the paradigm-read scanner as a directory glob over every
-`*.py` under `dsx/frame/` with `paradigm.py` excluded by name — so `interference.py` is covered
-automatically the moment it exists, with no edit. But Phase 7 has **not** executed that plan:
-`dsx/frame/val.py` does not exist and `val` is not registered in `dsx/cli.py` (both verified
-directly). If Phase 8 executes first, it must write the scanner itself, in the glob shape Phase 7
-specified, so Phase 7 inherits it rather than writing a second one.
+**REQ-P8-06's ordering question is now resolved, in the direction that costs least.** This
+document previously recorded that Phase 7 had not executed plan `07-03`, so the paradigm-read
+scanner might not exist. That is no longer true. The planner verified directly on 2026-08-12:
+`dsx/frame/val.py` is on disk, `dsx/cli.py` imports and registers `val` in `CHECKS` and in the
+`plan`, `verify` and `ship` profiles, and `tests/test_frame_boundary.py` contains
+`TestFrameParadigmReadBoundary` with a text detector, an abstract-syntax-tree detector, a
+`FRAME_DIR.rglob("*.py")` scan and `paradigm.py` excluded by name. Commits `3633222`, `c7800ef`
+and `27f495d` landed it. So `dsx/frame/interference.py` is covered by the glob automatically the
+moment the file exists, with no scanner edit at all.
+
+Plan `08-03` Task 2 is still written as check-then-branch — the executor confirms the class is
+present rather than assuming it — but the expected branch adds only a named traceability test
+asserting `interference.py` is inside the scan and clean under both detectors, plus a comment on
+the exclusion set. The contingency branch, which writes the scanner in full in the shape
+`07-03-PLAN.md` specified, remains in the plan in case the working tree is older than measured.
 
 ---
 
 ## Wave 0 Requirements
 
-- [ ] `tests/test_frame_interference.py` — new module; stubs for REQ-P8-01 … REQ-P8-05
-- [ ] A dilution function in `dsx/mathx.py` plus its reference-value test in the existing `TestMath` class — both new
-- [ ] The per-fixture rewrite of `tests/test_known_bad_corpus.py` — a **test-suite design gap shared with Phase 7**, not merely a fixture gap. Needs its own plan task.
-- [ ] `examples/known-bad/triggering-dilution-ANALYSIS-SPEC.yaml` and its post-mortem — confirmed absent; `examples/known-bad/` currently holds three pairs, none named `triggering-dilution`
-- [ ] The paradigm-read scanner in `tests/test_frame_boundary.py` — may already exist depending on execution order; plan a check-then-branch task, never an assumption either way
+- [ ] `tests/test_frame_interference.py` — new module. Created by plan `08-03` Task 1 covering
+      REQ-P8-01 and REQ-P8-02; extended by `08-04` Task 1 (REQ-P8-03, REQ-P8-04) and by `08-05`
+      Tasks 1 and 2 (REQ-P8-05 and the malformed-shape sweep).
+- [ ] A dilution function in `dsx/mathx.py` plus its reference-value test in the existing
+      `TestMath` class — both new, both in plan `08-01` Task 1.
+- [ ] The per-fixture rewrite of `tests/test_known_bad_corpus.py` — a **test-suite design gap
+      shared with Phase 7**, not merely a fixture gap. Plan `08-02` Task 2, deliberately scheduled
+      in wave 1 so it lands *before* the codes that break the old structure rather than beside
+      them; plans `08-03` and `08-04` each add one map entry in the same commit as their code.
+- [ ] `examples/known-bad/triggering-dilution-ANALYSIS-SPEC.yaml` and its post-mortem — plan
+      `08-02` Task 3.
+- [x] The paradigm-read scanner in `tests/test_frame_boundary.py` — **already exists.** Phase 7's
+      plan `07-03` landed `TestFrameParadigmReadBoundary` with the directory-glob design. Plan
+      `08-03` Task 2 is still written as check-then-branch and adds a named traceability test for
+      `interference.py` rather than new detection logic.
+- [ ] Honest `stability` declarations on all three pre-existing corpus fixtures — plan `08-02`
+      Task 1. Without this, `DSX-INT-040` would fire on three fixtures that exist to demonstrate
+      other defects, and the family-prefix exclusion would make documenting it impossible.
 
 No framework install is needed — `unittest` is standard library, consistent with the stdlib-only
 constraint (D-01).

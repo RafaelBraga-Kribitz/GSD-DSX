@@ -306,7 +306,35 @@ the brief fixes verbatim and D-06 makes irreversible.
      verify/ship with the assessment method cited, and a test asserts no
      `dsx/frame/interference.py` code path reads `inference.paradigm` (D-11).
 
-**Plans**: TBD
+**Plans:** 6 plans
+
+Plans:
+**Wave 1**
+
+- [ ] 08-01-PLAN.md — the published dilution formula in the math kernel, with its
+      counterexample test and range validation (wave 1)
+- [ ] 08-02-PLAN.md — corpus prophylaxis: honest stability declarations, the per-fixture
+      target-defect map, and the new triggering-dilution fixture pair (wave 1)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 08-03-PLAN.md — `dsx/frame/interference.py` lands with `DSX-INT-010`/`011`, the
+      risk-to-mitigation map and all build plumbing in one commit (wave 2)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 08-04-PLAN.md — `DSX-INT-030`, the additive metric partition, and the gated-backlog
+      row recording why ratio-metric dilution stays out of scope (wave 3)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
+- [ ] 08-05-PLAN.md — `DSX-INT-040` at HIGH with its disjointness statement, plus the
+      malformed-shape hardening sweep over all four codes (wave 4)
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
+- [ ] 08-06-PLAN.md — the two success-criteria corrections and the matching REQ-P8-04
+      amendment; the phase's only writer of the tracking files (wave 5)
 
 ### Phase 9: Monitoring discipline, symmetric (`DSX-PAR-*`)
 
