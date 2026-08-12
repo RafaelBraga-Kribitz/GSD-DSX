@@ -13,7 +13,7 @@ a suppression or a reference in a review stays valid across versions.
 **Gate thresholds.** `plan` and `execute` block at CRITICAL; `verify` and
 `ship` block at HIGH.
 
-**Total: 223 codes.**
+**Total: 224 codes.**
 
 ## Contract structure — `DSX-SPEC-*`
 
@@ -351,6 +351,7 @@ The declared inferential paradigm manifest and its symmetric peeking-monitoring 
 | Code | Severity | Finding |
 |---|---|---|
 | `DSX-PAR-001` | INFO | paradigm manifest — inference.paradigm: <…> |
+| `DSX-PAR-002` | HIGH | inference.paradigm is not declared under an uncontrolled continuous design |
 | `DSX-PAR-010` | CRITICAL | Uncontrolled continuous monitoring under a frequentist paradigm with no monitoring discipline declared |
 | `DSX-PAR-011` | CRITICAL | Uncontrolled continuous monitoring under a bayesian paradigm with no monitoring discipline declared |
 

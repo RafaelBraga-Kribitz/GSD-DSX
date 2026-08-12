@@ -25,7 +25,7 @@ from __future__ import annotations
 from ..decisions import DecisionRecord
 from ..findings import Report
 from ..mathx import inflation_from_peeking
-from ..spec import PARADIGMS, as_number, get, is_blank, normalize
+from ..spec import PARADIGM_JUSTIFICATIONS, PARADIGMS, as_number, get, is_blank, normalize
 
 # Frame/contract families that apply regardless of the declared paradigm
 # (D-11: frame-layer checks never branch on paradigm). DSX-PAR-002 is this
@@ -57,7 +57,6 @@ _PARADIGM_CONDITIONAL: "dict[str, tuple[str, ...]]" = {
 _NOT_SHIPPED: "dict[str, str]" = {
     "DSX-INT-": "Phase 8 ships DSX-INT-* (interference/SUTVA, triggering, dilution).",
     "DSX-PRE-": "Phase 10 ships DSX-PRE-* (pre-registered inference plan).",
-    "DSX-PAR-002": "Phase 9 ships DSX-PAR-002 alongside the symmetric monitoring pair.",
     "DSX-ADM-": "Phase 11 ships DSX-ADM-* (frequentist procedure admissibility).",
 }
 
@@ -291,6 +290,125 @@ def _check_monitoring_discipline(spec: dict, report: Report) -> None:
         )
 
 
+def _check_paradigm_justification(spec: dict, report: Report) -> None:
+    """Emit DSX-PAR-002 — requiredness for ``inference.paradigm_justification``,
+    and the requiredness half of a missing ``inference.paradigm`` under an
+    uncontrolled design (REQ-P9-04, D-08, D-09, brief D-12).
+
+    Two mutually exclusive cases by construction — one requires a declared
+    paradigm, the other requires a blank one — so at most one finding is
+    ever emitted:
+
+      - ``inference.paradigm`` normalizes to a member of ``PARADIGMS`` and
+        ``inference.paradigm_justification`` is blank or absent: a paradigm
+        was declared but the reason for it was not.
+      - ``inference.paradigm`` is blank or absent *and*
+        ``design.peeking_policy`` normalizes to ``uncontrolled_continuous``:
+        no paradigm was declared at all, under a design that needs one.
+
+    Never tests membership. ``DSX-SPEC-085``
+    (``dsx/spec.py::_validate_inference_shape``) owns whether a declared
+    ``paradigm_justification`` is a recognised member of
+    ``PARADIGM_JUSTIFICATIONS`` — a committed test pins the real
+    ``examples/bad-ANALYSIS-SPEC.yaml`` fixture at exactly one
+    ``DSX-SPEC-085`` finding for its out-of-vocabulary
+    ``paradigm_justification`` and zero ``DSX-PAR-002`` findings (T-9-14).
+    Re-checking membership here would emit two codes for one defect;
+    ``PARADIGM_JUSTIFICATIONS`` is read only to list the seven allowed
+    reasons in the remedy text, by iterating the live vocabulary in sorted
+    order — never a hand-written subset, never an adjective distinguishing
+    one reason from another (brief D-12; the failure mode this guards
+    against is named in brief D-12 itself: a reason like ``team_convention``
+    or ``vendor_constraint`` quietly acquiring a weaker path later).
+
+    Citation: Deng, A., Lu, J. & Chen, S. (2016), "Continuous Monitoring of
+    A/B Tests without Pain: Optional Stopping in Bayesian Testing", IEEE
+    DSAA 2016 — the same primary source this module's other checks cite, for
+    the proposition that a decision procedure's realised error rate is
+    paradigm-dependent, which is what makes an undeclared or unjustified
+    paradigm a real gap rather than a formality. The exact section/theorem
+    locator within this paper is unverified at time of writing — the same
+    unverified-locator flag carried by this module's other citations of the
+    same source, escalated per D-05 rather than invented.
+    Structural criterion: a presence test over one field at a time, never a
+    membership test (``DSX-SPEC-085`` owns membership). The identical path
+    applies to every member of ``PARADIGM_JUSTIFICATIONS`` and of
+    ``PARADIGMS``: no per-member or per-paradigm branch exists in this
+    function.
+    """
+    declared_paradigm = get(spec, "inference.paradigm")
+    paradigm = normalize(declared_paradigm) if not is_blank(declared_paradigm) else ""
+    justification = get(spec, "inference.paradigm_justification")
+    policy = normalize(get(spec, "design.peeking_policy") or "")
+
+    if paradigm in PARADIGMS and is_blank(justification):
+        allowed = ", ".join(sorted(PARADIGM_JUSTIFICATIONS))
+        report.add(
+            "DSX-PAR-002",
+            "HIGH",
+            f"inference.paradigm ({paradigm}) is declared with no paradigm_justification",
+            detail=(
+                "A paradigm was declared but the reason for choosing it was "
+                "not. The justification is what makes an honest paradigm "
+                "choice cheaper to declare than a dishonest one — without "
+                "it, a genuinely-reasoned declaration cannot be told apart "
+                "from a paradigm chosen only to dodge a stricter check."
+            ),
+            remedy=(
+                "Declare a non-blank inference.paradigm_justification, one "
+                f"of: {allowed}."
+            ),
+            where="spec.inference.paradigm_justification",
+        )
+        counterfactual = (
+            "Declaring a non-blank inference.paradigm_justification (any "
+            f"of: {allowed}) would have cleared DSX-PAR-002."
+        )
+    elif not paradigm and policy == _UNCONTROLLED_POLICY:
+        members = ", ".join(sorted(PARADIGMS))
+        report.add(
+            "DSX-PAR-002",
+            "HIGH",
+            "inference.paradigm is not declared under an uncontrolled continuous design",
+            detail=(
+                "design.peeking_policy is uncontrolled_continuous and no "
+                "inference.paradigm is declared. With no paradigm declared, "
+                "every paradigm-conditional check currently applies — "
+                "declaring one narrows the checks that apply to this spec, "
+                "it never adds to them."
+            ),
+            remedy=f"Declare inference.paradigm, one of: {members}.",
+            where="spec.inference.paradigm",
+        )
+        counterfactual = (
+            f"Declaring inference.paradigm (one of: {members}) would have "
+            "cleared DSX-PAR-002, and narrowed which paradigm-conditional "
+            "checks apply to this spec."
+        )
+    else:
+        return
+
+    report.context.setdefault("decisions", []).append(
+        DecisionRecord(
+            id="",
+            invocation_id="",
+            layer="deterministic",
+            choice=f"DSX-PAR-002 fired: paradigm={paradigm or 'undeclared'}",
+            inputs=[
+                "inference.paradigm", "inference.paradigm_justification",
+                "design.peeking_policy",
+            ],
+            rule=(
+                "inference.paradigm declared as a PARADIGMS member with a "
+                "blank paradigm_justification, or inference.paradigm blank "
+                "under an uncontrolled_continuous design."
+            ),
+            citation="Deng, Lu & Chen (2016), Continuous Monitoring of A/B Tests without Pain",
+            counterfactual=counterfactual,
+        ).to_dict()
+    )
+
+
 def check(spec: dict) -> Report:
     """Emit DSX-PAR-001 — the informational paradigm manifest.
 
@@ -410,5 +528,6 @@ def check(spec: dict) -> Report:
     )
 
     _check_monitoring_discipline(spec, report)
+    _check_paradigm_justification(spec, report)
 
     return report

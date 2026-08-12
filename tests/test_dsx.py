@@ -2717,24 +2717,54 @@ class TestPhase6ParadigmManifest(unittest.TestCase):
             self.assertTrue(reason.strip(), f"{prefix} has a blank reason")
 
     def test_manifest_never_blocks_at_any_default_gate_threshold(self):
+        # A non-blank paradigm_justification keeps DSX-PAR-002 (Phase 9,
+        # HIGH) silent so this test isolates what it names: DSX-PAR-001
+        # itself, INFO, never blocks. Without it this spec would also carry
+        # DSX-PAR-002's HIGH finding, which correctly blocks at verify/ship
+        # (09-05-PLAN.md's resolved_open_questions) — a fact this test must
+        # not obscure by picking a spec that happens to dodge it.
         from dsx.cli import GATE_THRESHOLDS
         from dsx.findings import Severity
         from dsx.frame import paradigm
 
-        report = paradigm.check({"inference": {"paradigm": "bayesian"}})
+        report = paradigm.check(
+            {"inference": {"paradigm": "bayesian", "paradigm_justification": "team_convention"}}
+        )
         for point, label in GATE_THRESHOLDS.items():
             with self.subTest(point=point):
                 self.assertFalse(report.blocks(Severity.parse(label)))
 
-    def test_check_appends_one_deterministic_decision_record(self):
+    def test_check_appends_one_decision_record_per_emitting_judgement_point(self):
+        """One DecisionRecord per judgement point that actually emits a
+        finding — never a fixed count. A spec declaring a paradigm with no
+        justification now legitimately emits two: DSX-PAR-001's manifest
+        record and DSX-PAR-002's requiredness record (Phase 9, 09-05-PLAN.md).
+        A spec that also clears DSX-PAR-002 (a valid paradigm_justification
+        declared) emits only the manifest's one. Pinning both counts is what
+        makes a future check that emits a record unconditionally, or one that
+        emits none at its judgement point, visible.
+        """
         from dsx.frame import paradigm
 
+        # DSX-PAR-001 (always) + DSX-PAR-002 (paradigm declared, no justification)
         report = paradigm.check({"inference": {"paradigm": "frequentist"}})
         decisions = report.context.get("decisions") or []
-        self.assertEqual(len(decisions), 1)
-        self.assertEqual(decisions[0]["layer"], "deterministic")
-        self.assertEqual(decisions[0]["id"], "")
-        self.assertTrue(decisions[0]["counterfactual"].strip())
+        self.assertEqual(len(decisions), 2)
+        for record in decisions:
+            self.assertEqual(record["layer"], "deterministic")
+            self.assertEqual(record["id"], "")
+            self.assertEqual(record["invocation_id"], "")
+            self.assertTrue(record["counterfactual"].strip())
+
+        # DSX-PAR-001 only — a valid paradigm_justification clears DSX-PAR-002
+        cleared_report = paradigm.check(
+            {"inference": {"paradigm": "frequentist", "paradigm_justification": "team_convention"}}
+        )
+        cleared_decisions = cleared_report.context.get("decisions") or []
+        self.assertEqual(len(cleared_decisions), 1)
+        self.assertEqual(cleared_decisions[0]["layer"], "deterministic")
+        self.assertEqual(cleared_decisions[0]["id"], "")
+        self.assertTrue(cleared_decisions[0]["counterfactual"].strip())
 
     # D-05: DSX-PAR-001
     def test_applied_prefixes_have_codes_and_not_shipped_prefixes_have_none(self):
@@ -3022,6 +3052,213 @@ class TestPhase9MonitoringDiscipline(unittest.TestCase):
         found = {f["code"] for f in findings}
         self.assertIn("DSX-PAR-010", found)
         self.assertNotIn("DSX-PAR-011", found)
+
+
+# ── Phase 9 (09-05): DSX-PAR-002 requiredness and symmetry ──────────────────
+# (REQ-P9-04, D-08, D-09, brief D-12). DSX-PAR-002 owns absence only — the
+# membership check over PARADIGM_JUSTIFICATIONS is DSX-SPEC-085's job
+# (dsx/spec.py::_validate_inference_shape). This class proves the two
+# requiredness cases, the one-finding-per-spec ceiling, the no-double-firing
+# boundary against DSX-SPEC-085, and — the load-bearing property — that no
+# member of PARADIGM_JUSTIFICATIONS and no member of PARADIGMS has its own
+# code path, via a genuine fourteen-case cross product.
+
+
+class TestPhase9ParadigmJustification(unittest.TestCase):
+    """DSX-PAR-002 — requiredness for inference.paradigm_justification, and
+    the requiredness half of the missing-paradigm message. Membership is
+    DSX-SPEC-085's job; this code never re-checks it (D-08).
+    """
+
+    ROOT = Path(__file__).resolve().parent.parent
+
+    def _run(self, argv: list[str]) -> tuple[int, str, str]:
+        out, err = io.StringIO(), io.StringIO()
+        with redirect_stdout(out), redirect_stderr(err):
+            code = cli.main(argv)
+        return code, out.getvalue(), err.getvalue()
+
+    # ── requiredness: missing/blank paradigm_justification ──────────────────
+
+    def test_declared_paradigm_with_no_justification_fires_dsx_par_002_at_high(self):
+        from dsx.frame import paradigm
+        from dsx.spec import PARADIGMS
+
+        for member in PARADIGMS:
+            with self.subTest(paradigm=member):
+                report = paradigm.check({"inference": {"paradigm": member}})
+                found = [f for f in report.findings if f.code == "DSX-PAR-002"]
+                self.assertEqual(len(found), 1)
+                self.assertEqual(found[0].severity, Severity.HIGH)
+                # D-05: DSX-PAR-002
+                self.assertEqual(found[0].where, "spec.inference.paradigm_justification")
+
+    def test_declared_paradigm_with_blank_justification_fires_dsx_par_002(self):
+        from dsx.frame import paradigm
+        from dsx.spec import PARADIGMS
+
+        for member in PARADIGMS:
+            with self.subTest(paradigm=member):
+                spec = {"inference": {"paradigm": member, "paradigm_justification": ""}}
+                report = paradigm.check(spec)
+                found = [f for f in report.findings if f.code == "DSX-PAR-002"]
+                self.assertEqual(len(found), 1)
+                self.assertEqual(found[0].severity, Severity.HIGH)
+                self.assertEqual(found[0].where, "spec.inference.paradigm_justification")
+
+    # ── requiredness: missing paradigm under an uncontrolled design ─────────
+
+    def test_uncontrolled_design_with_no_paradigm_fires_dsx_par_002_naming_paradigm(self):
+        from dsx.frame import paradigm
+
+        spec = {"design": {"peeking_policy": "uncontrolled_continuous"}, "inference": {}}
+        report = paradigm.check(spec)
+        found = [f for f in report.findings if f.code == "DSX-PAR-002"]
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0].severity, Severity.HIGH)
+        self.assertEqual(found[0].where, "spec.inference.paradigm")
+
+    def test_uncontrolled_design_with_absent_inference_block_fires_dsx_par_002(self):
+        from dsx.frame import paradigm
+
+        spec = {"design": {"peeking_policy": "uncontrolled_continuous"}}
+        report = paradigm.check(spec)
+        found = [f for f in report.findings if f.code == "DSX-PAR-002"]
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0].where, "spec.inference.paradigm")
+
+    # ── no finding when nothing is wrong ─────────────────────────────────────
+
+    def test_no_inference_block_and_controlled_or_absent_policy_fires_nothing(self):
+        from dsx.frame import paradigm
+
+        for policy in list(PEEKING_POLICIES) + ["", None]:
+            if policy == "uncontrolled_continuous":
+                continue
+            with self.subTest(policy=policy):
+                spec = {"design": {"peeking_policy": policy}} if policy is not None else {}
+                report = paradigm.check(spec)
+                self.assertNotIn("DSX-PAR-002", codes(report))
+
+    # ── at most one finding per spec ─────────────────────────────────────────
+
+    def test_dsx_par_002_never_fires_twice_for_one_spec(self):
+        from dsx.frame import paradigm
+        from dsx.spec import PARADIGMS
+
+        specs = (
+            [{"inference": {"paradigm": m}} for m in PARADIGMS]
+            + [{"inference": {"paradigm": m, "paradigm_justification": ""}} for m in PARADIGMS]
+            + [
+                {"design": {"peeking_policy": "uncontrolled_continuous"}, "inference": {}},
+                {"design": {"peeking_policy": "uncontrolled_continuous"}},
+                {},
+                {"inference": {}},
+            ]
+        )
+        for spec in specs:
+            with self.subTest(spec=spec):
+                report = paradigm.check(spec)
+                found = [f for f in report.findings if f.code == "DSX-PAR-002"]
+                self.assertLessEqual(len(found), 1, [f.where for f in found])
+
+    # ── the fourteen-case symmetry proof (D-09, brief D-12) ──────────────────
+
+    def test_every_justification_clears_dsx_par_002_identically_under_both_paradigms(self):
+        # D-05: DSX-PAR-002
+        # Genuine cross product, not fourteen hand-written assertions: for
+        # every member of PARADIGM_JUSTIFICATIONS against every member of
+        # PARADIGMS, a declared justification clears DSX-PAR-002, and the
+        # emitted code set for that justification is identical under both
+        # paradigms — the mechanical proof that no reason and no paradigm has
+        # its own code path.
+        from dsx.frame import paradigm
+        from dsx.spec import PARADIGM_JUSTIFICATIONS, PARADIGMS
+
+        by_justification: "dict[str, dict[str, set[str]]]" = {}
+        for justification in PARADIGM_JUSTIFICATIONS:
+            by_justification[justification] = {}
+            for member in PARADIGMS:
+                with self.subTest(justification=justification, paradigm=member):
+                    spec = {
+                        "inference": {
+                            "paradigm": member,
+                            "paradigm_justification": justification,
+                        }
+                    }
+                    report = paradigm.check(spec)
+                    found = [f for f in report.findings if f.code == "DSX-PAR-002"]
+                    self.assertEqual(len(found), 0, [f.where for f in found])
+                    by_justification[justification][member] = codes(report)
+
+        # Symmetry: for each justification, the emitted code set is identical
+        # across both paradigms.
+        for justification, per_paradigm in by_justification.items():
+            with self.subTest(justification=justification):
+                members = list(per_paradigm)
+                first = per_paradigm[members[0]]
+                for other in members[1:]:
+                    self.assertEqual(
+                        first, per_paradigm[other],
+                        f"{justification}: {members[0]} emitted {first}, "
+                        f"{other} emitted {per_paradigm[other]}",
+                    )
+
+        # No reason is treated as weaker: every justification's finding set is
+        # the same size as every other's, under each paradigm.
+        for member in PARADIGMS:
+            sizes = {
+                len(by_justification[j][member]) for j in PARADIGM_JUSTIFICATIONS
+            }
+            self.assertEqual(
+                len(sizes), 1,
+                f"paradigm={member}: justifications did not all produce "
+                f"finding sets of identical size: {sizes}",
+            )
+
+    # ── no double-firing with DSX-SPEC-085 ────────────────────────────────────
+
+    def test_bad_fixture_out_of_vocab_justification_is_dsx_spec_085_only(self):
+        # One defect, one code (T-9-14): examples/bad-ANALYSIS-SPEC.yaml
+        # declares an out-of-vocabulary paradigm_justification. DSX-PAR-002
+        # must never re-check membership, so it must stay silent while
+        # DSX-SPEC-085 owns the finding. Asserted independently of the
+        # existing pinned three-finding test elsewhere in this module (which
+        # exercises a synthetic spec with three invalid inference fields), so
+        # a future narrowing of DSX-SPEC-085 breaks in both places.
+        #
+        # Note: the fixture on disk declares only paradigm_justification
+        # (gut_feeling) out of vocabulary — paradigm (frequentist) and
+        # declared_at (pre_data) are both valid members — so this pins one
+        # DSX-SPEC-085 finding, not three. Three is the count the synthetic
+        # spec at test_inference_vocabulary_violations_report_three_high_findings
+        # exercises; that count does not apply to this real fixture.
+        from dsx.frame import paradigm
+        from dsx.loader import load
+
+        spec = load(str(self.ROOT / "examples" / "bad-ANALYSIS-SPEC.yaml"))
+        structure_report = validate_structure(spec)
+        spec_085 = [f for f in structure_report.findings if f.code == "DSX-SPEC-085"]
+        self.assertEqual(len(spec_085), 1, [f.where for f in spec_085])
+        self.assertEqual(spec_085[0].where, "spec.inference.paradigm_justification")
+
+        paradigm_report = paradigm.check(spec)
+        self.assertNotIn("DSX-PAR-002", codes(paradigm_report))
+
+    def test_good_fixture_never_fires_dsx_par_002_at_any_gate_point(self):
+        fixture = self.ROOT / "examples" / "good-ANALYSIS-SPEC.yaml"
+        for point in ("plan", "execute", "verify", "ship"):
+            with self.subTest(point=point):
+                with tempfile.TemporaryDirectory() as tmp:
+                    out, err = io.StringIO(), io.StringIO()
+                    with redirect_stdout(out), redirect_stderr(err):
+                        cli.main(
+                            ["gate", point, "--spec", str(fixture), "--phase-dir", tmp, "--json"]
+                        )
+                    raw = err.getvalue() or out.getvalue()
+                    report = json.loads(raw)
+                found = {f["code"] for f in report["findings"]}
+                self.assertNotIn("DSX-PAR-002", found)
 
 
 if __name__ == "__main__":
