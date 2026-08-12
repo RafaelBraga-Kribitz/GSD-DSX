@@ -438,17 +438,45 @@ Anchor D-05 citations here rather than sprawling.
 Kohavi, Tang and Xu, *Trustworthy Online Controlled Experiments* (triggering, dilution,
 interference, novelty and primacy, SRM). Imbens and Rubin, *Causal Inference for Statistics,
 Social, and Biomedical Sciences* (SUTVA, estimands). Hernan and Robins, *Causal Inference:
-What If* (estimands, identification). Gelman and Hill, *Data Analysis Using Regression and
-Multilevel/Hierarchical Models* (dependence, units). Lohr, *Sampling: Design and Analysis*
-(frames, selection). Little and Rubin, *Statistical Analysis with Missing Data* (mechanisms).
-Senn, *Statistical Issues in Drug Development* (design, units, multiplicity). Gelman et al.,
+What If* (estimands, identification). International Council for Harmonisation (2019), the
+E9(R1) addendum on estimands and sensitivity analysis, document reference
+EMA/CHMP/ICH/436221/2017 at Step 5, sections A.3.2 and A.3.3 (estimand completeness, the source
+for `DSX-VAL-010`). Hernan and Robins (2016), *American Journal of Epidemiology* volume 183
+issue 8, pages 758 to 764, Table 1 (a second, distinct publication by the same authors as the
+*What If* text above, anchoring `DSX-VAL-010` alongside the E9(R1) addendum). Popper (1959,
+2002 reissue), *The Logic of Scientific Discovery*, Part I Chapter 1 section 6 on falsifiability
+as a criterion of demarcation, pages 17 to 18 (the source for `DSX-VAL-011`). Gelman and Hill
+(2007), *Data Analysis Using Regression and Multilevel/Hierarchical Models*, Cambridge
+University Press (dependence, units; the exact chapter locator within it is unverified).
+Cameron and Miller (2015), "A Practitioner's Guide to Cluster-Robust Inference", *Journal of
+Human Resources* volume 50 issue 2, pages 317 to 372 (the source for `DSX-VAL-030`; its section
+locator is also unverified). Lohr (2021), *Sampling: Design and Analysis*, third edition,
+Chapter 1 sections 1.2, 1.3 and 1.3.4, and Chapter 16 section 16.1 (frames, selection, the
+source for `DSX-VAL-050`). Little and Rubin (2019), *Statistical Analysis with Missing Data*,
+third edition, Chapter 3 section 3.2 (mechanisms, the source for `DSX-VAL-060`). White and
+Carlin (2010), *Statistics in Medicine* volume 29 issue 28, pages 2920 to 2931, digital object
+identifier 10.1002/sim.3944 (the companion source establishing that complete-case analysis can
+be unbiased under missing-at-random, also anchoring `DSX-VAL-060`). Senn, *Statistical Issues
+in Drug Development* (design, units, multiplicity). Kish (1965), *Survey Sampling*, page 258
+for the design-effect definition and pages 161 to 162 for the intraclass correlation (the
+source for `DSX-VAL-020`; a section number for the design-effect formula itself is unverified —
+only the page numbers were confirmed). Higgins, Eldridge and Li (2024), the *Cochrane Handbook
+for Systematic Reviews of Interventions*, version 6.5, sections 23.1.4 and 23.1.4.1 (carrying
+the published design-effect worked value, also anchoring `DSX-VAL-020`). Gelman et al.,
 *Bayesian Data Analysis*, 3rd ed. (priors, sensitivity). Vehtari et al. (2021), "Rank-normalized
 R-hat" (convergence diagnostics and thresholds). Gelman et al. (2020), "Bayesian Workflow"
 (prior predictive checking, the workflow the guardrail framing informally describes). Gelman,
 Simpson and Betancourt (2017), "The Prior Can Often Only Be Understood in the Context of the
-Likelihood" (why prior strength is meaningless without identification, the source for
-`DSX-VAL-040/041`). Deng, Lu and Chen (2016), "Continuous Monitoring of A/B Tests without
-Pain" (error rates under optional stopping, the source for `DSX-PAR-011`).
+Likelihood", *Entropy* 19(10), 555, section 3.3 ("For complex models, certain aspects of the
+prior will always be relevant") and section 1.2 ("Existing methods for setting priors already
+depend on the likelihood") (why prior strength is meaningless without identification, the
+source for `DSX-VAL-040/041`; cited by section number and by title together because whether the
+typeset journal version uses the same section numbers as the arXiv preprint version is
+unverified). Deng, Lu and Chen (2016), "Continuous Monitoring of A/B Tests without
+Pain" (error rates under optional stopping, the source for `DSX-PAR-011`). Cronbach and Meehl
+(1955), "Construct Validity in Psychological Tests", *Psychological Bulletin* volume 52 issue
+4, pages 281 to 302, the nomological net discussion at page 290 (the source for
+`DSX-VAL-070`).
 
 ---
 
