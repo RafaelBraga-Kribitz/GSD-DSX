@@ -438,5 +438,22 @@ blocked: 0
     number for the formula itself is unverified while §8.2 covers the definition. Under this
     reading mathx.py is under-citing a confirmed locator rather than being the correct model.
   root_cause: "Diagnosed inline during UAT, not by a debug agent — the evidence was already in the phase's own artifacts. 07-DISCUSSION-LOG.md:102-103 and 07-CONTEXT.md:303-304 both record that Kish §8.2 p.258 WAS confirmed for the design-effect *definition*, and that what is unverified is a section number for the *formula*. The 07-CONTEXT.md:284 research-ledger row carries '§8.2 p. 258' and was copied into _UNIT_TRIAD_CITATION verbatim. The defect is that the disclosure sentence shipped alongside it — 'only the page numbers above were confirmed' — is broader than the ledger supports and contradicts the §8.2 it sits next to. mathx.py resolved the same tension the other way by dropping §8.2 entirely, so the two files now disagree about what was confirmed. No test detects this: TestValCitationObligations asserts only that a Citation: line exists."
-  remedy_decision: pending    # Reading A vs Reading B under `contested:` — user to pin before fix planning
+  remedy_decision: reading_b   # Pinned by the user at UAT close, 2026-08-12.
+  remedy_rationale: |
+    Reading B chosen. The discussion log and context file already record that Kish (1965)
+    section 8.2, page 258 was confirmed for the design-effect definition, and that only a
+    section for the formula itself was never confirmed. Dropping section 8.2 would throw away
+    a locator the phase already verified; matching mathx.py by deleting it would make the code
+    less accurate than the ledger. Keep the confirmed locator, narrow the disclosure, then
+    bring mathx.py up to the same wording.
+  remedy_steps:
+    - "dsx/frame/val.py: keep 'section 8.2, page 258 (design-effect definition)' in both
+       _UNIT_TRIAD_CITATION (lines 78-85) and the _check_unit_triad docstring (lines 671-677)."
+    - "dsx/frame/val.py: rewrite the UNVERIFIED sentence so it no longer says 'only the page
+       numbers above were confirmed'. Scope it to: no section number was confirmed for the
+       design-effect formula itself."
+    - "dsx/mathx.py: add section 8.2 to the design_effect() citation (lines 440-445) and use
+       the same scoped disclosure, so tests 1 and 4 no longer disagree."
+    - "Add a regression test that fails if a citation names a Kish section AND also claims only
+       page numbers were confirmed."
   debug_session: ""  # not needed; see root_cause
