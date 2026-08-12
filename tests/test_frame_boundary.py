@@ -121,5 +121,131 @@ class TestFrameImportBoundary(unittest.TestCase):
                 self.assertEqual(_scan_source_for_checks_imports(source, "dsx.frame"), [])
 
 
+# ── D-11 / REQ-P7-09: no dsx/frame check reads the declared inference paradigm ──
+#
+# A second, narrower detector living beside the import-boundary scanner above, not an
+# extension of it: the import scanner walks import statements only and has no mechanism
+# for flagging a string-literal call argument or a dictionary-subscript chain, which is
+# exactly the shape a paradigm read takes (dsx/frame/paradigm.py:80 itself reads
+# ``get(spec, "inference.paradigm")``). Two detectors, deliberately layered per this
+# module's own two-proofs rationale at lines 11-15: a blunt text-level scan that catches
+# any access style nobody anticipated (including inside a comment or message string), and
+# a precise AST scan that names the offending line for a future contributor.
+
+_PARADIGM_DOTTED_PATH = "inference.paradigm"
+_INFERENCE_BLOCK_NAME = "inference"
+_PARADIGM_FIELD_NAME = "paradigm"
+
+# The one legitimate reader: paradigm.py IS the paradigm manifest, whose entire job is to
+# report what inference.paradigm was declared. D-11 constrains the checks that adjudicate
+# the frame, not the manifest that describes it.
+_PARADIGM_READ_EXCLUDED_FILENAMES = {"paradigm.py"}
+
+
+def _scan_source_for_paradigm_reads_text(text: str) -> list[str]:
+    """Blunt text-level detector: flags the dotted path ``inference.paradigm`` anywhere
+    in ``text`` — in code, in a comment, or inside a message string. Deliberately not
+    AST-based, so it also catches a form the AST detector below was never taught to
+    recognise."""
+    violations: list[str] = []
+    for lineno, line in enumerate(text.splitlines(), start=1):
+        if _PARADIGM_DOTTED_PATH in line:
+            violations.append(f"line {lineno}: text contains {_PARADIGM_DOTTED_PATH!r}")
+    return violations
+
+
+def _subscript_key(slice_node: ast.AST) -> "str | None":
+    """Return a subscript's string key, tolerating both the modern (3.9+, the slice is
+    the index expression directly) and legacy (pre-3.9, wrapped in ``ast.Index``) AST
+    shapes. Ducktypes on the class name rather than referencing ``ast.Index`` directly —
+    that name no longer exists in newer versions of the ``ast`` module."""
+    node = slice_node
+    if type(node).__name__ == "Index":
+        node = node.value  # type: ignore[attr-defined]
+    if isinstance(node, ast.Constant) and isinstance(node.value, str):
+        return node.value
+    return None
+
+
+def _scan_source_for_paradigm_reads_ast(text: str) -> list[str]:
+    """Precise AST detector: flags a positional call argument that is the string literal
+    ``inference.paradigm`` (or any dotted path beginning ``inference.`` — the dotted-path
+    helper's convention), and flags a subscript chain that reads the ``inference`` key and
+    then the ``paradigm`` key (``spec["inference"]["paradigm"]``)."""
+    violations: list[str] = []
+    tree = ast.parse(text)
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Call):
+            for arg in node.args:
+                if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
+                    literal = arg.value
+                    if literal == _PARADIGM_DOTTED_PATH or literal.startswith(
+                        _INFERENCE_BLOCK_NAME + "."
+                    ):
+                        violations.append(
+                            f"line {node.lineno}: call argument string literal "
+                            f"{literal!r} names the inference block"
+                        )
+        elif isinstance(node, ast.Subscript):
+            key = _subscript_key(node.slice)
+            if key == _PARADIGM_FIELD_NAME and isinstance(node.value, ast.Subscript):
+                inner_key = _subscript_key(node.value.slice)
+                if inner_key == _INFERENCE_BLOCK_NAME:
+                    violations.append(
+                        f"line {node.lineno}: subscript chain reads "
+                        f"[{_INFERENCE_BLOCK_NAME!r}][{_PARADIGM_FIELD_NAME!r}]"
+                    )
+    return violations
+
+
+class TestFrameParadigmReadBoundary(unittest.TestCase):
+    """D-11 mechanical proof (REQ-P7-09): no code path under dsx/frame/ reads the
+    declared inference paradigm, except the paradigm manifest itself. Scans every
+    Python file under the frame package, not only dsx/frame/val.py, so a future frame
+    module inherits the invariant without anyone remembering to extend this test."""
+
+    def test_real_frame_modules_read_no_declared_paradigm(self):
+        violations: list[str] = []
+        files = sorted(FRAME_DIR.rglob("*.py"))
+        self.assertTrue(files, "dsx/frame/ has no *.py files to scan")
+        for path in files:
+            if path.name in _PARADIGM_READ_EXCLUDED_FILENAMES:
+                continue
+            text = path.read_text(encoding="utf-8")
+            for problem in _scan_source_for_paradigm_reads_text(text):
+                violations.append(f"{path.relative_to(ROOT)} (text): {problem}")
+            for problem in _scan_source_for_paradigm_reads_ast(text):
+                violations.append(f"{path.relative_to(ROOT)} (ast): {problem}")
+        self.assertEqual(violations, [], "\n".join(violations))
+
+    def test_ast_detector_fires_on_string_literal_paradigm_path_argument(self):
+        source = (
+            "from dsx.spec import get\n"
+            "value = get(spec, \"inference.paradigm\")\n"
+        )
+        self.assertTrue(_scan_source_for_paradigm_reads_ast(source))
+
+    def test_ast_detector_fires_on_direct_subscript_chain_reading_paradigm(self):
+        source = "value = spec[\"inference\"][\"paradigm\"]\n"
+        self.assertTrue(_scan_source_for_paradigm_reads_ast(source))
+
+    def test_text_detector_fires_on_dotted_path_anywhere_including_comments(self):
+        sources = [
+            "# a comment mentioning inference.paradigm here\n",
+            "message = \"do not read inference.paradigm\"\n",
+        ]
+        for source in sources:
+            with self.subTest(source=source):
+                self.assertTrue(_scan_source_for_paradigm_reads_text(source))
+
+    def test_both_detectors_permit_a_validity_frame_field_read(self):
+        source = (
+            "from dsx.spec import get\n"
+            "value = get(spec, \"validity_frame.estimand.quantity\")\n"
+        )
+        self.assertEqual(_scan_source_for_paradigm_reads_text(source), [])
+        self.assertEqual(_scan_source_for_paradigm_reads_ast(source), [])
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

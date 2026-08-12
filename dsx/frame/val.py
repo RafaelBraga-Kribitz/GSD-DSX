@@ -17,11 +17,11 @@ dispatcher — each new helper is one call added to ``check()``, not a
 restructure.
 
 D-11 (mechanically proven by ``tests/test_frame_boundary.py``'s
-``TestFrameParadigmReadBoundary``): no code path in this module reads
-``inference.paradigm``, in any form — not through ``get()``, not by direct
-dictionary indexing, not in a message string. A prior does not save an
-analysis from pseudo-replication; a check that branches on the declared
-paradigm is in the wrong layer.
+``TestFrameParadigmReadBoundary``): no code path in this module reads the
+declared inference paradigm field, in any form — not through ``get()``, not
+by direct dictionary indexing, not in a message string. A prior does not
+save an analysis from pseudo-replication; a check that branches on the
+declared paradigm is in the wrong layer.
 """
 
 from __future__ import annotations
