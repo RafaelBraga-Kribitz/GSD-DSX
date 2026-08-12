@@ -387,7 +387,7 @@ depend on it.
      route is no weaker than the sequential-method requirement (D-12); the `DSX-PAR-011`
      simulation lives under `tests/`, seeded and reproducible, and never on the gate path (D-02).
 
-**Plans**: 2/5 plans executed
+**Plans**: 3/5 plans executed
 
 Plans:
 **Wave 1**
@@ -397,7 +397,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 09-03-PLAN.md — The atomic pair `DSX-PAR-010` and `DSX-PAR-011`, both halves in one commit at CRITICAL (wave 2)
+- [x] 09-03-PLAN.md — The atomic pair `DSX-PAR-010` and `DSX-PAR-011`, both halves in one commit at CRITICAL (wave 2)
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
@@ -547,7 +547,7 @@ cases where absence permitted a false pass" is a debate, not a count.
 | 6. Contract extension, decision record, paradigm manifest | 13/13 | Complete | 2026-08-10 |
 | 7. Validity frame checks (`DSX-VAL-*`) | 7/7 | In Progress|  |
 | 8. Interference, triggering, stability (`DSX-INT-*`) | 0/TBD | Not started | - |
-| 9. Monitoring discipline, symmetric (`DSX-PAR-*`) | 2/5 | In Progress|  |
+| 9. Monitoring discipline, symmetric (`DSX-PAR-*`) | 3/5 | In Progress|  |
 | 10. Pre-registered inference plan (`DSX-PRE-*`) | 0/TBD | Not started | - |
 | 11. Frequentist admissibility adjudicator (`DSX-ADM-*`) | 0/TBD | Not started | - |
 | 12. Calibration | 0/TBD | Not started | - |
