@@ -10,6 +10,7 @@ in prose — which is what makes agent output checkable instead of merely plausi
 
 from __future__ import annotations
 
+import re
 from typing import Any, Iterable
 
 from .findings import Report
@@ -56,6 +57,17 @@ CAUSAL_VERBS = (
     "reduces", "reduced", "boosts", "boosted", "lifts", "lifted", "impact of",
     "effect of", "because of", "due to", "thanks to", "responsible for",
     "attributable to", "uplift from", "generates", "generated",
+)
+
+# Substrings that mark an estimand falsifier as discriminating — it names a concrete,
+# checkable observation that would prove the estimand wrong, not just a topic (D-05,
+# REQ-P7-01). The first eight members are fixed by D-05; the remainder (the two bare
+# comparison symbols) are the planner's discretion under D-05's explicit grant, chosen
+# to widen the accepted set rather than narrow it, because the accepted risk in D-05
+# runs toward false positives at the earliest and highest-friction gate.
+FALSIFIER_DISCRIMINATORS = (
+    "includes zero", "crosses", "below", "above", "exceeds", "does not exceed",
+    "falls below", "fails to", "greater than", "less than", "<", ">",
 )
 
 MULTIPLICITY_CORRECTIONS = {"bonferroni", "holm", "benjamini_hochberg", "bh", "fdr", "none"}
@@ -297,8 +309,9 @@ PARADIGM_JUSTIFICATIONS = {
 # Single registry behind describe_vocabulary() (D-05, REQ-P6-06): the object each shape
 # validator imports is the exact object dumped here — one place to add a vocabulary, not two.
 # Deliberately excludes SPEC_VERSION, CAUSAL_VERBS, REQUIRED_TOP_LEVEL,
-# IMBALANCE_UNSAFE_METRICS and DEPENDENCE_ADMISSIBLE_METHODS — they are not vocabularies.
-# chart_capabilities stays special-cased in describe_vocabulary() below, exactly as before.
+# IMBALANCE_UNSAFE_METRICS, DEPENDENCE_ADMISSIBLE_METHODS and FALSIFIER_DISCRIMINATORS —
+# they are not vocabularies. chart_capabilities stays special-cased in
+# describe_vocabulary() below, exactly as before.
 _VOCABULARIES: "list[tuple[str, Any]]" = [
     ("question_types", QUESTION_TYPES),
     ("design_kinds", DESIGN_KINDS),
@@ -380,6 +393,57 @@ def as_number(value: Any) -> "float | None":
 
 def normalize(value: Any) -> str:
     return str(value).strip().lower().replace("-", "_").replace(" ", "_")
+
+
+# ── Falsifier lexicon helpers (D-05, REQ-P7-01) ─────────────────────────────
+
+# Whole-value equality after normalize(), never substring containment — that is what
+# keeps "none identified" (the good fixture's sampling_frame.selection_risk value, a
+# different field entirely) out of this set even though it starts with "none".
+_FALSIFIER_REFUSALS = frozenset(
+    {"n/a", "na", "tbd", "tba", "none", "unknown", "not assessed", "to be determined"}
+)
+
+# A whole value that opens with '<' and closes with '>' with no intervening '>' — the
+# angle-bracket placeholder shape every template ships (e.g. "<the observation that
+# would prove this wrong>"). Not multiline, not anchored on a line end, so the CRLF
+# checkout cannot change the result.
+_PLACEHOLDER_RE = re.compile(r"^<[^>]*>$")
+
+# Re-homed from the numeric-token idiom at dsx/checks/claims.py:340-375 (the pattern is
+# copied, not the import — D-03a forbids importing dsx.checks from dsx.spec). Bounded,
+# non-nested quantifiers only: a nested quantifier here would expose the gate to a
+# denial-of-service through catastrophic backtracking on adversarial free text
+# (threat T-7-03).
+_FALSIFIER_NUMBER_RE = re.compile(r"\d+(?:\.\d+)?\s*(?:%|pp)?")
+
+
+def is_placeholder_or_refusal(value: Any) -> bool:
+    """True when ``value`` is blank, an angle-bracket placeholder, or a refusal token.
+
+    Layered beside ``is_blank()``, never a replacement for it — ``is_blank()`` stays
+    unchanged because placeholder text still counts as present for the sampling-frame
+    and measurement checks (plan 07-06), which must treat placeholder text as present
+    so the template does not trip them.
+    """
+    if is_blank(value):
+        return True
+    if isinstance(value, str) and _PLACEHOLDER_RE.match(value.strip()):
+        return True
+    return normalize(value) in _FALSIFIER_REFUSALS
+
+
+def falsifier_is_discriminating(value: Any) -> bool:
+    """True when ``value`` names a concrete, checkable observation that would prove an
+    estimand wrong — carries a comparison predicate (`FALSIFIER_DISCRIMINATORS`) or a
+    numeric threshold, and is neither blank, a placeholder, nor a refusal token.
+    """
+    if is_placeholder_or_refusal(value):
+        return False
+    text = str(value).lower()
+    if any(token in text for token in FALSIFIER_DISCRIMINATORS):
+        return True
+    return bool(_FALSIFIER_NUMBER_RE.search(str(value)))
 
 
 # ── Structural validation ────────────────────────────────────────────────────

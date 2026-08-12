@@ -644,6 +644,70 @@ class TestDependenceAdmissibleMethods(unittest.TestCase):
         self.assertNotIn("dependence_admissible_methods", out)
 
 
+# ── 07-01: falsifier placeholder/refusal/discrimination lexicon (D-05, REQ-P7-01) ──
+
+
+class TestFalsifierLexicon(unittest.TestCase):
+    def test_good_fixture_falsifier_is_discriminating_for_the_estimand(self):
+        from dsx.spec import falsifier_is_discriminating
+
+        # Verbatim from examples/good-ANALYSIS-SPEC.yaml:302
+        value = (
+            "95% CI on the activation uplift includes zero, or its lower bound "
+            "sits below +1.0pp"
+        )
+        self.assertTrue(falsifier_is_discriminating(value))
+
+    def test_empty_string_is_not_discriminating(self):
+        from dsx.spec import falsifier_is_discriminating
+
+        self.assertFalse(falsifier_is_discriminating(""))
+
+    def test_template_angle_bracket_falsifier_is_not_discriminating(self):
+        from dsx.spec import falsifier_is_discriminating
+
+        # Verbatim from templates/ANALYSIS-SPEC.yaml:288
+        value = "<the observation that would prove this wrong>"
+        self.assertFalse(falsifier_is_discriminating(value))
+
+    def test_refusal_tokens_are_not_discriminating(self):
+        from dsx.spec import falsifier_is_discriminating
+
+        for token in ("n/a", "N/A", "tbd", "TBD", "none", "unknown"):
+            self.assertFalse(falsifier_is_discriminating(token), token)
+
+    def test_prose_without_predicate_or_number_is_not_discriminating(self):
+        from dsx.spec import falsifier_is_discriminating
+
+        self.assertFalse(
+            falsifier_is_discriminating("the result will look different than we expect")
+        )
+
+    def test_numeric_only_falsifier_is_discriminating(self):
+        from dsx.spec import falsifier_is_discriminating
+
+        self.assertTrue(
+            falsifier_is_discriminating("the uplift must clear a 1.5pp threshold")
+        )
+
+    def test_none_identified_is_not_classified_as_a_refusal(self):
+        from dsx.spec import is_placeholder_or_refusal
+
+        # Verbatim from examples/good-ANALYSIS-SPEC.yaml:342 (sampling_frame.selection_risk)
+        self.assertFalse(is_placeholder_or_refusal("none identified"))
+
+    def test_long_input_classifies_without_catastrophic_backtracking(self):
+        import time
+
+        from dsx.spec import falsifier_is_discriminating
+
+        text = ("the result will look different than we expect " * 500)[:20000]
+        self.assertEqual(len(text), 20000)
+        start = time.perf_counter()
+        falsifier_is_discriminating(text)
+        self.assertLess(time.perf_counter() - start, 1.0)
+
+
 # ── design ───────────────────────────────────────────────────────────────────
 
 
