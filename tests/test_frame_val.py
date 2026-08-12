@@ -6,12 +6,15 @@ Run:  python3 -m unittest tests.test_frame_val -v
 
 from __future__ import annotations
 
+import copy
+import hashlib
 import sys
 import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from dsx.checks import design  # noqa: E402
 from dsx.findings import Report, Severity  # noqa: E402
 from dsx.frame import val  # noqa: E402
 
@@ -291,6 +294,130 @@ class TestValUnits(unittest.TestCase):
                 spec = load(str(path))
                 report = val.check(spec)
                 self.assertNotIn("DSX-VAL-021", codes(report), path.name)
+
+
+# ── disjointness (REQ-P7-03): DSX-VAL-020 and DSX-EXP-021 never both fire ──
+
+
+def _all_fixture_paths() -> "list[Path]":
+    root = Path(__file__).resolve().parent.parent
+    paths = [
+        root / "examples" / "good-ANALYSIS-SPEC.yaml",
+        root / "examples" / "bad-ANALYSIS-SPEC.yaml",
+        root / "templates" / "ANALYSIS-SPEC.yaml",
+    ]
+    paths += sorted((root / "examples" / "known-bad").glob("*-ANALYSIS-SPEC.yaml"))
+    return paths
+
+
+# The content hash of dsx/checks/design.py (REQ-P7-03's other half — this
+# family must never be edited during Phase 7). Measured 2026-08-12 against
+# the file as it stood at the start of plan 07-04, over UTF-8 bytes with
+# CRLF normalised to LF before hashing (this repository checks out CRLF on
+# Windows, and a hash taken over raw bytes would differ between a Windows
+# and a Linux checkout for no real reason — see .claude/CLAUDE.md's line-
+# ending guidance). A deliberate future change to dsx/checks/design.py must
+# update this constant in the same commit and say why in the commit message
+# — this test is what forces that, rather than letting a silent edit pass.
+_DESIGN_PY_SHA256 = "b7807c3480da7515b8019cf50ea815af88954bde1f51f67e887a147c7292604a"
+
+
+def _design_py_hash() -> str:
+    root = Path(__file__).resolve().parent.parent
+    data = (root / "dsx" / "checks" / "design.py").read_bytes()
+    return hashlib.sha256(data.replace(b"\r\n", b"\n")).hexdigest()
+
+
+class TestValExpUnitsDisjointness(unittest.TestCase):
+    def test_bad_fixture_trips_exp_021_and_not_val_020(self):
+        from dsx.loader import load
+
+        root = Path(__file__).resolve().parent.parent
+        spec = load(str(root / "examples" / "bad-ANALYSIS-SPEC.yaml"))
+        design_codes = codes(design.check(spec))
+        val_codes = codes(val.check(spec))
+        self.assertIn("DSX-EXP-021", design_codes)
+        self.assertNotIn("DSX-VAL-020", val_codes)
+
+    def test_unit_triad_defect_with_agreeing_design_units_trips_val_020_and_not_exp_021(self):
+        spec = {
+            "question_type": "causal",
+            "design": {
+                "kind": "experiment",
+                "randomization_unit": "user",
+                "analysis_unit": "user",
+            },
+            "validity_frame": {
+                "units": {"observation": "impression", "assignment": "user"},
+                "dependence": {"method_family_required": ""},
+            },
+        }
+        design_codes = codes(design.check(spec))
+        val_codes = codes(val.check(spec))
+        self.assertIn("DSX-VAL-020", val_codes)
+        self.assertNotIn("DSX-EXP-021", design_codes)
+
+    def test_no_fixture_in_the_repository_trips_both_units_codes_at_once(self):
+        from dsx.loader import load
+
+        fixtures = _all_fixture_paths()
+        self.assertGreaterEqual(len(fixtures), 6)
+        for path in fixtures:
+            with self.subTest(fixture=path.name):
+                spec = load(str(path))
+                design_codes = codes(design.check(spec))
+                val_codes = codes(val.check(spec))
+                self.assertFalse(
+                    "DSX-EXP-021" in design_codes and "DSX-VAL-020" in val_codes,
+                    f"{path.name} trips both DSX-EXP-021 and DSX-VAL-020",
+                )
+
+    def test_editing_only_validity_frame_never_changes_which_design_codes_fire(self):
+        base = {
+            "question_type": "causal",
+            "design": {
+                "kind": "experiment",
+                "randomization_unit": "user",
+                "analysis_unit": "session",
+            },
+            "validity_frame": {
+                "units": {"observation": "user", "assignment": "user"},
+                "dependence": {"method_family_required": ""},
+            },
+        }
+        edited = copy.deepcopy(base)
+        edited["validity_frame"]["units"]["observation"] = "impression"
+        edited["validity_frame"]["dependence"]["method_family_required"] = ""
+        self.assertEqual(codes(val.check(base)), set())
+        self.assertIn("DSX-VAL-020", codes(val.check(edited)))
+        self.assertEqual(codes(design.check(base)), codes(design.check(edited)))
+
+    def test_editing_only_design_never_changes_which_validity_codes_fire(self):
+        base = {
+            "question_type": "causal",
+            "design": {
+                "kind": "experiment",
+                "randomization_unit": "user",
+                "analysis_unit": "session",
+            },
+            "validity_frame": {
+                "units": {"observation": "user", "assignment": "user"},
+                "dependence": {"method_family_required": ""},
+            },
+        }
+        edited = copy.deepcopy(base)
+        edited["design"]["analysis_unit"] = "user"
+        self.assertIn("DSX-EXP-021", codes(design.check(base)))
+        self.assertNotIn("DSX-EXP-021", codes(design.check(edited)))
+        self.assertEqual(codes(val.check(base)), codes(val.check(edited)))
+
+    def test_design_checks_py_content_is_unmodified_since_phase_start(self):
+        self.assertEqual(
+            _design_py_hash(), _DESIGN_PY_SHA256,
+            "dsx/checks/design.py was edited during Phase 7 — REQ-P7-03 requires it "
+            "unmodified; if this is a deliberate change, update _DESIGN_PY_SHA256 in "
+            "this test and say why in the commit message",
+        )
 
 
 if __name__ == "__main__":
