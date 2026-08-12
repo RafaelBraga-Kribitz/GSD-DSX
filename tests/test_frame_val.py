@@ -133,14 +133,21 @@ def _units_spec(
     observation: object = "session",
     assignment: object = "user",
     method_family_required: object = "cluster_robust",
+    analysis: object = None,
     design: "dict | None" = None,
 ) -> dict:
     """A minimal spec carrying only a units/dependence pair, isolating the
-    unit-triad judgment from the estimand judgment (no `estimand` key at all,
-    so the estimand decision record does not also append)."""
+    unit judgments from the estimand judgment (no `estimand` key at all, so
+    the estimand decision record does not also append). `analysis` is only
+    added to `units` when given, so DSX-VAL-021's tests can control it
+    independently of `observation`/`assignment` without disturbing the
+    DSX-VAL-020 tests, which never set it."""
+    units: dict = {"observation": observation, "assignment": assignment}
+    if analysis is not None:
+        units["analysis"] = analysis
     spec: dict = {
         "validity_frame": {
-            "units": {"observation": observation, "assignment": assignment},
+            "units": units,
             "dependence": {"method_family_required": method_family_required},
         }
     }
@@ -212,14 +219,78 @@ class TestValUnits(unittest.TestCase):
                 report = val.check({"validity_frame": {"units": bad_units}})
                 self.assertNotIn("DSX-VAL-020", codes(report))
 
-    def test_units_judgment_point_appends_exactly_one_decision_record(self):
+    def test_unit_triad_judgment_point_appends_exactly_one_decision_record(self):
         report = val.check(
             _units_spec(observation="impression", assignment="user", method_family_required="")
         )
         decisions = report.context.get("decisions") or []
-        self.assertEqual(len(decisions), 1)
-        self.assertEqual(decisions[0]["layer"], "deterministic")
-        self.assertTrue(decisions[0]["counterfactual"].strip())
+        triad_decisions = [d for d in decisions if d["choice"].startswith("unit triad:")]
+        self.assertEqual(len(triad_decisions), 1)
+        self.assertEqual(triad_decisions[0]["layer"], "deterministic")
+        self.assertTrue(triad_decisions[0]["counterfactual"].strip())
+
+    # D-05: DSX-VAL-021
+    def test_assignment_vs_randomization_unit_disagreement_fires_high_units_021(self):
+        report = val.check(
+            _units_spec(assignment="user", design={"randomization_unit": "account"})
+        )
+        found = [f for f in report.findings if f.code == "DSX-VAL-021"]
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0].severity, Severity.HIGH)
+        for token in ("validity_frame.units.assignment", "design.randomization_unit",
+                      "user", "account"):
+            self.assertIn(token, found[0].detail)
+
+    def test_analysis_vs_design_analysis_unit_disagreement_fires_units_021(self):
+        report = val.check(
+            _units_spec(analysis="session", design={"analysis_unit": "user"})
+        )
+        self.assertIn("DSX-VAL-021", codes(report))
+
+    def test_both_pairs_agreeing_produces_no_units_021(self):
+        report = val.check(
+            _units_spec(
+                assignment="user", analysis="user",
+                design={"randomization_unit": "user", "analysis_unit": "user"},
+            )
+        )
+        self.assertNotIn("DSX-VAL-021", codes(report))
+
+    def test_blank_design_randomization_unit_produces_no_units_021(self):
+        report = val.check(_units_spec(assignment="user", design={"randomization_unit": ""}))
+        self.assertNotIn("DSX-VAL-021", codes(report))
+        report = val.check(_units_spec(assignment="user", design={}))
+        self.assertNotIn("DSX-VAL-021", codes(report))
+
+    def test_blank_validity_frame_assignment_produces_no_units_021(self):
+        report = val.check(
+            _units_spec(assignment="", design={"randomization_unit": "account"})
+        )
+        self.assertNotIn("DSX-VAL-021", codes(report))
+
+    def test_units_021_normalises_case_and_whitespace_before_comparing(self):
+        report = val.check(
+            _units_spec(assignment="  User ", design={"randomization_unit": "user"})
+        )
+        self.assertNotIn("DSX-VAL-021", codes(report))
+
+    def test_units_021_never_fires_on_the_canonical_or_corpus_fixtures(self):
+        import sys
+        from pathlib import Path
+
+        root = Path(__file__).resolve().parent.parent
+        sys.path.insert(0, str(root))
+        from dsx.loader import load  # noqa: E402
+
+        fixtures = [root / "examples" / "good-ANALYSIS-SPEC.yaml",
+                    root / "examples" / "bad-ANALYSIS-SPEC.yaml"]
+        fixtures += sorted((root / "examples" / "known-bad").glob("*-ANALYSIS-SPEC.yaml"))
+        self.assertGreaterEqual(len(fixtures), 5)
+        for path in fixtures:
+            with self.subTest(fixture=path.name):
+                spec = load(str(path))
+                report = val.check(spec)
+                self.assertNotIn("DSX-VAL-021", codes(report), path.name)
 
 
 if __name__ == "__main__":

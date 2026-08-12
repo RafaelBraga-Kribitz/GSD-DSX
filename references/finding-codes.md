@@ -13,7 +13,7 @@ a suppression or a reference in a review stays valid across versions.
 **Gate thresholds.** `plan` and `execute` block at CRITICAL; `verify` and
 `ship` block at HIGH.
 
-**Total: 214 codes.**
+**Total: 215 codes.**
 
 ## Contract structure — `DSX-SPEC-*`
 
@@ -361,3 +361,4 @@ Estimand, unit triad, dependence, identification, sampling frame, missingness an
 | `DSX-VAL-010` | CRITICAL | estimand is missing required attribute(s) |
 | `DSX-VAL-011` | HIGH | estimand falsifier does not discriminate |
 | `DSX-VAL-020` | CRITICAL | observation unit finer than assignment unit with no method family declared |
+| `DSX-VAL-021` | HIGH | validity frame analysis unit disagrees with design analysis unit |

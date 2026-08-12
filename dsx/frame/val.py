@@ -74,6 +74,11 @@ _UNIT_TRIAD_CITATION = (
     "only the page numbers above were confirmed; do not invent one."
 )
 
+_UNIT_DRIFT_CITATION = (
+    "Hernan, M.A. & Robins, J.M. (2020), Causal Inference: What If, Chapter 1, "
+    "section 1.2 (\"Average causal effects\")"
+)
+
 
 def check(spec: dict) -> Report:
     """Emit the validity-frame content findings (``DSX-VAL-*``).
@@ -98,6 +103,7 @@ def check(spec: dict) -> Report:
     _check_estimand_completeness(frame, report)
     _check_estimand_falsifiability(frame, report)
     _check_unit_triad(spec, frame, report)
+    _check_unit_drift(spec, frame, report)
 
     estimand = frame.get("estimand")
     if isinstance(estimand, dict):
@@ -173,6 +179,48 @@ def check(spec: dict) -> Report:
                     "A spec where the observation unit equals the assignment unit, or "
                     "where dependence.method_family_required names an admissible method "
                     "family, would have produced no DSX-VAL-020."
+                ),
+            ).to_dict()
+        )
+
+        design = spec.get("design")
+        design = design if isinstance(design, dict) else {}
+        assignment_for_drift = units.get("assignment")
+        analysis = units.get("analysis")
+        randomization_unit = design.get("randomization_unit")
+        design_analysis_unit = design.get("analysis_unit")
+        drift_blocked = (
+            not is_blank(assignment_for_drift)
+            and not is_blank(randomization_unit)
+            and normalize(assignment_for_drift) != normalize(randomization_unit)
+        ) or (
+            not is_blank(analysis)
+            and not is_blank(design_analysis_unit)
+            and normalize(analysis) != normalize(design_analysis_unit)
+        )
+        report.context.setdefault("decisions", []).append(
+            DecisionRecord(
+                id="",
+                invocation_id="",
+                layer="deterministic",
+                choice="unit drift: " + ("blocked" if drift_blocked else "passed"),
+                inputs=[
+                    "validity_frame.units.assignment",
+                    "design.randomization_unit",
+                    "validity_frame.units.analysis",
+                    "design.analysis_unit",
+                ],
+                rule=(
+                    "DSX-VAL-021 fires once per disagreeing pair: "
+                    "normalize(units.assignment) != normalize(design.randomization_unit), "
+                    "or normalize(units.analysis) != normalize(design.analysis_unit); each "
+                    "comparison is skipped unless both of its sides are non-blank."
+                ),
+                citation=_UNIT_DRIFT_CITATION,
+                counterfactual=(
+                    "A spec where the validity frame's assignment and analysis units "
+                    "agree with design.randomization_unit and design.analysis_unit "
+                    "respectively would have produced no DSX-VAL-021."
                 ),
             ).to_dict()
         )
@@ -369,3 +417,83 @@ def _check_unit_triad(spec: dict, frame: dict, report: Report) -> None:
         remedy=remedy,
         where="spec.validity_frame.units",
     )
+
+
+def _check_unit_drift(spec: dict, frame: dict, report: Report) -> None:
+    """Emit DSX-VAL-021 when the validity frame's own unit declarations
+    disagree with ``design:``'s.
+
+    Citation: Hernan, M.A. & Robins, J.M. (2020), Causal Inference: What If,
+    Chapter 1, section 1.2 ("Average causal effects") — the unit a claim is
+    made about must be fixed before the claim is made.
+
+    Structural criterion: string agreement (after ``normalize()``) between
+    two declarations of the same unit across two blocks — no ordering, no
+    ranking, no judgment of whether a mismatch is handled. Two comparisons,
+    and nothing else: ``validity_frame.units.assignment`` against
+    ``design.randomization_unit``, and ``validity_frame.units.analysis``
+    against ``design.analysis_unit``. Each comparison is skipped unless both
+    of its sides are non-blank — there is nothing to disagree with when one
+    side is undeclared.
+
+    This is pure agreement detection between two blocks (D-09), and that is
+    the whole of its job. It does not assess whether a mismatch is handled —
+    that judgment belongs to ``DSX-EXP-021`` (``dsx/checks/design.py``) for
+    the design block's own randomization/analysis pair, and to
+    ``DSX-VAL-020`` for the validity frame's own observation/assignment
+    pair. No suppression logic connects this check to either of those —
+    the disjointness is achieved by reading disjoint field pairs, not by one
+    check silencing another.
+    """
+    units = frame.get("units")
+    if not isinstance(units, dict):
+        return
+
+    design = spec.get("design")
+    design = design if isinstance(design, dict) else {}
+
+    assignment = units.get("assignment")
+    randomization_unit = design.get("randomization_unit")
+    if (
+        not is_blank(assignment)
+        and not is_blank(randomization_unit)
+        and normalize(assignment) != normalize(randomization_unit)
+    ):
+        report.add(
+            "DSX-VAL-021",
+            "HIGH",
+            "validity frame assignment unit disagrees with design randomization unit",
+            detail=(
+                f"validity_frame.units.assignment is {assignment!r}, but "
+                f"design.randomization_unit is {randomization_unit!r} — the two "
+                "declarations of the assignment unit disagree."
+            ),
+            remedy=(
+                "Align validity_frame.units.assignment and design.randomization_unit to "
+                "name the same unit; this check cannot know which declaration is right."
+            ),
+            where="spec.validity_frame.units.assignment",
+        )
+
+    analysis = units.get("analysis")
+    design_analysis_unit = design.get("analysis_unit")
+    if (
+        not is_blank(analysis)
+        and not is_blank(design_analysis_unit)
+        and normalize(analysis) != normalize(design_analysis_unit)
+    ):
+        report.add(
+            "DSX-VAL-021",
+            "HIGH",
+            "validity frame analysis unit disagrees with design analysis unit",
+            detail=(
+                f"validity_frame.units.analysis is {analysis!r}, but "
+                f"design.analysis_unit is {design_analysis_unit!r} — the two "
+                "declarations of the analysis unit disagree."
+            ),
+            remedy=(
+                "Align validity_frame.units.analysis and design.analysis_unit to name "
+                "the same unit; this check cannot know which declaration is right."
+            ),
+            where="spec.validity_frame.units.analysis",
+        )
