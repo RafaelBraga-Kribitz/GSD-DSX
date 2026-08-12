@@ -193,3 +193,14 @@ None - no external service configuration required.
 ---
 *Phase: 09-monitoring-discipline-symmetric-dsx-par*
 *Completed: 2026-08-12*
+
+## Self-Check: PASSED
+
+- FOUND: dsx/frame/paradigm.py
+- FOUND: tests/test_dsx.py
+- FOUND: references/finding-codes.md
+- FOUND: .planning/phases/09-monitoring-discipline-symmetric-dsx-par/09-05-SUMMARY.md
+- FOUND commit: c4d71cd (Task 1 RED)
+- FOUND commit: 1234978 (Task 2 GREEN)
+- FOUND commit: 6739936 (Task 3 repair-and-regenerate)
+- FOUND commit: 2b36e5a (SUMMARY.md)
