@@ -161,8 +161,8 @@ validity_frame:
 
   stability:
     window: "156 weeks"
-    novelty_primacy_assessed: false
-    evidence: ""
+    novelty_primacy_assessed: true
+    evidence: "RESULTS.md#tv-spend-coefficient-stability"
 
   sampling_frame:
     source: "warehouse.fct_media_weekly, all geos"

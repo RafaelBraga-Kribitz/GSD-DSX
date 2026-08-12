@@ -97,6 +97,24 @@ _INCIDENTAL_GAP_CODES = {
 # type: ratio, outside the additive partition {count, sum, average}. Adding a metric of
 # type count, sum or average to either fixture will make it block dsx gate plan on
 # DSX-INT-030 and will require an entry in this map.
+#
+# Second fragility note, a live one rather than hypothetical (measured 2026-08-12, plan
+# 08-02): weak-identification-mmm declares analysis_population: eligible,
+# dilution_adjusted: false, AND a metrics[0].type of sum (additive) — three of
+# DSX-INT-030's structural conditions, exactly as D-01 states them (an additive metric
+# analysed on the eligible population with dilution_adjusted not true). It escapes only
+# because its expected_trigger_rate is 1.0 (every observed week is in scope; there is no
+# untriggered eligible population, so the diluted-effect formula collapses to the
+# undiluted one and there is nothing to adjust for) — a materiality condition D-01's own
+# wording does not name, but which this plan's own triggering-dilution fixture treats as
+# load-bearing (Task 3 chose expected_trigger_rate 0.41 specifically because it "is what
+# makes the dilution material rather than negligible"). Whether plan 08-04's
+# implementation gates on trigger_rate < 1.0 is that plan's decision, not this one's; if
+# it does not, weak-identification-mmm will need an entry here too the moment DSX-INT-030
+# ships. Not fixed in this plan: editing its triggering block would touch a Phase 7
+# fixture's own encoded scenario (a full-period national aggregate with no eligibility
+# gate below 100% coverage, which is itself an honest declaration, not a defect) for a
+# risk that has not yet materialised into an actual gate finding.
 _TARGET_DEFECT_CODES: "dict[str, dict[str, str]]" = {
     "weak-identification-mmm": {"plan": "DSX-VAL-040"},
 }
