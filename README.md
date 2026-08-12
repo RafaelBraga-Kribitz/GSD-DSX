@@ -362,6 +362,11 @@ is how every check family from here forward proves its citation is actually
 exercised by a test, not just quoted in a comment. It binds every later
 milestone phase from the moment it lands.
 
+The `DSX-PAR-*` family's own symmetry argument — why neither the frequentist
+nor the Bayesian half of its monitoring-discipline pair is cheaper to satisfy
+dishonestly than the other — is committed separately at
+[`references/paradigm-symmetry.md`](references/paradigm-symmetry.md).
+
 ---
 
 ## Design notes
