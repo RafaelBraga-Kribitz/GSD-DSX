@@ -82,8 +82,8 @@ disjoint. See D-13 below for the one place Phase 7 and Phase 8 collide.
 
 ### The interference mitigation admissibility rule
 
-- **D-05: The mapping is a module constant in `dsx/frame/interference.py`, not a vocabulary in
-  `dsx/spec.py`.** It mirrors `_PARADIGM_CONDITIONAL` (`dsx/frame/paradigm.py:38`) exactly,
+- **D-05: The mapping is a module constant in `dsx/frame/interference.py`, not a vocabulary in `dsx/spec.py`.**
+  It mirrors `_PARADIGM_CONDITIONAL` (`dsx/frame/paradigm.py:38`) exactly,
   including a test asserting its keys are set-equal to `dsx.spec.INTERFERENCE_RISKS` so a
   future vocabulary addition without a matching key fails loudly. Rationale: this is a
   capability matrix, not a vocabulary — the category `describe_vocabulary()` already
@@ -145,8 +145,8 @@ disjoint. See D-13 below for the one place Phase 7 and Phase 8 collide.
 
 ### The dilution check
 
-- **D-09: `delta_diluted = delta_triggered × trigger_rate` lives in `dsx/mathx.py` as a pure
-  function and is NEVER called from the gate path.** `DSX-INT-030` adjudicates declarations
+- **D-09: `delta_diluted = delta_triggered × trigger_rate` lives in `dsx/mathx.py` as a pure function and is NEVER called from the gate path.**
+  `DSX-INT-030` adjudicates declarations
   only: is `triggering.analysis_population == "eligible"` and `dilution_adjusted` not true.
   `.planning/REQUIREMENTS.md:153` puts computing test statistics on the gate path out of scope,
   breaking D-01/D-02. `dsx/frame/` may import `dsx.mathx`.
@@ -203,8 +203,8 @@ disjoint. See D-13 below for the one place Phase 7 and Phase 8 collide.
 
 ### Novelty and primacy
 
-- **D-13: `DSX-INT-040` checks the assessment declaration and its evidence pointer — not the
-  window length, and not the file.** It fires when `stability` is present and
+- **D-13: `DSX-INT-040` checks the assessment declaration and its evidence pointer — not the window length, and not the file.**
+  It fires when `stability` is present and
   `novelty_primacy_assessed` is not true, or it is true and `stability.evidence` is blank.
   - **Not window length:** `DSX-EXP-030`/`031` already adjudicate `design.duration_days`
     (`dsx/checks/design.py:311-338`). A second window check is the double-firing M-01 forbids.
@@ -234,8 +234,8 @@ disjoint. See D-13 below for the one place Phase 7 and Phase 8 collide.
 
 ### Cross-phase and test-surface consequences
 
-- **D-14: The D-11 paradigm-read scanner is net-new, and MUST be written parameterised over a
-  module list.** No test today scans for *reads* of `inference.paradigm` — `tests/test_frame_boundary.py`
+- **D-14: The D-11 paradigm-read scanner is net-new, and MUST be written parameterised over a module list.**
+  No test today scans for *reads* of `inference.paradigm` — `tests/test_frame_boundary.py`
   scans imports only. Phase 7's REQ-P7-09 needs the identical scanner for `dsx/frame/val.py`,
   and the roadmap permits Phases 7 and 8 to run in parallel. **Whichever phase lands first
   writes it over a module list; the second phase adds its module and nothing else.** Two
@@ -245,8 +245,8 @@ disjoint. See D-13 below for the one place Phase 7 and Phase 8 collide.
   `get(spec, "inference.paradigm")`, `spec["inference"]["paradigm"]`, and the bare string
   literal.
 
-- **D-15: `tests/test_known_bad_corpus.py` needs a STRUCTURAL REWRITE, not an allow-list
-  edit.** This is the phase's largest under-sized item. Three tests break when `DSX-INT-010`
+- **D-15: `tests/test_known_bad_corpus.py` needs a STRUCTURAL REWRITE, not an allow-list edit.**
+  This is the phase's largest under-sized item. Three tests break when `DSX-INT-010`
   starts firing on the shared-budget fixture:
   `test_every_spec_passes_the_critical_threshold_gate_points` (line 187),
   `test_ship_gate_findings_are_all_documented_incidental_corpus_gaps` (line 202), and
@@ -301,8 +301,8 @@ disjoint. See D-13 below for the one place Phase 7 and Phase 8 collide.
   treatments assigned to other units, and, for each unit, there are no different forms or
   versions of each treatment level, which lead to different potential outcomes."*
 
-- **D-20: Marketplace-as-distinct-from-shared-budget has a verified citation if the planner
-  wants one.** Blake & Coey (2014), "Why Marketplace Experimentation is Harder than It Seems",
+- **D-20: Marketplace-as-distinct-from-shared-budget has a verified citation if the planner wants one.**
+  Blake & Coey (2014), "Why Marketplace Experimentation is Harder than It Seems",
   EC '14, abstract: *"Ignoring test-control interference leads to estimates of the campaign's
   effectiveness which are too large by a factor of around two."* Verified verbatim from the
   authors' own manuscript. The body (§3) says "over two" and shows the arithmetic (0.74%
