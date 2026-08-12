@@ -358,7 +358,18 @@ depend on it.
      route is no weaker than the sequential-method requirement (D-12); the `DSX-PAR-011`
      simulation lives under `tests/`, seeded and reproducible, and never on the gate path (D-02).
 
-**Plans**: TBD
+**Plans**: 5 plans
+
+Plans:
+- [ ] 09-01-PLAN.md — Symmetry audit written first, plus the three new `inference:` fields the pair reads (wave 1)
+- [ ] 09-02-PLAN.md — `inflation_from_peeking()` citation upgrade and the seeded, off-gate-path simulation (wave 1)
+- [ ] 09-03-PLAN.md — The atomic pair `DSX-PAR-010` and `DSX-PAR-011`, both halves in one commit at CRITICAL (wave 2)
+- [ ] 09-04-PLAN.md — Known-bad corpus prose corrected, and a positive-content test under the symmetry audit (wave 3)
+- [ ] 09-05-PLAN.md — `DSX-PAR-002` requiredness and the fourteen-case symmetry proof (wave 3)
+
+**Wave note (atomicity, D-12):** `DSX-PAR-010` and `DSX-PAR-011` are both delivered by a single
+plan, 09-03, in a single commit at the identical severity `CRITICAL`. They cannot land separately.
+The phase is incomplete until both are green; a half-shipped pair is a stop-and-report condition.
 
 ### Phase 10: Pre-registered inference plan (`DSX-PRE-*`)
 
