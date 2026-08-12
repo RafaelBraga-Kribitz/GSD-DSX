@@ -6,10 +6,12 @@ Run:  python3 -m unittest tests.test_frame_val -v
 
 from __future__ import annotations
 
+import ast
 import copy
 import hashlib
 import io
 import json
+import re
 import sys
 import tempfile
 import unittest
@@ -1312,6 +1314,136 @@ class TestValGateIntegration(unittest.TestCase):
     def test_weak_identification_mmm_fixture_clears_gate_execute(self):
         code, _out, err = self._run(["gate", "execute", "--spec", str(self.FIXTURE)])
         self.assertEqual(code, 0, f"expected dsx gate execute to pass; stderr: {err}")
+
+
+# ── citation obligations for the DSX-VAL-* family (D-05, plan 07-07 Task 2) ─
+#
+# scripts/gen-finding-catalogue.py --check is the mechanical, repository-wide
+# enforcement of D-05 and must stay green (see the module docstring's `Run:`
+# line and this phase's acceptance criteria). This class exists so a future
+# change to that script cannot silently stop enforcing this family's citation
+# obligations without a test noticing — it re-derives the same three facts
+# from dsx/frame/val.py directly, by parsing rather than by a hand-written
+# list of function or code names, so a helper this module adds later is
+# covered automatically.
+
+_VAL_MODULE_PATH = Path(__file__).resolve().parent.parent / "dsx" / "frame" / "val.py"
+_TESTS_ROOT = Path(__file__).resolve().parent
+_CATALOGUE_PATH = Path(__file__).resolve().parent.parent / "references" / "finding-codes.md"
+
+# Same two patterns scripts/gen-finding-catalogue.py's D-05 check compiles —
+# multiline, with no line-end anchor, so this repository's CRLF checkout
+# cannot change the result (`^` under re.MULTILINE re-anchors at the start of
+# every line regardless of whether it ends `\n` or `\r\n`).
+_CITATION_LINE_RE = re.compile(r"^\s*Citation:\s*\S", re.MULTILINE)
+_REFVALUE_LINE_RE = re.compile(
+    r"^\s*(?:Reference value|Structural criterion):\s*\S", re.MULTILINE
+)
+_TEST_MARKER_LINE_RE = re.compile(r"#\s*D-05:\s*(DSX-[A-Z]+-\d{3})")
+
+
+def _val_module_tree() -> ast.Module:
+    return ast.parse(
+        _VAL_MODULE_PATH.read_text(encoding="utf-8"), filename=str(_VAL_MODULE_PATH)
+    )
+
+
+def _functions_emitting_findings() -> "dict[str, str]":
+    """Every function in dsx/frame/val.py that calls ``report.add(...)``,
+    mapped to its own docstring (``""`` if it has none). Derived by walking
+    the module's AST and, for each qualifying call, climbing to its nearest
+    enclosing ``FunctionDef`` — not by naming functions by hand, so a helper
+    added later is covered automatically."""
+    tree = _val_module_tree()
+    parents: "dict[ast.AST, ast.AST]" = {}
+    for parent in ast.walk(tree):
+        for child in ast.iter_child_nodes(parent):
+            parents[child] = parent
+
+    functions: "dict[str, str]" = {}
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        func = node.func
+        if not (isinstance(func, ast.Attribute) and func.attr == "add"):
+            continue
+        current: ast.AST = node
+        while current in parents:
+            current = parents[current]
+            if isinstance(current, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                functions[current.name] = ast.get_docstring(current) or ""
+                break
+    return functions
+
+
+def _codes_emitted_by_val_module() -> "set[str]":
+    """Every ``DSX-VAL-*`` code named as the first argument of a
+    ``report.add(...)`` call in dsx/frame/val.py, derived by parsing rather
+    than by naming codes by hand."""
+    tree = _val_module_tree()
+    emitted: "set[str]" = set()
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        func = node.func
+        if not (isinstance(func, ast.Attribute) and func.attr == "add"):
+            continue
+        if not node.args:
+            continue
+        first = node.args[0]
+        if isinstance(first, ast.Constant) and isinstance(first.value, str):
+            if first.value.startswith("DSX-VAL-"):
+                emitted.add(first.value)
+    return emitted
+
+
+def _test_markers_under_tests_root() -> "set[str]":
+    markers: "set[str]" = set()
+    for path in sorted(_TESTS_ROOT.rglob("*.py")):
+        text = path.read_text(encoding="utf-8")
+        for match in _TEST_MARKER_LINE_RE.finditer(text):
+            markers.add(match.group(1))
+    return markers
+
+
+class TestValCitationObligations(unittest.TestCase):
+    def test_every_finding_emitting_function_has_citation_and_reference_value_lines(self):
+        functions = _functions_emitting_findings()
+        self.assertTrue(functions, "no function in dsx/frame/val.py calls report.add(...)")
+        for name, doc in sorted(functions.items()):
+            with self.subTest(function=name):
+                self.assertRegex(
+                    doc, _CITATION_LINE_RE,
+                    f"{name}'s docstring has no 'Citation:' line with non-whitespace after "
+                    "the colon",
+                )
+                self.assertRegex(
+                    doc, _REFVALUE_LINE_RE,
+                    f"{name}'s docstring has no 'Reference value:'/'Structural criterion:' "
+                    "line with non-whitespace after the colon",
+                )
+
+    def test_every_emitted_code_has_a_test_marker_under_tests(self):
+        emitted = _codes_emitted_by_val_module()
+        self.assertTrue(emitted, "dsx/frame/val.py emits no DSX-VAL-* code")
+        markers = _test_markers_under_tests_root()
+        missing = emitted - markers
+        self.assertEqual(
+            missing, set(),
+            f"code(s) with no '# D-05: <CODE>' marker anywhere under {_TESTS_ROOT}: "
+            f"{sorted(missing)}",
+        )
+
+    def test_every_emitted_code_appears_in_the_rendered_catalogue(self):
+        emitted = _codes_emitted_by_val_module()
+        self.assertTrue(emitted, "dsx/frame/val.py emits no DSX-VAL-* code")
+        catalogue_text = _CATALOGUE_PATH.read_text(encoding="utf-8")
+        missing = {code for code in emitted if code not in catalogue_text}
+        self.assertEqual(
+            missing, set(),
+            f"code(s) emitted by dsx/frame/val.py but absent from {_CATALOGUE_PATH}: "
+            f"{sorted(missing)} — run scripts/gen-finding-catalogue.py --write",
+        )
 
 
 if __name__ == "__main__":
