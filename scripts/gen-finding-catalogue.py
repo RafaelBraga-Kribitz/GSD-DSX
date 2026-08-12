@@ -42,6 +42,10 @@ PREFIX_GROUPS = [
     ("DSX-SMELL", "Plot smells", "Declaration-based plot-construction smells."),
     ("DSX-PAR", "Paradigm and monitoring discipline",
      "The declared inferential paradigm manifest and its symmetric peeking-monitoring pair."),
+    ("DSX-VAL", "Validity frame",
+     "Estimand, unit triad, dependence, identification, sampling frame, missingness and "
+     "measurement content — whether a validity_frame block that is present and structurally "
+     "well-formed is also internally coherent."),
 ]
 
 # D-20: the finite, visible exemption boundary for D-05 citation/reference-value
@@ -55,7 +59,7 @@ PREFIX_GROUPS = [
 # human noticing the allow-list needs updating. A single code that lives inside a
 # pre-existing family — where a family prefix would drag the whole legacy family
 # into enforcement — is named individually in `_D05_ALLOWLIST_CODES` instead.
-_D05_ALLOWLIST_PREFIXES = ("DSX-PAR-",)
+_D05_ALLOWLIST_PREFIXES = ("DSX-PAR-", "DSX-VAL-")
 
 # The individually-enumerated half of D-20's finite, visible boundary: exact
 # codes this milestone introduced inside a pre-existing family (DSX-SPEC-*),
