@@ -1205,6 +1205,14 @@ _EXPECTED_VAL_CODES: "dict[str, set[str]]" = {
     # constraint_source: none is the fixture's sole encoded defect (DSX-VAL-040);
     # every other validity_frame sub-block is clean.
     "weak-identification-mmm-ANALYSIS-SPEC.yaml": {"DSX-VAL-040"},
+    # Measured 2026-08-12 (plan 08-02) against the fixture as committed in this
+    # plan: loaded via dsx.loader.load(), ran dsx.frame.val.check(spec), recorded
+    # {f.code for f in report.findings}. This fixture's encoded defect lives in
+    # validity_frame.triggering (DSX-INT-030, Phase 8, plan 08-04) — units,
+    # dependence, identification, sampling_frame, missingness and measurement
+    # are all populated the same way the good fixture's are, so no DSX-VAL-*
+    # code fires.
+    "triggering-dilution-ANALYSIS-SPEC.yaml": set(),
 }
 
 
