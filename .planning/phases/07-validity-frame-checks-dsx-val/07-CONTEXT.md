@@ -33,9 +33,20 @@ incoherent*.
 ### Locked upstream — do NOT re-litigate
 
 - `brief.md` §4 (D-01…D-14) and §5 (contract shape) are binding. In particular: D-01 stdlib only
-  on the gate path; D-02 no statistic computed on the gate path; D-03a `dsx/frame/` imports only
-  `Report`/`Finding` from `dsx/checks/`; D-05 citation + reference value + linked test per check;
-  D-06 finding codes are never renumbered; **D-11 no frame-layer check reads `inference.paradigm`**.
+  on the gate path; D-02 no statistic computed on the gate path; **D-03a `dsx/frame/` must not
+  import `dsx.checks` at all** (see the correction note below); D-05 citation + reference value +
+  linked test per check; D-06 finding codes are never renumbered; **D-11 no frame-layer check reads
+  `inference.paradigm`**.
+
+  > **Correction (2026-08-12, from `07-RESEARCH.md`, verified independently).** D-03a is worded in
+  > `brief.md`, `PROJECT.md` and `06-CONTEXT.md` as "imports only `Report`/`Finding` from
+  > `dsx/checks/`". That phrasing misplaces the classes. **`Report` and `Finding` are defined in
+  > `dsx/findings.py`** (`:91` and `:52`), and `tests/test_frame_boundary.py` sets
+  > `_FORBIDDEN_PACKAGE = "dsx.checks"` with no carve-out — so an import from `dsx.checks` fails the
+  > suite outright, including one that names `Report` or `Finding`. The operative rule is: **`dsx/frame/*`
+  > imports nothing from `dsx.checks`**, and gets `Report` via `from ..findings import Report`, exactly
+  > as `dsx/frame/paradigm.py:19` already does. This corrects the wording carried into this document;
+  > it does not change what the shipped scanner enforces.
 - `PROJECT.md` Key Decisions M-01…M-09 are binding. M-09 in particular: `method_family_required`
   reuses `VARIANCE_ADJUSTMENTS` and defines no parallel vocabulary.
 - `06-CONTEXT.md` D-01…D-23 are locked. Load-bearing here: severity **is** the gate point
@@ -390,8 +401,8 @@ None — `todo.match-phase 7` returned zero matches.
 - **`dsx/mathx.py` `inflation_from_peeking()`** — the precedent for a pure numeric helper carrying a
   published reference value and a linked test. `design_effect()` follows it exactly.
 - **`dsx/checks/claims.py:350-370` `_NUMBER_RE`** — numeric-token extraction with unit-aware
-  exclusions, the pattern D-05's falsifier numeric test needs. **Cannot be imported** under D-03a;
-  re-home the pattern in `dsx/spec.py`.
+  exclusions, the pattern D-05's falsifier numeric test needs. **Cannot be imported** — D-03a's
+  scanner forbids `dsx.checks` entirely; re-home the pattern in `dsx/spec.py`.
 - **`dsx/checks/narrative.py:17-21` and `dsx/checks/claims.py:107-113`** — proof that lexicon-based
   free-text adjudication is an established idiom here, not an invention. Same import restriction.
 - **`scripts/gen-finding-catalogue.py` `extract()`** — already resolves a docstring upward from a
@@ -417,8 +428,9 @@ None — `todo.match-phase 7` returned zero matches.
 
 ### Integration Points
 
-- `dsx/frame/val.py` — new module, all nine codes. Imports only `Report`/`Finding` from
-  `dsx/checks/`; may import `dsx/spec.py`, `dsx/mathx.py` and `dsx/decisions.py` freely.
+- `dsx/frame/val.py` — new module, all nine codes. **Imports nothing from `dsx.checks`**; gets
+  `Report` via `from ..findings import Report` exactly as `dsx/frame/paradigm.py:19` does, and may
+  import `dsx/spec.py`, `dsx/mathx.py` and `dsx/decisions.py` freely.
 - `dsx/spec.py` — the structure→method map (D-04) and the falsifier lexicon (D-05), both excluded
   from `_VOCABULARIES`.
 - `dsx/cli.py` — `CHECKS["val"]` plus three profile entries.
