@@ -204,3 +204,12 @@ This plan's frontmatter sets `type: tdd`, and each task individually carries `td
 ---
 *Phase: 07-validity-frame-checks-dsx-val*
 *Completed: 2026-08-12*
+
+## Self-Check: PASSED
+
+- FOUND: dsx/frame/val.py
+- FOUND: tests/test_frame_val.py
+- FOUND: .planning/phases/07-validity-frame-checks-dsx-val/07-03-SUMMARY.md
+- FOUND commit 3633222 (Task 1)
+- FOUND commit c7800ef (Task 2)
+- FOUND commit 27f495d (this SUMMARY.md)
