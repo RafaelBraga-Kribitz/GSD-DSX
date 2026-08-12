@@ -128,6 +128,26 @@ class TestMath(unittest.TestCase):
         with self.assertRaises(ValueError):
             mathx.chi2_sf(1.0, 0)
 
+    # D-05: DSX-VAL-020
+    def test_design_effect_matches_cochrane_worked_example(self):
+        self.assertAlmostEqual(mathx.design_effect(29.8, 0.02), 1.576, places=3)
+
+    def test_design_effect_cluster_of_one_inflates_nothing(self):
+        self.assertEqual(mathx.design_effect(1, 0.5), 1.0)
+
+    def test_design_effect_zero_icc_inflates_nothing(self):
+        self.assertEqual(mathx.design_effect(50, 0.0), 1.0)
+
+    def test_design_effect_cluster_size_below_one_raises(self):
+        with self.assertRaises(ValueError):
+            mathx.design_effect(0.5, 0.1)
+
+    def test_design_effect_icc_out_of_range_raises(self):
+        with self.assertRaises(ValueError):
+            mathx.design_effect(30, -0.1)
+        with self.assertRaises(ValueError):
+            mathx.design_effect(30, 1.1)
+
 
 # ── loader ───────────────────────────────────────────────────────────────────
 
@@ -600,6 +620,112 @@ class TestSpecStructure(unittest.TestCase):
             if pattern.search(text):
                 offenders.append(str(path))
         self.assertEqual(offenders, [], offenders)
+
+
+# ── 07-01: dependence structure -> admissible method-family map (D-04, REQ-P7-04) ──
+
+
+class TestDependenceAdmissibleMethods(unittest.TestCase):
+    def test_dependence_admissible_methods_keys_match_structures_minus_none(self):
+        from dsx.spec import DEPENDENCE_ADMISSIBLE_METHODS, DEPENDENCE_STRUCTURES
+
+        self.assertEqual(
+            set(DEPENDENCE_ADMISSIBLE_METHODS), set(DEPENDENCE_STRUCTURES) - {"none"}
+        )
+
+    def test_every_dependence_admissible_method_is_a_variance_adjustment(self):
+        from dsx.spec import DEPENDENCE_ADMISSIBLE_METHODS, VARIANCE_ADJUSTMENTS
+
+        for structure, methods in DEPENDENCE_ADMISSIBLE_METHODS.items():
+            self.assertTrue(
+                methods <= VARIANCE_ADJUSTMENTS,
+                f"{structure}: {methods} is not a subset of VARIANCE_ADJUSTMENTS",
+            )
+
+    def test_none_structure_has_no_dependence_admissible_methods_entry(self):
+        from dsx.spec import DEPENDENCE_ADMISSIBLE_METHODS
+
+        self.assertNotIn("none", DEPENDENCE_ADMISSIBLE_METHODS)
+
+    def test_dependence_specific_admissibility(self):
+        from dsx.spec import DEPENDENCE_ADMISSIBLE_METHODS
+
+        self.assertIn("cluster_robust", DEPENDENCE_ADMISSIBLE_METHODS["clustered"])
+        self.assertTrue(
+            all(
+                "delta_method" not in methods
+                for methods in DEPENDENCE_ADMISSIBLE_METHODS.values()
+            ),
+            "delta_method must be admissible for no structure at all",
+        )
+
+    def test_dependence_admissible_methods_excluded_from_vocabulary_dump(self):
+        out = describe_vocabulary()
+        self.assertNotIn("dependence_admissible_methods", out)
+
+
+# ── 07-01: falsifier placeholder/refusal/discrimination lexicon (D-05, REQ-P7-01) ──
+
+
+class TestFalsifierLexicon(unittest.TestCase):
+    def test_good_fixture_falsifier_is_discriminating_for_the_estimand(self):
+        from dsx.spec import falsifier_is_discriminating
+
+        # Verbatim from examples/good-ANALYSIS-SPEC.yaml:302
+        value = (
+            "95% CI on the activation uplift includes zero, or its lower bound "
+            "sits below +1.0pp"
+        )
+        self.assertTrue(falsifier_is_discriminating(value))
+
+    def test_empty_string_is_not_discriminating(self):
+        from dsx.spec import falsifier_is_discriminating
+
+        self.assertFalse(falsifier_is_discriminating(""))
+
+    def test_template_angle_bracket_falsifier_is_not_discriminating(self):
+        from dsx.spec import falsifier_is_discriminating
+
+        # Verbatim from templates/ANALYSIS-SPEC.yaml:288
+        value = "<the observation that would prove this wrong>"
+        self.assertFalse(falsifier_is_discriminating(value))
+
+    def test_refusal_tokens_are_not_discriminating(self):
+        from dsx.spec import falsifier_is_discriminating
+
+        for token in ("n/a", "N/A", "tbd", "TBD", "none", "unknown"):
+            self.assertFalse(falsifier_is_discriminating(token), token)
+
+    def test_prose_without_predicate_or_number_is_not_discriminating(self):
+        from dsx.spec import falsifier_is_discriminating
+
+        self.assertFalse(
+            falsifier_is_discriminating("the result will look different than we expect")
+        )
+
+    def test_numeric_only_falsifier_is_discriminating(self):
+        from dsx.spec import falsifier_is_discriminating
+
+        self.assertTrue(
+            falsifier_is_discriminating("the uplift must clear a 1.5pp threshold")
+        )
+
+    def test_none_identified_is_not_classified_as_a_refusal(self):
+        from dsx.spec import is_placeholder_or_refusal
+
+        # Verbatim from examples/good-ANALYSIS-SPEC.yaml:342 (sampling_frame.selection_risk)
+        self.assertFalse(is_placeholder_or_refusal("none identified"))
+
+    def test_long_input_classifies_without_catastrophic_backtracking(self):
+        import time
+
+        from dsx.spec import falsifier_is_discriminating
+
+        text = ("the result will look different than we expect " * 500)[:20000]
+        self.assertEqual(len(text), 20000)
+        start = time.perf_counter()
+        falsifier_is_discriminating(text)
+        self.assertLess(time.perf_counter() - start, 1.0)
 
 
 # ── design ───────────────────────────────────────────────────────────────────
