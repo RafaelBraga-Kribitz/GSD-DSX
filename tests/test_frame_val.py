@@ -753,6 +753,153 @@ class TestValSamplingMissingnessMeasurement(unittest.TestCase):
         )
         self.assertNotIn("DSX-VAL-070", codes(report))
 
+    # D-05: DSX-VAL-060
+    def test_missingness_mar_mechanism_with_complete_case_fires_high_val_060(self):
+        report = val.check(
+            {
+                "validity_frame": {
+                    "missingness": {"mechanism": "MAR", "method_implied": "complete_case"}
+                }
+            }
+        )
+        found = [f for f in report.findings if f.code == "DSX-VAL-060"]
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0].severity, Severity.HIGH)
+
+    def test_missingness_mar_mechanism_with_available_case_fires_val_060(self):
+        report = val.check(
+            {
+                "validity_frame": {
+                    "missingness": {"mechanism": "MAR", "method_implied": "available_case"}
+                }
+            }
+        )
+        found = [f for f in report.findings if f.code == "DSX-VAL-060"]
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0].severity, Severity.HIGH)
+
+    def test_mar_mechanism_with_multiple_imputation_produces_no_missingness_finding(self):
+        report = val.check(
+            {
+                "validity_frame": {
+                    "missingness": {"mechanism": "MAR", "method_implied": "multiple_imputation"}
+                }
+            }
+        )
+        self.assertNotIn("DSX-VAL-060", codes(report))
+
+    def test_mcar_mechanism_with_complete_case_produces_no_missingness_finding(self):
+        report = val.check(
+            {
+                "validity_frame": {
+                    "missingness": {"mechanism": "MCAR", "method_implied": "complete_case"}
+                }
+            }
+        )
+        self.assertNotIn("DSX-VAL-060", codes(report))
+
+    def test_missingness_mnar_mechanism_with_complete_case_fires_critical_val_060(self):
+        report = val.check(
+            {
+                "validity_frame": {
+                    "missingness": {"mechanism": "MNAR", "method_implied": "complete_case"}
+                }
+            }
+        )
+        found = [f for f in report.findings if f.code == "DSX-VAL-060"]
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0].severity, Severity.CRITICAL)
+
+    def test_missingness_mnar_mechanism_with_an_explicit_mechanism_model_produces_no_finding(self):
+        for method in ("mechanism_model", "selection_model", "pattern_mixture_model"):
+            with self.subTest(method=method):
+                report = val.check(
+                    {
+                        "validity_frame": {
+                            "missingness": {"mechanism": "MNAR", "method_implied": method}
+                        }
+                    }
+                )
+                self.assertNotIn("DSX-VAL-060", codes(report))
+
+    def test_missingness_mnar_mechanism_with_an_unrecognised_method_fires_critical_val_060(self):
+        report = val.check(
+            {
+                "validity_frame": {
+                    "missingness": {
+                        "mechanism": "MNAR",
+                        "method_implied": "some_novel_approach",
+                    }
+                }
+            }
+        )
+        found = [f for f in report.findings if f.code == "DSX-VAL-060"]
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0].severity, Severity.CRITICAL)
+
+    def test_missingness_mar_mechanism_with_an_unrecognised_method_produces_no_finding(self):
+        report = val.check(
+            {
+                "validity_frame": {
+                    "missingness": {
+                        "mechanism": "MAR",
+                        "method_implied": "some_novel_approach",
+                    }
+                }
+            }
+        )
+        self.assertNotIn("DSX-VAL-060", codes(report))
+
+    def test_not_assessed_missingness_mechanism_produces_no_finding_for_any_method(self):
+        for method_implied in (
+            "complete_case", "available_case", "multiple_imputation", "", None,
+        ):
+            with self.subTest(method_implied=method_implied):
+                report = val.check(
+                    {
+                        "validity_frame": {
+                            "missingness": {
+                                "mechanism": "not_assessed",
+                                "method_implied": method_implied,
+                            }
+                        }
+                    }
+                )
+                self.assertNotIn("DSX-VAL-060", codes(report))
+
+    def test_missingness_rate_is_never_read_by_the_check(self):
+        baseline = None
+        for rate in (0, 0.4, None, "not_a_number"):
+            with self.subTest(rate=rate):
+                missingness = {"mechanism": "MAR", "method_implied": "complete_case"}
+                if rate is not None:
+                    missingness["rate"] = rate
+                report = val.check({"validity_frame": {"missingness": missingness}})
+                found = [
+                    (f.code, f.severity) for f in report.findings if f.code == "DSX-VAL-060"
+                ]
+                if baseline is None:
+                    baseline = found
+                    self.assertEqual(len(baseline), 1)
+                else:
+                    self.assertEqual(found, baseline)
+
+    def test_malformed_missingness_subblock_produces_no_finding_and_does_not_raise(self):
+        for malformed in ("a string", ["a", "list"], None, 5):
+            with self.subTest(malformed=malformed):
+                report = val.check({"validity_frame": {"missingness": malformed}})
+                self.assertNotIn("DSX-VAL-060", codes(report))
+
+    def test_missingness_known_bad_corpus_fixtures_never_fire_val_060(self):
+        root = Path(__file__).resolve().parent.parent
+        fixtures = sorted((root / "examples" / "known-bad").glob("*-ANALYSIS-SPEC.yaml"))
+        self.assertGreaterEqual(len(fixtures), 3)
+        for path in fixtures:
+            with self.subTest(fixture=path.name):
+                spec = load(str(path))
+                report = val.check(spec)
+                self.assertNotIn("DSX-VAL-060", codes(report), path.name)
+
     def test_malformed_sampling_frame_and_measurement_subblocks_produce_no_finding_and_do_not_raise(
         self,
     ):
@@ -1024,6 +1171,102 @@ class TestValGateSeverity(unittest.TestCase):
             reachable_profiles,
             "val is registered in CHECKS but reachable from no gate profile — every "
             "DSX-VAL-* code would then be unreachable from any gate",
+        )
+
+
+# ── fixture matrix (REQ-P7-*, whole family): every spec file in the repo ───
+#
+# Discovers every analysis-spec fixture using the same glob idiom
+# tests/test_known_bad_corpus.py uses (never a hardcoded filename list), so a
+# fixture added by a later phase is picked up structurally rather than by
+# someone remembering to list it. _all_fixture_paths() (defined above) is
+# already that discovery: examples/good-ANALYSIS-SPEC.yaml,
+# examples/bad-ANALYSIS-SPEC.yaml, templates/ANALYSIS-SPEC.yaml, and every
+# *-ANALYSIS-SPEC.yaml under examples/known-bad/.
+
+# Measured 2026-08-12 against the fixtures as they stand after plan 07-06:
+# loaded each path in _all_fixture_paths() via dsx.loader.load(), ran
+# dsx.frame.val.check(spec), and recorded {f.code for f in report.findings}.
+# A constant that looks derived but was actually guessed is worse than no
+# constant — the same discipline tests/test_known_bad_corpus.py's own
+# measured allow-list documents.
+_EXPECTED_VAL_CODES: "dict[str, set[str]]" = {
+    "good-ANALYSIS-SPEC.yaml": set(),
+    "bad-ANALYSIS-SPEC.yaml": {"DSX-VAL-011"},
+    "ANALYSIS-SPEC.yaml": {"DSX-VAL-011"},
+    "bayesian-continuous-monitoring-ANALYSIS-SPEC.yaml": {"DSX-VAL-041"},
+    "frequentist-uncontrolled-continuous-ANALYSIS-SPEC.yaml": set(),
+    "interference-shared-budget-ANALYSIS-SPEC.yaml": set(),
+}
+
+
+class TestValFixtureMatrix(unittest.TestCase):
+    # Behaviour 1
+    def test_every_discovered_fixture_loads_and_checks_without_raising(self):
+        fixtures = _all_fixture_paths()
+        self.assertGreaterEqual(len(fixtures), 6)
+        for path in fixtures:
+            with self.subTest(fixture=path.name):
+                spec = load(str(path))
+                val.check(spec)  # must not raise
+
+    # Behaviour 3: the guard that makes this class worth having — a fixture
+    # discovered by glob with no expectation must fail loudly, not skip
+    # silently, so a fixture added later cannot slip through unexamined.
+    def test_discovered_fixture_set_equals_the_expected_dictionarys_key_set(self):
+        discovered = {path.name for path in _all_fixture_paths()}
+        expected = set(_EXPECTED_VAL_CODES)
+        missing = discovered - expected
+        self.assertEqual(
+            missing,
+            set(),
+            "Fixture(s) discovered by glob with no entry in _EXPECTED_VAL_CODES: "
+            f"{sorted(missing)}. Add an entry naming the DSX-VAL-* codes this fixture "
+            "is expected to produce (an empty set if none), measured by running "
+            "dsx.frame.val.check() against the loaded fixture — do not guess it.",
+        )
+        stale = expected - discovered
+        self.assertEqual(
+            stale,
+            set(),
+            f"_EXPECTED_VAL_CODES names file(s) no longer discovered by glob: "
+            f"{sorted(stale)}. Remove the stale entry.",
+        )
+
+    # Behaviour 2
+    def test_each_fixture_produces_exactly_its_expected_val_code_set(self):
+        for path in _all_fixture_paths():
+            with self.subTest(fixture=path.name):
+                expected = _EXPECTED_VAL_CODES.get(path.name)
+                if expected is None:
+                    continue  # the guard test above already fails this case loudly
+                spec = load(str(path))
+                report = val.check(spec)
+                self.assertEqual(codes(report), expected, path.name)
+
+    # Behaviour 4
+    def test_good_fixture_expected_val_code_set_is_empty(self):
+        self.assertEqual(_EXPECTED_VAL_CODES["good-ANALYSIS-SPEC.yaml"], set())
+
+    # Behaviour 5: closes the decision-trail obligation for the family as a
+    # whole in one place, rather than repeating a partial assertion in every
+    # per-code test.
+    def test_every_decision_record_the_family_produces_has_the_standard_shape(self):
+        saw_at_least_one_decision = False
+        for path in _all_fixture_paths():
+            with self.subTest(fixture=path.name):
+                spec = load(str(path))
+                report = val.check(spec)
+                decisions = report.context.get("decisions") or []
+                for decision in decisions:
+                    saw_at_least_one_decision = True
+                    self.assertEqual(decision["id"], "")
+                    self.assertEqual(decision["invocation_id"], "")
+                    self.assertEqual(decision["layer"], "deterministic")
+                    self.assertTrue(decision["counterfactual"].strip())
+        self.assertTrue(
+            saw_at_least_one_decision,
+            "no fixture in the repository reached any validity-frame judgment point",
         )
 
 
