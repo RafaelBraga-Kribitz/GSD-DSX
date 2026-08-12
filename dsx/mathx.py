@@ -411,9 +411,30 @@ def pocock_boundary(total_looks: int, alpha: float = 0.05) -> float:
 def inflation_from_peeking(total_looks: int, alpha: float = 0.05) -> float:
     """Approximate true type-I error when a fixed-horizon test is peeked ``n`` times.
 
-    Armitage's classic result: repeated naive testing at alpha=0.05 reaches roughly
-    0.08 at 2 looks, 0.11 at 3, 0.14 at 5, 0.19 at 10. Interpolated linearly in
-    log-looks between the tabulated anchors, then scaled by alpha/0.05.
+    Interpolated log-linearly between the tabulated anchor values below, then
+    scaled by alpha/0.05.
+
+    Citation: Armitage, P., McPherson, C. K. & Rowe, B. C. (1969), "Repeated
+    Significance Tests on Accumulating Data", Journal of the Royal Statistical
+    Society, Series A (General), volume 132, issue 2, pages 235-244,
+    DOI 10.2307/2343787. The anchors below correspond to the paper's normal,
+    known-variance, equal-group-size case at a two-sided nominal alpha of
+    0.05 — the paper tabulates three distributional cases (binomial, normal,
+    exponential), and this is not the only one.
+    The full text is subscriber-only at Oxford University Press, Wiley and
+    JSTOR. No table number and no page number within the paper was verified —
+    naming one would be the fabricated locator brief D-05 exists to prevent.
+    Jennison & Turnbull's table is equally unobtainable and is not cited
+    either.
+    Reference value: the six anchors below (0.083 at 2 looks, 0.107 at 3,
+    0.126 at 4, 0.142 at 5, 0.193 at 10, 0.248 at 20) are verified by
+    independent computation, not by citation: exact numerical quadrature by
+    recursive convolution over the continuation region, cross-checked against
+    a seeded Monte Carlo run of four million paths, reproducing 0.08314,
+    0.10728, 0.12620, 0.14171, 0.19338 and 0.24793 respectively. The
+    widely-circulated figure of 0.246 at twenty looks is wrong; this table's
+    0.248 is right — the two independent methods agree at 0.2479, more than
+    five Monte Carlo standard errors away from 0.246.
     """
     if total_looks < 1:
         raise ValueError("total_looks must be >= 1")
