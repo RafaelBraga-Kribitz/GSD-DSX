@@ -6,10 +6,12 @@ Run:  python3 -m unittest tests.test_frame_val -v
 
 from __future__ import annotations
 
+import ast
 import copy
 import hashlib
 import io
 import json
+import re
 import sys
 import tempfile
 import unittest
@@ -1197,6 +1199,12 @@ _EXPECTED_VAL_CODES: "dict[str, set[str]]" = {
     "bayesian-continuous-monitoring-ANALYSIS-SPEC.yaml": {"DSX-VAL-041"},
     "frequentist-uncontrolled-continuous-ANALYSIS-SPEC.yaml": set(),
     "interference-shared-budget-ANALYSIS-SPEC.yaml": set(),
+    # Measured 2026-08-12 (plan 07-07) against the fixture as committed in this
+    # plan: loaded via dsx.loader.load(), ran dsx.frame.val.check(spec), recorded
+    # {f.code for f in report.findings}. identification.strength: weak paired with
+    # constraint_source: none is the fixture's sole encoded defect (DSX-VAL-040);
+    # every other validity_frame sub-block is clean.
+    "weak-identification-mmm-ANALYSIS-SPEC.yaml": {"DSX-VAL-040"},
 }
 
 
@@ -1267,6 +1275,174 @@ class TestValFixtureMatrix(unittest.TestCase):
         self.assertTrue(
             saw_at_least_one_decision,
             "no fixture in the repository reached any validity-frame judgment point",
+        )
+
+
+# ── gate integration for the weak-identification-mmm fixture (REQ-P7-05, ────
+# ROADMAP Success Criterion 1, plan 07-07) ──────────────────────────────────
+#
+# The other TestValGateSeverity tests above prove the plan/verify/ship/execute
+# split against synthetic identification-block variants cloned from the good
+# fixture. This class proves the roadmap's own success criterion directly,
+# against the real committed corpus fixture the roadmap names by filename —
+# the end-to-end edge plan 07-07's threat model calls out: the fixture must
+# block at one gate point and clear another, in the same repository,
+# discovered by the same glob tests/test_known_bad_corpus.py uses.
+
+
+class TestValGateIntegration(unittest.TestCase):
+    ROOT = Path(__file__).resolve().parent.parent
+    FIXTURE = ROOT / "examples" / "known-bad" / "weak-identification-mmm-ANALYSIS-SPEC.yaml"
+
+    def _run(self, argv: "list[str]") -> "tuple[int, str, str]":
+        out, err = io.StringIO(), io.StringIO()
+        with redirect_stdout(out), redirect_stderr(err):
+            code = cli.main(argv)
+        return code, out.getvalue(), err.getvalue()
+
+    def test_weak_identification_mmm_fixture_exists(self):
+        self.assertTrue(
+            self.FIXTURE.is_file(),
+            f"{self.FIXTURE} does not exist — ROADMAP Success Criterion 1 names this exact path",
+        )
+
+    def test_weak_identification_mmm_fixture_blocks_gate_plan_naming_val_040(self):
+        code, _out, err = self._run(["gate", "plan", "--spec", str(self.FIXTURE)])
+        self.assertEqual(code, 1, f"expected dsx gate plan to block; stderr: {err}")
+        self.assertIn("DSX-VAL-040", err)
+
+    def test_weak_identification_mmm_fixture_clears_gate_execute(self):
+        code, _out, err = self._run(["gate", "execute", "--spec", str(self.FIXTURE)])
+        self.assertEqual(code, 0, f"expected dsx gate execute to pass; stderr: {err}")
+
+
+# ── citation obligations for the DSX-VAL-* family (D-05, plan 07-07 Task 2) ─
+#
+# scripts/gen-finding-catalogue.py --check is the mechanical, repository-wide
+# enforcement of D-05 and must stay green (see the module docstring's `Run:`
+# line and this phase's acceptance criteria). This class exists so a future
+# change to that script cannot silently stop enforcing this family's citation
+# obligations without a test noticing — it re-derives the same three facts
+# from dsx/frame/val.py directly, by parsing rather than by a hand-written
+# list of function or code names, so a helper this module adds later is
+# covered automatically.
+
+_VAL_MODULE_PATH = Path(__file__).resolve().parent.parent / "dsx" / "frame" / "val.py"
+_TESTS_ROOT = Path(__file__).resolve().parent
+_CATALOGUE_PATH = Path(__file__).resolve().parent.parent / "references" / "finding-codes.md"
+
+# Same two patterns scripts/gen-finding-catalogue.py's D-05 check compiles —
+# multiline, with no line-end anchor, so this repository's CRLF checkout
+# cannot change the result (`^` under re.MULTILINE re-anchors at the start of
+# every line regardless of whether it ends `\n` or `\r\n`).
+_CITATION_LINE_RE = re.compile(r"^\s*Citation:\s*\S", re.MULTILINE)
+_REFVALUE_LINE_RE = re.compile(
+    r"^\s*(?:Reference value|Structural criterion):\s*\S", re.MULTILINE
+)
+_TEST_MARKER_LINE_RE = re.compile(r"#\s*D-05:\s*(DSX-[A-Z]+-\d{3})")
+
+
+def _val_module_tree() -> ast.Module:
+    return ast.parse(
+        _VAL_MODULE_PATH.read_text(encoding="utf-8"), filename=str(_VAL_MODULE_PATH)
+    )
+
+
+def _functions_emitting_findings() -> "dict[str, str]":
+    """Every function in dsx/frame/val.py that calls ``report.add(...)``,
+    mapped to its own docstring (``""`` if it has none). Derived by walking
+    the module's AST and, for each qualifying call, climbing to its nearest
+    enclosing ``FunctionDef`` — not by naming functions by hand, so a helper
+    added later is covered automatically."""
+    tree = _val_module_tree()
+    parents: "dict[ast.AST, ast.AST]" = {}
+    for parent in ast.walk(tree):
+        for child in ast.iter_child_nodes(parent):
+            parents[child] = parent
+
+    functions: "dict[str, str]" = {}
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        func = node.func
+        if not (isinstance(func, ast.Attribute) and func.attr == "add"):
+            continue
+        current: ast.AST = node
+        while current in parents:
+            current = parents[current]
+            if isinstance(current, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                functions[current.name] = ast.get_docstring(current) or ""
+                break
+    return functions
+
+
+def _codes_emitted_by_val_module() -> "set[str]":
+    """Every ``DSX-VAL-*`` code named as the first argument of a
+    ``report.add(...)`` call in dsx/frame/val.py, derived by parsing rather
+    than by naming codes by hand."""
+    tree = _val_module_tree()
+    emitted: "set[str]" = set()
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        func = node.func
+        if not (isinstance(func, ast.Attribute) and func.attr == "add"):
+            continue
+        if not node.args:
+            continue
+        first = node.args[0]
+        if isinstance(first, ast.Constant) and isinstance(first.value, str):
+            if first.value.startswith("DSX-VAL-"):
+                emitted.add(first.value)
+    return emitted
+
+
+def _test_markers_under_tests_root() -> "set[str]":
+    markers: "set[str]" = set()
+    for path in sorted(_TESTS_ROOT.rglob("*.py")):
+        text = path.read_text(encoding="utf-8")
+        for match in _TEST_MARKER_LINE_RE.finditer(text):
+            markers.add(match.group(1))
+    return markers
+
+
+class TestValCitationObligations(unittest.TestCase):
+    def test_every_finding_emitting_function_has_citation_and_reference_value_lines(self):
+        functions = _functions_emitting_findings()
+        self.assertTrue(functions, "no function in dsx/frame/val.py calls report.add(...)")
+        for name, doc in sorted(functions.items()):
+            with self.subTest(function=name):
+                self.assertRegex(
+                    doc, _CITATION_LINE_RE,
+                    f"{name}'s docstring has no 'Citation:' line with non-whitespace after "
+                    "the colon",
+                )
+                self.assertRegex(
+                    doc, _REFVALUE_LINE_RE,
+                    f"{name}'s docstring has no 'Reference value:'/'Structural criterion:' "
+                    "line with non-whitespace after the colon",
+                )
+
+    def test_every_emitted_code_has_a_test_marker_under_tests(self):
+        emitted = _codes_emitted_by_val_module()
+        self.assertTrue(emitted, "dsx/frame/val.py emits no DSX-VAL-* code")
+        markers = _test_markers_under_tests_root()
+        missing = emitted - markers
+        self.assertEqual(
+            missing, set(),
+            f"code(s) with no '# D-05: <CODE>' marker anywhere under {_TESTS_ROOT}: "
+            f"{sorted(missing)}",
+        )
+
+    def test_every_emitted_code_appears_in_the_rendered_catalogue(self):
+        emitted = _codes_emitted_by_val_module()
+        self.assertTrue(emitted, "dsx/frame/val.py emits no DSX-VAL-* code")
+        catalogue_text = _CATALOGUE_PATH.read_text(encoding="utf-8")
+        missing = {code for code in emitted if code not in catalogue_text}
+        self.assertEqual(
+            missing, set(),
+            f"code(s) emitted by dsx/frame/val.py but absent from {_CATALOGUE_PATH}: "
+            f"{sorted(missing)} — run scripts/gen-finding-catalogue.py --write",
         )
 
 
