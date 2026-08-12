@@ -2734,15 +2734,37 @@ class TestPhase6ParadigmManifest(unittest.TestCase):
             with self.subTest(point=point):
                 self.assertFalse(report.blocks(Severity.parse(label)))
 
-    def test_check_appends_one_deterministic_decision_record(self):
+    def test_check_appends_one_decision_record_per_emitting_judgement_point(self):
+        """One DecisionRecord per judgement point that actually emits a
+        finding — never a fixed count. A spec declaring a paradigm with no
+        justification now legitimately emits two: DSX-PAR-001's manifest
+        record and DSX-PAR-002's requiredness record (Phase 9, 09-05-PLAN.md).
+        A spec that also clears DSX-PAR-002 (a valid paradigm_justification
+        declared) emits only the manifest's one. Pinning both counts is what
+        makes a future check that emits a record unconditionally, or one that
+        emits none at its judgement point, visible.
+        """
         from dsx.frame import paradigm
 
+        # DSX-PAR-001 (always) + DSX-PAR-002 (paradigm declared, no justification)
         report = paradigm.check({"inference": {"paradigm": "frequentist"}})
         decisions = report.context.get("decisions") or []
-        self.assertEqual(len(decisions), 1)
-        self.assertEqual(decisions[0]["layer"], "deterministic")
-        self.assertEqual(decisions[0]["id"], "")
-        self.assertTrue(decisions[0]["counterfactual"].strip())
+        self.assertEqual(len(decisions), 2)
+        for record in decisions:
+            self.assertEqual(record["layer"], "deterministic")
+            self.assertEqual(record["id"], "")
+            self.assertEqual(record["invocation_id"], "")
+            self.assertTrue(record["counterfactual"].strip())
+
+        # DSX-PAR-001 only — a valid paradigm_justification clears DSX-PAR-002
+        cleared_report = paradigm.check(
+            {"inference": {"paradigm": "frequentist", "paradigm_justification": "team_convention"}}
+        )
+        cleared_decisions = cleared_report.context.get("decisions") or []
+        self.assertEqual(len(cleared_decisions), 1)
+        self.assertEqual(cleared_decisions[0]["layer"], "deterministic")
+        self.assertEqual(cleared_decisions[0]["id"], "")
+        self.assertTrue(cleared_decisions[0]["counterfactual"].strip())
 
     # D-05: DSX-PAR-001
     def test_applied_prefixes_have_codes_and_not_shipped_prefixes_have_none(self):
