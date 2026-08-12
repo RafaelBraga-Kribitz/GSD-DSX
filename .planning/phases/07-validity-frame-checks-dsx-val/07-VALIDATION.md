@@ -50,15 +50,22 @@ binding contract each task must trace to.
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| TBD | TBD | TBD | REQ-P7-01 | — | N/A | unit | `python3 -m unittest tests.test_dsx -v -k estimand` | ❌ W0 | ⬜ pending |
-| TBD | TBD | TBD | REQ-P7-02 | — | N/A | unit | `python3 -m unittest tests.test_dsx -v -k design_effect` | ❌ W0 | ⬜ pending |
-| TBD | TBD | TBD | REQ-P7-03 | — | N/A | gate-level | `python3 -m unittest tests.test_dsx -v -k units` | ❌ W0 | ⬜ pending |
-| TBD | TBD | TBD | REQ-P7-04 | — | N/A | unit | `python3 -m unittest tests.test_dsx -v -k dependence` | ❌ W0 | ⬜ pending |
-| TBD | TBD | TBD | REQ-P7-05 | — | N/A | unit + build check | `python3 scripts/gen-finding-catalogue.py --check` | ❌ W0 | ⬜ pending |
-| TBD | TBD | TBD | REQ-P7-06 | — | N/A | unit | `python3 -m unittest tests.test_dsx -v -k sampling_frame` | ❌ W0 | ⬜ pending |
-| TBD | TBD | TBD | REQ-P7-07 | — | N/A | unit | `python3 -m unittest tests.test_dsx -v -k missingness` | ❌ W0 | ⬜ pending |
-| TBD | TBD | TBD | REQ-P7-08 | — | N/A | unit | `python3 -m unittest tests.test_dsx -v -k measurement` | ❌ W0 | ⬜ pending |
-| TBD | TBD | TBD | REQ-P7-09 | — | N/A | abstract-syntax-tree boundary | `python3 -m unittest tests.test_frame_boundary -v` | ❌ W0 | ⬜ pending |
+| 07-01-T2 | 07-01 | 1 | REQ-P7-01 | T-7-01, T-7-03 | word-list matching has no catastrophic backtracking; long-input timing test | unit | `python3 -m unittest tests.test_dsx -v -k estimand` | ❌ created by task | ⬜ pending |
+| 07-03-T1 | 07-03 | 2 | REQ-P7-01 | T-7-01, T-7-05, T-7-07 | malformed sub-block degrades to no finding; decision record emitted; project-defined disclosure in docstring | unit | `python3 -m unittest tests.test_frame_val -v` | ❌ created by task | ⬜ pending |
+| 07-01-T3 | 07-01 | 1 | REQ-P7-02 | T-7-07 | unverified Kish locator labelled, not invented | unit (numeric) | `python3 -m unittest tests.test_dsx -v -k design_effect` | ❌ created by task | ⬜ pending |
+| 07-04-T1 | 07-04 | 3 | REQ-P7-02 | T-7-01, T-7-04 | illustrative number labelled as illustration, not as a figure computed from the author's spec | unit | `python3 -m unittest tests.test_frame_val -v -k units` | ❌ created by task | ⬜ pending |
+| 07-04-T3 | 07-04 | 3 | REQ-P7-03 | T-7-06 | disjointness asserted by construction; design check pinned by content hash | unit + gate-level | `python3 -m unittest tests.test_frame_val -v` | ❌ created by task | ⬜ pending |
+| 07-01-T1 | 07-01 | 1 | REQ-P7-04 | T-7-07 | two unverified locators labelled; Conley non-citation recorded | unit | `python3 -m unittest tests.test_dsx -v -k dependence` | ❌ created by task | ⬜ pending |
+| 07-05-T1 | 07-05 | 4 | REQ-P7-04 | T-7-01, T-7-05 | malformed sub-block degrades to no finding; decision record emitted | unit | `python3 -m unittest tests.test_frame_val -v -k dependence` | ❌ created by task | ⬜ pending |
+| 07-05-T2 | 07-05 | 4 | REQ-P7-05 | T-7-07, T-7-12, T-7-13 | project-defined partition disclosed in both comment and docstring; allow-list entry carries its cause | unit + build check | `python3 scripts/gen-finding-catalogue.py --check` | ✅ command exists | ⬜ pending |
+| 07-05-T3 | 07-05 | 4 | REQ-P7-05 | — | N/A | gate-level | `python3 -m unittest tests.test_frame_val -v -k identification` | ❌ created by task | ⬜ pending |
+| 07-07-T1 | 07-07 | 6 | REQ-P7-05 | T-7-07, T-7-16 | post-mortem source verified or escalated; corpus assertion narrowed by named exception with a positive counterpart | gate-level | `python3 -m unittest tests.test_known_bad_corpus -v` | ✅ exists, amended | ⬜ pending |
+| 07-06-T1 | 07-06 | 5 | REQ-P7-06 | T-7-01 | malformed sub-block degrades to no finding | unit | `python3 -m unittest tests.test_frame_val -v -k sampling_frame` | ❌ created by task | ⬜ pending |
+| 07-06-T2 | 07-06 | 5 | REQ-P7-07 | T-7-07, T-7-14 | pairing table stated as assembled, not as a printed table; rate field never read | unit | `python3 -m unittest tests.test_frame_val -v -k missingness` | ❌ created by task | ⬜ pending |
+| 07-06-T1 | 07-06 | 5 | REQ-P7-08 | T-7-01 | blank construct demands nothing; second clause recorded as unadjudicated at the code | unit | `python3 -m unittest tests.test_frame_val -v -k measurement` | ❌ created by task | ⬜ pending |
+| 07-03-T2 | 07-03 | 2 | REQ-P7-09 | — | detector proven to fire against synthetic violations, and a deliberate real violation run and reverted | abstract-syntax-tree and text boundary | `python3 -m unittest tests.test_frame_boundary -v` | ✅ exists, extended | ⬜ pending |
+| 07-06-T3 | 07-06 | 5 | all nine (matrix) | T-7-15 | expected code sets measured and dated; an unrecognised fixture fails loudly | fixture matrix | `python3 -m unittest tests.test_frame_val -v` | ❌ created by task | ⬜ pending |
+| 07-07-T2 | 07-07 | 6 | all nine (coverage) | T-7-06, T-7-17 | citation obligations asserted by parsing the module; no requirement checkbox changed | invariant scan | `python3 -m unittest tests.test_frame_val -v` | ❌ created by task | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -79,16 +86,33 @@ weakened to make new work pass:
 
 ## Wave 0 Requirements
 
-- [ ] New test class or module for `dsx/frame/val.py` unit tests, mirroring the
-      `DSX-SPEC-080/081/082` tests at `tests/test_dsx.py:390-474`
+- [ ] New test module `tests/test_frame_val.py` for `dsx/frame/val.py` unit tests, mirroring the
+      `DSX-SPEC-080/081/082` tests at `tests/test_dsx.py:390-474` — created by plan 07-03, task 1.
+      A dedicated module rather than a new class inside `tests/test_dsx.py`, so plans 07-01 and
+      07-02 can run in the same wave without a shared-file conflict.
 - [ ] `mathx.design_effect()` reference-value test in the existing `TestMath` class
       (`tests/test_dsx.py:33`) — asserting **1.576** (intraclass correlation coefficient 0.02,
       average cluster size 29.8, Cochrane Handbook §23.1.4.1). **Not 3.45**, which is unpublished.
-- [ ] The REQ-P7-09 no-paradigm-read test — a new method on
-      `tests/test_frame_boundary.py::TestFrameImportBoundary` or a sibling class
-- [ ] `# D-05: DSX-VAL-0NN` marker comments in `tests/` for all nine codes
+      Created by plan 07-01, task 3.
+- [ ] The REQ-P7-09 no-paradigm-read test — a sibling class
+      `TestFrameParadigmReadBoundary` in `tests/test_frame_boundary.py`, created by plan 07-03,
+      task 2. The existing scanner walks import statements only and cannot be extended to cover
+      a string-literal read, so this is a second detector beside it, not an extension of it.
+- [ ] `# D-05: DSX-VAL-0NN` marker comments in `tests/` for all **ten** codes. Nine requirements,
+      ten codes — decision D-02's own table lists `010`, `011`, `020`, `021`, `030`, `040`, `041`,
+      `050`, `060` and `070`. Plan 07-07 task 2 asserts every emitted code has a marker.
 - [ ] **Resolution of the known-bad corpus test conflict** — a test-suite design gap, not a fixture
-      gap, and it needs its own task (see below)
+      gap. Owned by plan 07-07, task 1, with the decision recorded in that plan (see below).
+
+**One correction to the wave plan carried from research.** `07-RESEARCH.md` section 9 recommends
+landing every fixture and template repair in a late wave, after all the checks exist. That leaves
+the suite red between waves, because four regression assertions that must stay green break the
+moment a check ships against an unrepaired file. The plans instead land each repair in the same
+commit as the check that would otherwise break it: the template unit placeholders and the
+interference fixture with `DSX-VAL-020` in plan 07-04, the template identification strength and the
+corpus allow-list entry with `DSX-VAL-040`/`041` in plan 07-05, and the good fixture's implied
+method with `DSX-VAL-060` in plan 07-06. Only the new fixture and its test conflict are genuinely
+late, in plan 07-07, because they cannot be observed until every check exists.
 
 ---
 
@@ -112,6 +136,18 @@ test as written.
 
 This must be resolved by an explicit task with a stated decision, not silently. It is listed here
 so it cannot be missed at sign-off.
+
+**Resolved at planning, in plan 07-07 task 1, with the decision block recorded in that plan.** A
+named exception dictionary in `tests/test_known_bad_corpus.py` maps a fixture file name to the
+finding code expected to block it at the plan gate. The blanket assertion consults it: a listed
+fixture must exit non-zero at `plan` naming that exact code, and must still exit zero at `execute`.
+Glob discovery is untouched, every unlisted fixture is asserted exactly as today, and the lost
+assertion is replaced by a stronger positive one rather than deleted. The exception is smaller than
+it looks: the validity frame check is registered at `plan`, `verify` and `ship` but not at
+`execute`, so half the corpus's positive guarantee holds for the new fixture with no special
+handling at all. The fixture's target code goes into `_TARGET_CODE_FAMILIES` as one exact code
+string rather than the family prefix, which is what keeps the `DSX-VAL-041` allow-list entry from
+plan 07-05 legal under `test_incidental_allowlist_names_no_target_family_code`.
 
 ---
 

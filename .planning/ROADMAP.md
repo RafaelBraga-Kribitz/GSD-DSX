@@ -233,7 +233,16 @@ assignments within `DSX-VAL-*` beyond those the brief fixes (D-06 makes numberin
   5. A test asserts that no `dsx/frame/val.py` code path reads `inference.paradigm` (D-11),
      failing the suite if one is introduced.
 
-**Plans**: TBD
+**Plans:** 7 plans
+
+Plans:
+- [ ] 07-01-PLAN.md — shared contract constants and the design-effect helper (wave 1)
+- [ ] 07-02-PLAN.md — citation ledger extension and the unpublished-number correction (wave 1)
+- [ ] 07-03-PLAN.md — `dsx/frame/val.py` lands with the estimand checks, all build plumbing and the no-paradigm-read invariant (wave 2)
+- [ ] 07-04-PLAN.md — unit triad and unit drift, with the template and interference fixture repaired in the same commits (wave 3)
+- [ ] 07-05-PLAN.md — dependence and identification, with the template repair and the documented corpus allow-list entry (wave 4)
+- [ ] 07-06-PLAN.md — sampling frame, missingness and measurement, with the good fixture repaired in the same commit (wave 5)
+- [ ] 07-07-PLAN.md — the weak-identification fixture, its post-mortem, and the corpus-test conflict resolution (wave 6)
 
 ### Phase 8: Interference, triggering, stability (`DSX-INT-*`)
 
