@@ -192,6 +192,36 @@ DEPENDENCE_STRUCTURES = {
     "hierarchical": "Observations are nested within multiple levels of grouping.",
 }
 
+# Dependence structure -> admissible variance-adjustment method family (D-04, REQ-P7-04).
+# Every method named below is drawn verbatim from VARIANCE_ADJUSTMENTS above — M-09
+# forbids inventing a parallel vocabulary. "none" has no entry: a declared independence
+# is the nothing-to-validate case, and the consuming check in plan 07-05 must handle it
+# before indexing this map. delta_method appears in no entry — it addresses
+# transformed-parameter variance, not correlated observations, so admitting it anywhere
+# here would let a spec satisfy a dependence declaration with a method that does not
+# address dependence.
+#
+# Citation: Cameron, A.C. and Miller, D.L. (2015), "A Practitioner's Guide to
+# Cluster-Robust Inference", Journal of Human Resources 50(2):317-372 — covers the
+# `clustered` and `repeated_measures` pairings directly.
+# The same Cameron and Miller (2015) paper is cited for `temporal` and `spatial`; the
+# exact section locator inside that paper for those two structures is UNVERIFIED —
+# author, year, title, journal, volume, issue and page range were confirmed, the
+# section number was not.
+# Citation: Gelman, A. and Hill, J. (2007), Data Analysis Using Regression and
+# Multilevel/Hierarchical Models, Cambridge University Press — covers `hierarchical`.
+# The exact chapter locator inside it is UNVERIFIED, for the same reason as above.
+# Conley, T.G. (1999) was considered as a second source for the `spatial` pairing and
+# deliberately NOT cited: only training-knowledge attribution was available for it, and
+# this project does not ship a citation it has not confirmed.
+DEPENDENCE_ADMISSIBLE_METHODS: "dict[str, frozenset[str]]" = {
+    "clustered": frozenset({"cluster_robust", "bootstrap_cluster", "mixed_effects"}),
+    "repeated_measures": frozenset({"mixed_effects", "cluster_robust"}),
+    "temporal": frozenset({"cluster_robust", "bootstrap_cluster", "mixed_effects"}),
+    "spatial": frozenset({"cluster_robust", "bootstrap_cluster", "mixed_effects"}),
+    "hierarchical": frozenset({"mixed_effects", "cluster_robust"}),
+}
+
 INTERFERENCE_RISKS = {
     "none": "Treatment of one unit does not plausibly affect another unit's outcome.",
     "shared_budget": (
@@ -266,9 +296,9 @@ PARADIGM_JUSTIFICATIONS = {
 
 # Single registry behind describe_vocabulary() (D-05, REQ-P6-06): the object each shape
 # validator imports is the exact object dumped here — one place to add a vocabulary, not two.
-# Deliberately excludes SPEC_VERSION, CAUSAL_VERBS, REQUIRED_TOP_LEVEL and
-# IMBALANCE_UNSAFE_METRICS — they are not vocabularies. chart_capabilities stays
-# special-cased in describe_vocabulary() below, exactly as before.
+# Deliberately excludes SPEC_VERSION, CAUSAL_VERBS, REQUIRED_TOP_LEVEL,
+# IMBALANCE_UNSAFE_METRICS and DEPENDENCE_ADMISSIBLE_METHODS — they are not vocabularies.
+# chart_capabilities stays special-cased in describe_vocabulary() below, exactly as before.
 _VOCABULARIES: "list[tuple[str, Any]]" = [
     ("question_types", QUESTION_TYPES),
     ("design_kinds", DESIGN_KINDS),

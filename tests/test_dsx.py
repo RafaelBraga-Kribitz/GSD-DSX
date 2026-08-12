@@ -602,6 +602,48 @@ class TestSpecStructure(unittest.TestCase):
         self.assertEqual(offenders, [], offenders)
 
 
+# ── 07-01: dependence structure -> admissible method-family map (D-04, REQ-P7-04) ──
+
+
+class TestDependenceAdmissibleMethods(unittest.TestCase):
+    def test_dependence_admissible_methods_keys_match_structures_minus_none(self):
+        from dsx.spec import DEPENDENCE_ADMISSIBLE_METHODS, DEPENDENCE_STRUCTURES
+
+        self.assertEqual(
+            set(DEPENDENCE_ADMISSIBLE_METHODS), set(DEPENDENCE_STRUCTURES) - {"none"}
+        )
+
+    def test_every_dependence_admissible_method_is_a_variance_adjustment(self):
+        from dsx.spec import DEPENDENCE_ADMISSIBLE_METHODS, VARIANCE_ADJUSTMENTS
+
+        for structure, methods in DEPENDENCE_ADMISSIBLE_METHODS.items():
+            self.assertTrue(
+                methods <= VARIANCE_ADJUSTMENTS,
+                f"{structure}: {methods} is not a subset of VARIANCE_ADJUSTMENTS",
+            )
+
+    def test_none_structure_has_no_dependence_admissible_methods_entry(self):
+        from dsx.spec import DEPENDENCE_ADMISSIBLE_METHODS
+
+        self.assertNotIn("none", DEPENDENCE_ADMISSIBLE_METHODS)
+
+    def test_dependence_specific_admissibility(self):
+        from dsx.spec import DEPENDENCE_ADMISSIBLE_METHODS
+
+        self.assertIn("cluster_robust", DEPENDENCE_ADMISSIBLE_METHODS["clustered"])
+        self.assertTrue(
+            all(
+                "delta_method" not in methods
+                for methods in DEPENDENCE_ADMISSIBLE_METHODS.values()
+            ),
+            "delta_method must be admissible for no structure at all",
+        )
+
+    def test_dependence_admissible_methods_excluded_from_vocabulary_dump(self):
+        out = describe_vocabulary()
+        self.assertNotIn("dependence_admissible_methods", out)
+
+
 # ── design ───────────────────────────────────────────────────────────────────
 
 
