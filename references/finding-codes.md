@@ -13,7 +13,7 @@ a suppression or a reference in a review stays valid across versions.
 **Gate thresholds.** `plan` and `execute` block at CRITICAL; `verify` and
 `ship` block at HIGH.
 
-**Total: 211 codes.**
+**Total: 213 codes.**
 
 ## Contract structure — `DSX-SPEC-*`
 
@@ -351,3 +351,12 @@ The declared inferential paradigm manifest and its symmetric peeking-monitoring 
 | Code | Severity | Finding |
 |---|---|---|
 | `DSX-PAR-001` | INFO | paradigm manifest — inference.paradigm: <…> |
+
+## Validity frame — `DSX-VAL-*`
+
+Estimand, unit triad, dependence, identification, sampling frame, missingness and measurement content — whether a validity_frame block that is present and structurally well-formed is also internally coherent.
+
+| Code | Severity | Finding |
+|---|---|---|
+| `DSX-VAL-010` | CRITICAL | estimand is missing required attribute(s) |
+| `DSX-VAL-011` | HIGH | estimand falsifier does not discriminate |
