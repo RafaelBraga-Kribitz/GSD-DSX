@@ -149,8 +149,8 @@ _BOUND_CLAIM_DOCUMENTS = (
 # checks — like Phase 9's DSX-PAR-010/DSX-PAR-011 pair — whose check family is
 # registered at every gate point and so is expected to catch at both.
 _EXPECTED_CAUGHT_DEFECTS: "dict[str, frozenset[str]]" = {
-    "bayesian-continuous-monitoring": frozenset(),
-    "frequentist-uncontrolled-continuous": frozenset(),
+    "bayesian-continuous-monitoring": frozenset({"DSX-PAR-011"}),
+    "frequentist-uncontrolled-continuous": frozenset({"DSX-PAR-010"}),
     "interference-shared-budget": frozenset(),
     "weak-identification-mmm": frozenset(),
 }

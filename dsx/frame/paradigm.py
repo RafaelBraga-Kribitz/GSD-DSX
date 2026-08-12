@@ -129,7 +129,7 @@ def _check_monitoring_discipline(spec: dict, report: Report) -> None:
     to block at ``plan`` on its own: the uncontrolled design is already
     blocked regardless of whether a paradigm was declared.
 
-    Citation (DSX-PAR-010): Armitage, P., McPherson, C. K. & Rowe, B. C.
+    Citation: (DSX-PAR-010) Armitage, P., McPherson, C. K. & Rowe, B. C.
     (1969), "Repeated Significance Tests on Accumulating Data", Journal of
     the Royal Statistical Society, Series A (General), volume 132, issue 2,
     pages 235-244, DOI 10.2307/2343787. Same unverified-locator flag as
@@ -138,7 +138,7 @@ def _check_monitoring_discipline(spec: dict, report: Report) -> None:
     University Press, Wiley and JSTOR, and no table or page number within the
     paper was verified — naming one would be the fabricated locator brief D-05
     exists to prevent.
-    Reference value (DSX-PAR-010): at a nominal alpha of 0.05, the true
+    Reference value: (DSX-PAR-010) at a nominal alpha of 0.05, the true
     type-I error is 0.142 at five interim looks and 0.248 at twenty (the same
     anchors ``inflation_from_peeking()`` itself is pinned against). Because
     the number of looks is by definition undeclared and unbounded under an
@@ -147,14 +147,14 @@ def _check_monitoring_discipline(spec: dict, report: Report) -> None:
     what distinguishes this finding from ``DSX-EXP-060`` at a glance (that
     finding names an exact realised look count).
 
-    Citation (DSX-PAR-011): Deng, A., Lu, J. & Chen, S. (2016), "Continuous
+    Citation: (DSX-PAR-011) Deng, A., Lu, J. & Chen, S. (2016), "Continuous
     Monitoring of A/B Tests without Pain: Optional Stopping in Bayesian
     Testing", IEEE DSAA 2016. Theorem 1 states the optional-stopping equality
     that licenses this figure under known prior odds; the bound itself — "the
     risk of false discovery at most 1/(1+K)" — is unnumbered prose
     immediately following Theorem 1 and again in the paper's Section 3.2, so
     citing Theorem 1 alone for the number 1/(K+1) would be a locator error.
-    Reference value (DSX-PAR-011): 1/(K+1) is exactly 0.05 at K = 19, the
+    Reference value: (DSX-PAR-011) 1/(K+1) is exactly 0.05 at K = 19, the
     posterior odds implied by a P(B>A) > 0.95 decision threshold. This check
     asserts the prior-averaged formulation, and explicitly not the point-null
     / law-of-iterated-logarithm formulation — under which type-I error tends

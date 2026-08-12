@@ -2738,6 +2738,22 @@ class TestPhase6ParadigmManifest(unittest.TestCase):
 
     # D-05: DSX-PAR-001
     def test_applied_prefixes_have_codes_and_not_shipped_prefixes_have_none(self):
+        """A prefix reported 'not applied' is not applied for one of two
+        distinct reasons, conflated before Phase 9 shipped its first
+        paradigm-conditional code alongside a still-unshipped one:
+
+        - **not shipped** (the reason came from ``_NOT_SHIPPED``): no known
+          code may start with that prefix — the original, still-valid half
+          of this test.
+        - **not selected for the declared paradigm** (the other paradigm's
+          own conditional family, now that it has shipped): a known code
+          *must* start with that prefix — a shipped-but-currently-unselected
+          prefix is not the same thing as an unshipped one, and asserting
+          the same "resolves to zero known codes" property against it would
+          be wrong now that DSX-PAR-010/DSX-PAR-011 exist. This positive half
+          is strictly additive: it proves the reverse direction the original
+          test never checked, it does not weaken the original assertion.
+        """
         from dsx.frame import paradigm
         from dsx.spec import PARADIGMS
         from dsx.suppressions import known_codes
@@ -2753,11 +2769,20 @@ class TestPhase6ParadigmManifest(unittest.TestCase):
                         [c for c in known if c.startswith(prefix)],
                         f"{prefix} reported applied but no known code starts with it",
                     )
-                for prefix in finding.data.get("not_applied", {}):
-                    self.assertFalse(
-                        [c for c in known if c.startswith(prefix)],
-                        f"{prefix} reported not-shipped but a known code exists",
-                    )
+                for prefix, reason in finding.data.get("not_applied", {}).items():
+                    has_known_code = bool([c for c in known if c.startswith(prefix)])
+                    if reason == "not selected for the declared paradigm":
+                        self.assertTrue(
+                            has_known_code,
+                            f"{prefix} reported not-selected-for-paradigm but no "
+                            "known code starts with it — a shipped-but-unselected "
+                            "prefix must still resolve to a real code",
+                        )
+                    else:
+                        self.assertFalse(
+                            has_known_code,
+                            f"{prefix} reported not-shipped but a known code exists",
+                        )
         for prefix in paradigm._NOT_SHIPPED:
             self.assertFalse([c for c in known if c.startswith(prefix)], prefix)
 
