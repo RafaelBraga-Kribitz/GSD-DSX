@@ -387,7 +387,7 @@ depend on it.
      route is no weaker than the sequential-method requirement (D-12); the `DSX-PAR-011`
      simulation lives under `tests/`, seeded and reproducible, and never on the gate path (D-02).
 
-**Plans**: 5/5 plans executed
+**Plans**: 5/7 plans executed (2 gap-closure plans added after verification)
 
 Plans:
 **Wave 1**
@@ -403,6 +403,14 @@ Plans:
 
 - [x] 09-04-PLAN.md — Known-bad corpus prose corrected, and a positive-content test under the symmetry audit (wave 3)
 - [x] 09-05-PLAN.md — `DSX-PAR-002` requiredness and the fourteen-case symmetry proof (wave 3)
+
+**Wave 4** *(gap closure — `09-VERIFICATION.md` gap 1 / `09-REVIEW.md` CR-01, REQ-P9-06)*
+
+- [ ] 09-06-PLAN.md — Text-only clearing predicate (`is_blank_text`) closes the bare-`0`/`false` escape, and the symmetry audit is corrected to match (wave 4)
+
+**Wave 5** *(gap closure — `09-VERIFICATION.md` gap 2 / `09-REVIEW.md` CR-02, REQ-P9-03)*
+
+- [ ] 09-07-PLAN.md — `DSX-PAR-011`'s emitted finding text and the known-bad fixture comment stop committing the Theorem 1 locator error (wave 5)
 
 **Wave note (atomicity, D-12):** `DSX-PAR-010` and `DSX-PAR-011` are both delivered by a single
 plan, 09-03, in a single commit at the identical severity `CRITICAL`. They cannot land separately.
