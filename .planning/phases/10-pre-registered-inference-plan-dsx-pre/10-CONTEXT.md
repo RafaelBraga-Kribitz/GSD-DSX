@@ -1,6 +1,7 @@
 # Phase 10: Pre-registered inference plan (`DSX-PRE-*`) - Context
 
 **Gathered:** 2026-08-13 (assumptions mode)
+**Updated:** 2026-08-14 (assumptions mode — re-verified against live tree after Phase 9 close)
 **Status:** Ready for planning
 
 <domain>
@@ -27,8 +28,11 @@ It ships:
 `plan` or `execute` (`ROADMAP.md:444-445`). This is the first frame family whose gate points differ
 from `paradigm`'s, so unlike Phase 9 it *does* require `GATE_PROFILES` edits.
 
-**Out of this phase's boundary:** `DSX-VAL-*` (Phase 7, shipped), `DSX-INT-*` (Phase 8, shipped),
-`DSX-PAR-*` (Phase 9), `DSX-ADM-*` (Phase 11). **No procedure ranking, admissibility, power or
+**Out of this phase's boundary:** `DSX-VAL-*` (Phase 7, executed, UAT complete, verification
+`human_needed`), `DSX-INT-*` (Phase 8, executed, verification `gaps_found`), `DSX-PAR-*` (Phase 9,
+complete 2026-08-13), `DSX-ADM-*` (Phase 11). The Phase 8 OOV-`risk` bypass does not block this
+phase — `prereg` does not inherit that guard. Phase 7's dependence taxonomy shipped; D-04 still
+does not coin `clusters`. **No procedure ranking, admissibility, power or
 conservatism ordering on the gate path** — that is Phase 11's job and brief D-02 bars it here.
 `references/families.yaml` is not created in this phase (brief §6.6 — an empty ontology accumulates
 speculative structure).
@@ -69,17 +73,20 @@ Requirements: REQ-P10-01 … REQ-P10-04 (4 requirements, `.planning/REQUIREMENTS
 - **D-01: the mini-language is opt-in, discriminated by the literal arrow `->`.** A `fallback_rule`
   containing `->` is a rule and must parse. A `fallback_rule` without `->` is free prose, is outside
   the mini-language entirely, and produces no finding and no error.
-  - **Verified during discuss:** every `fallback_rule` committed today is English prose and **none
-    contains `->`**. The eight values are `examples/good-ANALYSIS-SPEC.yaml:362-364`,
-    `templates/ANALYSIS-SPEC.yaml:358`, `examples/bad-ANALYSIS-SPEC.yaml:242` (empty),
+  - **Verified during discuss and re-verified 2026-08-14:** every `fallback_rule` committed today is
+    English prose and **none contains `->`**. The eight values are
+    `examples/good-ANALYSIS-SPEC.yaml:362-364`, `templates/ANALYSIS-SPEC.yaml:358`,
+    `examples/bad-ANALYSIS-SPEC.yaml:242` (empty),
     `examples/known-bad/frequentist-uncontrolled-continuous-…:184` (empty),
-    `…/bayesian-continuous-monitoring-…:198-201`, `…/weak-identification-mmm-…:190-193`,
+    `…/bayesian-continuous-monitoring-…:204-207`, `…/weak-identification-mmm-…:190-193`,
     `…/interference-shared-budget-…:183-185`, `…/triggering-dilution-…:182-184`.
-  - **Why not an `if`-prefix trigger:** six of the eight begin with "If". An `if`-prefix trigger
-    over-matches the entire corpus, including the template and the good fixture.
+  - **Why not an `if`-prefix trigger:** four of the eight begin with "If" (good, weak-id,
+    interference, triggering). The template is a placeholder; two are empty; Bayesian starts
+    "None declared". An `if`-prefix still over-matches the good fixture, which is the blast radius
+    that matters (`scripts/check.sh:15-23`).
   - **The blast radius of getting this wrong** is two guards at once:
-    `tests/test_dsx.py:1390-1393` (the template still passes `dsx gate plan`) and
-    `scripts/check.sh:15-23` (`good-ANALYSIS-SPEC.yaml` exits `0` everywhere).
+    `tests/test_dsx.py:1586-1589` (`test_template_validity_frame_and_inference_pass_gate_plan`) and
+    `scripts/check.sh:15-23` (`test_good_fixture_passes_every_gate` at `tests/test_dsx.py:1388-1392`).
   - The arrow is the brief's own grammar token (`brief.md:204-205`) and has zero collisions in any
     `fallback_rule` value.
 
@@ -114,14 +121,19 @@ Requirements: REQ-P10-01 … REQ-P10-04 (4 requirements, `.planning/REQUIREMENTS
     `dsx vocab` dumps, and no unknown-key check catches (`dsx/spec.py:973-980` states in prose that
     there is no unknown-key check under `inference:`). A Phase 6 contract change arriving in Phase 10
     is the wrong shape for a phase whose job is reconciliation.
-  - **What the planner must build instead:** an explicit fact registry, so an unknown fact name is a
-    **decidable error** rather than a silent pass. Candidate members are numeric fields already read
-    by shipped checks — `results.observed_n`, `results.interim_looks`,
-    `results.comparisons_looked_at`, `design.alpha`. **The planner selects the final membership after
-    confirming each field is actually populated in a fixture that reaches `verify`**, and documents
-    the registry where `dsx vocab` or the README will show it. A rule referencing a name outside the
-    registry resolves to no branch and is a `DSX-PRE-010` finding — not an exit-2 parse failure,
-    because the rule parsed fine; it referenced something that does not exist.
+  - **Locked membership (re-verified 2026-08-14, was Claude's Discretion, now D-04a):** exactly three
+    scalars, as `10-01-PLAN.md` already chose — `alpha` → `design.alpha`, `interim_looks` →
+    `results.interim_looks`, `comparisons_looked_at` → `results.comparisons_looked_at`. The good
+    fixture still populates all three (`examples/good-ANALYSIS-SPEC.yaml:135`, `:220`, `:221`).
+    `results.observed_n` is still a list (`:219`) and stays out. `dsx/checks/design.py` still
+    consumes those three scalars (`:94` for `alpha`; `:407` / `:446` for the looks fields).
+  - **Surfacing:** `describe_vocabulary()` gains a `prereg_facts` key (`10-01`); README known-limits
+    copy lands in `10-06`. Live `describe_vocabulary()` still has only `chart_capabilities` and
+    `inference_fields` (`dsx/spec.py:1077-1095`).
+  - A rule referencing a name outside the registry resolves to no branch and is a `DSX-PRE-010`
+    finding — not an exit-2 parse failure, because the rule parsed fine; it referenced something
+    that does not exist. **The new known-bad fixture must populate whichever registry fact its rule
+    names** — `comparisons_looked_at` is absent from all five current known-bad specs.
 
 ### Reconciling the declared procedure against the executed one
 
@@ -131,10 +143,15 @@ Requirements: REQ-P10-01 … REQ-P10-04 (4 requirements, `.planning/REQUIREMENTS
   - `_INFERENCE_MEMBERSHIP` vocabulary-checks only `paradigm`, `paradigm_justification` and
     `declared_at` (`dsx/spec.py:990-994`), so `primary_procedure` is unconstrained free text.
   - `results.tests[]` entries carry `metric`, `p_value`, `effect`, `standardized_effect`, `ci`,
-    `interpretation`, `minimum_practical_effect` (`examples/good-ANALYSIS-SPEC.yaml:231-255`) and
-    **no procedure name at all**. `analysis.test` does hold one, and in every fixture the declared and
-    executed values already agree by construction (`two_proportion_z`/`two_proportion_z` in the good
-    and frequentist-uncontrolled fixtures, `bayesian_ab`/`bayesian_ab` in the Bayesian one).
+    `interpretation`, `minimum_practical_effect`, and now `effect_size_kind`
+    (`examples/good-ANALYSIS-SPEC.yaml:231-255`) and **still no procedure name**. `analysis.test`
+    does hold one. Good / frequentist / interference agree `two_proportion_z`/`two_proportion_z`;
+    Bayesian agrees `bayesian_ab`/`bayesian_ab`; triggering-dilution agrees `welch_t`/`welch_t`.
+  - **`examples/known-bad/weak-identification-mmm-ANALYSIS-SPEC.yaml` declares
+    `primary_procedure: linear_regression` (`:188`) and has no `analysis:` block.** Missing
+    `analysis.test` must not count as a mismatch — D-01 (no-arrow prose → no `DSX-PRE-030`) is what
+    keeps that fixture from exploding once `prereg` is registered. Do not treat a missing executed
+    label as a switch.
   - `normalize()` (`dsx/spec.py:409-410`) is `str().strip().lower().replace("-","_").replace(" ","_")`
     — it maps `wild cluster bootstrap` to `wild_cluster_bootstrap`, which is exactly the free-string
     brittleness this decision has to solve, already shipped and already imported by every
@@ -195,16 +212,19 @@ Requirements: REQ-P10-01 … REQ-P10-04 (4 requirements, `.planning/REQUIREMENTS
   - **Verified during discuss, by direct read:** `_write_decision_trail` is wrapped in
     `except Exception` and swallowed, and its docstring states the invariant without qualification —
     "the write is a side channel, never part of the block contract, so it can never change `point`'s
-    exit code" (`dsx/cli.py:288-290`).
+    exit code" (`dsx/cli.py:285-289`).
   - **The narrowing is real and must be legible.** After Phase 10 the true statement is: *the write
     is a side channel and can never change an exit code; the plan-time header, once written, is a
     gate input at verify and ship.* Editing that docstring without stating why would leave a comment
     that contradicts the code — the failure this project's honesty controls exist to prevent.
   - **Mechanically it is a signature change.** `run_checks` calls `CHECKS[name](spec)` for frame
     modules (`dsx/cli.py:176-177`); both `val.check(spec)` (`dsx/frame/val.py:200`) and
-    `interference.check(spec)` (`dsx/frame/interference.py:643`) take `spec` alone. `prereg.check`
-    needs a `root` argument via a new `elif` branch — precedent exists for `dq`, `code`, `figures`
-    and `narrative` (`dsx/cli.py:156-175`). The D-03a boundary permits importing `dsx.decisions`
+    `interference.check(spec)` (`dsx/frame/interference.py:675`) take `spec` alone. `prereg.check`
+    needs a `root` argument via a new `elif` branch — precedent exists for `dq` and `code`
+    (`dsx/cli.py:158-171`). **Locked 2026-08-14 (was Claude's Discretion):** that `elif` also takes
+    `gate_invocation: bool = False` so D-09's missing-header exit 2 applies only to real `cmd_gate`
+    verify/ship, not to `dsx check` / `dsx audit` which iterate all `CHECKS` (`dsx/cli.py:203-222`).
+    `10-04-PLAN.md` already chose this. The D-03a boundary permits importing `dsx.decisions`
     (`dsx/frame/__init__.py:17-18`), so `read_all` and `decisions_path` are legal imports.
   - **A `verify` run with no recorded plan-time header exits `2` — could not run — not `0`.** This is
     consistent with the exit-code contract and with ROADMAP SC 4's conditional wording ("*where* a
@@ -215,6 +235,18 @@ Requirements: REQ-P10-01 … REQ-P10-04 (4 requirements, `.planning/REQUIREMENTS
       without a could-not-run. The exit-2 message must name `suppressions[]` with its ADR/SPEC
       authority requirement as the intended route, so the grandfather path stays walkable and
       attributable. **Do not solve this by making the missing header pass.**
+    - **Harness blast radius (re-verified 2026-08-14, `10-RESEARCH.md` Pitfall 1 still live):**
+      `_gate_findings()` still uses a fresh empty `TemporaryDirectory()` and `json.loads`s
+      stdout/stderr (`tests/test_known_bad_corpus.py:332-353`). Exit 2 prints plain text and ignores
+      `--json` (`dsx/cli.py:763-768`). Registering `prereg` without seeding a plan header (or without
+      catching non-JSON exit-2 text) turns every existing corpus `verify`/`ship` call into
+      `json.JSONDecodeError`. **Fix in the same commit that edits `GATE_PROFILES` (`10-04`).**
+  - **Locked 2026-08-14 (was Claude's Discretion — earliest vs most-recent):** `DSX-PRE-020` compares
+    by **set membership over all recorded plan-time digests**, not most-recent and not earliest.
+    `scripts/check.sh:16-21` runs good then bad at each point with no `--phase-dir` on the shared
+    `examples/` root, so a most-recent rule would compare good's `verify` digest against bad's plan
+    header. `10-03-PLAN.md` already chose the set rule. Residual gaming (re-run `gate plan` after
+    seeing data) stays a documented known limit, same class as D-10.
 
 - **D-10: an honest `post_data` declaration stays legal and silent.**
   `declared_at` set to `post_data`, on its own, produces no finding. Phase 10 documents its limit; it
@@ -247,7 +279,7 @@ Requirements: REQ-P10-01 … REQ-P10-04 (4 requirements, `.planning/REQUIREMENTS
     `DSX-PRE-*` would exit `1` as SC 2 demands **and still fail the corpus classifier**.
   - The pattern to copy is `test_interference_registered_in_plan_verify_ship_absent_from_execute`
     plus `test_every_dsx_int_code_reachable_from_a_gate_profile`
-    (`tests/test_frame_interference.py:169-185`). That pair is what ROADMAP SC 5's reachability test
+    (`tests/test_frame_interference.py:181-196`). That pair is what ROADMAP SC 5's reachability test
     must assert, with `execute` **and** `plan` as the absent points.
 
 - **D-12: three codes — `DSX-PRE-010`, `DSX-PRE-020`, `DSX-PRE-030`. Irreversible under brief D-06.**
@@ -280,10 +312,10 @@ Requirements: REQ-P10-01 … REQ-P10-04 (4 requirements, `.planning/REQUIREMENTS
   Each is a designed forcing edit, not a defect, and each must be fixed in the same commit that lands
   its code.
   1. `_NOT_SHIPPED` names `"DSX-PRE-"` (`dsx/frame/paradigm.py:66`, **verified**) and
-     `tests/test_dsx.py:2849-2850` asserts every `_NOT_SHIPPED` prefix resolves to **zero** known
+     `tests/test_dsx.py:2857-2858` asserts every `_NOT_SHIPPED` prefix resolves to **zero** known
      codes. The entry must be deleted.
   2. `_PARADIGM_INDEPENDENT` already lists `"DSX-PRE-"` (`dsx/frame/paradigm.py:47`, **verified**)
-     and `tests/test_dsx.py:2830-2834` asserts every *applied* prefix resolves to at least one known
+     and `tests/test_dsx.py:2838-2842` asserts every *applied* prefix resolves to at least one known
      code. The same commit satisfies it — these two guards are a matched pair and flip together.
   3. `PREFIX_GROUPS` (`scripts/gen-finding-catalogue.py:25-52`) has **no `DSX-PRE` entry**, and
      `render()` silently skips unmatched prefixes while still counting them in the total
@@ -383,41 +415,44 @@ Requirements: REQ-P10-01 … REQ-P10-04 (4 requirements, `.planning/REQUIREMENTS
 
 - **D-16: one new known-bad fixture carrying a post-hoc procedure switch, registered in the per-gate-point map.**
   The strictly-more-conservative case lives as a synthetic spec in the unit suite.
-  - `tests/test_known_bad_corpus.py` now carries **two** live maps whose comment at `:243-253` states
+  - `tests/test_known_bad_corpus.py` now carries **two** live maps whose comment at `:271` states
     plainly that "neither shape subsumes the other": `_TARGET_DEFECT_CODES` (`:134-138`), keyed by
     gate point, for a check registered at some points but not others — `weak-identification-mmm` uses
-    `{"plan": "DSX-VAL-040", "verify": "DSX-INT-030"}`; and `_EXPECTED_CAUGHT_DEFECTS` (`:259-265`),
+    `{"plan": "DSX-VAL-040", "verify": "DSX-INT-030"}`; and `_EXPECTED_CAUGHT_DEFECTS` (`:278-284`),
     the both-CRITICAL-points form. **Since `prereg` is verify/ship-only, the per-gate-point shape is
-    the right one** — `{"verify": "DSX-PRE-030"}`.
+    the right one** — `{"verify": "DSX-PRE-030"}`. The comment at `:274-277` still says INT codes
+    "have not shipped yet"; Phase 8 executed — empty frozensets remain correct because those fixtures
+    live in `_TARGET_DEFECT_CODES`, but the comment is stale.
   - `test_expected_caught_defects_keys_match_the_corpus_on_disk` requires **every** fixture on disk to
     have a key in `_EXPECTED_CAUGHT_DEFECTS`, so the new fixture needs an entry there too, even if it
     is an empty frozenset.
   - **Adding `DSX-PRE-*` to `_INCIDENTAL_GAP_CODES` is explicitly forbidden** by
-    `test_incidental_allowlist_names_no_slugs_own_target_code`. A planner taking that shortcut would
-    neutralise the phase's own check by allow-list. **Do not weaken that guard.**
+    `test_incidental_allowlist_names_no_slugs_own_target_code` (`:511-529`). A planner taking that
+    shortcut would neutralise the phase's own check by allow-list. **Do not weaken that guard.**
   - Every committed fixture must also satisfy the post-mortem and catch-attribution invariants at
-    `tests/test_known_bad_corpus.py:270-326`, which is why the more-conservative case is a unit-suite
+    `tests/test_known_bad_corpus.py:400-409`, which is why the more-conservative case is a unit-suite
     synthetic rather than a second committed corpus pair.
 
 ### Claude's Discretion
 
-The researcher and planner may settle these without returning to discuss:
+Settled at the 2026-08-14 re-verify (user confirmed "Yes, proceed"). Do not re-open:
 
-- **Plan slicing across the four requirements.** There is no atomicity constraint in this phase —
-  unlike Phase 9's `DSX-PAR-010/011` pair, the three `DSX-PRE-*` codes are independent and may land
-  separately, provided each landing commit fixes the D-13 guards its own code trips.
-- **The exact grammar of the mini-language beyond the `->` trigger** — comparison operators, whether
-  a rule may carry more than one condition, whether an `else` branch is expressible. Keep it as small
-  as the four requirements need. `brief.md:204-205` is the one worked example that must parse.
-- **The final membership of D-04's fact registry**, subject to confirming each field is actually
-  populated in a fixture that reaches `verify`.
-- **Where the fact registry is surfaced to an operator** — `dsx vocab`, the README, or both.
-- **Whether `DSX-PRE-020` compares the digest against the most recent `plan` header or the earliest**,
-  and what a trail containing several `plan` headers means. State the choice; do not leave it implicit.
-- **The exact `elif` shape for threading `root` into `prereg.check`** (D-09), following the existing
-  `dq`/`code`/`figures`/`narrative` precedent at `dsx/cli.py:156-175`.
-- **Whether the paradigm-independence test for `DSX-PRE-*` is written as a source-level assertion or
-  a behavioural one**, following whichever of REQ-P7-09 and REQ-P8-06 shipped the cleaner idiom.
+- **Plan slicing** — ROADMAP waves 1–5 (`10-01` … `10-06`); D-13 guards in `10-02`; `GATE_PROFILES`
+  + `_gate_findings` repair together in `10-04`.
+- **Grammar beyond `->`** — `10-01-PLAN.md`: single condition, optional `if`, six operators, RHS
+  truncated at first comma, implicit else = `inference.primary_procedure`. Live tree has no parser
+  to contradict this. `brief.md:204-205` remains the one worked example that must parse.
+- **Fact-registry membership** — locked under D-04a (three scalars).
+- **Vocab vs README** — `prereg_facts` via `describe_vocabulary()` in `10-01`; README known-limits
+  in `10-06`.
+- **Earliest vs latest plan header** — locked under D-09 as set membership over all recorded
+  plan-time digests.
+- **`elif` shape for `root`** — locked under D-09: `dq`/`code` precedent plus `gate_invocation`.
+- **Paradigm-independence test** — `tests/test_frame_boundary.py:210-222` already scans every
+  `dsx/frame/*.py`, so `prereg.py` is covered automatically. `10-01`/`10-02` also add behavioural
+  identity tests; REQ-P8-06's named-file idiom remains available as a cheap extra.
+
+Nothing remains at planner discretion that would change a finding code, a trigger, or an exit code.
 
 ### Folded Todos
 
@@ -430,22 +465,17 @@ None — `todo.match-phase 10` returned zero matches.
 
 **Downstream agents MUST read these before planning or implementing.**
 
-> **⚠ Line-number corrections (post-research, 2026-08-13).** Research re-read every citation below and
-> found **seven test line references in this file point to the wrong location** — they name comment
-> prose, loop setup, or an adjacent unrelated test rather than the code claimed. **Read
-> `10-RESEARCH.md` §"Corrections to 10-CONTEXT.md" and use its corrected line numbers**, not the ones
-> in this file, for: `tests/test_dsx.py:1390-1393`, `:2830-2834`, `:2849-2850`;
-> `tests/test_frame_interference.py:169-185`; `tests/test_known_bad_corpus.py:243-253`, `:259-265`,
-> `:270-326`. **No corrected citation changes a decision** — every guard named here is real and still
-> flips; only the coordinates were off. Every other citation in this section was independently re-read
-> and confirmed accurate.
+> **Line-number corrections (folded in 2026-08-14).** The 2026-08-13 research pass found seven test
+> citations pointing at comment prose rather than the claimed code. This update writes the live
+> coordinates in place. **No corrected citation changes a decision.** Remaining live citations that
+> still match are listed in the source-files section below.
 >
-> **⚠ New blocking finding not anticipated here.** `tests/test_known_bad_corpus.py`'s `_gate_findings()`
-> helper builds a fresh empty temp directory per call, so no `verify`/`ship` call ever has a prior
-> plan-time header on file. The moment `prereg` is registered, **D-09's exit-2 rule fires on every
-> existing fixture**, and because a `CheckError` exit prints plain text even under `--json`, the
-> harness fails with an unrelated JSON decode error rather than a legible assertion. This must be
-> fixed in the same commit that edits `GATE_PROFILES`. See `10-RESEARCH.md` Pitfall 1.
+> **Blocking harness finding (still live).** `tests/test_known_bad_corpus.py`'s `_gate_findings()`
+> helper builds a fresh empty temp directory per call (`:332-353`), so no `verify`/`ship` call ever
+> has a prior plan-time header on file. The moment `prereg` is registered, **D-09's exit-2 rule fires
+> on every existing fixture**, and because a `CheckError` exit prints plain text even under `--json`,
+> the harness fails with an unrelated JSON decode error rather than a legible assertion. This must be
+> fixed in the same commit that edits `GATE_PROFILES` (`10-04`). See `10-RESEARCH.md` Pitfall 1.
 
 ### Binding inputs — not re-litigable
 
@@ -478,7 +508,7 @@ None — `todo.match-phase 10` returned zero matches.
 - `dsx/cli.py:90-103` `GATE_PROFILES` — **`prereg` added to `verify` and `ship` only**, absent from
   `plan` and `execute` (**verified: no `prereg` entry exists today**); `:107-112` `GATE_THRESHOLDS`
   (**verified**); `:156-177` `run_checks` and the `root`-threading `elif` precedent; `:277-315`
-  `_write_decision_trail` and the docstring invariant at `:288-290` that D-09 narrows (**verified**);
+  `_write_decision_trail` and the docstring invariant at `:285-289` that D-09 narrows (**verified**);
   `:763-768` the only two `EXIT_ERROR` returns (**verified**).
 - `dsx/findings.py:23` `EXIT_ERROR = 2`; `:181-182` `exit_code()` returning only 1 or 0
   (**both verified**); `CheckError` and `require()`.
@@ -489,23 +519,27 @@ None — `todo.match-phase 10` returned zero matches.
   unknown-key check under `inference:`; `:990-994` `_INFERENCE_MEMBERSHIP`.
 - `dsx/checks/stats.py:40-127` — `recommend_test()`'s procedure lexicon. **Must not be imported**
   (D-06); named here so a planner does not rediscover it and reach for it.
-- `dsx/frame/val.py:200` and `dsx/frame/interference.py:643` — the `check(spec)` signature `prereg`
+- `dsx/frame/val.py:200` and `dsx/frame/interference.py:675` — the `check(spec)` signature `prereg`
   deviates from, and the module idiom to copy otherwise.
 - `templates/ANALYSIS-SPEC.yaml:129` (`analysis.test`), `:355` (`declared_at`), `:358`
   (`fallback_rule`) — the scaffold, and the suppressions comment documenting the exit-2 precedent.
 - `examples/good-ANALYSIS-SPEC.yaml:150` (`analysis.test`), `:231-255` (`results.tests[]` — **no
-  procedure field**), `:359-364` (the `inference:` block).
+  procedure field**; `effect_size_kind` was added), `:356-364` (the `inference:` block; `declared_at`
+  at `:359`, `primary_procedure` at `:360`, `fallback_rule` at `:362-364`).
 - `examples/DECISIONS.jsonl` — **gitignored working-directory output, NOT a committed fixture**
   (`.gitignore:7`; verified). Useful to inspect locally to see the real record shape; never cite it as
   a stable artifact and never assert its contents in a test.
 - `examples/known-bad/*` — the five existing fixtures; one new fixture joins them (D-16).
+  `weak-identification-mmm` has `primary_procedure` and **no** `analysis:` block — missing executed
+  label is not a switch.
 - `tests/test_known_bad_corpus.py:134-138` `_TARGET_DEFECT_CODES`; `:176` the CRITICAL filter that
-  makes D-11's severity load-bearing; `:243-253` the comment on why both maps exist; `:259-265`
-  `_EXPECTED_CAUGHT_DEFECTS`; `:270-326` the post-mortem invariants; the incidental-allow-list guard
-  that must not be weakened.
-- `tests/test_dsx.py:1390-1393` (template passes `gate plan` — D-01's blast radius);
-  `:2830-2834` and `:2849-2850` (the matched `_PARADIGM_INDEPENDENT` / `_NOT_SHIPPED` invariants).
-- `tests/test_frame_interference.py:169-185` — the registration + reachability test pair ROADMAP
+  makes D-11's severity load-bearing; `:271` the comment on why both maps exist; `:278-284`
+  `_EXPECTED_CAUGHT_DEFECTS`; `:332-353` `_gate_findings` (Pitfall 1); `:400-409` post-mortem
+  invariants; `:511-529` the incidental-allow-list guard that must not be weakened.
+- `tests/test_dsx.py:1388-1392` (good fixture passes every gate — D-01's blast radius);
+  `:1586-1589` (template passes `gate plan`); `:2838-2842` and `:2857-2858` (the matched
+  `_PARADIGM_INDEPENDENT` / `_NOT_SHIPPED` invariants).
+- `tests/test_frame_interference.py:181-196` — the registration + reachability test pair ROADMAP
   SC 5 must copy.
 - `tests/test_frame_boundary.py` — the D-03a scanner. `dsx.decisions` is a legal import; `dsx.checks`
   is not.
@@ -568,9 +602,9 @@ None — `todo.match-phase 10` returned zero matches.
   the working precedent and its behaviour already documented to operators in the template.
 - **`DECLARATION_POINTS`'s committed forward reference** (`dsx/spec.py:279-285`) — the REQ-P10-02
   documentation is half written and waiting.
-- **The registration + reachability test pair** (`tests/test_frame_interference.py:169-185`) — a
+- **The registration + reachability test pair** (`tests/test_frame_interference.py:181-196`) — a
   direct template for ROADMAP SC 5's second clause.
-- **The two-map corpus structure** (`tests/test_known_bad_corpus.py:134-138`, `:259-265`) — Phase 9's
+- **The two-map corpus structure** (`tests/test_known_bad_corpus.py:134-138`, `:278-284`) — Phase 9's
   restructuring already built the per-gate-point shape a verify/ship-only family needs. Phase 10
   inherits it rather than restructuring again.
 - **`Structural criterion:` as a first-class D-05 satisfier** — four shipped precedents
@@ -599,7 +633,7 @@ None — `todo.match-phase 10` returned zero matches.
 
 - `dsx/frame/prereg.py` — new module, three codes.
 - `dsx/cli.py` — `GATE_PROFILES` gains `prereg` at `verify` and `ship`; `run_checks` gains a `root`
-  branch for `prereg.check`; `_write_decision_trail`'s docstring invariant is narrowed to the write
+  branch for `prereg.check` with `gate_invocation=True` only on the real gate path; `_write_decision_trail`'s docstring invariant is narrowed to the write
   path with a stated reason.
 - `dsx/frame/paradigm.py` — `_NOT_SHIPPED` loses its `DSX-PRE-` entry; `_PARADIGM_INDEPENDENT` keeps
   its one and starts resolving.
@@ -674,3 +708,4 @@ None — `todo.match-phase 10` returned zero matches.
 
 *Phase: 10-pre-registered-inference-plan-dsx-pre*
 *Context gathered: 2026-08-13 (assumptions mode)*
+*Context updated: 2026-08-14 (assumptions mode — live-tree re-verify; discretion items locked)*

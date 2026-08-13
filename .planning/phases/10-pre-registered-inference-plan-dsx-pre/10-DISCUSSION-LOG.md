@@ -118,3 +118,61 @@ reference value" was satisfiable here at all.
   (2004), *JAMA* 291(20):2457-2465 was reached at abstract level only; no internal locator verified.
 - **Follow-on action recorded in the context file:** `brief.md` §7 gains the Gelman & Loken record.
   This is a citation addition where none existed, not a brief-D-14 reversal.
+
+---
+
+## Update session — 2026-08-14
+
+**Mode:** assumptions (text mode). User chose **1 = Update it**, then **1 = Yes, proceed**.
+**Trigger:** re-verify after Phase 9 close, against the live tree. Existing plans (`10-01` … `10-06`)
+were already written and unexecuted; this session refreshed CONTEXT, it did not rewrite plans.
+**External research:** none. Gelman & Loken (2014) and the two secondaries from 2026-08-13 stand.
+
+### Assumptions re-verified
+
+All of D-01 … D-16 still hold. None contradicted. `dsx/frame/prereg.py` still does not exist. All five
+D-13 guards still wait. Confidence on every re-checked claim: **Confident**.
+
+| Claim | Result |
+|---|---|
+| Mini-language still opt-in via literal `->`; no committed `fallback_rule` contains it | Holds. Four of eight values begin with "If" (was "six of eight" in the 2026-08-13 log — count error, not a decision error) |
+| Exit 2 only via `CheckError`; aborting the whole run is accepted | Holds |
+| No new contract field; `clusters` still absent | Holds. Locked membership now D-04a (three scalars) |
+| Declared = `inference.primary_procedure`; executed = `analysis.test`; `normalize()` | Holds. `weak-identification-mmm` has no `analysis:` block — missing executed label must not fire `DSX-PRE-030` |
+| REQ-P10-03 and REQ-P10-04 = one code `DSX-PRE-030` + two fixtures | Holds |
+| `frame_digest()` already ships; `examples/DECISIONS.jsonl` is gitignored | Holds |
+| Missing plan-time header at verify → exit 2; message names `suppressions[]` | Holds. `_gate_findings` Pitfall 1 still live at `tests/test_known_bad_corpus.py:332-353` |
+| Honest `post_data` stays legal and silent | Holds |
+| New `dsx/frame/prereg.py`, `CHECKS["prereg"]` at verify/ship only, CRITICAL | Holds |
+| Codes `DSX-PRE-010`, `-020`, `-030`; `-011` unspent; unparseable rule has no code | Holds |
+| Five D-13 guards, including `_D05_ALLOWLIST_PREFIXES` as an inclusion list | Holds. Allowlist is still `DSX-PAR-`, `DSX-VAL-`, `DSX-INT-` only |
+| Gelman & Loken (2014) Structural criterion, not Reference value | Holds — not re-read |
+| One new known-bad fixture in `_TARGET_DEFECT_CODES`; do not add `DSX-PRE-*` to `_INCIDENTAL_GAP_CODES` | Holds |
+
+### Corrections Made
+
+No user corrections — all assumptions confirmed.
+
+### Discretion items locked (were Claude's Discretion)
+
+Settled from existing plans plus the live tree. User confirmed proceed.
+
+1. **Fact registry (D-04a):** exactly three scalars — `alpha` → `design.alpha`, `interim_looks` → `results.interim_looks`, `comparisons_looked_at` → `results.comparisons_looked_at`. Not `clusters`, not `observed_n`. New known-bad fixture must populate whichever fact its rule names.
+2. **Grammar:** single condition, optional `if`, six operators, RHS truncated at first comma, implicit else = `primary_procedure` (`10-01-PLAN.md`).
+3. **Digest comparison:** set membership over all recorded plan-time digests, not most-recent / earliest. Residual gaming (re-run `gate plan` after seeing data) stays a documented known limit.
+4. **`gate_invocation: bool = False`:** D-09 missing-header exit 2 applies only to real `cmd_gate` verify/ship, not `dsx check` / `dsx audit`.
+5. **Surfacing:** `describe_vocabulary()["prereg_facts"]` in 10-01; README known-limits in 10-06.
+6. **Plan slicing:** ROADMAP waves 1–5 already; D-13 guards in 10-02; `GATE_PROFILES` + `_gate_findings` repair together in 10-04.
+7. **Paradigm-independence:** `tests/test_frame_boundary.py:210-222` already scans every future `dsx/frame/*.py`.
+
+### Line-number corrections folded into CONTEXT
+
+Seven 2026-08-13 test citations that pointed at comment prose were rewritten to live coordinates.
+`interference.check` is line 675, not 643. Good-fixture `inference:` block starts at 356. No corrected
+citation changes a decision.
+
+### Orchestrator verification this session
+
+Confirmed by direct read: `_D05_ALLOWLIST_PREFIXES` still three prefixes; `CHECKS` / `GATE_PROFILES`
+still have no `prereg`; `_write_decision_trail` docstring at `dsx/cli.py:285-289`; `_gate_findings`
+still uses a fresh empty `TemporaryDirectory`. Phase 8 OOV-`risk` gap does not block Phase 10.
