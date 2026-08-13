@@ -503,25 +503,56 @@ class TestTriggeringDilution(unittest.TestCase):
                 "spec.validity_frame.triggering.analysis_population",
             )
 
+    # 08-REVIEW.md WR-01's negative counterpart: an absence assertion against
+    # rendered text would silently start failing the day any finding's
+    # detail names DSX-INT-030, the same contamination WR-01 documents in
+    # the opposite direction. Asserts against the structured finding list
+    # instead, and pins the exit code it never checked before.
+    #
+    # Plan 08-09 deviation (documented in the plan's SUMMARY.md): this test's
+    # own name has claimed all four fixtures "clear plan" since it was
+    # written in feat(08-04), commit 36ff448 — before Phase 9 shipped
+    # DSX-PAR-010/DSX-PAR-011. Those two CRITICAL checks now legitimately
+    # block `plan` for the two monitoring fixtures, for reasons entirely
+    # unrelated to DSX-INT-030 (verified by hand: DSX-PAR-010 fires on
+    # frequentist-uncontrolled-continuous-ANALYSIS-SPEC.yaml, DSX-PAR-011 on
+    # bayesian-continuous-monitoring-ANALYSIS-SPEC.yaml). The original
+    # assertion never checked exit codes, so this drift went unnoticed.
+    # Pinning the real, observed per-fixture exit code is strictly stronger
+    # than the plan's stated "assert 0 for all four" without asserting
+    # something false about fixtures this plan does not own.
     def test_good_and_monitoring_fixtures_and_template_still_clear_plan(self):
         good = ROOT / "examples" / "good-ANALYSIS-SPEC.yaml"
-        monitoring = [
-            ROOT / "examples" / "known-bad" / "bayesian-continuous-monitoring-ANALYSIS-SPEC.yaml",
-            ROOT / "examples" / "known-bad" / "frequentist-uncontrolled-continuous-ANALYSIS-SPEC.yaml",
-        ]
+        bayesian_monitoring = (
+            ROOT / "examples" / "known-bad" / "bayesian-continuous-monitoring-ANALYSIS-SPEC.yaml"
+        )
+        frequentist_monitoring = (
+            ROOT
+            / "examples"
+            / "known-bad"
+            / "frequentist-uncontrolled-continuous-ANALYSIS-SPEC.yaml"
+        )
         template = ROOT / "templates" / "ANALYSIS-SPEC.yaml"
-        for fixture in [good, template, *monitoring]:
+        expected_exit_code = {
+            good.name: 0,
+            template.name: 0,
+            # Blocked by DSX-PAR-011 (CRITICAL), unrelated to DSX-INT-030.
+            bayesian_monitoring.name: 1,
+            # Blocked by DSX-PAR-010 (CRITICAL), unrelated to DSX-INT-030.
+            frequentist_monitoring.name: 1,
+        }
+        for fixture in [good, template, bayesian_monitoring, frequentist_monitoring]:
             with self.subTest(fixture=fixture.name):
-                with tempfile.TemporaryDirectory() as phase_dir:
-                    out, err = io.StringIO(), io.StringIO()
-                    with redirect_stdout(out), redirect_stderr(err):
-                        code = cli.main(
-                            ["gate", "plan", "--spec", str(fixture), "--phase-dir", phase_dir]
-                        )
-                    self.assertNotIn(
-                        "DSX-INT-030", out.getvalue() + err.getvalue(),
-                        f"{fixture.name} unexpectedly names DSX-INT-030 at plan",
-                    )
+                code, findings = _gate_findings(fixture, "plan")
+                self.assertEqual(
+                    code, expected_exit_code[fixture.name],
+                    f"{fixture.name} exit code drifted from the observed baseline",
+                )
+                by_code = {f["code"]: f for f in findings}
+                self.assertNotIn(
+                    "DSX-INT-030", by_code,
+                    f"{fixture.name} unexpectedly names DSX-INT-030 at plan",
+                )
 
     def test_good_fixture_clears_ship_resolving_sibling_artifacts_from_its_own_directory(self):
         # No --phase-dir here, deliberately: dsx/cli.py::cmd_gate resolves relative
@@ -600,17 +631,28 @@ class TestInterferenceGateLevel(unittest.TestCase):
     # `mitigation: none` would have blocked. DSX-SPEC-082 must still fire
     # beside DSX-INT-010 — the vocabulary violation and the unaddressed risk
     # are different facts about the same spec, not a double report of one.
+    # 08-REVIEW.md WR-01: the rendered report prints each finding's `detail`,
+    # and DSX-INT-010's `detail` quotes DSX-SPEC-082 unconditionally, so a
+    # substring assertion on the rendered text is satisfied by prose whenever
+    # DSX-INT-010 fires at all, whether or not DSX-SPEC-082 actually fired.
+    # Asserts against the structured finding list instead, which is the only
+    # evidence source that can distinguish a fired finding from a code merely
+    # quoted inside another finding's prose.
     def test_out_of_vocabulary_mitigation_variant_blocks_plan_naming_both_int_010_and_spec_082(self):
         with tempfile.TemporaryDirectory() as tmp:
             spec_path = self._copied_fixture(tmp)
             self._mutate_interference(spec_path, mitigation="buget_isolation")
-            with tempfile.TemporaryDirectory() as phase_dir:
-                code, out, err = self._run(
-                    ["gate", "plan", "--spec", str(spec_path), "--phase-dir", phase_dir]
-                )
-                self.assertEqual(code, 1)
-                self.assertIn("DSX-INT-010", out + err)
-                self.assertIn("DSX-SPEC-082", out + err)
+            code, findings = _gate_findings(spec_path, "plan")
+            by_code = {f["code"]: f for f in findings}
+            self.assertEqual(code, 1)
+            self.assertIn("DSX-INT-010", by_code)
+            self.assertEqual(by_code["DSX-INT-010"]["severity"], "CRITICAL")
+            self.assertIn("DSX-SPEC-082", by_code)
+            self.assertEqual(by_code["DSX-SPEC-082"]["severity"], "HIGH")
+            self.assertEqual(
+                by_code["DSX-SPEC-082"]["where"], "spec.validity_frame.interference.mitigation"
+            )
+            self.assertNotIn("DSX-INT-011", by_code)
 
     # 08-VERIFICATION.md gap 1 / 08-REVIEW.md CR-01: same defect class as the
     # mitigation-field variant above, on the adjacent `risk` field. Asserts
