@@ -283,6 +283,26 @@ class TestTriggeringDilution(unittest.TestCase):
         self.assertIn("revenue_per_eligible_session", decisions[0]["choice"])
         self.assertIn("declared type", decisions[0]["rule"])
 
+    # 08-REVIEW.md WR-03: an explicit `type: null` (or blank `type: ""`) must
+    # produce the same skip decision record as an absent `type` key.
+    # `metric.get("type", "")` only returns the `""` default when the key is
+    # entirely absent — an explicit null normalizes to the truthy string
+    # "none", so the metric silently fell through to the ignored branch with
+    # no decision record at all, contradicting the docstring's claim that one
+    # record is appended per undeclared-type metric.
+    def test_explicit_null_metric_type_produces_the_same_skip_decision_record_as_an_absent_type(self):
+        for type_value in (None, ""):
+            with self.subTest(type_value=type_value):
+                spec = _triggering_causal_spec()
+                spec["metrics"] = [{"name": "revenue_per_eligible_session", "type": type_value}]
+                report = interference.check(spec)
+                self.assertNotIn("DSX-INT-030", codes(report))
+                decisions = report.context.get("decisions") or []
+                self.assertEqual(len(decisions), 1)
+                self.assertIn("skip", decisions[0]["choice"])
+                self.assertIn("revenue_per_eligible_session", decisions[0]["choice"])
+                self.assertIn("declared type", decisions[0]["rule"])
+
     def test_mixed_metrics_one_ratio_two_additive_produces_one_finding_naming_both_additive(self):
         spec = _triggering_causal_spec()
         spec["metrics"] = [

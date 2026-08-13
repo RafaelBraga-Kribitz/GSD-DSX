@@ -425,7 +425,15 @@ def _check_triggering_dilution(spec: dict, frame: dict, report: Report) -> None:
         if not isinstance(metric, dict):
             continue
         name = metric.get("name")
-        mtype = normalize(metric.get("type", ""))
+        # An absent key, an explicit `type: null`, and a blank string are one
+        # case, not three: `metric.get("type", "")` only falls back to the
+        # default when the key is entirely absent, so an explicit null slips
+        # through as the truthy string "none" from normalize(None) and lands
+        # silently in the ignored branch below with no decision record at
+        # all (08-REVIEW.md WR-03). Read the raw value first and normalize it
+        # only when it is not blank, so all three inputs degrade identically.
+        raw_type = metric.get("type")
+        mtype = normalize(raw_type) if not is_blank(raw_type) else ""
         if not mtype:
             report.context.setdefault("decisions", []).append(
                 DecisionRecord(
