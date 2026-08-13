@@ -31,6 +31,39 @@ def codes(report: Report) -> set[str]:
     return {f.code for f in report.findings}
 
 
+def _gate_findings(spec_path: Path, point: str) -> "tuple[int, list[dict]]":
+    """Run one real ``dsx gate <point>`` against one fixture and return
+    ``(exit_code, findings)``.
+
+    Exists because an assertion against rendered report text cannot
+    distinguish a finding that actually fired from a finding code merely
+    quoted inside another finding's ``detail`` prose — and
+    ``DSX-INT-010``'s own ``detail`` text names ``DSX-SPEC-082``
+    unconditionally. Asserting against the parsed ``--json`` finding list
+    instead is what stops that kind of test from being vacuous
+    (08-REVIEW.md WR-01). Module level so both ``TestInterferenceUnaddressed``
+    and ``TestInterferenceGateLevel`` can reach it.
+
+    ``--phase-dir`` is a fresh ``tempfile.TemporaryDirectory()`` per call so
+    the ``DECISIONS.jsonl`` trail write (``dsx/cli.py::cmd_gate``,
+    ``root = args.phase_dir or str(path.parent)``) never lands under
+    ``examples/`` — matching ``TestKnownBadCorpus._gate_findings``'s
+    ``io.StringIO()`` plus ``redirect_stdout``/``redirect_stderr`` capture
+    idiom rather than a new pattern. Blocking output goes to stderr and
+    passing output to stdout (``dsx/findings.py::emit``), so whichever
+    stream is non-empty is the one holding the JSON report.
+    """
+    with tempfile.TemporaryDirectory() as tmp:
+        out, err = io.StringIO(), io.StringIO()
+        with redirect_stdout(out), redirect_stderr(err):
+            code = cli.main(
+                ["gate", point, "--spec", str(spec_path), "--phase-dir", tmp, "--json"]
+            )
+        raw = err.getvalue() or out.getvalue()
+        report = json.loads(raw)
+    return code, report["findings"]
+
+
 def _causal_spec(**overrides: object) -> dict:
     """A minimal causal spec carrying an interference sub-block that
     declares the full DSX-INT-010 defect by default, with the given
@@ -97,6 +130,18 @@ class TestInterferenceUnaddressed(unittest.TestCase):
     # `mitigation: none` would have blocked.
     def test_out_of_vocabulary_mitigation_with_blank_residual_still_fires_int_010(self):
         report = interference.check(_causal_spec(mitigation="buget_isolation"))
+        found = [f for f in report.findings if f.code == "DSX-INT-010"]
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0].severity, Severity.CRITICAL)
+        self.assertEqual(found[0].where, "spec.validity_frame.interference.mitigation")
+        self.assertNotIn("DSX-INT-011", codes(report))
+
+    # 08-VERIFICATION.md gap 1 / 08-REVIEW.md CR-01: an unrecognised risk
+    # string made the whole judgment look inapplicable, so a typo cleared a
+    # CRITICAL-threshold gate that an honest `risk: none` would also have
+    # cleared, but an honest `risk: shared_budget` would not.
+    def test_out_of_vocabulary_risk_with_no_mitigation_and_blank_residual_still_fires_int_010(self):
+        report = interference.check(_causal_spec(risk="shared_buget"))
         found = [f for f in report.findings if f.code == "DSX-INT-010"]
         self.assertEqual(len(found), 1)
         self.assertEqual(found[0].severity, Severity.CRITICAL)
@@ -489,6 +534,29 @@ class TestInterferenceGateLevel(unittest.TestCase):
                 self.assertEqual(code, 1)
                 self.assertIn("DSX-INT-010", out + err)
                 self.assertIn("DSX-SPEC-082", out + err)
+
+    # 08-VERIFICATION.md gap 1 / 08-REVIEW.md CR-01: same defect class as the
+    # mitigation-field variant above, on the adjacent `risk` field. Asserts
+    # against the structured finding list, not rendered report text, because
+    # DSX-INT-010's own `detail` names DSX-SPEC-082 unconditionally — a
+    # substring assertion on `out + err` cannot tell the two apart. The
+    # `where` assertion on DSX-SPEC-082 pins that the vocabulary violation
+    # fired for the `risk` field specifically, not some other field.
+    def test_out_of_vocabulary_risk_variant_blocks_plan_naming_both_int_010_and_spec_082(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            spec_path = self._copied_fixture(tmp)
+            self._mutate_interference(spec_path, risk="shared_buget")
+            code, findings = _gate_findings(spec_path, "plan")
+            by_code = {f["code"]: f for f in findings}
+            self.assertEqual(code, 1)
+            self.assertIn("DSX-INT-010", by_code)
+            self.assertEqual(by_code["DSX-INT-010"]["severity"], "CRITICAL")
+            self.assertIn("DSX-SPEC-082", by_code)
+            self.assertEqual(by_code["DSX-SPEC-082"]["severity"], "HIGH")
+            self.assertEqual(
+                by_code["DSX-SPEC-082"]["where"], "spec.validity_frame.interference.risk"
+            )
+            self.assertNotIn("DSX-INT-011", by_code)
 
 
 def _stability_causal_spec(**overrides: object) -> dict:
