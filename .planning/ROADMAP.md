@@ -474,7 +474,24 @@ reconcile against at plan or execute.
      a test against a published reference value or a named structural criterion, and a test
      asserts every `DSX-PRE-*` code is reachable from at least one `GATE_PROFILES` entry.
 
-**Plans**: TBD
+**Plans**: 6 plans
+
+Plans:
+
+- [ ] 10-01-PLAN.md — Fact registry and the arrow-triggered fallback-rule mini-language (wave 1)
+- [ ] 10-02-PLAN.md — `DSX-PRE-010` and `DSX-PRE-030`, plus all five D-13 guards in one commit (wave 2)
+- [ ] 10-03-PLAN.md — `DSX-PRE-020` content-lock reconciliation and the missing-header exit 2 (wave 3)
+- [ ] 10-04-PLAN.md — Registration at verify/ship and the test-harness blast radius (wave 4)
+- [ ] 10-05-PLAN.md — The `post-hoc-procedure-switch` known-bad fixture pair and its corpus test (wave 5)
+- [ ] 10-06-PLAN.md — README known limits, the `brief.md` §7 citation anchor, STATE.md (wave 5)
+
+**Wave note (guard atomicity, D-13):** the five forcing guards trip on the first
+`report.add("DSX-PRE-…")` call site, not on the `GATE_PROFILES` edit — `known_codes()` scans source
+and ignores registration. They are therefore fixed inside 10-02, in the same commit as the first
+code. Separately, the `GATE_PROFILES` edit and the `tests/test_known_bad_corpus.py::_gate_findings`
+repair are both inside 10-04 and must land in one commit: registering `prereg` without the harness
+repair makes every existing fixture stop at exit 2 at verify and ship, surfacing as a JSON decoding
+error rather than a legible assertion.
 
 ### Phase 11: Frequentist admissibility adjudicator (`DSX-ADM-*`)
 
