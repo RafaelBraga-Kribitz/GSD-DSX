@@ -653,9 +653,16 @@ def check(spec: dict) -> Report:
 
     Structural criterion: dispatches to one private helper per adjudicated
     concept; no numeric threshold, effect size or statistic is computed
-    anywhere in this module.
+    anywhere in this module. Guards against a non-dict ``spec`` itself
+    (``dsx.spec.section``/``needs_causal_block`` both call ``.get()`` on
+    their argument unconditionally, so a spec that is a string, list, or
+    other non-mapping value must be intercepted here before either is
+    reached — never by a try/except, matching the rest of this module).
     """
     report = Report(check="interference")
+
+    if not isinstance(spec, dict):
+        return report
 
     frame = section(spec, "validity_frame")
     if not frame:

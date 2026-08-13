@@ -580,5 +580,98 @@ class TestStabilityAssessment(unittest.TestCase):
                     )
 
 
+_MALFORMED_SHAPES: "tuple[object, ...]" = ("s", [], None, 3, {})
+
+
+class TestModuleHardenedAgainstMalformedShapes(unittest.TestCase):
+    """Task 2 (T-8-01/T-8-02): every sub-block and list this module reads
+    degrades to no finding and no exception, across the full malformed-shape
+    table, and the module never converts a crash into a silent pass via
+    exception handling."""
+
+    def test_malformed_top_level_and_sub_block_values_raise_no_exception(self):
+        targets = (
+            "validity_frame",
+            "validity_frame.interference",
+            "validity_frame.triggering",
+            "validity_frame.stability",
+            "metrics",
+        )
+        for target in targets:
+            for shape in _MALFORMED_SHAPES:
+                with self.subTest(target=target, shape=repr(shape)):
+                    spec: dict = {"question_type": "causal", "validity_frame": {}}
+                    if target == "validity_frame":
+                        spec["validity_frame"] = shape
+                    elif target == "metrics":
+                        spec["metrics"] = shape
+                    else:
+                        sub = target.split(".")[1]
+                        spec["validity_frame"] = {sub: shape}
+                    try:
+                        interference.check(spec)
+                    except Exception as exc:  # pragma: no cover - failure path
+                        self.fail(f"check() raised {exc!r} for {target}={shape!r}")
+
+    def test_malformed_top_level_and_sub_block_values_produce_no_int_finding(self):
+        targets = (
+            "validity_frame",
+            "validity_frame.interference",
+            "validity_frame.triggering",
+            "validity_frame.stability",
+            "metrics",
+        )
+        for target in targets:
+            for shape in _MALFORMED_SHAPES:
+                with self.subTest(target=target, shape=repr(shape)):
+                    spec: dict = {"question_type": "causal", "validity_frame": {}}
+                    if target == "validity_frame":
+                        spec["validity_frame"] = shape
+                    elif target == "metrics":
+                        spec["metrics"] = shape
+                    else:
+                        sub = target.split(".")[1]
+                        spec["validity_frame"] = {sub: shape}
+                    report = interference.check(spec)
+                    int_codes = {c for c in codes(report) if c.startswith("DSX-INT-")}
+                    self.assertEqual(int_codes, set())
+
+    def test_malformed_spec_itself_not_a_mapping_raises_no_exception(self):
+        for bad_spec in ("s", [], None, 3):
+            with self.subTest(bad_spec=repr(bad_spec)):
+                try:
+                    report = interference.check(bad_spec)
+                except Exception as exc:  # pragma: no cover - failure path
+                    self.fail(f"check() raised {exc!r} for spec={bad_spec!r}")
+                self.assertEqual(codes(report), set())
+
+    def test_malformed_metrics_entries_that_are_strings_raise_no_exception_and_no_finding(self):
+        spec = {
+            "question_type": "causal",
+            "validity_frame": {
+                "triggering": {"analysis_population": "eligible", "dilution_adjusted": False}
+            },
+            "metrics": ["revenue", "orders"],
+        }
+        try:
+            report = interference.check(spec)
+        except Exception as exc:  # pragma: no cover - failure path
+            self.fail(f"check() raised {exc!r} for a metrics list of bare strings")
+        self.assertEqual(codes(report), set())
+
+    def test_module_contains_no_try_or_except_ast_nodes_for_malformed_shapes(self):
+        import ast
+
+        source = (ROOT / "dsx" / "frame" / "interference.py").read_text(encoding="utf-8")
+        tree = ast.parse(source)
+        try_nodes = [n for n in ast.walk(tree) if isinstance(n, ast.Try)]
+        self.assertEqual(
+            try_nodes, [],
+            "dsx/frame/interference.py must degrade by type check, never by "
+            "exception handling — an exception handler here would convert a "
+            "crash into a silent pass",
+        )
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
