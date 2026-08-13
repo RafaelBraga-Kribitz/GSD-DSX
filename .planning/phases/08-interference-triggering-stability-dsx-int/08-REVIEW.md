@@ -2,319 +2,343 @@
 phase: 08-interference-triggering-stability-dsx-int
 reviewed: 2026-08-13T00:00:00Z
 depth: deep
-files_reviewed: 19
+review_type: re-review of gap closure (08-07)
+diff_range: e397aa4..8f2933a
+files_reviewed: 5
 files_reviewed_list:
-  - dsx/cli.py
   - dsx/frame/interference.py
-  - dsx/frame/paradigm.py
-  - dsx/mathx.py
-  - dsx/spec.py
-  - examples/known-bad/bayesian-continuous-monitoring-ANALYSIS-SPEC.yaml
-  - examples/known-bad/frequentist-uncontrolled-continuous-ANALYSIS-SPEC.yaml
-  - examples/known-bad/interference-shared-budget-ANALYSIS-SPEC.yaml
-  - examples/known-bad/interference-shared-budget-POSTMORTEM.md
-  - examples/known-bad/triggering-dilution-ANALYSIS-SPEC.yaml
-  - examples/known-bad/triggering-dilution-POSTMORTEM.md
-  - examples/known-bad/weak-identification-mmm-ANALYSIS-SPEC.yaml
-  - references/finding-codes.md
-  - scripts/gen-finding-catalogue.py
-  - tests/test_dsx.py
-  - tests/test_frame_boundary.py
   - tests/test_frame_interference.py
-  - tests/test_frame_val.py
   - tests/test_known_bad_corpus.py
+  - tests/test_dsx.py
+  - examples/bad-ANALYSIS-SPEC.yaml
 findings:
-  critical: 1
-  warning: 4
+  critical: 2
+  warning: 2
   info: 2
-  total: 7
+  total: 6
 status: issues_found
 ---
 
-# Phase 8: Code Review Report
+# Phase 8: Code Review Report — gap closure (plan 08-07) re-review
 
 **Reviewed:** 2026-08-13T00:00:00Z
 **Depth:** deep
-**Files Reviewed:** 19
+**Scope:** `git diff e397aa4..8f2933a -- dsx/ tests/ examples/` (commits `21cdc04`, `f669607`, `7c5cfec`)
+**Files Reviewed:** 5
 **Status:** issues_found
 
 ## Summary
 
-`dsx/frame/interference.py` (DSX-INT-010/011/030/040), the new `dsx.mathx.diluted_effect`
-helper, and the accompanying corpus fixtures/tests are, on the whole, carefully built:
-the malformed-shape hardening is real and mechanically proven (AST scan for `try`/`except`,
-a full malformed-shape matrix), the DSX-INT-010/DSX-INT-030 disjointness claims hold up
-under trace, the additive/ratio metric partition is a correct, tested subset of
-`METRIC_TYPES`, and the `weak-identification-mmm` fixture's newly-added DSX-INT-030
-co-firing is a real, deliberate, well-documented second defect rather than a false
-positive.
+The landed change does what it says on the one field it touches. Every previously-open item is
+genuinely closed, and I proved each one mechanically rather than reading the summary:
 
-That said, adversarial tracing through the admissibility logic surfaced one real gate
-bypass: **an out-of-vocabulary `interference.mitigation` value silently defeats both
-DSX-INT-010 and DSX-INT-011**, so a spec with a declared, unaddressed interference risk
-can clear `dsx gate plan` (CRITICAL threshold) just by misspelling the mitigation field —
-exactly the "cheapest way past the gate" failure mode this codebase is explicit about
-avoiding elsewhere (e.g. `dsx/frame/paradigm.py`'s D-10 commentary). No test exercises
-this path. Three further items degrade confidence in the corpus's own guarantees and
-test coverage without being runtime bugs: a documented-but-unenforced positive claim in
-`tests/test_known_bad_corpus.py`, a tautological unit test in `tests/test_dsx.py` that
-never calls the function it claims to verify, and an asymmetry between the corpus's two
-per-fixture expectation maps' completeness guards.
+| Prior finding | Verdict | Evidence |
+|---|---|---|
+| CR-01 (out-of-vocab `mitigation` bypass) | **Closed** for the `mitigation` field | Reverting only the `mitigation_absent` hunk turns both new tests red (`FAILED (failures=2)`); with the fix, the mutated fixture exits 1 naming `DSX-INT-010` where it previously exited 0 |
+| WR-01 (INT-030 verify/ship prose-only) | **Closed** | Sabotaging `fired = not_adjusted` → `fired = False` turns `test_weak_identification_mmm_fixture_blocks_verify_and_ship_naming_int_030` red at both `verify` and `ship` |
+| WR-02 (tautological dilution test) | **Partially closed** — see WR-02 below | The rewrite can fail (proven), but still never calls `mathx.diluted_effect` |
+| WR-03 (`type: null` decision-trail gap) | **Closed** | Absent key, `null`, `""`, `"   "` and `[]` now all emit one identical skip record; reverting the hunk turns the new test red |
+| WR-04 (`_TARGET_DEFECT_CODES` on-disk guard) | **Closed** | Subset guard present and correctly shaped; `_slugs` is glob-based, no CRLF exposure |
+| IN-01 | Deferred by decision — not re-raised | Recorded in `08-07-PLAN.md` `<deferrals>` |
+| IN-02 | **Closed** | Arrow-comment convention matches the file's 15 other attributions; `dsx.loader.load` still parses the block correctly; `gate plan` still names `DSX-INT-010` |
+
+I also independently verified the executor's documented deviation, and **the executor is right**:
+`python3 -m dsx validate --spec examples/bad-ANALYSIS-SPEC.yaml` exits 1 both before and after the
+IN-02 comment edit, with a byte-identical finding-code set
+(`DSX-SPEC-010, -026, -033, -081, -082, -085`). The plan's acceptance criterion was wrong; the
+executor's note is accurate and is not a finding.
+
+Disjointness holds, and for the right reason. `_check_interference_unaddressed` now fires on
+`normalized_mitigation == "none" or not in INTERFERENCE_MITIGATIONS`;
+`_check_interference_mitigation_admissibility` still guards on the exact complement
+(`!= "none" and in INTERFERENCE_MITIGATIONS`), computed from an identical normalization expression
+(`interference.py:186` vs `:300`). The two predicates are mutually exclusive by construction, not by
+early return. I confirmed this empirically across 22 input classes — `none`, absent, `null`, an
+admissible in-vocabulary value, an inadmissible in-vocabulary value, an out-of-vocabulary near-miss,
+`int`, `bool` (both `True` and `False`), `list`, `dict`, and case/whitespace/hyphen/space variants of
+a valid value — and no input produced both codes. No false positives either: the unedited
+`templates/ANALYSIS-SPEC.yaml` and `examples/good-ANALYSIS-SPEC.yaml` both still exit 0 at
+`gate plan`, `sh scripts/check.sh` prints `all checks passed`,
+`python3 scripts/gen-finding-catalogue.py --check` prints `finding catalogue is current`, and
+`python3 -m unittest discover -s tests` reports `Ran 531 tests ... OK (skipped=2)`.
+
+**What is still wrong is that the fix was applied to one field, not to the failure mode.** The
+principle the new docstring now asserts in writing — "a mitigation the vocabulary does not contain
+cannot be admissible for any risk … treating a misspelling as a declared mitigation made a typo the
+cheapest way past this CRITICAL-threshold gate" — is contradicted twelve lines above it by the
+`risk` guard, and again in `_check_triggering_dilution`'s `analysis_population` guard. Both are
+reachable on committed fixtures with a one-character edit, and both exit 0 at `dsx gate plan`.
+Misspelling `mitigation` is no longer cheaper than honesty; misspelling `risk` still is. Separately,
+the new gate-level test that is supposed to prove `DSX-SPEC-082` fires *beside* `DSX-INT-010` cannot
+fail — the commit that added the test also added the literal string `DSX-SPEC-082` to
+`DSX-INT-010`'s own `detail` text, so the assertion is satisfied by prose the same commit wrote.
+
+No new regex or line-oriented parsing was introduced anywhere in the diff (`_mutate_interference`
+round-trips through `dsx.loader.load` + `json.dumps`, not text editing), so there is no CRLF
+exposure. No citation was invented: the new test comment restates claims already carried verbatim by
+`dsx.mathx.diluted_effect`'s existing `Reference value:` paragraph, which I read and cross-checked.
 
 ## Critical Issues
 
-### CR-01: DSX-INT-010/DSX-INT-011 are both silently bypassed by an out-of-vocabulary `interference.mitigation` value
+### CR-01: The bypass moved one field up — an out-of-vocabulary `interference.risk` still clears `dsx gate plan` with a declared risk, no mitigation and no residual note
 
-**File:** `dsx/frame/interference.py:172` (also `dsx/frame/interference.py:277`)
+**File:** `dsx/frame/interference.py:176-181` (the guard the fix did not touch), in the same function
+as the fix at `:187-190`
 
-**Issue:** `_check_interference_unaddressed` only treats a mitigation as "absent" when it
-normalizes to the literal string `"none"`:
-
-```python
-normalized_mitigation = normalize(mitigation) if not is_blank(mitigation) else "none"
-mitigation_absent = normalized_mitigation == "none"
-```
-
-`_check_interference_mitigation_admissibility` independently requires the mitigation to
-already be a *recognised* member of `INTERFERENCE_MITIGATIONS` before it will judge
-admissibility at all:
+**Issue:** The fix made an unrecognised `mitigation` count as absent. It left the identically-shaped
+guard on `risk` unchanged:
 
 ```python
-if normalized_mitigation == "none" or normalized_mitigation not in INTERFERENCE_MITIGATIONS:
+risk = get(frame, "interference.risk")
+normalized_risk = normalize(risk) if not is_blank(risk) else "none"
+if normalized_risk == "none" or normalized_risk not in INTERFERENCE_RISKS:
+    # DSX-SPEC-082 territory (out-of-vocabulary) or the honestly-declared
+    # no-risk case; either way there is nothing for this check to judge.
     return
 ```
 
-Trace a spec that declares a real risk (`interference.risk: shared_budget`), a
-**misspelled** mitigation (`interference.mitigation: buget_isolation`, missing the `d`),
-and a blank `residual_note`:
+`_check_interference_mitigation_admissibility:294-297` carries the same guard. So an
+out-of-vocabulary `risk` value returns early from **both** helpers, leaving `DSX-SPEC-082` (HIGH) as
+the only finding — below `GATE_THRESHOLDS["plan"] == "CRITICAL"` (`dsx/cli.py`). This is the exact
+trace the old CR-01 documented, re-run against the `risk` field.
 
-- `_check_interference_unaddressed`: `normalized_mitigation = "buget_isolation"` ≠
-  `"none"` ⇒ `mitigation_absent = False` ⇒ `unaddressed = False`. **DSX-INT-010 does not
-  fire.**
-- `_check_interference_mitigation_admissibility`: `"buget_isolation" not in
-  INTERFERENCE_MITIGATIONS` ⇒ the guard returns immediately. **DSX-INT-011 does not
-  fire.**
-- The only finding produced anywhere is `dsx/spec.py`'s `DSX-SPEC-082`
-  (`validity_frame.interference.mitigation 'buget_isolation' is not recognised`), which
-  is **HIGH**, not CRITICAL — and `GATE_THRESHOLDS["plan"] == "CRITICAL"`
-  (`dsx/cli.py:107-112`), so `dsx gate plan` **exits 0**.
+Reproduced against the committed known-bad fixture (`gate plan`, three variants of
+`examples/known-bad/interference-shared-budget-ANALYSIS-SPEC.yaml`, real command output):
 
-The result: a spec with a declared, structurally unaddressed interference risk (no
-working mitigation, no residual note — functionally identical to the
-`interference-shared-budget` known-bad fixture) clears the CRITICAL-threshold `plan`
-gate purely because the mitigation string doesn't exactly match a vocabulary entry. A
-single typo is strictly *safer*, gate-wise, than honestly writing `mitigation: none`.
-This is the inverse of `dsx/frame/paradigm.py`'s explicit D-10 guarantee ("an
-unsupported or undeclared paradigm must not be the cheapest way past the gate") applied
-to the interference family. No test in `tests/test_frame_interference.py` exercises an
-out-of-vocabulary `interference.mitigation` on a real, declared risk — the gap is
-untested as well as unfixed.
+```
+BASELINE mitigation: none | exit 1 | [... 'DSX-INT-010' ... 'DSX-SPEC-082']
+MITIGATION TYPO           | exit 1 | [... 'DSX-INT-010' ... 'DSX-SPEC-082']   <- the fix works
+RISK TYPO (shared_buget)  | exit 0 | [...              no DSX-INT-* at all ]  <- still open
+```
 
-**Fix:** Treat "not a recognised, admissible-in-principle mitigation" as equivalent to
-"absent" for DSX-INT-010's purposes, so an out-of-vocabulary mitigation still leaves the
-risk judged unaddressed (DSX-SPEC-082 keeps firing independently for the vocabulary
-violation itself — the two findings describe different facts and are not a double
-report of the same defect):
+`gate execute` also exits 0 for the risk-typo variant; `verify` and `ship` block only because their
+threshold reaches HIGH and picks up `DSX-SPEC-082`. That is the identical bypass window the previous
+CR-01 described.
+
+The inline comment on the `risk` guard ("either way there is nothing for this check to judge") now
+directly contradicts the docstring the same commit added twelve lines below it, which states the
+opposite policy for `mitigation`. One of the two is wrong, and the module currently ships both.
+
+**Fix:** Apply the same vocabulary-membership-as-declaration treatment to the risk guard. An
+unrecognised risk string is not `none` — the author declared *something* — so it should be
+adjudicated rather than dropped, exactly as an unrecognised mitigation now is. Because
+`_RISK_MITIGATION_MAP` has no cell for it, `admissible_listed` degrades correctly to
+`(none admissible)` via the existing `.get(normalized_risk, ())`:
 
 ```python
 # dsx/frame/interference.py, _check_interference_unaddressed
-mitigation = get(frame, "interference.mitigation")
-residual_note = get(frame, "interference.residual_note")
-normalized_mitigation = normalize(mitigation) if not is_blank(mitigation) else "none"
-mitigation_absent = (
-    normalized_mitigation == "none"
-    or normalized_mitigation not in INTERFERENCE_MITIGATIONS
-)
-residual_missing = is_placeholder_or_refusal(residual_note)
-unaddressed = mitigation_absent and residual_missing
+risk = get(frame, "interference.risk")
+normalized_risk = normalize(risk) if not is_blank(risk) else "none"
+if normalized_risk == "none":
+    # The honestly-declared no-risk case; nothing to judge.
+    return
+# An out-of-vocabulary risk string is NOT nothing: the author declared a risk
+# and spelled it wrong. Dropping it here makes a typo in `risk` cheaper at the
+# CRITICAL-threshold gate than writing `risk: none` honestly — the same failure
+# mode the mitigation branch below was fixed for. DSX-SPEC-082 still fires
+# independently for the vocabulary violation itself.
 ```
 
-Add a regression test (e.g. `test_out_of_vocabulary_mitigation_with_blank_residual_still_fires_int_010`)
-asserting `DSX-INT-010` fires for `_causal_spec(mitigation="buget_isolation")`.
+`_check_interference_mitigation_admissibility:296` must keep its `not in INTERFERENCE_RISKS` return
+(it has no admissibility cell to consult), which preserves disjointness: an unrecognised risk would
+then fire DSX-INT-010 only.
 
-## Warnings
+Add regression tests mirroring the ones that closed the mitigation half:
+`test_out_of_vocabulary_risk_with_no_mitigation_and_blank_residual_still_fires_int_010`
+(`_causal_spec(risk="shared_buget")`) and a gate-level variant asserting exit 1.
 
-### WR-01: The "weak-identification-mmm blocks on DSX-INT-030 at verify/ship" guarantee is never mechanically checked
+### CR-02: The same typo-defeats-the-gate hole is open on `triggering.analysis_population`, defeating DSX-INT-030
 
-**File:** `tests/test_known_bad_corpus.py:135` (also `:392-425`, `:427-468`)
-
-**Issue:** `_TARGET_DEFECT_CODES["weak-identification-mmm"]` carries `{"plan":
-"DSX-VAL-040", "verify": "DSX-INT-030"}`, and the surrounding commentary (lines 105-133)
-extensively documents this as a "resolved fragility" — DSX-INT-030 is claimed to fire
-for this fixture at plan, verify and ship. But:
-
-- `test_every_spec_blocks_only_on_its_target_defect_at_critical_threshold_points`
-  (the only test that calls `_classify_target_defect` with a real gate run) iterates
-  `for point in _CRITICAL_THRESHOLD_POINTS`, and `_CRITICAL_THRESHOLD_POINTS = ("plan",
-  "execute")` (line 53) — `"verify"` is never one of the `point` values passed in, so
-  the `"verify": "DSX-INT-030"` entry is never used to positively assert that DSX-INT-030
-  actually appears among the CRITICAL findings at any real gate invocation.
-- `test_ship_gate_findings_are_all_documented_incidental_corpus_gaps` (lines 427-468)
-  only checks the *complement* direction — that every CRITICAL/HIGH finding produced at
-  `ship` is *allowed* (documented or the fixture's own target code). It does not assert
-  that DSX-INT-030 is *present*. If a future change silently stopped DSX-INT-030 from
-  firing for this fixture (e.g. the CR-01 fix applied incorrectly, or a regression in
-  the additive-metric loop), `blocking` would simply shrink and this test would keep
-  passing.
-- `test_incidental_allowlist_names_no_slugs_own_target_code` (line 479) has the same
-  one-directional shape: it only forbids a target code from being in
-  `_INCIDENTAL_GAP_CODES`, it never asserts the code was actually observed firing.
-
-No test anywhere under `tests/` invokes `dsx gate verify` or `dsx gate ship` against
-`weak-identification-mmm-ANALYSIS-SPEC.yaml` and asserts `"DSX-INT-030"` is among the
-returned findings (confirmed by grep across `tests/`). The positive half of this
-fixture's documented guarantee is asserted only in prose.
-
-**Fix:** Add a positive gate-level test mirroring
-`tests/test_frame_val.py::TestValGateIntegration`, e.g.:
-
-```python
-def test_weak_identification_mmm_fixture_blocks_verify_and_ship_naming_int_030(self):
-    for point in ("verify", "ship"):
-        code, findings = self._gate_findings(
-            ROOT / "examples" / "known-bad" / "weak-identification-mmm-ANALYSIS-SPEC.yaml",
-            point,
-        )
-        self.assertEqual(code, 1)
-        self.assertIn(
-            "DSX-INT-030", {f["code"] for f in findings if f["severity"] == "CRITICAL"}
-        )
-```
-
-### WR-02: `test_diluted_effect_naive_and_true_values_differ_for_time_to_success` never calls `dsx.mathx.diluted_effect`
-
-**File:** `tests/test_dsx.py:162-170`
-
-**Issue:** The test's name and docstring claim to assert "the additive-only scope
-boundary REQ-P8-04 demands" against the published Deng & Hu counterexample, but the body
-is:
-
-```python
-def test_diluted_effect_naive_and_true_values_differ_for_time_to_success(self):
-    # Deng & Hu (2015) section 2.1: ...
-    naive_msec = -18.0
-    true_msec = -26.0
-    self.assertNotEqual(naive_msec, true_msec)
-```
-
-This never invokes `mathx.diluted_effect` (or any other code under test). It is a
-tautology — `-18.0 != -26.0` is true regardless of anything in the repository — so it
-provides zero verification of `diluted_effect`'s scope boundary despite its name
-implying otherwise (matches the phase-context concern: "any place a test asserts
-something weaker than its docstring claims").
-
-**Fix:** Either delete the test (the comment can move to
-`dsx.mathx.diluted_effect`'s docstring, where the same UNVERIFIED-inputs caveat is
-already stated), or make it actually exercise the boundary it claims to check, e.g.
-assert that `diluted_effect` is undefined/inapplicable for a ratio-typed dilution
-scenario by pointing at `interference._RATIO_METRIC_TYPES`/`_ADDITIVE_METRIC_TYPES`
-directly rather than restating two hardcoded literals.
-
-### WR-03: DSX-INT-030's metric-type loop treats an explicit `type: null` differently from an absent `type` key
-
-**File:** `dsx/frame/interference.py:403-425`
+**File:** `dsx/frame/interference.py:406-408` (in `_check_triggering_dilution`, the function this
+diff edited at `:428-436`)
 
 **Issue:**
 
 ```python
-mtype = normalize(metric.get("type", ""))
-if not mtype:
-    ... append a "skip: no declared type" DecisionRecord ...
-    continue
+population = get(triggering, "analysis_population")
+normalized_population = normalize(population) if not is_blank(population) else ""
+if normalized_population != "eligible":
+    return
 ```
 
-`metric.get("type", "")` only returns the `""` default when the `type` key is entirely
-absent. If a metric declares `type: null` in YAML (parses to Python `None`, key present),
-`metric.get("type", "")` returns `None`, and `normalize(None)` is `str(None).strip()
-.lower()` → the truthy string `"none"`. `if not mtype:` is then `False`, so this metric
-skips the documented "no declared type" path (and its `DecisionRecord`) entirely, falls
-through the `if mtype in _ADDITIVE_METRIC_TYPES:` check (false, since `"none"` isn't a
-member), and lands silently in the "ignored" branch with **no decision record at all** —
-contradicting the docstring's claim that "one `DecisionRecord` naming the skip and its
-reason is appended for each" undeclared-type metric. No finding is produced either way,
-so this is a decision-trail completeness gap rather than an incorrect block/pass, but it
-is a real behavioral inconsistency between two inputs (`type` absent vs. `type: null`)
-that should be identical under the check's own stated model.
+`ANALYSIS_POPULATIONS` is a closed vocabulary (`{"eligible", "triggered"}`), so an out-of-vocabulary
+value is a spec defect, not a declaration of `triggered`. The guard treats it as neither: it returns
+before the judgment point, and DSX-INT-030 never fires. `DSX-SPEC-082` (HIGH) fires alone and the
+CRITICAL-threshold gates pass.
 
-**Fix:**
+Reproduced against the committed fixture (`examples/known-bad/triggering-dilution-ANALYSIS-SPEC.yaml`,
+real command output):
+
+```
+baseline                                    | exit 1 | DSX-INT-030 present: True
+population TYPO (eligible -> eligable)      | exit 0 | DSX-INT-030 present: False
+```
+
+The gate output still names `analysis_population` (via `DSX-SPEC-082`), so the operator is told the
+string is wrong — but the CRITICAL check the fixture exists to demonstrate is silenced, and
+`dsx gate plan` exits 0. This is the same class as CR-01 and it is the second CRITICAL check in this
+module a one-character edit can defeat.
+
+I am scoring this Critical on impact rather than diff proximity: the guard predates 08-07, but
+`_check_triggering_dilution` is inside the reviewed diff, and the policy the fix's own docstring now
+states covers it.
+
+**Fix:** Distinguish "declared something outside the vocabulary" from "declared `triggered`". Fail
+closed for the former, matching the mitigation branch:
 
 ```python
-raw_type = metric.get("type")
-mtype = normalize(raw_type) if not is_blank(raw_type) else ""
+population = get(triggering, "analysis_population")
+normalized_population = normalize(population) if not is_blank(population) else ""
+if normalized_population == "triggered" or not normalized_population:
+    # Honestly declared as the triggered population, or not declared at all
+    # (DSX-SPEC-08x territory) — nothing for this check to adjudicate.
+    return
+# "eligible" or any unrecognised string: an out-of-vocabulary value is a
+# misspelling, not a declaration of `triggered`, and must not be cheaper at the
+# gate than writing `analysis_population: eligible` honestly.
 ```
 
-so an explicit `null`/blank `type` is treated identically to an absent one.
+Add a regression test for `analysis_population="eligable"` asserting DSX-INT-030 fires, and a
+gate-level variant asserting exit 1. Update the docstring's firing condition and the
+`DecisionRecord.rule` text, both of which currently say `is 'eligible'`.
 
-### WR-04: `_TARGET_DEFECT_CODES` has no on-disk completeness guard, unlike its sibling map
+## Warnings
 
-**File:** `tests/test_known_bad_corpus.py:134-138` (contrast with `:490-502`)
+### WR-01: The new gate-level test's `DSX-SPEC-082` assertion cannot fail — the same commit put the literal string into `DSX-INT-010`'s own detail text
 
-**Issue:** `_EXPECTED_CAUGHT_DEFECTS` is protected by
-`test_expected_caught_defects_keys_match_the_corpus_on_disk`, which fails loudly if the
-map's keys and the fixtures discovered by glob ever diverge (a fixture added without an
-entry, or an entry naming a fixture no longer on disk). `_TARGET_DEFECT_CODES` — the
-other of the two maps `_effective_target_map()` combines, and the one carrying the
-point-scoped `DSX-VAL-040`/`DSX-INT-010`/`DSX-INT-030` guarantees — has no equivalent
-test. If `weak-identification-mmm-ANALYSIS-SPEC.yaml` (or either of the other two keyed
-fixtures) were ever renamed or removed, the corresponding `_TARGET_DEFECT_CODES` entry
-would become an orphaned, silently-inert dict entry: `_classify_target_defect` would
-simply find no matching slug on disk, the renamed fixture would default to "clears
-cleanly" in `test_every_spec_blocks_only_on_its_target_defect_at_critical_threshold_points`,
-and the loss of the `DSX-VAL-040 at plan` guarantee would go unnoticed by any test —
-precisely the "silently weakened guarantee" failure mode this module's own comments
-(lines 90-138, 244-253) are otherwise careful to call out and guard against for the
-sibling map.
+**File:** `tests/test_frame_interference.py:491` (assertion), caused by
+`dsx/frame/interference.py:207-211` (detail text added in the same commit, `f669607`)
 
-**Fix:** Add a symmetrical guard, e.g.:
+**Issue:** `test_out_of_vocabulary_mitigation_variant_blocks_plan_naming_both_int_010_and_spec_082`
+ends with:
 
 ```python
-def test_target_defect_codes_keys_are_a_subset_of_the_corpus_on_disk(self):
-    disk_slugs = _slugs(f"*{SPEC_SUFFIX}", SPEC_SUFFIX)
-    stale = set(_TARGET_DEFECT_CODES) - disk_slugs
-    self.assertEqual(
-        stale, set(),
-        f"_TARGET_DEFECT_CODES names fixture(s) no longer on disk: {sorted(stale)}",
-    )
+self.assertEqual(code, 1)
+self.assertIn("DSX-INT-010", out + err)
+self.assertIn("DSX-SPEC-082", out + err)
 ```
+
+Its comment states the purpose explicitly: "DSX-SPEC-082 must still fire beside DSX-INT-010 — the
+vocabulary violation and the unaddressed risk are different facts about the same spec, not a double
+report of one." Commit `f669607` also appended this sentence to every DSX-INT-010 finding's `detail`:
+
+> "If the declared mitigation string is not a recognised member of INTERFERENCE_MITIGATIONS,
+> **DSX-SPEC-082** also fires on the same input — …"
+
+`out + err` is the rendered text report, which prints `detail`. So the string `DSX-SPEC-082` is in
+the output whenever `DSX-INT-010` fires at all — which is the only branch this test reaches.
+
+Proven, real output, comparing the JSON finding list against the text output for the same fixture:
+
+```
+UNMUTATED (mitigation: none)          exit=1  real DSX-SPEC-082 findings=0  substring in output=True
+MUTATED (mitigation: buget_isolation) exit=1  real DSX-SPEC-082 findings=1  substring in output=True
+```
+
+The unmutated fixture produces **zero** `DSX-SPEC-082` findings yet still satisfies the assertion.
+If `DSX-SPEC-082` stopped firing for `interference.mitigation` entirely, this test would stay green.
+
+This matters beyond a weak test. This assertion is the sole mechanical evidence for the plan's third
+must-have truth ("DSX-SPEC-082 keeps firing independently … reported as two findings, not one defect
+reported twice") and for 08-VERIFICATION.md's third `missing:` entry. That guarantee is currently
+unasserted — which is precisely the disease the previous review's WR-02 named and this plan set out
+to cure.
+
+The secondary effect is worth noting too: putting a finding code inside another finding's `detail`
+makes every text-substring assertion in the suite unreliable in both directions. The negative
+counterpart at `tests/test_frame_interference.py:363-402`
+(`assertNotIn("DSX-INT-030", out.getvalue() + err.getvalue())`) will silently start failing the day
+any check's detail text names DSX-INT-030.
+
+**Fix:** Assert against structured findings, not rendered text. `_gate_findings`-style JSON capture
+already exists in `tests/test_known_bad_corpus.py:332-353`; use the same shape here:
+
+```python
+code, out, err = self._run(
+    ["gate", "plan", "--spec", str(spec_path), "--phase-dir", phase_dir, "--json"]
+)
+self.assertEqual(code, 1)
+report = json.loads(err or out)
+by_code = {f["code"]: f for f in report["findings"]}
+self.assertIn("DSX-INT-010", by_code)
+self.assertEqual(by_code["DSX-INT-010"]["severity"], "CRITICAL")
+self.assertIn("DSX-SPEC-082", by_code)
+# the two findings are about the same field, and are two findings, not one
+self.assertEqual(
+    by_code["DSX-INT-010"]["where"], "spec.validity_frame.interference.mitigation"
+)
+```
+
+Consider also making `DSX-INT-010`'s `detail` name the code only when it is actually true (see
+IN-01), which removes the source of the contamination.
+
+### WR-02: The rewritten dilution test still never calls `mathx.diluted_effect`; its only novel assertion is a docstring substring grep
+
+**File:** `tests/test_dsx.py:163-178`
+
+**Issue:** `test_diluted_effect_is_scoped_to_additive_metrics_not_the_counterexamples_ratio_metric`
+is a real improvement on the tautology it replaced — I confirmed it turns red when `"ratio"` is added
+to `_ADDITIVE_METRIC_TYPES`. But the disease the original WR-02 named (a test whose name claims more
+than its body asserts) is reduced, not eliminated:
+
+- Nothing in the body touches `mathx.diluted_effect`'s *behaviour*, despite the name. The function is
+  never called. It cannot be — `diluted_effect(effect, rate)` takes two floats and has no metric-type
+  parameter — but that means the name asserts a scope boundary the function does not enforce and the
+  test does not check.
+- The two partition assertions are almost entirely subsumed by
+  `tests/test_frame_interference.py:320-328`
+  (`test_additive_and_ratio_metric_type_partitions_are_subsets_disjoint_and_proper`), which already
+  proves the two sets are disjoint subsets of `METRIC_TYPES`, plus
+  `test_ratio_scope_boundary_ratio_metric_produces_no_finding` (`:257-261`), which proves the
+  behaviour end-to-end. The only thing this test adds that no other test has is the docstring grep.
+- The docstring assertions are documentation checks living in a `TestMath` behaviour class, and they
+  are substring-loose: `assertIn("-26", docstring)` would pass on any text containing `-26`.
+
+**Fix:** Either rename it to what it actually guards — e.g.
+`test_ratio_metric_type_stays_outside_the_additive_partition_and_the_reference_pair_is_recorded` —
+or, better, move the two partition assertions out (they belong beside their siblings in
+`tests/test_frame_interference.py`) and keep only the docstring-provenance assertion under an honest
+name such as `test_diluted_effect_docstring_still_records_the_published_counterexample_pair`. If the
+scope boundary is meant to be enforced rather than documented, the enforcement point is
+`_ADDITIVE_METRIC_TYPES` and it is already tested; `diluted_effect` itself has no boundary to assert.
 
 ## Info
 
-### IN-01: Quoted-string YAML booleans silently defeat the strict identity checks
+### IN-01: `DSX-INT-010`'s `detail` names `DSX-SPEC-082` unconditionally, including in the common case where it did not fire
 
-**File:** `dsx/frame/interference.py:390-396`, `:558-564`
+**File:** `dsx/frame/interference.py:207-211`
 
-**Issue:** Both `dilution_adjusted is not True` and `novelty_primacy_assessed is not
-True` are deliberate, documented identity comparisons (never `is_blank()`) so that the
-literal boolean `false` still fires. That same strictness means a *quoted* YAML scalar
-(`dilution_adjusted: "true"`, parsed as the Python string `"true"`, not the boolean)
-also fails the `is not True` test and fires the check, even though the operator's intent
-was clearly "yes, adjusted." This is a pre-existing, codebase-wide convention (the same
-pattern appears for other boolean fields outside this module) rather than something
-introduced by Phase 8, and the failure mode is "check fires when it arguably shouldn't"
-rather than a silent pass, so it is low risk — noted for awareness, not required to fix
-in this phase.
+**Issue:** The sentence is emitted for every DSX-INT-010 finding, including the honest
+`mitigation: none` case that all four committed fixtures and the template use. In that case no
+`DSX-SPEC-082` finding exists (verified: the unmutated `interference-shared-budget` fixture produces
+zero), so the operator reading the report sees a code named in the detail that appears nowhere in the
+finding list. The sentence is grammatically hedged ("If the declared mitigation string is not …"), so
+it is not a false claim — but it is unconditional noise on the majority path, and it is what makes
+WR-01's assertion vacuous.
 
-### IN-02: `examples/bad-ANALYSIS-SPEC.yaml` now also encodes a live DSX-INT-010 defect, undocumented in its own comments
+**Fix:** Emit it only when it is true, e.g. build the detail with a conditional suffix keyed on
+`normalized_mitigation not in INTERFERENCE_MITIGATIONS`. That also removes the string from the output
+of the common case, so a text-substring assertion on `DSX-SPEC-082` would become meaningful again.
 
-**File:** `examples/bad-ANALYSIS-SPEC.yaml:224-228`
+### IN-02: `assertIn("-26", docstring)` fails under `python -OO`
 
-**Issue:** This pre-Phase-8 general-purpose "bad" fixture declares
-`interference.risk: shared_budget`, `mitigation: none`, `residual_note: ""` — the exact
-shape `_check_interference_unaddressed` fires on. Since Phase 8 shipped, `dsx gate plan`
-against this fixture now also blocks on `DSX-INT-010` in addition to its originally
-documented codes, but the fixture's own inline comments (which carefully attribute every
-other declared defect to a code, e.g. "`DSX-SPEC-082`", "`COH-031`") say nothing about
-this one. This is not a functional bug — the finding is a correct catch of a genuinely
-undocumented interference risk in the fixture, and no test asserts an exhaustive finding
-set for this file — but the comment block is now stale relative to the fixture's actual
-behavior.
+**File:** `tests/test_dsx.py:175-178`
 
-**Fix:** Add a one-line comment at `examples/bad-ANALYSIS-SPEC.yaml:224-228` noting the
-DSX-INT-010 attribution, matching the file's existing convention for every other
-deliberately-encoded defect.
+**Issue:** `python3 -OO` strips docstrings; `mathx.diluted_effect.__doc__` is then `None`, the
+`or ""` fallback yields an empty string, and all three `assertIn` calls fail. Verified:
+
+```
+$ python3 -OO -c "from dsx import mathx; print('doc under -OO:', repr(mathx.diluted_effect.__doc__))"
+doc under -OO: None
+```
+
+Nothing in this repo currently runs tests under `-OO`, so this is informational only.
+
+**Fix:** Guard with `@unittest.skipIf(mathx.diluted_effect.__doc__ is None, "docstrings stripped")`,
+or read the reference pair from a module-level constant rather than from `__doc__`.
 
 ---
 
 _Reviewed: 2026-08-13T00:00:00Z_
 _Reviewer: Claude (gsd-code-reviewer)_
-_Depth: deep_
+_Depth: deep — re-review of gap closure `e397aa4..8f2933a`_
