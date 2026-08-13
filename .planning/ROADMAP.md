@@ -319,7 +319,7 @@ the brief fixes verbatim and D-06 makes irreversible.
      verify/ship with the assessment method cited, and a test asserts no
      `dsx/frame/interference.py` code path reads `inference.paradigm` (D-11).
 
-**Plans:** 9/9 plans executed
+**Plans:** 10 plans — 9 executed, 1 planned
 
 Plans:
 **Wave 1**
@@ -366,6 +366,16 @@ Plans:
 - [x] 08-09-PLAN.md — close the `DSX-INT-030` out-of-vocabulary `triggering.analysis_population`
       bypass (08-VERIFICATION.md gap 2 / 08-REVIEW.md CR-02), correct the decision trail, and
       tighten the weak `DSX-SPEC-082` gate assertion (WR-01) (wave 8)
+
+**Wave 10** *(gap closure — blocked on Wave 8 completion; wave 9 is intentionally unused, so the
+wave number matches the plan number for this closure round)*
+
+- [ ] 08-10-PLAN.md — close the last `08-VERIFICATION.md` gap: an out-of-vocabulary
+      `interference.risk` paired with a real, recognised mitigation reached neither `DSX-INT-010` nor
+      `DSX-INT-011` and cleared `dsx gate plan`. Drops the risk-vocabulary clause from
+      `_check_interference_mitigation_admissibility`'s guard, corrects the three prose sites that
+      describe the routing, and turns the disjointness invariant into two executable grid tests
+      (08-REVIEW.md CR-01; REQ-P8-01, REQ-P8-02) (wave 10)
 
 ### Phase 9: Monitoring discipline, symmetric (`DSX-PAR-*`)
 
