@@ -6,20 +6,20 @@ current_phase: 08
 current_phase_name: interference-triggering-stability-dsx-int
 status: executing
 stopped_at: Phase 9 context gathered (assumptions mode)
-last_updated: "2026-08-13T12:31:08.663Z"
+last_updated: "2026-08-13T12:34:56.360Z"
 last_activity: 2026-08-13
 last_activity_desc: Phase 08 execution started
 progress:
-  total_phases: 4
-  completed_phases: 1
-  total_plans: 34
-  completed_plans: 27
-  percent: 25
+  total_phases: 5
+  completed_phases: 2
+  total_plans: 35
+  completed_plans: 33
+  percent: 40
 ---
 
 # Project state
 
-**Status:** Ready to execute
+**Status:** Executing Phase 08
 **Progress:** [███████░░░] 65% (1/7 phases — Phase 6 complete, 13/13 plans)  
 **Locked decisions:** DQ = profile runner + hermetic gates; Glyph = hermetic svg_sha256 only (no MCP dep); forbidden claims = universal pack + optional phase YAML; repro_lock = ARS-style honest-null (not byte-replay); decision replay = structured thresholds only; suppressions = ADR/SPEC authority required (unknown codes → exit 2)  
 **v2.0.0 locked decisions:** DSX-PAR-010 is a distinct code, DSX-EXP-060 untouched (M-01); no `inference.stopping_rule` — PAR-010/011 read the existing `design.peeking_policy` (M-02); PEEKING_POLICIES gains an uncontrolled-continuous-monitoring value (M-03); automated import test enforces the D-03a boundary from M1 (M-04); SELF-001 stays a convention, REVERSALS.md template seeded in M1 (M-05); `validity_frame` sub-block requiredness gated by `question_type` (M-06); existing `suppressions[]` is the pre-v2.0.0 grandfather path (M-07); D-05 citation enforcement automated via `gen-finding-catalogue.py` (M-08); `dependence.method_family_required` reuses `VARIANCE_ADJUSTMENTS` (M-09)
@@ -69,8 +69,8 @@ progress:
 ## Current Position
 
 Phase: 08 (interference-triggering-stability-dsx-int) — EXECUTING
-Plan: 1 of 6
-Status: Ready to execute
+Plan: 1 of 7
+Status: Executing Phase 08
 Last activity: 2026-08-13 — Phase 08 execution started
 
 ## Project Reference
