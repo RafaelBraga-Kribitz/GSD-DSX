@@ -822,6 +822,16 @@ _VALIDITY_FRAME_MEMBERSHIP: "tuple[tuple[str, str, Any], ...]" = (
 )
 
 
+def needs_causal_block(spec: dict) -> bool:
+    """The single condition deciding whether the causal ``validity_frame`` sub-blocks
+    (identification, interference, triggering, stability) apply — shared by the shape
+    validator and the frame checks so the two can never disagree (D-16)."""
+    return (
+        normalize(spec.get("question_type", "")) in ("causal", "prescriptive")
+        or normalize(get(spec, "design.kind", "")) == "experiment"
+    )
+
+
 def _validate_validity_frame_shape(spec: dict, report: Report) -> None:
     """Requiredness, aggregation and membership shape of the ``validity_frame:`` block.
 
@@ -849,12 +859,8 @@ def _validate_validity_frame_shape(spec: dict, report: Report) -> None:
     from .decisions import DecisionRecord
 
     frame = spec.get("validity_frame")
-    needs_causal_block = (
-        normalize(spec.get("question_type", "")) in ("causal", "prescriptive")
-        or normalize(get(spec, "design.kind", "")) == "experiment"
-    )
     required = list(_VALIDITY_FRAME_ALWAYS_REQUIRED) + (
-        list(_VALIDITY_FRAME_CAUSAL_REQUIRED) if needs_causal_block else []
+        list(_VALIDITY_FRAME_CAUSAL_REQUIRED) if needs_causal_block(spec) else []
     )
 
     report.context.setdefault("decisions", []).append(

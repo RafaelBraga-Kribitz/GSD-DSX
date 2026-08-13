@@ -47,7 +47,7 @@ from .decisions import (
     read_all,
 )
 from .findings import EXIT_ERROR, CheckError, Report, Severity, emit, merge
-from .frame import paradigm, val
+from .frame import interference, paradigm, val
 from .loader import SpecParseError, load
 from .spec import describe_vocabulary, validate_structure
 from .suppressions import apply_suppressions
@@ -77,6 +77,7 @@ CHECKS: dict[str, Callable] = {
     "decision": decision.check,
     "paradigm": paradigm.check,
     "val": val.check,
+    "interference": interference.check,
 }
 
 # Which checks each GSD loop point cares about. Keeping this here rather than in
@@ -87,17 +88,17 @@ CHECKS: dict[str, Callable] = {
 # points, not just verify/ship: it must be visible wherever a gate runs, and
 # INFO severity means it structurally cannot flip any gate's exit code.
 GATE_PROFILES: dict[str, tuple[str, ...]] = {
-    "plan": ("spec", "design", "metrics", "coherence", "paradigm", "val"),
+    "plan": ("spec", "design", "metrics", "coherence", "paradigm", "val", "interference"),
     "execute": ("spec", "ml", "repro", "dq", "code", "paradigm"),
     "verify": (
         "spec", "design", "stats", "ml", "metrics", "claims", "viz", "repro",
         "dq", "coherence", "smells", "figures", "narrative", "code", "decision",
-        "paradigm", "val",
+        "paradigm", "val", "interference",
     ),
     "ship": (
         "spec", "design", "stats", "ml", "metrics", "claims", "viz", "repro",
         "dq", "coherence", "smells", "figures", "narrative", "code", "decision",
-        "paradigm", "val",
+        "paradigm", "val", "interference",
     ),
 }
 

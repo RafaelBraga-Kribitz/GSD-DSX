@@ -46,6 +46,9 @@ PREFIX_GROUPS = [
      "Estimand, unit triad, dependence, identification, sampling frame, missingness and "
      "measurement content — whether a validity_frame block that is present and structurally "
      "well-formed is also internally coherent."),
+    ("DSX-INT", "Interference, triggering and stability",
+     "Interference and SUTVA risk, triggered-versus-eligible dilution, and novelty or primacy "
+     "over the declared stability window."),
 ]
 
 # D-20: the finite, visible exemption boundary for D-05 citation/reference-value
@@ -59,7 +62,7 @@ PREFIX_GROUPS = [
 # human noticing the allow-list needs updating. A single code that lives inside a
 # pre-existing family — where a family prefix would drag the whole legacy family
 # into enforcement — is named individually in `_D05_ALLOWLIST_CODES` instead.
-_D05_ALLOWLIST_PREFIXES = ("DSX-PAR-", "DSX-VAL-")
+_D05_ALLOWLIST_PREFIXES = ("DSX-PAR-", "DSX-VAL-", "DSX-INT-")
 
 # The individually-enumerated half of D-20's finite, visible boundary: exact
 # codes this milestone introduced inside a pre-existing family (DSX-SPEC-*),

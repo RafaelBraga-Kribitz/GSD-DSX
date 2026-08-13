@@ -129,6 +129,7 @@ _INCIDENTAL_GAP_CODES = {
 # risk that has not yet materialised into an actual gate finding.
 _TARGET_DEFECT_CODES: "dict[str, dict[str, str]]" = {
     "weak-identification-mmm": {"plan": "DSX-VAL-040"},
+    "interference-shared-budget": {"plan": "DSX-INT-010"},
 }
 
 
