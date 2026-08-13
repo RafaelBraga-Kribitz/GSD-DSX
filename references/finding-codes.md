@@ -13,7 +13,7 @@ a suppression or a reference in a review stays valid across versions.
 **Gate thresholds.** `plan` and `execute` block at CRITICAL; `verify` and
 `ship` block at HIGH.
 
-**Total: 227 codes.**
+**Total: 228 codes.**
 
 ## Contract structure — `DSX-SPEC-*`
 
@@ -381,3 +381,4 @@ Interference and SUTVA risk, triggered-versus-eligible dilution, and novelty or 
 | `DSX-INT-010` | CRITICAL | interference risk <…> declared with no mitigation and no residual note |
 | `DSX-INT-011` | CRITICAL | mitigation <…> is not admissible for interference risk <…> |
 | `DSX-INT-030` | CRITICAL | additive metric analysed on the eligible population with no dilution adjustment declared |
+| `DSX-INT-040` | HIGH | novelty/primacy assessment <…> for the declared stability window |
