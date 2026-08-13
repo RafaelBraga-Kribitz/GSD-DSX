@@ -1,39 +1,196 @@
 ---
 phase: 09-monitoring-discipline-symmetric-dsx-par
-reviewed: 2026-08-13T00:00:00Z
+reviewed: 2026-08-13T14:01:12+02:00
 depth: deep
-files_reviewed: 13
+gap_closure_commit_range: 4c983fa..HEAD
+files_reviewed: 7
 files_reviewed_list:
-  - dsx/frame/__init__.py
   - dsx/frame/paradigm.py
-  - dsx/mathx.py
   - dsx/spec.py
   - examples/known-bad/bayesian-continuous-monitoring-ANALYSIS-SPEC.yaml
-  - examples/known-bad/bayesian-continuous-monitoring-POSTMORTEM.md
-  - examples/known-bad/frequentist-uncontrolled-continuous-ANALYSIS-SPEC.yaml
-  - examples/known-bad/frequentist-uncontrolled-continuous-POSTMORTEM.md
-  - references/finding-codes.md
   - references/paradigm-symmetry.md
   - templates/ANALYSIS-SPEC.yaml
   - tests/test_dsx.py
   - tests/test_known_bad_corpus.py
-  - tests/test_par_monitoring_simulation.py
 findings:
-  critical: 2
-  warning: 3
-  info: 1
-  total: 6
-status: issues_found
+  critical: 0
+  warning: 1
+  info: 0
+  total: 1
+gap_closure_verdict:
+  CR-01: CLOSED
+  CR-02: CLOSED
+status: warning
 ---
 
 # Phase 9: Code Review Report
+
+**Reviewed:** 2026-08-13T14:01:12+02:00
+**Depth:** deep (gap-closure diff `4c983fa..HEAD`) / deep (prior review, retained below)
+**Files Reviewed:** 7 (gap-closure scope)
+**Status:** warning — both prior CRITICAL findings verified CLOSED; one new, non-behavioral WARNING found in the closure diff itself
+
+## Summary
+
+Plans 09-06 and 09-07 closed both gaps `09-VERIFICATION.md` scored FAILED, and did not reopen either of the three WARNING/INFO items the prior review deliberately left unfixed. I re-derived the dishonest-escape inputs myself and ran them against the live gate (not read from the diff) — `alpha_spending: 0`, `prior_justification: False`, `threshold_calibration: 0`/`0.0`, plus `[]`, `{}`, `[0]`, `{"a": 1}` on both paradigms — and confirmed the CRITICAL pair fires on every one, with the fix going further than the prior review's own suggested patch (it also closes non-empty containers, not just empty ones). I confirmed `is_blank()` is byte-identical and that `is_blank_text()` is imported nowhere outside `dsx/frame/paradigm.py`, so the tightening cannot leak into the ~130+ other blank-presence checks across the codebase. I mutation-tested both new pinning tests by reverting each fix in place and re-running: both test suites failed loudly, so neither is a vacuous assertion. I confirmed the `DSX-PAR-011` emitted `detail=` text no longer pairs "2016" with "Theorem 1" in one clause, while the four correct `Theorem 1` usages elsewhere in the same docstring (Armitage citation, Deng/Lu/Chen citation, the `1/k` vs `1/(K+1)` distinction) were left untouched. `sh scripts/check.sh` passes at 526 tests, catalogue current, gate contract and determinism intact — matching the documented baseline exactly.
+
+One new issue survives: a docstring written as part of this closure overstates what changed (see WR-04 below). It is a comment-accuracy defect, not a behavioral one — the code itself is correct and covered by tests — but it lands inside the exact code family this phase exists to make precise, so it is reported rather than waved through.
+
+## Gap-Closure Review (09-06, 09-07)
+
+### WR-04: `_blank_clearing_declarations`'s new docstring overstates what `is_blank()` used to say about empty lists and mappings
+
+**File:** `dsx/frame/paradigm.py:112-113`
+
+**Issue:** The docstring added by 09-06 reads:
+
+```python
+    """Return the subset of ``fields`` that are blank under ``inference``.
+    ...
+    content — a bare number, boolean, list or mapping is blank here even
+    though ``is_blank`` itself would call it present.
+    """
+```
+
+This claims `is_blank()` would call *any* list or mapping "present." That is
+only true for a **non-empty** list or mapping — `is_blank([])` and
+`is_blank({})` are both already `True` under the pre-existing, unmodified
+`is_blank()`. Verified directly:
+
+```
+>>> from dsx.spec import is_blank
+>>> is_blank([]), is_blank({})
+(True, True)
+>>> is_blank(['a']), is_blank({'a': 1})
+(False, False)
+```
+
+So for an empty list or mapping, `is_blank_text()`'s behavior is *identical*
+to `is_blank()`'s — both call it blank — and the docstring's "even though
+`is_blank` itself would call it present" is factually wrong for that case.
+The claim is accurate only for non-empty containers (and for numbers and
+booleans, where it is correct throughout). This doesn't affect behavior —
+the actual code (`is_blank_text`) is correct and is pinned by
+`test_non_text_and_blank_values_never_clear_either_half`, which exercises
+both `[]` and `["a"]` — but a maintainer reading only this docstring would
+come away believing the tightening changed something about empty containers
+that it did not, which is exactly the kind of imprecise technical claim
+plan 09-07 was written to retire elsewhere in this same file.
+
+**Fix:** Narrow the claim to what's actually true:
+
+```python
+    content — a bare number or boolean, or a non-empty list or mapping, is
+    blank here even though ``is_blank`` itself would call it present (an
+    empty list or mapping was already blank under ``is_blank``).
+```
+
+## Gap Closure Verdict
+
+### CR-01 (`alpha_spending`/`prior_justification`/`threshold_calibration` clearable with a bare `0`/`false`) — **CLOSED**
+
+Evidence:
+- Read `dsx/spec.py:379-391` (`is_blank_text`) and `dsx/frame/paradigm.py:101-115`
+  (`_blank_clearing_declarations`, now routed through `is_blank_text`).
+- Direct execution over the full type domain named in the review brief:
+
+  ```
+  is_blank_text(0)=True  is_blank_text(0.0)=True  is_blank_text(False)=True
+  is_blank_text(True)=True  is_blank_text(None)=True  is_blank_text('')=True
+  is_blank_text('  ')=True  is_blank_text([])=True  is_blank_text(['a'])=True
+  is_blank_text({})=True  is_blank_text({'a': 1})=True
+  is_blank_text('0')=False  is_blank_text('a spending function')=False
+  ```
+
+- Ran the exact dishonest-escape specs named in the review brief through the
+  live gate (`paradigm.check()`, not the CLI mock): `alpha_spending: 0`,
+  `threshold_calibration: 0`/`0.0`, `prior_justification: False`, plus
+  `alpha_spending: []`, `alpha_spending: {}`, `alpha_spending: [0]`,
+  `prior_justification: {"a": 1}` — every one still produces its paradigm's
+  CRITICAL code (`DSX-PAR-010` or `DSX-PAR-011`); none of them clear it.
+  A real string, including the degenerate `"0"`, still clears, matching the
+  audit's stated floor.
+- Confirmed `is_blank()` is byte-identical to the pre-gap-closure version
+  (no diff hunk touches `dsx/spec.py:369-376`) and still returns `False` for
+  `0`, `0.0`, `False`, `True` — the blast-radius guarantee for its ~130
+  other call sites holds.
+- Confirmed `is_blank_text` is imported and used only in
+  `dsx/frame/paradigm.py` — it does not leak into any other check module.
+- Mutation test: reverted `_blank_clearing_declarations` to call `is_blank`
+  instead of `is_blank_text` and reran `TestPhase9MonitoringDiscipline` —
+  4 of the new tests failed immediately (`test_non_text_and_blank_values_never_clear_either_half`
+  ×3 subtests shown, `test_numeric_threshold_calibration_blocks_plan_with_both_codes`),
+  proving the tests actually pin the fix rather than passing vacuously.
+  Reverted the mutation; working tree confirmed clean afterward.
+- `references/paradigm-symmetry.md`'s "What does not clear either half"
+  section now states the corrected rule, including the fact that a
+  non-empty container is also blocked, and explicitly documents what the
+  old (defective) behavior was — closing the "differently-wrong" risk named
+  in the review brief.
+- `sh scripts/check.sh`: 526 tests, `OK (skipped=2)`, catalogue current, gate
+  contract and determinism pass — matches the documented baseline exactly.
+
+### CR-02 (`DSX-PAR-011` `detail=` text ties `1/(K+1)` directly to "Theorem 1") — **CLOSED**
+
+Evidence:
+- Executed `paradigm.check()` directly against a bayesian spec with both
+  clearing fields blank and printed the live `detail=` string (not read from
+  source):
+
+  > "...Under the prior-averaged formulation (Deng, Lu & Chen 2016), the
+  > risk of false discovery at a P(B>A) > 0.95 decision threshold is
+  > bounded by 1/(K+1) = 1/20 = 0.05 at K = 19 — a fixed reference anchor,
+  > never a computation over any operator-declared value. Theorem 1
+  > licenses that bound under optional stopping with known prior odds; the
+  > bound itself is unnumbered prose following Theorem 1 and again in the
+  > paper's Section 3.2."
+
+  The number and the citation year now appear in one clause; "Theorem 1" is
+  attributed only to what it actually licenses (the optional-stopping
+  bound under known prior odds), in a separate clause, matching the
+  docstring and the audit.
+- Confirmed the four pre-existing, *correct* `Theorem 1` usages in the same
+  function's docstring (`dsx/frame/paradigm.py:142-191` — the Armitage
+  citation for `DSX-PAR-010`, and the Deng/Lu/Chen citation, the `1/k` vs
+  `1/(K+1)` distinction, and the "Theorem 1 states an optional-stopping
+  equality, not the bound directly" sentence for `DSX-PAR-011`) were left
+  untouched by the diff — the fix did not overcorrect a true statement into
+  a false one.
+- Confirmed the arithmetic is still stated correctly: `1/(K+1) = 1/20 = 0.05
+  at K = 19`, still distinguished from Ville's inequality's `1/k ≈ 0.0526`
+  (unchanged, in the docstring).
+- Mutation test: reintroduced `"...formulation (Deng, Lu & Chen 2016,
+  Theorem 1), the risk..."` into the live `detail=` string and reran the
+  new pinning test
+  (`test_dsx_par_011_detail_attributes_the_bound_without_a_locator_error`)
+  and the known-bad corpus guard — both failed with the exact message
+  naming the reintroduced locator error, confirming the test is not
+  vacuous. Reverted the mutation; working tree confirmed clean afterward.
+- `examples/known-bad/bayesian-continuous-monitoring-ANALYSIS-SPEC.yaml`'s
+  Formulation note carries the same corrected three-part attribution, and
+  `tests/test_known_bad_corpus.py` now both negatively guards against the
+  two retired phrasings (`"2016, Theorem 1"`, `"Theorem 1 caps"`) across
+  every file under `examples/known-bad/`, and positively asserts the
+  corrected phrasing is still present — closing the "un-misattributed but
+  also un-stated" vacuous-pass risk the review brief called out. Both new
+  test-file guards normalize whitespace with `" ".join(text.split())` before
+  matching, which is CRLF-safe (`str.split()` treats `\r` and `\n` alike);
+  neither uses a line-anchored (`^`/`$`) regex, so the repo's CRLF checkout
+  (confirmed: `dsx/frame/paradigm.py` is 100% CRLF, `core.autocrlf=true`)
+  does not put them at risk.
+
+## Prior Review (pre-gap-closure, retained for traceability)
+
+_The section below is the original review content, preserved verbatim except for the two status annotations marked with a `>` blockquote immediately under the CR-01 and CR-02 headings. WR-01, WR-02, WR-03 and IN-01 are unchanged and remain open — deliberately deferred per the 09-06 and 09-07 plans' `<flagged_assumptions>`, and explicitly out of scope for this gap-closure review per its own instructions._
+
+---
 
 **Reviewed:** 2026-08-13T00:00:00Z
 **Depth:** deep
 **Files Reviewed:** 13
 **Status:** issues_found
 
-## Summary
+### Summary
 
 The `DSX-PAR-010`/`DSX-PAR-011` pair itself is genuinely symmetric: one dict
 (`_MONITORING_DISCIPLINE`), one shared clearing predicate
@@ -60,9 +217,16 @@ function's own docstring, three sentences earlier, and
 unnumbered prose at Section 3.2, not something Theorem 1 states directly).
 Both are concrete, reproducible defects, not stylistic quibbles.
 
-## Critical Issues
+### Critical Issues
 
-### CR-01: `alpha_spending`/`prior_justification`/`threshold_calibration` can be cleared with a bare `0` or `false`, defeating the CRITICAL gate on both paradigms
+#### CR-01: `alpha_spending`/`prior_justification`/`threshold_calibration` can be cleared with a bare `0` or `false`, defeating the CRITICAL gate on both paradigms
+
+> **STATUS: CLOSED.** Verified by direct execution against the current gate
+> and by mutation-testing the new pinning tests — see "Gap Closure Verdict"
+> above. `dsx/spec.py::is_blank_text()` now routes
+> `_blank_clearing_declarations` (via `dsx/frame/paradigm.py:115`), and the
+> fix additionally closes non-empty-list/mapping escapes the original
+> report did not name.
 
 **File:** `dsx/spec.py:369-376` (`is_blank()`), reused by `dsx/frame/paradigm.py:94-104` (`_blank_clearing_declarations`)
 
@@ -127,7 +291,13 @@ or a small, generically-named helper in `dsx/spec.py` (e.g.
 `is_blank_text(value)`) that both this call site and any future free-text
 clearing field can share, so the fix does not live only in `dsx/frame/paradigm.py`.
 
-### CR-02: `DSX-PAR-011`'s emitted finding text attributes the `1/(K+1)` bound to "Theorem 1" — the locator error the module's own docstring warns against
+#### CR-02: `DSX-PAR-011`'s emitted finding text attributes the `1/(K+1)` bound to "Theorem 1" — the locator error the module's own docstring warns against
+
+> **STATUS: CLOSED.** Verified by executing `paradigm.check()` directly
+> against the live gate and by mutation-testing the new pinning test — see
+> "Gap Closure Verdict" above. The emitted `detail=` text no longer pairs
+> the citation year with "Theorem 1" in the clause that states the number;
+> Theorem 1 is now attributed only to what it licenses.
 
 **File:** `dsx/frame/paradigm.py:244-253`
 
@@ -178,9 +348,9 @@ detail=(
 ),
 ```
 
-## Warnings
+### Warnings
 
-### WR-01: `design.alpha: 0` is silently replaced by the 0.05 default via Python's falsy-`or` idiom
+#### WR-01: `design.alpha: 0` is silently replaced by the 0.05 default via Python's falsy-`or` idiom
 
 **File:** `dsx/frame/paradigm.py:206`
 
@@ -214,7 +384,7 @@ alpha_value = as_number(get(spec, "design.alpha"))
 alpha = 0.05 if alpha_value is None else alpha_value
 ```
 
-### WR-02: `references/finding-codes.md` silently drops one of `DSX-PAR-002`'s two distinct trigger messages
+#### WR-02: `references/finding-codes.md` silently drops one of `DSX-PAR-002`'s two distinct trigger messages
 
 **File:** `references/finding-codes.md:354`, generated from `dsx/frame/paradigm.py:344-389`
 
@@ -249,7 +419,7 @@ incomplete picture of what `DSX-PAR-002` actually covers.
 print a "declared twice with different text" warning, so a future
 multi-message code fails the build instead of silently losing a message.
 
-### WR-03: The `DSX-PAR-001` counterfactual for a declared paradigm hard-codes "the other paradigm" as a single value
+#### WR-03: The `DSX-PAR-001` counterfactual for a declared paradigm hard-codes "the other paradigm" as a single value
 
 **File:** `dsx/frame/paradigm.py:493-503`
 
@@ -278,9 +448,9 @@ text, or add a test asserting `len(PARADIGMS) == 2` (documenting the
 assumption this code silently relies on) so a third paradigm addition
 surfaces this spot for a required edit.
 
-## Info
+### Info
 
-### IN-01: `is_blank()`'s numeric/boolean gap is a pre-existing helper, not new to this phase — worth a wider audit
+#### IN-01: `is_blank()`'s numeric/boolean gap is a pre-existing helper, not new to this phase — worth a wider audit
 
 **File:** `dsx/spec.py:369-376`
 
@@ -303,3 +473,9 @@ only instance of this class of gap.
 _Reviewed: 2026-08-13T00:00:00Z_
 _Reviewer: Claude (gsd-code-reviewer)_
 _Depth: deep_
+
+---
+
+_Gap-closure review reviewed: 2026-08-13T14:01:12+02:00_
+_Reviewer: Claude (gsd-code-reviewer)_
+_Depth: deep (gap-closure diff `4c983fa..HEAD`)_
