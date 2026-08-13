@@ -1,172 +1,187 @@
 ---
 phase: 08-interference-triggering-stability-dsx-int
-reviewed: 2026-08-13T00:00:00Z
+reviewed: 2026-08-14T00:00:00Z
 depth: deep
-review_type: gap-closure round (plans 08-08/08-09), scoped to two files
-diff_range: 6321bdfe274d76a0288461347fbe1d04728d8a4e..HEAD
-files_reviewed: 2
+files_reviewed: 19
 files_reviewed_list:
+  - dsx/cli.py
   - dsx/frame/interference.py
+  - dsx/frame/paradigm.py
+  - dsx/mathx.py
+  - dsx/spec.py
+  - examples/bad-ANALYSIS-SPEC.yaml
+  - examples/known-bad/bayesian-continuous-monitoring-ANALYSIS-SPEC.yaml
+  - examples/known-bad/frequentist-uncontrolled-continuous-ANALYSIS-SPEC.yaml
+  - examples/known-bad/interference-shared-budget-ANALYSIS-SPEC.yaml
+  - examples/known-bad/interference-shared-budget-POSTMORTEM.md
+  - examples/known-bad/triggering-dilution-ANALYSIS-SPEC.yaml
+  - examples/known-bad/triggering-dilution-POSTMORTEM.md
+  - examples/known-bad/weak-identification-mmm-ANALYSIS-SPEC.yaml
+  - references/finding-codes.md
+  - scripts/gen-finding-catalogue.py
+  - tests/test_dsx.py
+  - tests/test_frame_boundary.py
   - tests/test_frame_interference.py
+  - tests/test_frame_val.py
+  - tests/test_known_bad_corpus.py
 findings:
-  critical: 1
-  warning: 0
-  info: 0
-  total: 1
+  critical: 0
+  warning: 2
+  info: 1
+  total: 3
 status: issues_found
 ---
 
-# Phase 8: Code Review Report — gap-closure round (plans 08-08/08-09)
+# Phase 08: Code Review Report
 
-**Reviewed:** 2026-08-13T00:00:00Z
+**Reviewed:** 2026-08-14T00:00:00Z
 **Depth:** deep
-**Files Reviewed:** 2
+**Files Reviewed:** 19 (test_frame_val.py counted; test_frame_val.py itself has no interference-family content but was read as required)
 **Status:** issues_found
 
 ## Summary
 
-I read both files in full, ran `python3 -m unittest discover -s tests` (536 tests, OK, 2 skipped)
-and `sh scripts/check.sh` (all checks passed) to ground every claim below against the running code,
-not against the commit messages.
+Plan 08-10's change to `dsx/frame/interference.py` drops the risk-vocabulary
+short-circuit from `_check_interference_mitigation_admissibility`'s guard,
+leaving only the `risk == "none"` exemption. I traced the full
+risk-state × mitigation-state truth table by hand (blank/none/recognised/
+unrecognised on both axes) against both `_check_interference_unaddressed`
+(DSX-INT-010) and `_check_interference_mitigation_admissibility`
+(DSX-INT-011), and confirmed:
 
-The two things this round explicitly set out to fix are genuinely fixed, and I reproduced both
-mechanically rather than trusting the summary:
+- The two codes are provably disjoint: DSX-INT-010 requires
+  `mitigation_absent` (mitigation blank, `"none"`, or not a member of
+  `INTERFERENCE_MITIGATIONS`); DSX-INT-011's guard returns unless the
+  mitigation is present, recognised, and non-`"none"` — the exact logical
+  complement. No risk-side condition can make both true at once.
+- The out-of-vocabulary-risk-with-real-mitigation gap the plan set out to
+  close is closed: `_RISK_MITIGATION_MAP.get(normalized_risk, frozenset())`
+  degrades an unrecognised risk to an empty admissible set, so any
+  recognised, non-`none` mitigation is unconditionally inadmissible for it
+  and DSX-INT-011 fires.
+- Every `DecisionRecord.rule` string in the module (DSX-INT-010, -011, -030,
+  -040) matches its function's actual firing condition — I checked each one
+  against the code line by line, not just against the docstring prose.
+- `dsx/frame/interference.py` reads no code path through `inference.paradigm`
+  (confirmed by re-reading the module and by running
+  `tests/test_frame_boundary.py::TestFrameParadigmReadBoundary`).
+- Ran the full suite (`python -m unittest discover -s tests`): 540 tests,
+  OK. Ran `scripts/gen-finding-catalogue.py --check`-equivalent inspection by
+  hand against `references/finding-codes.md`: all four `DSX-INT-*` titles and
+  severities match the `report.add(...)` call sites exactly.
+- Checked every `examples/known-bad/*-ANALYSIS-SPEC.yaml` fixture's
+  `validity_frame.interference` block against the new guard: none of them
+  declares a recognised, non-`none` mitigation paired with an unrecognised
+  risk, so none is newly affected by this change (all either have
+  `mitigation: none` or `risk: none`) — the fixture corpus's existing
+  `_TARGET_DEFECT_CODES`/`_EXPECTED_CAUGHT_DEFECTS` expectations in
+  `tests/test_known_bad_corpus.py` stay accurate.
 
-- The `interference.risk` guard in `_check_interference_unaddressed` (`DSX-INT-010`) now only
-  exempts the literal `none`. `risk="shared_buget"` with `mitigation="none"` and a blank
-  `residual_note` fires `DSX-INT-010`/CRITICAL and `dsx gate plan` exits 1, where it exited 0 before
-  this round.
-- The `triggering.analysis_population` guard in `_check_triggering_dilution` (`DSX-INT-030`) now
-  only exempts `triggered` or an absent value. `analysis_population="eligable"` fires
-  `DSX-INT-030`/CRITICAL and `dsx gate plan` exits 1, where it exited 0 before this round.
-- The prior review's WR-01 (vacuous `DSX-SPEC-082 in (out+err)` substring assertion, made vacuous
-  because `DSX-INT-010`'s own `detail` names `DSX-SPEC-082` unconditionally) is closed: the new
-  `_gate_findings` helper asserts against the parsed `--json` finding list, and I confirmed no other
-  finding in this codebase quotes the literal strings `DSX-INT-010` or `DSX-INT-030` inside its own
-  `detail` text (`grep -rn "DSX-INT-010\|DSX-INT-030" dsx/` returns only `dsx/frame/interference.py`),
-  so none of the remaining substring assertions in this file (e.g.
-  `test_committed_fixture_blocks_plan_naming_int_010`,
-  `test_committed_triggering_dilution_fixture_blocks_plan_naming_int_030`) share WR-01's disease.
-- Docstrings, `DecisionRecord.rule` text and code agree for both fixed guards — I compared each
-  triplet line by line; the firing condition is stated identically in all three places for both
-  `_check_interference_unaddressed` and `_check_triggering_dilution`.
-- No new regex or line-anchored pattern was added anywhere in the diff, so there is no new CRLF
-  exposure to flag.
+No BLOCKER-class defect found in the reviewed diff. Two WARNING-level
+quality issues found (both real, reachable code paths, not hypothetical),
+and one INFO-level style nit.
 
-What is **not** fixed is the underlying failure class itself, only the two narrow reproduction cases
-that were tested against. `_check_interference_mitigation_admissibility` (`DSX-INT-011`) was
-deliberately left untouched, on the documented rationale (`08-08-PLAN.md` T-8-18/T-8-27,
-`08-08-SUMMARY.md`) that forcing a judgment there for an out-of-vocabulary risk "would make
-`DSX-INT-011` double-report what `DSX-INT-010` now reports." I tested that claim directly — see
-CR-01 below — and it is false. Because it is false, a live, one-character-typo bypass of the same
-`dsx gate plan` CRITICAL threshold remains, on the same field, for a case none of this round's new
-tests exercise.
+## Warnings
 
-## Critical Issues
+### WR-01: DSX-INT-011's remedy text is self-contradictory for an out-of-vocabulary risk
 
-### CR-01: An out-of-vocabulary `interference.risk`, paired with any *recognised* mitigation, still clears `dsx gate plan` with zero `DSX-INT-*` findings — the risk-guard fix only closed the "no mitigation declared" half of the bypass
+**File:** `dsx/frame/interference.py:349-366`
 
-**File:** `dsx/frame/interference.py:311-314` (`_check_interference_mitigation_admissibility`'s risk
-guard, unedited by this round, in the function this round's docstring and disjointness argument both
-depend on)
+**Issue:** When `_check_interference_mitigation_admissibility` fires against
+an unrecognised `interference.risk` string (a typo, e.g. `shared_buget`)
+paired with a recognised, channel-inadmissible mitigation, `admissible` is
+the empty frozenset (`_RISK_MITIGATION_MAP.get(normalized_risk,
+frozenset())` has no cell for an out-of-vocabulary key), so
+`admissible_listed` becomes the literal string `"(none admissible)"`. The
+`remedy` field then renders as:
 
-**Issue:** This round's fix to `_check_interference_unaddressed` correctly makes an unrecognised
-`risk` string fall through to judgment instead of being treated as `none`. But `DSX-INT-010` only
-fires when the *mitigation* side is also absent, `none`, or unrecognised
-(`mitigation_absent = normalized_mitigation == "none" or normalized_mitigation not in
-INTERFERENCE_MITIGATIONS`). If a spec pairs a misspelled `risk` with a real, recognised,
-non-`none` mitigation string, `mitigation_absent` is `False`, so `DSX-INT-010` stays silent — and
-`_check_interference_mitigation_admissibility` (`DSX-INT-011`) returns before its judgment point for
-*any* risk not in `INTERFERENCE_RISKS`, recognised mitigation or not:
+```text
+Declare a mitigation admissible for 'shared_buget': (none admissible).
+```
+
+This instructs the operator to do the one thing the same sentence says is
+impossible, and gives no alternative. `_check_interference_unaddressed`
+(DSX-INT-010) has the identical `admissible_listed or "(none admissible)"`
+substitution at line 230 but at least appends `"— or write a residual_note
+stating plainly what interference remains unaddressed and why it is
+accepted"` as a real escape hatch; DSX-INT-011's remedy has no equivalent
+fallback clause. This is a real, reachable path — it is exactly what fires
+in `tests/test_frame_interference.py::test_out_of_vocabulary_risk_with_real_mitigation_still_fires_int_011`
+and its gate-level sibling — the test asserts the finding fires and its
+`where`, but never asserts on `remedy` text, so the confusing message
+shipped without a test catching it.
+
+**Fix:** Branch the remedy on whether `admissible` is empty, and point the
+operator at the real fix (correct the risk spelling — DSX-SPEC-082 already
+flags the vocabulary violation separately) instead of an impossible
+instruction:
 
 ```python
-risk = get(frame, "interference.risk")
-normalized_risk = normalize(risk) if not is_blank(risk) else "none"
-if normalized_risk == "none" or normalized_risk not in INTERFERENCE_RISKS:
-    return
+if admissible:
+    remedy = (
+        f"Declare a mitigation admissible for {normalized_risk!r}: "
+        f"{admissible_listed}."
+    )
+else:
+    remedy = (
+        f"{normalized_risk!r} is not a recognised interference risk (see "
+        "DSX-SPEC-082), so no mitigation can be admissible for it — correct "
+        "the spelling to a member of INTERFERENCE_RISKS, or declare "
+        "interference.risk: none if no interference risk actually applies."
+    )
 ```
 
-Reproduced directly against `interference.check()` (no gate machinery involved):
+### WR-02: `design.alpha: 0` is silently replaced by the 0.05 default in the monitoring-discipline check
 
-```
-risk=shared_buget (typo of shared_budget), mitigation=geo_split, residual_note=""
-  -> interference.check() findings: set()          # neither DSX-INT-010 nor DSX-INT-011 fires
+**File:** `dsx/frame/paradigm.py:219`
 
-risk=shared_budget (spelled correctly), mitigation=geo_split, residual_note=""
-  -> interference.check() findings: {'DSX-INT-011'} # correctly caught: geo_split is not
-                                                      # admissible for shared_budget
-```
-
-A single misspelled character in `risk` is the entire difference between "correctly caught,
-CRITICAL, blocks `plan`" and "not adjudicated at all." Reproduced at the gate level against a
-mutated copy of the committed `interference-shared-budget-ANALYSIS-SPEC.yaml` fixture:
-
-```
-$ dsx gate plan --spec <mutated: risk=shared_buget, mitigation=budget_isolation, residual_note=""> --json
-exit code: 0
-DSX-SPEC-082 HIGH  spec.validity_frame.interference.risk   (below GATE_THRESHOLDS["plan"] == "CRITICAL")
-DSX-EXP-040 MEDIUM ...
-DSX-MET-040 HIGH   ...
-DSX-PAR-001 INFO   ...
-```
-
-No `DSX-INT-*` finding of any kind. `08-VERIFICATION.md`'s truth statement for this gap ("A declared
-interference risk other than none, with no admissible mitigation and no residual note, is blocked at
-`dsx gate plan` no matter which `INTERFERENCE_*` field carries the typo") is not actually established
-by the fix or the new tests — every risk-typo test this round added
-(`test_out_of_vocabulary_risk_with_no_mitigation_and_blank_residual_still_fires_int_010`,
-`test_out_of_vocabulary_risk_variant_blocks_plan_naming_both_int_010_and_spec_082`) pairs the typo'd
-`risk` with `mitigation="none"` — the one sub-case where the fixed `_check_interference_unaddressed`
-guard is sufficient on its own. None pairs it with a mitigation that is present and recognised, which
-is exactly the sub-case that routes to the untouched `_check_interference_mitigation_admissibility`
-guard instead.
-
-The rationale on record for leaving that guard alone is also directly falsifiable, not just
-unproven. `08-08-PLAN.md` (T-8-18) and `08-08-SUMMARY.md` both state the reason is that judging an
-out-of-vocabulary risk in `_check_interference_mitigation_admissibility` "would make DSX-INT-011
-double-report what DSX-INT-010 now reports." I swept 400 `(risk, mitigation, residual_note)`
-combinations, including every documented risk/mitigation vocabulary member, several typo'd
-near-misses, blanks and `None`, through both the shipped `DSX-INT-010` predicate and a
-minimally-changed `DSX-INT-011` predicate (only the `normalized_risk not in INTERFERENCE_RISKS`
-clause removed, letting `_RISK_MITIGATION_MAP.get(normalized_risk, frozenset())` degrade to an empty
-admissible set exactly the way `_check_interference_unaddressed`'s own `admissible_listed` already
-does): **zero combinations produced both findings at once.** Disjointness does not depend on that
-clause — `DSX-INT-010` fires only when the mitigation is absent/`none`/unrecognised, and the modified
-`DSX-INT-011` would fire only when it is present/recognised/non-`none`; those two conditions are
-already mutually exclusive on the mitigation dimension alone, independent of risk vocabulary
-membership.
-
-This is the same class of defect the project brief calls out as the highest severity in this
-codebase: an input silently not judged at a CRITICAL-threshold gate, requiring only a one-character
-typo to trigger, on a fixture already committed to the corpus to demonstrate the opposite.
-
-**Fix:** Drop the `or normalized_risk not in INTERFERENCE_RISKS` clause from
-`_check_interference_mitigation_admissibility`'s guard, matching the treatment this round already
-applied on the `DSX-INT-010` side, and letting the existing `.get(normalized_risk, frozenset())`
-degrade correctly (it already prints `(none admissible)` for exactly this case via the shared
-`admissible_listed` pattern used in both functions):
+**Issue:**
 
 ```python
-# dsx/frame/interference.py, _check_interference_mitigation_admissibility
-risk = get(frame, "interference.risk")
-normalized_risk = normalize(risk) if not is_blank(risk) else "none"
-if normalized_risk == "none":
-    return
+alpha = as_number(get(spec, "design.alpha")) or 0.05
 ```
 
-Update the function's docstring accordingly — it currently states DSX-INT-011 "requires a real,
-recognised risk," which after this change is no longer true, and the disjointness paragraph in
-`_check_interference_unaddressed`'s own docstring ("DSX-INT-011's own risk guard returns before its
-judgment point for exactly that input, because `_RISK_MITIGATION_MAP` has no admissibility cell for a
-risk it does not contain") should be corrected too — that clause is not, in fact, why the guard
-returns early today (the guard is an explicit `not in INTERFERENCE_RISKS` check, never reaching the
-map for this input); after the fix above it becomes accurate for a different reason worth restating
-in its own terms.
+`as_number(0)` returns `0.0`, and `0.0 or 0.05` evaluates to `0.05` in
+Python because `0.0` is falsy — an explicitly declared `design.alpha: 0`
+is silently discarded and replaced by the default, identically to an
+undeclared `design.alpha`. This only affects the DSX-PAR-010 reference-value
+text (the `inflated_alpha_at_5_looks`/`_at_20_looks` figures and the
+"at a nominal alpha of {alpha:.2f}" sentence), never the finding's
+fire/no-fire decision, so it is not a blocking-severity defect — but it is a
+genuine correctness gap in output the operator reads to judge the size of
+the problem. `alpha: 0` is not a meaningful significance level in practice,
+so the practical blast radius is small, but the code has no guard rejecting
+it either, so the silent substitution is the only thing standing between a
+malformed declaration and a wrong number in a CRITICAL finding's own detail
+text.
 
-Add a regression test pairing an out-of-vocabulary `risk` with a real, recognised, `INTERFERENCE_RISKS`-inadmissible mitigation (e.g. `risk="shared_buget"`, `mitigation="geo_split"`) and asserting `DSX-INT-011` fires — the sub-case none of this round's new tests cover, and the one that falsifies the "double-report" rationale on record for leaving this function alone.
+**Fix:** Use an explicit `None` check instead of `or`:
+
+```python
+raw_alpha = as_number(get(spec, "design.alpha"))
+alpha = raw_alpha if raw_alpha is not None else 0.05
+```
+
+## Info
+
+### IN-01: Inconsistent empty-collection default style between the two admissible-set lookups
+
+**File:** `dsx/frame/interference.py:210` and `dsx/frame/interference.py:350`
+
+**Issue:** `_check_interference_unaddressed`'s remedy computes
+`_RISK_MITIGATION_MAP.get(normalized_risk, ())` (bare tuple default), while
+`_check_interference_mitigation_admissibility`'s judgment point computes
+`_RISK_MITIGATION_MAP.get(normalized_risk, frozenset())` (frozenset
+default) three lines later for the same map. Both are iterated by
+`sorted(...)` so the behavioural difference is nil, but the inconsistency
+reads as accidental rather than deliberate, in a module whose whole style is
+otherwise scrupulously explicit about typed defaults.
+
+**Fix:** Use `frozenset()` in both call sites for consistency with the
+module's declared type alias (`"dict[str, frozenset[str]]"` at line 62).
 
 ---
 
-_Reviewed: 2026-08-13T00:00:00Z_
+_Reviewed: 2026-08-14T00:00:00Z_
 _Reviewer: Claude (gsd-code-reviewer)_
-_Depth: deep — gap-closure round, scoped to `dsx/frame/interference.py` and `tests/test_frame_interference.py`_
+_Depth: deep_
