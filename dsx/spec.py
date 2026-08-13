@@ -376,6 +376,21 @@ def is_blank(value: Any) -> bool:
     return False
 
 
+def is_blank_text(value: Any) -> bool:
+    """Return True unless ``value`` is a string carrying non-whitespace text.
+
+    Deliberately not ``is_blank``'s general semantics: this is the predicate
+    for free-text declarations whose entire declared content is the text an
+    operator wrote — a bare number or boolean carries no declared content, so
+    every non-string type reads as blank here, even though ``is_blank`` itself
+    reads a declared ``0`` or ``False`` as present. ``is_blank`` is read by
+    138 call sites where a declared ``0`` or ``False`` is meaningful data, so
+    the tightening lives in this separate helper rather than in ``is_blank``.
+    ``references/paradigm-symmetry.md`` is the contract this predicate serves.
+    """
+    return not isinstance(value, str) or is_blank(value)
+
+
 def as_number(value: Any) -> "float | None":
     if isinstance(value, bool):
         return None
@@ -952,8 +967,8 @@ def _validate_validity_frame_shape(spec: dict, report: Report) -> None:
 # it. All three new fields are deliberately free-text scalars, not a
 # {method:, sims:, fpr:} sub-dict: giving every clearing declaration on both
 # paradigms the same shape is what makes the brief-D-12 cost-symmetry argument
-# mechanically provable by one shared blank-check predicate instead of by
-# inspection (references/paradigm-symmetry.md).
+# mechanically provable by one shared text-only blank-check predicate
+# (is_blank_text) instead of by inspection (references/paradigm-symmetry.md).
 #
 # This tuple is not an enforced closed set: _validate_inference_shape vocabulary-checks
 # only three of these nine fields (paradigm, paradigm_justification, declared_at, via
