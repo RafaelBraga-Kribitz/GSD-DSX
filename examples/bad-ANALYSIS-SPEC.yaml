@@ -224,7 +224,7 @@ validity_frame:
   interference:
     risk: shared_budget         # both segments draw from one acquisition budget
     mechanism: "shared acquisition budget across the compared segments"
-    mitigation: none            # risk declared, no mitigation applied
+    mitigation: none            # risk declared, no mitigation applied → DSX-INT-010
     residual_note: ""
 
   # dependence, sampling_frame, missingness, measurement omitted entirely

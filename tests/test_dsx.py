@@ -19,6 +19,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from dsx import cli, mathx  # noqa: E402
 from dsx.checks import claims, design, metrics, ml, repro, stats, viz  # noqa: E402
 from dsx.findings import Report, Severity  # noqa: E402
+from dsx.frame import interference  # noqa: E402
 from dsx.loader import SpecParseError, _parse_yaml_subset, loads  # noqa: E402
 from dsx.spec import PEEKING_POLICIES, describe_vocabulary, validate_structure  # noqa: E402
 
@@ -159,15 +160,22 @@ class TestMath(unittest.TestCase):
         # multiplicative identity directly instead.
         self.assertAlmostEqual(mathx.diluted_effect(-10.0, 0.4), -4.0, places=6)
 
-    def test_diluted_effect_naive_and_true_values_differ_for_time_to_success(self):
-        # Deng & Hu (2015) section 2.1: the paper's own time-to-success
-        # counterexample publishes a true effect of -26 msec against the
-        # naive formula's -18 msec for the same example — the additive-only
-        # scope boundary REQ-P8-04 demands, asserted directly against the
-        # published pair.
-        naive_msec = -18.0
-        true_msec = -26.0
-        self.assertNotEqual(naive_msec, true_msec)
+    # D-05: DSX-INT-030
+    def test_diluted_effect_is_scoped_to_additive_metrics_not_the_counterexamples_ratio_metric(self):
+        # Deng & Hu (2015) section 2.1: the paper's own counterexample metric
+        # is time to success, a ratio metric, and the paper prints the
+        # diverging -26/-18 msec pair precisely to show the additive formula
+        # failing there. The scope boundary this test guards is that "ratio"
+        # stays outside the partition DSX-INT-030 and diluted_effect are
+        # scoped to — asserted against the real partition constants and the
+        # docstring's own reference-value paragraph, not against two
+        # hardcoded literals compared to each other (08-REVIEW.md WR-02).
+        self.assertIn("ratio", interference._RATIO_METRIC_TYPES)
+        self.assertNotIn("ratio", interference._ADDITIVE_METRIC_TYPES)
+        docstring = mathx.diluted_effect.__doc__ or ""
+        self.assertIn("-26", docstring)
+        self.assertIn("-18", docstring)
+        self.assertIn("additive", docstring)
 
     def test_diluted_effect_rejects_trigger_rate_below_zero(self):
         with self.assertRaises(ValueError):

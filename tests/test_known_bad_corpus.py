@@ -443,6 +443,28 @@ class TestKnownBadCorpus(unittest.TestCase):
                     )
                     self.assertEqual(problems, [], "; ".join(problems))
 
+    def test_weak_identification_mmm_fixture_blocks_verify_and_ship_naming_int_030(self):
+        """The positive direction nothing asserts today (08-REVIEW.md WR-01).
+        `_TARGET_DEFECT_CODES["weak-identification-mmm"]` carries `"verify":
+        "DSX-INT-030"`, but that entry is never consumed:
+        `_CRITICAL_THRESHOLD_POINTS` is `("plan", "execute")`, so `"verify"` is
+        never passed to `_classify_target_defect`, and
+        `test_ship_gate_findings_are_all_documented_incidental_corpus_gaps` only
+        checks that findings are *allowed*, never that this one is *present*.
+        This test asserts the positive direction directly against a real gate
+        run, so a regression that silently stopped DSX-INT-030 firing for this
+        fixture (e.g. an incorrectly-applied CR-01 fix) would turn it red
+        instead of quietly shrinking the blocking set."""
+        fixture = CORPUS_DIR / "weak-identification-mmm-ANALYSIS-SPEC.yaml"
+        for point in ("verify", "ship"):
+            with self.subTest(point=point):
+                code, findings = self._gate_findings(fixture, point)
+                self.assertEqual(code, 1)
+                self.assertIn(
+                    "DSX-INT-030",
+                    {f["code"] for f in findings if f["severity"] == "CRITICAL"},
+                )
+
     def test_ship_gate_findings_are_all_documented_incidental_corpus_gaps(self):
         """Every CRITICAL/HIGH finding `dsx gate ship` produces against a fixture
         is either a member of the documented `_INCIDENTAL_GAP_CODES` allow-list,
@@ -518,6 +540,24 @@ class TestKnownBadCorpus(unittest.TestCase):
             f"_EXPECTED_CAUGHT_DEFECTS keys and the corpus on disk disagree: "
             f"{sorted(map_slugs ^ disk_slugs)} — every fixture must have an entry "
             "(even an empty frozenset()) and every key must name a real fixture",
+        )
+
+    def test_target_defect_codes_keys_are_a_subset_of_the_corpus_on_disk(self):
+        """A subset assertion, not the equality its sibling
+        (`test_expected_caught_defects_keys_match_the_corpus_on_disk`) uses:
+        `_TARGET_DEFECT_CODES` is deliberately partial, holding only the
+        fixtures that carry a point-scoped guarantee, whereas
+        `_EXPECTED_CAUGHT_DEFECTS` must have a key for every fixture on disk.
+        Protects against a renamed or removed fixture leaving an orphaned,
+        silently-inert dict entry (08-REVIEW.md WR-04): `_classify_target_defect`
+        would find no matching slug on disk, the renamed fixture would default
+        to the clears-cleanly branch, and the corresponding point-scoped
+        guarantee would disappear with no test failing."""
+        disk_slugs = _slugs(f"*{SPEC_SUFFIX}", SPEC_SUFFIX)
+        stale = set(_TARGET_DEFECT_CODES) - disk_slugs
+        self.assertEqual(
+            stale, set(),
+            f"_TARGET_DEFECT_CODES names fixture(s) no longer on disk: {sorted(stale)}",
         )
 
     def test_no_corpus_file_repeats_a_retired_gate_overclaim(self):
