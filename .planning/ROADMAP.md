@@ -295,12 +295,25 @@ the brief fixes verbatim and D-06 makes irreversible.
   3. `examples/known-bad/triggering-dilution-ANALYSIS-SPEC.yaml` exits `1` under `DSX-INT-030`
      when an additive metric is analysed on the eligible population with no dilution adjustment
      declared, and a test asserts `delta_diluted = delta_triggered × trigger_rate` against the
-     Deng & Hu (2015) published value.
+     Deng & Hu (2015) published counterexample — the paper's time-to-success case, where the
+     paper reports a true effect of −26 msec against the naive formula's −18 msec. Time-to-success
+     is itself a ratio metric, so the paper prints this pair to show the additive formula failing
+     there, which means the same test also proves the additive-only scope boundary success
+     criterion 4 requires. (Corrected per 08-CONTEXT.md D-10: the previous wording asked for a
+     value the paper publishes, but the full camera-ready contains no additive worked example at
+     all — every number in it is for a ratio metric — so the original wording asked for something
+     the paper does not contain.)
 
   4. A ratio metric under triggering is explicitly out of scope rather than silently adjudicated:
      `DSX-INT-030` does not fire on it, its docstring states the additive-only scope, and
-     `brief.md` §6.5 carries the entry condition that the Deng & Hu (2015) ratio-metric equation
-     be obtained from primary source before it ships (D-13).
+     `brief.md` §6.5 carries an entry condition naming the per-unit trigger and outcome data that
+     Formula (3) in §3.3 requires reaching the gate — because that equation sums over individual
+     users and has no closed-form scalar multiplier, unlike the additive Formula (1) — and notes
+     the item may be permanently out of scope for a declaration-only gate rather than merely
+     deferred. (Corrected per 08-CONTEXT.md D-12: the previous wording conditioned the item on
+     retrieving the equation from a primary source; that retrieval was already achievable — the
+     paper is freely public and Formula (3) is readable today — so the condition was already met
+     and would have unblocked the item immediately, which was never the intent.) (D-13)
 
   5. An unassessed novelty/primacy effect over the declared stability window is flagged at
      verify/ship with the assessment method cited, and a test asserts no

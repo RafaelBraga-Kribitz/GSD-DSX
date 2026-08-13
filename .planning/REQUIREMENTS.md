@@ -108,7 +108,7 @@ in either direction — they cannot justify a check and cannot excuse skipping o
 - [ ] REQ-P8-01 A declared interference risk other than `none` without either a mitigation or an explicit residual note is blocked, citing the SUTVA statement in Imbens & Rubin (2015)
 - [ ] REQ-P8-02 Shared-budget and marketplace interference patterns are recognised as distinct risks with distinct admissible mitigations
 - [ ] REQ-P8-03 `DSX-INT-030` blocks analysis of the eligible population when treatment reaches only the triggered subset and no dilution adjustment is declared, for additive metrics, asserting `delta_diluted = delta_triggered × trigger_rate`
-- [ ] REQ-P8-04 Ratio-metric dilution is explicitly out of scope for v2.0.0 and recorded in the gated backlog with the entry condition that the Deng & Hu (2015) ratio-metric equation is obtained from primary source (D-13)
+- [ ] REQ-P8-04 Ratio-metric dilution is explicitly out of scope for v2.0.0 and recorded in the gated backlog with the entry condition naming the per-unit trigger and outcome data Formula (3) (Deng & Hu 2015, §3.3) requires reaching the gate, since that equation sums over individual users with no closed-form scalar multiplier and the item may be permanently out of scope for a declaration-only gate (corrected per 08-CONTEXT.md D-12 — the prior condition was already met and so was never a real blocker) (D-13)
 - [ ] REQ-P8-05 An unassessed novelty/primacy effect over the declared stability window is flagged, with the assessment method cited
 - [ ] REQ-P8-06 No `DSX-INT-*` check reads `inference.paradigm` (D-11), asserted by test
 
@@ -155,7 +155,7 @@ in either direction — they cannot justify a check and cannot excuse skipping o
 | Prior justification and prior sensitivity (`DSX-PAR-020`/`-021`) | Deferred under D-12a — the frequentist specification-sensitivity mirror is not written |
 | Convergence declarations (`DSX-PAR-030`) | Deferred under D-12a — the frequentist estimation-convergence mirror is not written |
 | Prior predictive check (`DSX-PAR-022`) | Promoted only once its frequentist simulated-data mirror is drafted (REV-001) |
-| Ratio-metric dilution | Formula could not be obtained from primary source; shipping a plausible-looking equation would violate D-05 |
+| Ratio-metric dilution | Formula (3) (Deng & Hu 2015, §3.3) sums over individual users with no closed-form scalar multiplier, so it needs per-unit data a declaration-only gate never has; shipping a plausible-looking equation without it would violate D-05 (corrected per 08-CONTEXT.md D-12 — the equation itself was never unobtainable) |
 | Causal identification strategy checking | `DSX-CAU-*` owns this |
 | Survival, time-series and spatial estimation methods | Temporal and spatial dependence are declared types; the methods are out |
 | Reading a data warehouse from a gate | Breaks the determinism doctrine |
