@@ -443,5 +443,142 @@ class TestInterferenceGateLevel(unittest.TestCase):
                         self.assertEqual(code, 0, f"gate {point} unexpectedly blocked:\n{err}")
 
 
+def _stability_causal_spec(**overrides: object) -> dict:
+    """A minimal causal spec carrying a stability sub-block that declares the
+    full DSX-INT-040 defect by default, with the given stability fields
+    overridden to isolate one condition at a time."""
+    block = {
+        "window": "14 days",
+        "novelty_primacy_assessed": False,
+        "evidence": "",
+    }
+    block.update(overrides)
+    return {
+        "question_type": "causal",
+        "validity_frame": {"stability": block},
+    }
+
+
+class TestStabilityAssessment(unittest.TestCase):
+    # D-05: DSX-INT-040
+    def test_stability_unassessed_novelty_primacy_fires_high_int_040(self):
+        report = interference.check(_stability_causal_spec())
+        found = [f for f in report.findings if f.code == "DSX-INT-040"]
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0].severity, Severity.HIGH)
+
+    def test_stability_key_absent_entirely_still_fires_int_040(self):
+        spec = _stability_causal_spec()
+        del spec["validity_frame"]["stability"]["novelty_primacy_assessed"]
+        report = interference.check(spec)
+        self.assertIn("DSX-INT-040", codes(report))
+
+    def test_stability_assessed_true_with_real_evidence_produces_no_finding(self):
+        report = interference.check(
+            _stability_causal_spec(
+                novelty_primacy_assessed=True, evidence="RESULTS.md#week1-vs-week2"
+            )
+        )
+        self.assertNotIn("DSX-INT-040", codes(report))
+
+    def test_stability_assessed_true_with_empty_evidence_fires_int_040(self):
+        report = interference.check(
+            _stability_causal_spec(novelty_primacy_assessed=True, evidence="")
+        )
+        self.assertIn("DSX-INT-040", codes(report))
+
+    def test_stability_assessed_true_with_placeholder_evidence_fires_int_040(self):
+        report = interference.check(
+            _stability_causal_spec(
+                novelty_primacy_assessed=True,
+                evidence="<pointer to the check, e.g. RESULTS.md#week1-vs-week2>",
+            )
+        )
+        self.assertIn("DSX-INT-040", codes(report))
+
+    def test_stability_sub_block_absent_produces_no_int_040(self):
+        spec = {"question_type": "causal", "validity_frame": {}}
+        report = interference.check(spec)
+        self.assertNotIn("DSX-INT-040", codes(report))
+
+    def test_stability_descriptive_observational_spec_produces_no_int_040_despite_full_defect(self):
+        spec = _stability_causal_spec()
+        spec["question_type"] = "descriptive"
+        report = interference.check(spec)
+        self.assertEqual(codes(report), set())
+
+    def test_stability_where_names_sub_block_explicitly_not_bare_field_name(self):
+        report = interference.check(_stability_causal_spec())
+        found = [f for f in report.findings if f.code == "DSX-INT-040"][0]
+        self.assertEqual(
+            found.where, "spec.validity_frame.stability.novelty_primacy_assessed"
+        )
+
+        report2 = interference.check(
+            _stability_causal_spec(novelty_primacy_assessed=True, evidence="")
+        )
+        found2 = [f for f in report2.findings if f.code == "DSX-INT-040"][0]
+        self.assertEqual(found2.where, "spec.validity_frame.stability.evidence")
+
+    def test_stability_detail_names_dsx_exp_030_and_states_disjointness(self):
+        report = interference.check(_stability_causal_spec())
+        found = [f for f in report.findings if f.code == "DSX-INT-040"][0]
+        self.assertIn("DSX-EXP-030", found.detail)
+
+    def test_stability_gate_level_severity_alone_selects_verify_not_plan(self):
+        """D-02's whole argument, proven at the gate level: a copy of the good
+        fixture with novelty_primacy_assessed mutated to false exits 0 at
+        plan and 1 at verify, naming DSX-INT-040 — proving severity alone,
+        with no GATE_THRESHOLDS edit, selects the gate point."""
+        from dsx.cli import GATE_THRESHOLDS
+
+        self.assertEqual(GATE_THRESHOLDS["plan"], "CRITICAL")
+        self.assertEqual(GATE_THRESHOLDS["verify"], "HIGH")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            target = Path(tmp) / "examples"
+            shutil.copytree(ROOT / "examples", target)
+            spec_path = target / "good-ANALYSIS-SPEC.yaml"
+            spec = load(spec_path)
+            spec.setdefault("validity_frame", {}).setdefault("stability", {})[
+                "novelty_primacy_assessed"
+            ] = False
+            spec_path.write_text(json.dumps(spec), encoding="utf-8")
+
+            out, err = io.StringIO(), io.StringIO()
+            with redirect_stdout(out), redirect_stderr(err):
+                code = cli.main(["gate", "plan", "--spec", str(spec_path)])
+            self.assertEqual(code, 0, f"gate plan unexpectedly blocked:\n{err.getvalue()}")
+
+            out2, err2 = io.StringIO(), io.StringIO()
+            with redirect_stdout(out2), redirect_stderr(err2):
+                code2 = cli.main(["gate", "verify", "--spec", str(spec_path)])
+            self.assertEqual(code2, 1)
+            self.assertIn("DSX-INT-040", out2.getvalue() + err2.getvalue())
+
+    def test_stability_no_committed_fixture_produces_int_040_at_ship(self):
+        """No fixture under examples/ (top-level or known-bad/) fires
+        DSX-INT-040 at ship — the gate's finding list carries every finding
+        regardless of severity threshold, so this one run also proves the
+        code is silent at plan/execute/verify for the same spec, since
+        interference.check() is a pure function of the spec content."""
+        specs = sorted((ROOT / "examples").glob("*-ANALYSIS-SPEC.yaml")) + sorted(
+            (ROOT / "examples" / "known-bad").glob("*-ANALYSIS-SPEC.yaml")
+        )
+        self.assertTrue(specs, "no example specs found")
+        for path in specs:
+            with self.subTest(spec=path.name):
+                with tempfile.TemporaryDirectory() as phase_dir:
+                    out, err = io.StringIO(), io.StringIO()
+                    with redirect_stdout(out), redirect_stderr(err):
+                        code = cli.main(
+                            ["gate", "ship", "--spec", str(path), "--phase-dir", phase_dir]
+                        )
+                    self.assertNotIn(
+                        "DSX-INT-040", out.getvalue() + err.getvalue(),
+                        f"{path.name} unexpectedly names DSX-INT-040 at ship",
+                    )
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

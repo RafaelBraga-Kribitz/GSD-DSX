@@ -8,13 +8,15 @@ vocabulary. A missing sub-block is ``DSX-SPEC-080``/``DSX-SPEC-081``
 territory, never a ``DSX-INT-*`` finding; firing here on top of that would
 double-report a single defect.
 
-Three of the family's four codes ship as of this plan: ``DSX-INT-010`` (a
+All four of the family's codes ship as of this plan: ``DSX-INT-010`` (a
 declared risk with no mitigation and no real residual note), ``DSX-INT-011``
-(a declared mitigation that is not admissible for the declared risk), and
+(a declared mitigation that is not admissible for the declared risk),
 ``DSX-INT-030`` (an additive metric analysed on the eligible population with
-no declared dilution adjustment). The remaining one — ``DSX-INT-040``
-(novelty/primacy) — arrives behind the same ``check()`` dispatcher in a
-later plan of this phase.
+no declared dilution adjustment), and ``DSX-INT-040`` (a declared novelty or
+primacy assessment that was never carried out, or was carried out with no
+evidence pointer). ``DSX-INT-040`` is the family's only non-CRITICAL code —
+HIGH, blocking from ``verify`` and ``ship`` but not ``plan`` — by severity
+alone; no ``GATE_THRESHOLDS`` edit accompanies it.
 
 D-11/D-16 (mechanically proven by ``tests/test_frame_boundary.py``'s
 ``TestFrameParadigmReadBoundary``): no code path in this module reads the
@@ -498,6 +500,146 @@ def _check_triggering_dilution(spec: dict, frame: dict, report: Report) -> None:
     )
 
 
+def _check_stability_assessment(frame: dict, report: Report) -> None:
+    """Emit DSX-INT-040 when a declared novelty or primacy assessment was
+    never carried out, or was carried out with no evidence pointer.
+
+    Fires when ``validity_frame.stability`` is present (a non-empty mapping —
+    the same presence gate ``_check_triggering_dilution`` uses for
+    ``triggering``, so an absent or malformed sub-block, including an empty
+    mapping, degrades to no finding rather than being distinguished from
+    absence) and either ``novelty_primacy_assessed`` is not the literal
+    boolean ``True``, or it is ``True`` and ``evidence`` is blank, an
+    angle-bracket placeholder, or a refusal token
+    (``is_placeholder_or_refusal()``). One finding is emitted, never two,
+    naming which of the two cases was hit. The absent-sub-block case belongs
+    to ``DSX-SPEC-081`` (Phase 6 D-11); firing here on top of it would
+    double-report a single defect.
+
+    This is the family's only HIGH code — the severity alone, with no
+    ``GATE_THRESHOLDS`` edit, is what blocks ``verify`` and ``ship`` and not
+    ``plan`` (D-02).
+
+    Citation: Sadeghi, S. et al. (2021), "Novelty and Primacy: A Long-Term
+    Estimator for Online Experiments", arXiv:2102.12893v1, Equation (13) in
+    section 4.2 for the general difference-in-differences estimator and
+    Equation (9) in section 4.1 for the three-period case. The published
+    p-value 0.0083 attaches to Equation (9) and not to Equation (13) —
+    section 4.4 of the preprint says so explicitly. Technometrics
+    64(4):524-534 (2022) is cited alongside as the version of record, but
+    never for the equation numbers or the values: it is paywalled, the
+    arXiv record holds only version 1 from February 2021, and the preprint
+    was never synced to the accepted manuscript, so agreement between the
+    two is unverified.
+    Structural criterion: a declared stability window with no completed
+    novelty or primacy assessment, or an assessment with no evidence
+    pointer, leaves the time-stability of the reported effect asserted
+    rather than checked. This check reads the declaration and does not open
+    the evidence file: resolving the pointer needs the evidence helpers in
+    ``dsx/checks/claims.py``, which the D-03a import boundary forbids
+    ``dsx/frame/`` from reaching. Doing it properly means extracting those
+    helpers into a standard-library-only peer module — the move already
+    made for the decision-record module (``dsx/decisions.py``) — and this is
+    a candidate for whichever later phase next needs the same thing. The
+    assessment method is cited here in the docstring rather than declared in
+    a configuration field, because there is no ``stability.method`` field in
+    the contract and adding one is contract surface this phase is not
+    scoped for.
+    """
+    stability = section(frame, "stability")
+    if not stability:
+        # Absent, malformed, or an empty mapping all degrade identically —
+        # DSX-SPEC-081 owns the absent case, and an empty mapping carries
+        # nothing to adjudicate.
+        return
+
+    # Judgment point: the stability sub-block is present.
+    window = get(stability, "window")
+    assessed = stability.get("novelty_primacy_assessed")
+    # Deliberate identity comparison, never is_blank(): is_blank(False) is
+    # False (a bool is none of is_blank's blank shapes), so an is_blank()
+    # check here would never fire on the literal `novelty_primacy_assessed:
+    # false` the template and (pre plan 08-02) several corpus fixtures
+    # declared. Do not "simplify" this back to is_blank().
+    not_assessed = assessed is not True
+    evidence = get(stability, "evidence")
+    evidence_missing = is_placeholder_or_refusal(evidence)
+
+    if not_assessed:
+        case = "unassessed"
+        fired = True
+    else:
+        case = "unevidenced"
+        fired = evidence_missing
+
+    if fired:
+        if case == "unassessed":
+            where = "spec.validity_frame.stability.novelty_primacy_assessed"
+            case_text = (
+                f"novelty_primacy_assessed is {assessed!r} — no completed novelty or "
+                "primacy assessment is declared over this window."
+            )
+        else:
+            where = "spec.validity_frame.stability.evidence"
+            case_text = (
+                f"novelty_primacy_assessed is true but stability.evidence is "
+                f"{evidence!r}, which is blank or a placeholder — the assessment is "
+                "declared with no supporting record."
+            )
+        report.add(
+            "DSX-INT-040",
+            "HIGH",
+            f"novelty/primacy assessment {case} for the declared stability window",
+            detail=(
+                f"validity_frame.stability.window is {window!r}. {case_text} This is "
+                "not DSX-EXP-030: that code adjudicates design.duration_days against "
+                "a minimum-week floor; this code adjudicates whether a novelty or "
+                "primacy assessment was carried out and evidenced over the declared "
+                "stability window, not the window's length."
+            ),
+            remedy=(
+                "Run the novelty/primacy assessment over the declared window and "
+                "record where the result lives (e.g. a RESULTS.md anchor), then set "
+                "validity_frame.stability.novelty_primacy_assessed: true and point "
+                "validity_frame.stability.evidence at that record."
+            ),
+            where=where,
+        )
+
+    report.context.setdefault("decisions", []).append(
+        DecisionRecord(
+            id="",
+            invocation_id="",
+            layer="deterministic",
+            choice=(
+                f"DSX-INT-040 {'fired' if fired else 'clear'}: "
+                f"novelty_primacy_assessed={assessed!r}, evidence={evidence!r}"
+            ),
+            inputs=[
+                "validity_frame.stability.novelty_primacy_assessed",
+                "validity_frame.stability.evidence",
+            ],
+            rule=(
+                "DSX-INT-040 fires when the stability sub-block is present and "
+                "novelty_primacy_assessed is not the literal boolean True, or it is "
+                "True and stability.evidence is blank, an angle-bracket placeholder, "
+                "or a refusal token under is_placeholder_or_refusal()."
+            ),
+            citation=(
+                "Sadeghi et al. (2021), Novelty and Primacy: A Long-Term Estimator "
+                "for Online Experiments, arXiv:2102.12893v1, Eq. (13)/(9)"
+            ),
+            counterfactual=(
+                "Declaring novelty_primacy_assessed: true with a real evidence "
+                "pointer would have cleared DSX-INT-040."
+                if fired
+                else "novelty_primacy_assessed not true, or true with a blank or "
+                "placeholder evidence, would have fired DSX-INT-040."
+            ),
+        ).to_dict()
+    )
+
+
 def check(spec: dict) -> Report:
     """Emit the interference-family findings (``DSX-INT-*``).
 
@@ -524,5 +666,6 @@ def check(spec: dict) -> Report:
     _check_interference_unaddressed(frame, report)
     _check_interference_mitigation_admissibility(frame, report)
     _check_triggering_dilution(spec, frame, report)
+    _check_stability_assessment(frame, report)
 
     return report
