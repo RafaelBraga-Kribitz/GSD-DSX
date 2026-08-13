@@ -109,8 +109,10 @@ def _blank_clearing_declarations(
     anywhere in the pair. A clearing declaration is satisfied only by
     non-blank text (``is_blank_text``), identically for every paradigm and
     every field, so no row can be cleared by a value that carries no declared
-    content — a bare number, boolean, list or mapping is blank here even
-    though ``is_blank`` itself would call it present.
+    content — a bare number or boolean is blank here even though
+    ``is_blank`` itself would call it present; a list or mapping is blank
+    here even when non-empty (empty containers were already blank under
+    ``is_blank``).
     """
     return [name for name in fields if is_blank_text(inference.get(name))]
 

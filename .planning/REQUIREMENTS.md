@@ -114,13 +114,13 @@ in either direction — they cannot justify a check and cannot excuse skipping o
 
 ## Phase 9 (M2c) — Monitoring discipline, symmetric (`DSX-PAR-*`)
 
-- [ ] REQ-P9-01 `DSX-PAR-010` blocks a frequentist design declaring continuous or group-sequential monitoring with no alpha-spending or sequential method, reusing the existing `inflation_from_peeking()` table rather than introducing a second one
-- [ ] REQ-P9-02 `DSX-PAR-011` blocks a Bayesian design declaring continuous monitoring with neither threshold calibration nor a justified informative prior, asserting the prior-averaged bound `1/(K+1)` — at the `P(B>A) > 0.95` threshold, `K=19` and the bound is `0.05` — citing Deng, Lu & Chen (2016) Theorem 1, whose likelihood-ratio argument is not Ville's inequality (Ville gives the different bound `1/k`)
-- [ ] REQ-P9-03 The `DSX-PAR-011` docstring states explicitly that it asserts the prior-averaged formulation and not the point-null/law-of-iterated-logarithm formulation, and the fixture traces to the specific theorem
-- [ ] REQ-P9-04 `DSX-PAR-002` validates `paradigm_justification` against the closed vocabulary, symmetric across both paradigms with no reason ranked above another
-- [ ] REQ-P9-05 Neither `DSX-PAR-010` nor `DSX-PAR-011` can be satisfied by switching the declared `paradigm` value, asserted by test in both directions
-- [ ] REQ-P9-06 A documented audit records that neither half of the pair has a cheaper dishonest escape than the other, and the disjunctive `prior_justification` path is no weaker than the sequential-method requirement (D-12)
-- [ ] REQ-P9-07 The `DSX-PAR-011` simulation lives under `tests/`, never on the gate path, and is seeded and reproducible (D-02)
+- [x] REQ-P9-01 `DSX-PAR-010` blocks a frequentist design declaring continuous or group-sequential monitoring with no alpha-spending or sequential method, reusing the existing `inflation_from_peeking()` table rather than introducing a second one
+- [x] REQ-P9-02 `DSX-PAR-011` blocks a Bayesian design declaring continuous monitoring with neither threshold calibration nor a justified informative prior, asserting the prior-averaged bound `1/(K+1)` — at the `P(B>A) > 0.95` threshold, `K=19` and the bound is `0.05` — citing Deng, Lu & Chen (2016) Theorem 1, whose likelihood-ratio argument is not Ville's inequality (Ville gives the different bound `1/k`)
+- [x] REQ-P9-03 The `DSX-PAR-011` docstring states explicitly that it asserts the prior-averaged formulation and not the point-null/law-of-iterated-logarithm formulation, and the fixture traces to the specific theorem
+- [x] REQ-P9-04 `DSX-PAR-002` requires `paradigm_justification` (presence/requiredness only); closed-vocabulary membership is owned by `DSX-SPEC-085`. Symmetric across both paradigms with no reason ranked above another (D-08)
+- [x] REQ-P9-05 Neither `DSX-PAR-010` nor `DSX-PAR-011` can be satisfied by switching the declared `paradigm` value, asserted by test in both directions
+- [x] REQ-P9-06 A documented audit records that neither half of the pair has a cheaper dishonest escape than the other, and the disjunctive `prior_justification` path is no weaker than the sequential-method requirement (D-12)
+- [x] REQ-P9-07 The `DSX-PAR-011` simulation lives under `tests/`, never on the gate path, and is seeded and reproducible (D-02)
 
 ## Phase 10 (M3) — Pre-registered inference plan (`DSX-PRE-*`)
 
@@ -168,7 +168,7 @@ in either direction — they cannot justify a check and cannot excuse skipping o
 |---|---|---|
 | `method_family_required` cannot express a disjunction under M-09's single-member reuse of `VARIANCE_ADJUSTMENTS`; the brief's example value is `cluster_robust_or_mixed` | 7 (M2a) | Reuse was chosen over a parallel vocabulary; whether the field becomes set-valued is a modelling call best made against real dependence declarations |
 | Final numeric code assignments within `DSX-VAL-*`, `DSX-INT-*`, `DSX-ADM-*` beyond those the brief fixes | 7, 8, 11 | D-06 makes numbering irreversible |
-| Whether the existing `inflation_from_peeking()` docstring is upgraded to a full D-05 citation (currently "Armitage's classic result", no year or paper) | 9 (M2c) | Pre-existing docstring held to a lower bar than the new checks it will support |
+| ~~Whether the existing `inflation_from_peeking()` docstring is upgraded to a full D-05 citation~~ | 9 (M2c) | **Resolved 2026-08-12 at discuss** — yes, with an explicit unverified-locator flag (09-CONTEXT D-13). |
 
 ## Traceability
 
@@ -207,11 +207,11 @@ Every v2.0.0 requirement maps to exactly one phase. 53/53 mapped; no orphans, no
 | REQ-P8-04 | Phase 8 | Complete |
 | REQ-P8-05 | Phase 8 | Complete |
 | REQ-P8-06 | Phase 8 | Pending |
-| REQ-P9-01 | Phase 9 | Pending |
-| REQ-P9-02 | Phase 9 | Pending |
-| REQ-P9-03 | Phase 9 | Pending |
-| REQ-P9-04 | Phase 9 | Pending |
-| REQ-P9-05 | Phase 9 | Pending |
+| REQ-P9-01 | Phase 9 | Complete |
+| REQ-P9-02 | Phase 9 | Complete |
+| REQ-P9-03 | Phase 9 | Complete |
+| REQ-P9-04 | Phase 9 | Complete |
+| REQ-P9-05 | Phase 9 | Complete |
 | REQ-P9-06 | Phase 9 | Complete |
 | REQ-P9-07 | Phase 9 | Complete |
 | REQ-P10-01 | Phase 10 | Pending |

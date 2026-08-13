@@ -14,7 +14,7 @@
 - [x] **Phase 6: Contract extension, decision record, paradigm manifest** - `validity_frame:`/`inference:` blocks, decision records, `dsx explain`, `DSX-PAR-001`, D-05/D-03a enforcement (M1) — completed 2026-08-10
 - [ ] **Phase 7: Validity frame checks (`DSX-VAL-*`)** - estimand, unit triad, dependence, identification strength, sampling frame, missingness, measurement (M2a)
 - [ ] **Phase 8: Interference, triggering, stability (`DSX-INT-*`)** - SUTVA risk, shared-budget/marketplace patterns, triggered-vs-eligible dilution, novelty/primacy (M2b)
-- [ ] **Phase 9: Monitoring discipline, symmetric (`DSX-PAR-*`)** - the atomic `DSX-PAR-010`/`-011` pair plus `DSX-PAR-002` (M2c)
+- [x] **Phase 9: Monitoring discipline, symmetric (`DSX-PAR-*`)** - the atomic `DSX-PAR-010`/`-011` pair plus `DSX-PAR-002` (M2c) — completed 2026-08-13
 - [ ] **Phase 10: Pre-registered inference plan (`DSX-PRE-*`)** - fallback-rule DSL, `declared_at` provenance, declared-vs-executed branch reconciliation (M3)
 - [ ] **Phase 11: Frequentist admissibility adjudicator (`DSX-ADM-*`)** - `references/families.yaml`, ranked admissible set, `no_admissible_procedure` escalation (M4)
 - [ ] **Phase 12: Calibration** - full known-bad corpus, measured catch rate and FPR, `dsx stats --paradigm`, backlog re-evaluation (M5)
@@ -397,8 +397,10 @@ depend on it.
   4. Switching `paradigm` cannot buy a pass in either direction: the `DSX-PAR-010` bad fixture
      retyped to `bayesian` still exits `1` (now under `DSX-PAR-011`), and the `DSX-PAR-011` bad
      fixture retyped to `frequentist` still exits `1` (now under `DSX-PAR-010`) — asserted by
-     test both ways; `DSX-PAR-002` validates `paradigm_justification` against the closed
-     vocabulary with no reason ranked above another.
+     test both ways; `DSX-PAR-002` requires `paradigm_justification` (presence and
+     requiredness only) and `DSX-SPEC-085` validates it against the closed vocabulary,
+     with no reason ranked above another (D-08 — membership is not duplicated so one
+     defect cannot emit two codes).
 
   5. Both codes ship together at identical severity, and a committed audit records the cheapest
      dishonest satisfaction path for each half, showing the disjunctive `prior_justification`
@@ -573,7 +575,7 @@ cases where absence permitted a false pass" is a debate, not a count.
 | 6. Contract extension, decision record, paradigm manifest | 13/13 | Complete | 2026-08-10 |
 | 7. Validity frame checks (`DSX-VAL-*`) | 7/7 | In Progress|  |
 | 8. Interference, triggering, stability (`DSX-INT-*`) | 7/7 | In Progress|  |
-| 9. Monitoring discipline, symmetric (`DSX-PAR-*`) | 7/7 | In Progress|  |
+| 9. Monitoring discipline, symmetric (`DSX-PAR-*`) | 7/7 | Complete | 2026-08-13 |
 | 10. Pre-registered inference plan (`DSX-PRE-*`) | 0/TBD | Not started | - |
 | 11. Frequentist admissibility adjudicator (`DSX-ADM-*`) | 0/TBD | Not started | - |
 | 12. Calibration | 0/TBD | Not started | - |

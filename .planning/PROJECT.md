@@ -46,9 +46,10 @@ written profile.
   decidable (DQ, evidence, coherence, viz/seals/smells, narrative/code, analytical
   logic / stats extensions including decision replay and repro_lock, plus scored
   CHART-REVIEW and ADR-authorised suppressions).
-- **v2.0.0 in progress** — Phase 6 (M1) complete 2026-08-10, 13/13 plans. Package
-  version is 2.0.0. The contract surface, decision trail and paradigm manifest
-  exist; Phases 7–12 (the check families that use them) are unblocked and unwritten.
+- **v2.0.0 in progress** — Phase 6 (M1) complete 2026-08-10. Phase 9 (M2c, monitoring
+  discipline) complete 2026-08-13. Package version is 2.0.0. Phases 7 and 8 are
+  executed but not closed (Phase 7: human verification still open; Phase 8: one
+  blocking verification gap). Phases 10–12 remain.
 
 ## Current Milestone: v2.0.0 DSX Validity Frame
 
@@ -92,6 +93,7 @@ specs without it begin to block — a breaking contract change.
 - ✓ Assumption checkoffs/waivers, TOST/CI/MDE, multiplicity family, repro_lock, decision replay — v1.4.0
 - ✓ ANALYSIS-SPEC `suppressions[]` with authority, scored CHART-REVIEW.md — v1.5.0
 - ✓ `validity_frame:`/`inference:` contract blocks, decision records + `dsx explain`, `DSX-PAR-001` paradigm manifest, `dsx/frame/` package with enforced D-03a boundary, mechanical D-05 citation enforcement, known-bad corpus — Phase 6 (REQ-P6-01 … REQ-P6-16)
+- ✓ Symmetric monitoring pair `DSX-PAR-010`/`DSX-PAR-011` plus membership-free `DSX-PAR-002` (requiredness; `DSX-SPEC-085` owns vocabulary membership) — Phase 9 (REQ-P9-01 … REQ-P9-07)
 
 ### Active
 
@@ -141,11 +143,12 @@ See `.planning/REQUIREMENTS.md` for the v2.0.0 requirement set (REQ-P7-* … REQ
 | D-05 Citation + published reference value per check | Prevents laundering model statistics knowledge into a blocking gate | Delivered Phase 6 — `check_d05` in `gen-finding-catalogue.py --check` fails the build on a missing `Citation:` line |
 | D-10 An unsupported paradigm is never blocking on its own | Blocking on `paradigm: bayesian` makes typing `frequentist` the cheapest way past the gate | Delivered Phase 6 — `DSX-PAR-001` is INFO (10); every default `GATE_THRESHOLDS` value is 40 or 50 |
 | D-11 Frame-layer checks never read `paradigm` | A prior does not save you from pseudo-replication; if a frame check branches on paradigm it is in the wrong layer | — Pending |
-| D-12/D-12a Paradigm-specific checks ship in symmetric pairs, and symmetry is the scoping rule | Asymmetric enforcement is how a tool silently steers method choice | — Pending |
+| D-12/D-12a Paradigm-specific checks ship in symmetric pairs, and symmetry is the scoping rule | Asymmetric enforcement is how a tool silently steers method choice | Delivered Phase 9 for the monitoring pair (`DSX-PAR-010`/`-011` at identical CRITICAL; `is_blank_text` as the single clearing predicate; committed symmetry audit). D-12a deferred codes (`DSX-PAR-020`/`-021`/`-030`) remain out of scope |
 | D-13 Deferred checks carry an entry condition, not a wish | A trigger tied to a measured catch rate is falsifiable; a priority is not | — Pending |
 | D-14 Reversing a D-table decision requires a reversal record; evidence-free reversal logs as `SELF-001` | "Here is what would change my mind" is stronger than "here is what I chose" | — Pending |
-| **M-01** `DSX-PAR-010` ships as a distinct code, `DSX-EXP-060` untouched | Triggers are disjoint — undeclared looks under a fixed horizon vs a declared continuous design with no sequential method. Widening EXP-060 would silently broaden existing suppressions, against the spirit of D-06 | — Pending |
-| **M-02** No `inference.stopping_rule` field; `DSX-PAR-010/011` read the existing `design.peeking_policy` | One concept, one field. Avoids a permanent consistency check between two vocabularies for the same thing. Deviates from brief §5.2, which specified a new field | — Pending |
+| **M-01** `DSX-PAR-010` ships as a distinct code, `DSX-EXP-060` untouched | Triggers are disjoint — undeclared looks under a fixed horizon vs a declared continuous design with no sequential method. Widening EXP-060 would silently broaden existing suppressions, against the spirit of D-06 | Delivered Phase 9 — pair ships in `dsx/frame/paradigm.py`; `dsx/checks/design.py` untouched |
+| **M-02** No `inference.stopping_rule` field; `DSX-PAR-010/011` read the existing `design.peeking_policy` | One concept, one field. Avoids a permanent consistency check between two vocabularies for the same thing. Deviates from brief §5.2, which specified a new field | Delivered Phase 9 — both codes trigger on `peeking_policy: uncontrolled_continuous` |
+| **Phase 9 D-08** `DSX-PAR-002` is presence/requiredness only; `DSX-SPEC-085` owns closed-vocabulary membership | Two codes for one defect would violate one-stable-fact-per-code. UAT 2026-08-13 accepted the split; ROADMAP SC 4 / REQ-P9-04 amended to name both codes | Delivered Phase 9 |
 | **M-03** `PEEKING_POLICIES` gains a value for uncontrolled continuous monitoring | Consequence of M-02: the existing vocabulary has `always_valid` (disciplined) but no value for "peeking continuously with no correction" — precisely what `DSX-PAR-010` must fire on | Delivered Phase 6 — `uncontrolled_continuous` added (`dsx/spec.py:71`) |
 | **M-04** Automated import test enforces the D-03a boundary from M1 | Enforces the boundary without scaffolding an empty `families.yaml`, which brief §6.6 warns accumulates speculative structure | Delivered Phase 6 — AST scanner proven against three deliberately violating sources |
 | **M-05** `SELF-001` stays a convention for v2.0.0; `REVERSALS.md` template seeded in M1 | Enforcement is a planning-process concern, not a gate concern; a subcommand adjudicating planning docs is outside the gate path | Delivered Phase 6 — `REVERSALS.md` seeded with the four-field D-14 template; SELF-001 trigger stated. Human-validated (UAT 1) |
@@ -185,4 +188,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-08-10 after Phase 6*
+*Last updated: 2026-08-13 after Phase 9*

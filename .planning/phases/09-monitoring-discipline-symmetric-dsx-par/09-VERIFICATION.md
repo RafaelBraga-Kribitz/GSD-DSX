@@ -1,7 +1,7 @@
 ---
 phase: 09-monitoring-discipline-symmetric-dsx-par
 verified: 2026-08-13T15:00:00Z
-status: human_needed
+status: passed
 score: 7/7 must-haves verified
 behavior_unverified: 0
 overrides_applied: 0
@@ -17,6 +17,10 @@ human_verification:
   - test: "Confirm the DSX-PAR-002 scope decision (membership-free presence/requiredness only, closed-vocabulary membership left to the pre-existing DSX-SPEC-085) is an acceptable reading of ROADMAP Success Criterion 4's wording ('DSX-PAR-002 validates paradigm_justification against the closed vocabulary')."
     expected: "A human decision on whether the literal roadmap wording is satisfied by the two-code split, or whether DSX-PAR-002 itself should also test membership."
     why_human: "This is a values/scope judgment about roadmap wording versus shipped design, not a code defect — carried forward unchanged from the initial verification. Re-confirmed this cycle: git diff 4c983fa..HEAD shows zero changes to DSX-PAR-002's check logic, so nothing about this item's facts moved during gap closure. Independent verification (this cycle and the last) found no input where the combined system lets a bogus, non-blank paradigm_justification pass silently — DSX-SPEC-085 always catches it."
+    result: pass
+    decision: accept the split
+    decided: 2026-08-13T15:25:00Z
+    notes: "Roadmap wording reads as intent, not an implementation assignment. ROADMAP SC 4 and REQ-P9-04 amended to name both codes."
 ---
 
 # Phase 9: Monitoring discipline, symmetric (`DSX-PAR-*`) Verification Report
@@ -61,7 +65,7 @@ No regression found.
 | 4 | Switching `paradigm` cannot buy a pass in either direction (asserted by test both ways); `DSX-PAR-002` validates `paradigm_justification` against the closed vocabulary, no reason ranked above another | ⚠ VERIFIED with a documented scope note (unchanged) | `test_retyping_frequentist_fixture_to_bayesian_yields_dsx_par_011_not_010` and the reverse both re-ran and pass. `git diff 4c983fa..HEAD -- dsx/frame/paradigm.py` shows no hunk touching `_check_paradigm_justification` (`DSX-PAR-002`'s logic) — the scope split (membership-free `DSX-PAR-002` + closed-vocabulary `DSX-SPEC-085`) is byte-for-byte unchanged from the initial verification. Routed to human verification below, carried forward unchanged — not a functional gap. |
 | 5 | Both codes ship together at identical severity; a committed audit records the cheapest dishonest satisfaction path for each half; the simulation lives under `tests/`, seeded, reproducible, never on the gate path | ✓ VERIFIED (gap closed) | Both codes still `CRITICAL` (confirmed via `finding-codes.md` and direct `check()` calls). **Audit accuracy re-verified by direct execution**, not by reading the audit text alone: ran a 48-case matrix (both paradigms × 3 clearing fields × 8 non-text values — `0`, `0.0`, `False`, `True`, `[]`, `{}`, `[0]`, `{'a':1}`) against the live `dsx.frame.paradigm.check()` — the CRITICAL pair fired in **all 48 cases**, i.e. the previously-cheaper bare-`0`/`False`/container escape no longer clears either half. A genuine non-blank string (including the literal `"0"`) still clears, confirming the audit's "one free-text declaration" floor is now actually the cheapest path. `references/paradigm-symmetry.md`'s new "What does not clear either half" section, read directly, states this history and the closed rule accurately. Simulation requirement unchanged and re-confirmed: `tests/test_par_monitoring_simulation.py` still seeded/reproducible/off-gate-path (not touched by gap closure — outside the `4c983fa..HEAD` diff). |
 
-**Score:** 5/5 ROADMAP Success Criteria verified; both prior FAILED truths (3 and 5) now VERIFIED. Success Criterion 4 remains routed to human verification on the same scope question as before (not a defect).
+**Score:** 5/5 ROADMAP Success Criteria verified; both prior FAILED truths (3 and 5) now VERIFIED. Success Criterion 4 accepted at UAT 2026-08-13 (split stands; wording amended).
 
 ### Required Artifacts
 
@@ -117,7 +121,7 @@ above).
 | REQ-P9-01 | 09-03 | `DSX-PAR-010` blocks frequentist uncontrolled monitoring, reuses `inflation_from_peeking()` | ✓ SATISFIED | Gate run + `git diff` empty on `dsx/checks/design.py` |
 | REQ-P9-02 | 09-03 | `DSX-PAR-011` blocks Bayesian uncontrolled monitoring, asserts `1/(K+1)` bound | ✓ SATISFIED | Gate run + boundary-arithmetic test pass |
 | REQ-P9-03 | 09-03/09-07 | Docstring states prior-averaged not point-null/LIL; fixture traces theorem correctly | ✓ SATISFIED (gap closed by 09-07) | Live `detail=` text and fixture note both re-read directly; locator error absent, correct attribution present in both |
-| REQ-P9-04 | 09-05 | `DSX-PAR-002` validates `paradigm_justification` against closed vocabulary, symmetric | ? NEEDS HUMAN (scope) — unchanged | Functionally complete via `DSX-PAR-002` + `DSX-SPEC-085` split; check logic byte-identical to initial verification (confirmed by diff); wording-vs-scope judgment carried forward |
+| REQ-P9-04 | 09-05 | `DSX-PAR-002` validates `paradigm_justification` against closed vocabulary, symmetric | ✓ SATISFIED (human: accept the split) | Functionally complete via `DSX-PAR-002` + `DSX-SPEC-085` split; UAT 2026-08-13 accepted D-08; ROADMAP SC 4 and REQ-P9-04 amended to name both codes |
 | REQ-P9-05 | 09-03 | Neither code escaped by retyping `paradigm`, both directions | ✓ SATISFIED | Both retype tests re-ran and pass |
 | REQ-P9-06 | 09-01/09-04/09-06 | Documented audit records cheapest dishonest path per half | ✓ SATISFIED (gap closed by 09-06) | 48-case matrix confirms no cheaper escape than one free-text declaration; audit text re-read directly and matches |
 | REQ-P9-07 | 09-02 | Simulation seeded, reproducible, never on gate path | ✓ SATISFIED | Outside gap-closure diff; part of the passing 526-test suite |
@@ -155,6 +159,10 @@ No `TBD`/`FIXME`/`XXX` unresolved debt markers found in any file modified by thi
 gap-closure plans.
 
 ### Human Verification Required
+
+Resolved at UAT 2026-08-13: accept the split. `DSX-PAR-002` stays membership-free;
+`DSX-SPEC-085` owns closed-vocabulary membership. ROADMAP Success Criterion 4 and
+REQ-P9-04 now name both codes.
 
 ### 1. `DSX-PAR-002` scope versus ROADMAP Success Criterion 4's literal wording
 
@@ -207,18 +215,17 @@ retype-both-directions tests, the `DSX-PAR-002`/`DSX-SPEC-085` split (confirmed 
 `_MONITORING_DISCIPLINE`'s D-12 symmetry, and the full 526-test suite (`sh scripts/check.sh`) all
 pass. No regression found.
 
-The only remaining item is the same human-judgment scope question the initial verification
-already routed to a human — `DSX-PAR-002` versus Success Criterion 4's literal wording — carried
-forward unchanged because the underlying code is confirmed unmoved by this round's diff. This
-routes the phase to `human_needed` rather than `passed`, exactly as it did at the initial
-verification; it is not a new item and not a regression.
+The remaining human-judgment scope question — `DSX-PAR-002` versus Success Criterion 4's
+literal wording — was decided at UAT 2026-08-13: accept the split. Frontmatter status is
+now `passed`. ROADMAP Success Criterion 4 and REQ-P9-04 were amended to name both codes.
 
 One new, non-behavioral finding surfaced during gap closure (`09-REVIEW.md` WR-04: a docstring
 added by 09-06 slightly overstates `is_blank()`'s pre-existing behavior for *empty* containers).
 Independently confirmed this cycle (`is_blank([])`/`is_blank({})` are both already `True`, so the
 docstring's "even though `is_blank` itself would call it present" is imprecise for that one case).
-It is internal-only (never emitted in operator-facing output), does not change any tested
-behavior, and does not defeat any ROADMAP Success Criterion — reported as a Warning, not a gap.
+Fixed at UAT close: the docstring now distinguishes bare scalars (where `is_blank` and
+`is_blank_text` diverge) from containers (empty already blank under `is_blank`; non-empty
+blank only under `is_blank_text`). Internal-only; no behavioral change.
 
 ---
 

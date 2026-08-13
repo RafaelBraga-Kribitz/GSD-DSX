@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v2.0.0
 milestone_name: DSX Validity Frame
-current_phase: 08
-current_phase_name: interference-triggering-stability-dsx-int
-status: executing
-stopped_at: Phase 10 context gathered (assumptions mode)
-last_updated: "2026-08-13T13:15:35.393Z"
+current_phase: 07
+current_phase_name: validity-frame-checks-dsx-val
+status: verifying
+stopped_at: Phase 9 complete; Phase 7 human verification and Phase 8 blocking gap remain
+last_updated: "2026-08-13T15:30:00.000Z"
 last_activity: 2026-08-13
-last_activity_desc: Phase 08 execution started
+last_activity_desc: Phase 09 complete — DSX-PAR-002 split accepted at UAT
 progress:
-  total_phases: 5
-  completed_phases: 3
+  total_phases: 7
+  completed_phases: 2
   total_plans: 35
   completed_plans: 34
   percent: 60
@@ -19,8 +19,8 @@ progress:
 
 # Project state
 
-**Status:** Executing Phase 08
-**Progress:** [███████░░░] 65% (1/7 phases — Phase 6 complete, 13/13 plans)  
+**Status:** Phase 9 complete; Phase 7 and Phase 8 executed but not closed
+**Progress:** [███████████████████░] 34/35 plans (97%)  
 **Locked decisions:** DQ = profile runner + hermetic gates; Glyph = hermetic svg_sha256 only (no MCP dep); forbidden claims = universal pack + optional phase YAML; repro_lock = ARS-style honest-null (not byte-replay); decision replay = structured thresholds only; suppressions = ADR/SPEC authority required (unknown codes → exit 2)  
 **v2.0.0 locked decisions:** DSX-PAR-010 is a distinct code, DSX-EXP-060 untouched (M-01); no `inference.stopping_rule` — PAR-010/011 read the existing `design.peeking_policy` (M-02); PEEKING_POLICIES gains an uncontrolled-continuous-monitoring value (M-03); automated import test enforces the D-03a boundary from M1 (M-04); SELF-001 stays a convention, REVERSALS.md template seeded in M1 (M-05); `validity_frame` sub-block requiredness gated by `question_type` (M-06); existing `suppressions[]` is the pre-v2.0.0 grandfather path (M-07); D-05 citation enforcement automated via `gen-finding-catalogue.py` (M-08); `dependence.method_family_required` reuses `VARIANCE_ADJUSTMENTS` (M-09)
 
@@ -35,11 +35,13 @@ progress:
 - v2.0.0 requirements defined (53 requirements, REQ-P6-* … REQ-P12-*)
 - v2.0.0 roadmap written — Phases 6–12, 53/53 requirements mapped, traceability populated
 - Phase 6 (M1, v2.0.0) — Contract extension, decision record, paradigm manifest. 13/13 plans, UAT 4/4, verification passed, security verified (35 threats, 0 open). Completed 2026-08-10.
+- Phase 9 (M2c, v2.0.0) — Monitoring discipline, symmetric (`DSX-PAR-010`/`-011` plus membership-free `DSX-PAR-002`). 7/7 plans, UAT 1/1 (split accepted), verification passed, security verified (24 threats, 0 open). Completed 2026-08-13.
 
 ## Next
 
-- Phases 7/8/9 (M2a/M2b/M2c) — no hard ordering among themselves; listed order is catastrophe-prevention value per unit of work. Phase 7 is next up.
-- Then Phase 10 (M3, soft-depends on 7), Phase 11 (M4, hard-depends on 7), Phase 12 (M5, terminal).
+- Phase 7 (M2a) — executed, UAT complete; verification still `human_needed` (citation-admissibility judgment). Lowest outstanding phase.
+- Phase 8 (M2b) — executed; verification `gaps_found` (5/7). Blocking: out-of-vocabulary `interference.risk` still bypasses `DSX-INT-010`/`-011` (same class as the 08-07 mitigation fix, unpatched on `risk`). A second gap on out-of-vocabulary `triggering.analysis_population` vs `DSX-INT-030`.
+- Then Phase 10 (M3, context gathered, soft-depends on 7), Phase 11 (M4, hard-depends on 7), Phase 12 (M5, terminal).
 - Deferred, unchanged: Parquet profiler, live Glyph MCP, NLP decision_rule — out of scope for core gates.
 
 ## Accumulated Context
@@ -47,7 +49,7 @@ progress:
 **Hard ordering constraints carried into planning:**
 
 - Phase 6 blocks Phases 7–12. **Resolved** — Phase 6 complete 2026-08-10, so Phases 7–12 are unblocked.
-- Phase 9's `DSX-PAR-010` and `DSX-PAR-011` are atomic (D-12): both ship or neither; the phase cannot close half-delivered. Note: 06-08 already committed both halves.
+- Phase 9's `DSX-PAR-010` and `DSX-PAR-011` are atomic (D-12): both ship or neither. **Resolved** — both shipped in 09-03 at CRITICAL; phase closed 2026-08-13.
 - Phase 7 precedes Phase 11 — admissibility is keyed on the dependence taxonomy.
 - Phase 12 is necessarily last.
 
@@ -57,7 +59,8 @@ progress:
 - Phases 7, 8, 11: final numeric code assignments beyond those the brief fixes (D-06 makes numbering irreversible).
 - ~~Phase 9: whether the pre-existing `inflation_from_peeking()` docstring is upgraded to a full D-05 citation.~~ **Resolved 2026-08-12 at discuss** — yes, with an explicit unverified-locator flag (09-CONTEXT D-13). D-05 does not mechanically reach the function (no `report.add` call site), so this is elective; it is done because leaving it uncited puts a seam where a v2.0.0 check depends on a v1.5.0 computation. Anchor values verified by independent quadrature + Monte Carlo; the 1969 paper itself remains inaccessible, so **no table or page may be cited**.
 - Phase 9: the "prior-averaged Ville bound" name is retired. **Corrected further 2026-08-12** — Deng Theorem 1 does **not** state `1/(K+1)`; it states an optional-stopping equality. The bound is unnumbered prose, §3.2 in its operational form. Verified against the arXiv LaTeX source (09-CONTEXT D-10). Ville's `1/k` remains a separate result, and Ville is never cited in Deng et al. at all (D-12). **REQ-P9-02/03 and ROADMAP Phase 9 SC 2/SC 3 still carry the old attribution and must be amended during planning.** The three regression guards in `tests/test_known_bad_corpus.py` hold the Deng-vs-Ville line and should be re-read, not assumed stale (UAT gap G-01).
-- Phase 9: **new, surfaced at discuss** — omitting `inference.paradigm` (or the whole `inference:` block) produces no finding today (`dsx/spec.py:886-888`, `:917-919`), which becomes the cheapest escape from both halves of the pair the moment it ships. Mechanism preferred in 09-CONTEXT D-07; the severity question it raises is explicitly left for planning.
+- ~~Phase 9: omitting `inference.paradigm` produces no finding.~~ **Resolved in 09-03** — undeclared paradigm selects every `_MONITORING_DISCIPLINE` row, so both CRITICAL codes fire at `plan`.
+- Phase 9 D-08 (`DSX-PAR-002` membership-free; `DSX-SPEC-085` owns vocabulary): **accepted at UAT 2026-08-13**. ROADMAP SC 4 and REQ-P9-04 now name both codes.
 - Phase 10: numeric code assignments **resolved 2026-08-13 at discuss** — `DSX-PRE-010` (rule does not resolve to exactly one branch), `-020` (recorded plan-time `frame_digest` differs from verify-time bytes while `declared_at: pre_data` is claimed), `-030` (executed procedure differs from the selected branch, both labels named). `-011` deliberately unspent; the unparseable-rule case carries no code at all and is exit 2 (10-CONTEXT D-12, D-02). Note this phase was not named in the numbering open item above — it is recorded here because brief D-06 makes numbering irreversible.
 - Phase 10: **new, surfaced at discuss** — reading the plan-time content lock promotes `DECISIONS.jsonl` from side channel to gate input, narrowing the unconditional invariant at `dsx/cli.py:288-290` to the write path. A `verify` with no recorded `plan` header exits `2`, which collides with the M-07 grandfather path; the exit-2 message must name `suppressions[]` so that path stays walkable (10-CONTEXT D-09). **Do not solve this by making the missing header pass.**
 - Phase 10: `_D05_ALLOWLIST_PREFIXES` (`scripts/gen-finding-catalogue.py:65`) is an **inclusion** list, not an exemption list, and does not cover `DSX-PRE-`. Without that edit the brief-D-05 citation gate is silently disabled for this family and `--check` still passes (10-CONTEXT D-13 item 4).
@@ -72,27 +75,25 @@ progress:
 
 ## Current Position
 
-Phase: 08 (interference-triggering-stability-dsx-int) — EXECUTING
-Plan: 1 of 7
-Status: Executing Phase 08
-Last activity: 2026-08-13 — Phase 08 execution started
+Phase: 07 (validity-frame-checks-dsx-val) — executed, UAT complete, verification `human_needed`
+Plan: 7 of 7 executed
+Status: Phase 9 complete. Phase 7 human verification and Phase 8 blocking gap remain.
+Last activity: 2026-08-13 — Phase 09 UAT accepted the `DSX-PAR-002` / `DSX-SPEC-085` split
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-08-10)
+See: .planning/PROJECT.md (updated 2026-08-13)
 
 **Core value:** Gate analytical work on validity before the data is touched.
-**Current focus:** Phase 08 — interference-triggering-stability-dsx-int
+**Current focus:** Close Phase 7 (human verification) and Phase 8 (blocking gap). Do not start Phase 10 until those two are closed — Phase 10 soft-depends on 7, Phase 11 hard-depends on 7.
 
 ## Session
 
-**Last session:** 2026-08-13T13:15:35.382Z
-**Stopped at:** Phase 10 context gathered (assumptions mode)
-**Resume file:** .planning/phases/10-pre-registered-inference-plan-dsx-pre/10-CONTEXT.md
+**Last session:** 2026-08-13T15:30:00.000Z
+**Stopped at:** Phase 9 complete
+**Resume file:** None
 
-Note: a Phase 8 discuss ran concurrently on 2026-08-12 and produced
-`.planning/phases/08-interference-triggering-stability-dsx-int/08-CONTEXT.md`. Phase 8 is
-contexted but unplanned; Phase 7 is the active phase.
+Phase 10 context remains at `.planning/phases/10-pre-registered-inference-plan-dsx-pre/10-CONTEXT.md` for when 7 and 8 are closed. Phase 8's blocking gap is in `08-VERIFICATION.md` (out-of-vocabulary `interference.risk` bypass).
 
 ## Performance Metrics
 
