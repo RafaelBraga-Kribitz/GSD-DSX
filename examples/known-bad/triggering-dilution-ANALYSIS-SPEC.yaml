@@ -1,0 +1,184 @@
+# A known-bad ANALYSIS-SPEC (REQ-P8-03, ROADMAP Phase 8 Success Criterion 3, D-17).
+# This file is structurally valid — it parses, passes dsx validate, and clears
+# both CRITICAL-threshold gate points, dsx gate plan and dsx gate execute (both
+# exit 0) — but it declares a triggered-versus-eligible dilution pattern: an
+# additive metric (revenue_per_eligible_session, type: average) is analysed on
+# the eligible population (validity_frame.triggering.analysis_population:
+# eligible) with dilution_adjusted: false and an expected_trigger_rate of 0.41 —
+# most of the eligible population never reached the upsell prompt at all. It
+# currently also blocks dsx gate verify and dsx gate ship (both exit 1), on
+# unrelated corpus-completeness gaps — none of which is the dilution defect this
+# fixture exists to encode; see tests/test_known_bad_corpus.py's
+# _INCIDENTAL_GAP_CODES for the full measured list. Phase 8's DSX-INT-030 (plan
+# 08-04) is the code that will block the dilution pattern itself once it ships;
+# nothing in this repository adjudicates it today, which is correct — declaring
+# an interference/triggering/stability sub-block is Phase 6's shape territory,
+# not Phase 8's semantics. See the paired POSTMORTEM.md.
+#
+#   dsx validate --spec examples/known-bad/triggering-dilution-ANALYSIS-SPEC.yaml
+#   dsx gate plan --spec examples/known-bad/triggering-dilution-ANALYSIS-SPEC.yaml
+
+spec_version: 1
+title: "Does the in-product upsell prompt raise revenue per eligible session, when only part of the eligible population ever reaches the prompt?"
+owner: "growth-monetization"
+created: "2026-04-20"
+
+question_type: causal
+
+decision:
+  owner: "VP Monetization"
+  decision_rule: >
+    Roll out the upsell prompt to 100% of eligible sessions if the 95% CI
+    lower bound on the revenue-per-eligible-session lift exceeds +$0.005 and
+    no guardrail metric degrades beyond its declared tolerance. Otherwise
+    hold at the current checkout flow.
+  action_if_null: "Keep the current checkout flow; close the initiative and revisit prompt placement instead."
+  minimum_practical_effect: 0.005
+  reversible: true
+  deadline: "2026-05-20"
+
+metrics:
+  - name: revenue_per_eligible_session
+    type: average
+    definition: "Gross revenue attributed to the session, averaged across every eligible session regardless of whether the upsell prompt was ever shown"
+    grain: session
+    source: warehouse.fct_session_revenue
+    owner: growth-monetization
+
+data:
+  - name: eligible_sessions
+    source: warehouse.fct_session_revenue
+    period: "2026-04-20..2026-05-04"
+    rows: 184320
+
+design:
+  kind: experiment
+  identification: randomized_experiment
+  randomization_unit: session
+  analysis_unit: session
+  arms: [control, treatment]
+  expected_allocation: [0.5, 0.5]
+  baseline_rate: 0.031
+  mde: 0.005
+  alpha: 0.05
+  power: 0.80
+  planned_n_per_arm: 90000
+  duration_days: 14
+  peeking_policy: fixed_horizon
+
+analysis:
+  outcome_type: continuous
+  n_groups: 2
+  paired: false
+  test: welch_t
+  normality_ok: true
+  equal_variance: true
+  independence_ok: true
+
+results:
+  observed_n: [90344, 90112]
+  interim_looks: 1
+  overall_effect: 0.34
+
+claims:
+  - text: >
+      The in-product upsell prompt increases revenue per eligible session by
+      $0.34, measured across every session eligible for the prompt in the test
+      window.
+    type: causal
+    evidence: "RESULTS.md#upsell-revenue-lift"
+    population: "eligible checkout sessions, 2026-04-20 to 2026-05-04"
+    identification: randomized_experiment
+
+assumptions:
+  - assumption: "Revenue attributed to a session in the analysis window reflects the upsell prompt's effect on that session alone."
+    rationale: "Sessions are randomized independently and the prompt has no cross-session carryover mechanism."
+    impact_if_wrong: "A carryover effect would bias the per-session estimate, though the dilution problem below is independent of that risk."
+    checked: false
+
+limitations:
+  - "The upsell prompt is shown only to sessions that reach the checkout step; most eligible sessions never see it. The revenue effect is measured across the whole eligible population with no adjustment for the share that was never exposed; see validity_frame.triggering."
+
+# ── Validity frame (REQ-P8-03) ───────────────────────────────────────────────
+# question_type: causal + design.kind: experiment, so all ten sub-blocks are
+# required from plan onward (R-01 / M-06). The defect: validity_frame.triggering
+# declares analysis_population: eligible with dilution_adjusted: false and
+# expected_trigger_rate 0.41 — well below 1.0 — while metrics[0].type is
+# average, a member of the additive partition {count, sum, average}
+# DSX-INT-030 adjudicates (dsx/frame/interference.py, plan 08-04). Every other
+# sub-block is clean by construction: interference.risk is none (this fixture
+# is not the interference fixture — that is interference-shared-budget's job),
+# stability.novelty_primacy_assessed is true with a real evidence pointer
+# (matching Task 1's fix to the three sibling fixtures), and
+# identification/dependence/sampling_frame/missingness/measurement/units/estimand
+# are all populated the same way the good fixture's are, so no DSX-VAL-* or
+# DSX-SPEC-08x code fires either — this fixture blocks on exactly one encoded
+# defect, the dilution pattern.
+validity_frame:
+  estimand:
+    quantity: "difference in average revenue per eligible session"
+    population: "eligible checkout sessions, 2026-04-20 to 2026-05-04"
+    contrast: "upsell prompt shown when reached (treatment) vs current checkout flow (control)"
+    time_window: "same session as the checkout step"
+    falsifier: "95% CI on the revenue-per-eligible-session lift includes zero, or its lower bound sits below +$0.005"
+
+  units:
+    observation: session
+    assignment: session
+    analysis: session
+
+  identification:
+    strength: strong               # strong | moderate | weak
+    evidence: "Assignment is randomized per session at checkout start, before the prompt eligibility check runs."
+    constraint_source: none        # none | informative_priors | penalisation | design_restriction | hierarchical_pooling
+    constraint_justification: ""
+
+  dependence:
+    structure: clustered           # none | clustered | repeated_measures | temporal | spatial | hierarchical
+    cluster_var: user_id
+    method_family_required: cluster_robust
+
+  interference:
+    risk: none                     # none | shared_budget | marketplace | geo_spillover | social_graph | shared_inventory
+    mechanism: ""
+    mitigation: none               # none | geo_split | cluster_randomisation | time_split | budget_isolation | modelled
+    residual_note: ""
+
+  triggering:
+    eligible_population: "all checkout sessions in the test window"
+    triggered_definition: "reached the point in checkout where the upsell prompt is shown"
+    analysis_population: eligible  # eligible | triggered
+    expected_trigger_rate: 0.41
+    dilution_adjusted: false
+
+  stability:
+    window: "14 days"
+    novelty_primacy_assessed: true
+    evidence: "RESULTS.md#revenue-lift-by-week"
+
+  sampling_frame:
+    source: "warehouse.fct_session_revenue, all regions"
+    claim_population: "all checkout sessions, 2026-04-20 to 2026-05-04"
+    known_exclusions: []
+    selection_risk: "none identified"
+
+  missingness:
+    mechanism: MCAR                # MCAR | MAR | MNAR | not_assessed
+    rate: 0.0
+    method_implied: complete_case
+
+  measurement:
+    construct: "session revenue"
+    operationalisation: "sum of completed order revenue attributed to the session within the checkout window"
+    known_gaps: "none identified"
+
+# ── Inference plan (REQ-P6-04) ───────────────────────────────────────────────
+inference:
+  paradigm: frequentist            # frequentist | bayesian
+  paradigm_justification: team_convention
+  declared_at: pre_data            # pre_data | post_data
+  primary_procedure: welch_t
+  alpha_spending: null
+  fallback_rule: >
+    If either arm's observed n falls below 80% of planned_n_per_arm, extend to
+    the pre-declared duration_days ceiling before analysing.
