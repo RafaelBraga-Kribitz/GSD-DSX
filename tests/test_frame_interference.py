@@ -756,6 +756,40 @@ class TestInterferenceGateLevel(unittest.TestCase):
             )
             self.assertNotIn("DSX-INT-010", by_code)
 
+    # 08-VERIFICATION.md's sixth `missing:` item: re-run the disjointness
+    # proof after the fix, at gate level, across in-vocabulary and
+    # out-of-vocabulary risk and across absent/none/real mitigation, as an
+    # executable check with a recorded result rather than a claim.
+    def test_int_010_and_int_011_never_both_fire_across_the_gate_level_risk_and_mitigation_grid(self):
+        """Gate-level half of the disjointness proof, run after this plan's
+        fix rather than before it. Covers the shipped path — check dispatch,
+        severity mapping, the plan gate's CRITICAL threshold and the exit
+        code — rather than the predicate in isolation. Runs eight real gate
+        invocations, which is why this grid is eight cells and not the unit
+        grid's full cross. Does not assert the finding list equals a fixed
+        set: this fixture also emits DSX-EXP-040, DSX-MET-040 and
+        DSX-PAR-001, none of which this plan is about.
+        """
+        risks = ["shared_budget", "shared_buget"]
+        mitigations = ["none", "geo_split", "budget_isolation", "buget_isolation"]
+        for risk in risks:
+            for mitigation in mitigations:
+                with self.subTest(risk=risk, mitigation=mitigation):
+                    with tempfile.TemporaryDirectory() as tmp:
+                        spec_path = self._copied_fixture(tmp)
+                        self._mutate_interference(spec_path, risk=risk, mitigation=mitigation)
+                        code, findings = _gate_findings(spec_path, "plan")
+                        found_codes = {f["code"] for f in findings}
+                        self.assertFalse(
+                            {"DSX-INT-010", "DSX-INT-011"} <= found_codes,
+                            f"both codes fired for risk={risk!r} mitigation={mitigation!r}",
+                        )
+                        has_either = bool(found_codes & {"DSX-INT-010", "DSX-INT-011"})
+                        if has_either:
+                            self.assertEqual(code, 1)
+                        else:
+                            self.assertEqual(code, 0)
+
 
 def _stability_causal_spec(**overrides: object) -> dict:
     """A minimal causal spec carrying a stability sub-block that declares the
