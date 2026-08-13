@@ -223,6 +223,25 @@ _BOUND_CLAIM_DOCUMENTS = (
     ROOT / ".planning" / "ROADMAP.md",
 )
 
+# The two retired locator-error phrasings closed by plan 09-07 (REQ-P9-03):
+# both tie the 1/(K+1) number directly to the numbered "Theorem 1", when the
+# paper states the bound as unnumbered prose immediately following Theorem 1
+# and again, in its operational form, in Section 3.2 — Theorem 1 itself states
+# only the optional-stopping equality that licenses the bound under known
+# prior odds. Scoped to examples/known-bad/ only, deliberately kept separate
+# from _RETIRED_BOUND_MISATTRIBUTIONS (which is also applied to brief.md,
+# .planning/REQUIREMENTS.md and .planning/ROADMAP.md by
+# test_no_planning_document_misattributes_the_prior_averaged_bound): those
+# three planning documents legitimately carry the corrected form of this
+# citation, so a tuple applied to them must not name phrasings the corrected
+# prose is expected to state. The guard names the phrasings rather than the
+# numbers, so corrected prose stays free to explain the distinction between
+# what Theorem 1 states and where the number itself appears.
+_RETIRED_LOCATOR_ERRORS = (
+    "2016, Theorem 1",
+    "Theorem 1 caps",
+)
+
 
 # Per-fixture expected-caught-defect map (D-03): keyed by fixture slug — the same
 # value _slugs() produces, the spec filename with -ANALYSIS-SPEC.yaml stripped —
@@ -580,6 +599,56 @@ class TestKnownBadCorpus(unittest.TestCase):
                     required, normalized,
                     f"{matches[0].name} no longer states {required!r} — the corrected "
                     "prior-averaged bound must remain stated, not merely un-misattributed",
+                )
+
+    def test_no_corpus_file_commits_the_theorem_1_locator_error(self):
+        """Neither retired locator-error phrasing — pairing the 1/(K+1) number
+        directly with the numbered "Theorem 1" — can be reintroduced silently
+        into any file under examples/known-bad/ (plan 09-07, REQ-P9-03).
+
+        Matched against whitespace-normalized text so a cosmetic line-wrap or
+        this repository's CRLF checkout cannot hide a reintroduced locator
+        error from a plain substring check.
+        """
+        files = [p for p in sorted(CORPUS_DIR.rglob("*")) if p.is_file()]
+        self.assertTrue(files, "no files found under examples/known-bad/")
+        for path in files:
+            normalized = " ".join(path.read_text(encoding="utf-8").split())
+            for retired in _RETIRED_LOCATOR_ERRORS:
+                with self.subTest(file=path.name, retired=retired):
+                    self.assertNotIn(
+                        retired, normalized,
+                        f"{path.name} still commits the Theorem 1 locator error: {retired!r}. "
+                        "Theorem 1 licenses the bound under optional stopping; it does not "
+                        "itself state 1/(K+1), which is unnumbered prose at Section 3.2.",
+                    )
+
+    def test_bayesian_fixture_states_the_corrected_attribution(self):
+        """The negative guard above cannot tell a corrected fixture from one
+        that dropped the claim entirely, so assert the correct three-part
+        attribution positively too — mirroring
+        test_bayesian_postmortem_states_the_deng_bound_and_its_value.
+        """
+        matches = sorted(CORPUS_DIR.glob(f"*bayesian*{SPEC_SUFFIX}"))
+        self.assertEqual(
+            len(matches), 1,
+            f"expected exactly one bayesian known-bad spec, found {[p.name for p in matches]}",
+        )
+        normalized = " ".join(matches[0].read_text(encoding="utf-8").split())
+        required = (
+            "Theorem 1",
+            "1/(K+1)",
+            "1/20 = 0.05",
+            "unnumbered prose",
+            "Section 3.2",
+            "locator error",
+        )
+        for substring in required:
+            with self.subTest(required=substring):
+                self.assertIn(
+                    substring, normalized,
+                    f"{matches[0].name} no longer states {substring!r} — the corrected "
+                    "three-part attribution must remain stated, not merely un-misattributed",
                 )
 
     def test_brief_states_the_ratio_metric_dilution_entry_condition_as_a_falsifiable_blocker(self):
