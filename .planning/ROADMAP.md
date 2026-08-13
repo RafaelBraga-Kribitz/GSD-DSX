@@ -306,20 +306,20 @@ the brief fixes verbatim and D-06 makes irreversible.
      verify/ship with the assessment method cited, and a test asserts no
      `dsx/frame/interference.py` code path reads `inference.paradigm` (D-11).
 
-**Plans:** 6 plans
+**Plans:** 3/6 plans executed
 
 Plans:
 **Wave 1**
 
-- [ ] 08-01-PLAN.md — the published dilution formula in the math kernel, with its
+- [x] 08-01-PLAN.md — the published dilution formula in the math kernel, with its
       counterexample test and range validation (wave 1)
 
-- [ ] 08-02-PLAN.md — corpus prophylaxis: honest stability declarations, the per-fixture
+- [x] 08-02-PLAN.md — corpus prophylaxis: honest stability declarations, the per-fixture
       target-defect map, and the new triggering-dilution fixture pair (wave 1)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 08-03-PLAN.md — `dsx/frame/interference.py` lands with `DSX-INT-010`/`011`, the
+- [x] 08-03-PLAN.md — `dsx/frame/interference.py` lands with `DSX-INT-010`/`011`, the
       risk-to-mitigation map and all build plumbing in one commit (wave 2)
 
 **Wave 3** *(blocked on Wave 2 completion)*
@@ -554,7 +554,7 @@ cases where absence permitted a false pass" is a debate, not a count.
 | 5. Chart review + suppressions | — | Complete | v1.5.0 |
 | 6. Contract extension, decision record, paradigm manifest | 13/13 | Complete | 2026-08-10 |
 | 7. Validity frame checks (`DSX-VAL-*`) | 7/7 | In Progress|  |
-| 8. Interference, triggering, stability (`DSX-INT-*`) | 0/TBD | Not started | - |
+| 8. Interference, triggering, stability (`DSX-INT-*`) | 3/6 | In Progress|  |
 | 9. Monitoring discipline, symmetric (`DSX-PAR-*`) | 5/5 | In Progress|  |
 | 10. Pre-registered inference plan (`DSX-PRE-*`) | 0/TBD | Not started | - |
 | 11. Frequentist admissibility adjudicator (`DSX-ADM-*`) | 0/TBD | Not started | - |
