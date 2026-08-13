@@ -105,12 +105,12 @@ in either direction — they cannot justify a check and cannot excuse skipping o
 
 ## Phase 8 (M2b) — Interference, triggering, stability (`DSX-INT-*`)
 
-- [ ] REQ-P8-01 A declared interference risk other than `none` without either a mitigation or an explicit residual note is blocked, citing the SUTVA statement in Imbens & Rubin (2015)
-- [ ] REQ-P8-02 Shared-budget and marketplace interference patterns are recognised as distinct risks with distinct admissible mitigations
-- [ ] REQ-P8-03 `DSX-INT-030` blocks analysis of the eligible population when treatment reaches only the triggered subset and no dilution adjustment is declared, for additive metrics, asserting `delta_diluted = delta_triggered × trigger_rate`
-- [ ] REQ-P8-04 Ratio-metric dilution is explicitly out of scope for v2.0.0 and recorded in the gated backlog with the entry condition naming the per-unit trigger and outcome data Formula (3) (Deng & Hu 2015, §3.3) requires reaching the gate, since that equation sums over individual users with no closed-form scalar multiplier and the item may be permanently out of scope for a declaration-only gate (corrected per 08-CONTEXT.md D-12 — the prior condition was already met and so was never a real blocker) (D-13)
-- [ ] REQ-P8-05 An unassessed novelty/primacy effect over the declared stability window is flagged, with the assessment method cited
-- [ ] REQ-P8-06 No `DSX-INT-*` check reads `inference.paradigm` (D-11), asserted by test
+- [x] REQ-P8-01 A declared interference risk other than `none` without either a mitigation or an explicit residual note is blocked, citing the SUTVA statement in Imbens & Rubin (2015)
+- [x] REQ-P8-02 Shared-budget and marketplace interference patterns are recognised as distinct risks with distinct admissible mitigations
+- [x] REQ-P8-03 `DSX-INT-030` blocks analysis of the eligible population when treatment reaches only the triggered subset and no dilution adjustment is declared, for additive metrics, asserting `delta_diluted = delta_triggered × trigger_rate`
+- [x] REQ-P8-04 Ratio-metric dilution is explicitly out of scope for v2.0.0 and recorded in the gated backlog with the entry condition naming the per-unit trigger and outcome data Formula (3) (Deng & Hu 2015, §3.3) requires reaching the gate, since that equation sums over individual users with no closed-form scalar multiplier and the item may be permanently out of scope for a declaration-only gate (corrected per 08-CONTEXT.md D-12 — the prior condition was already met and so was never a real blocker) (D-13)
+- [x] REQ-P8-05 An unassessed novelty/primacy effect over the declared stability window is flagged, with the assessment method cited
+- [x] REQ-P8-06 No `DSX-INT-*` check reads `inference.paradigm` (D-11), asserted by test
 
 ## Phase 9 (M2c) — Monitoring discipline, symmetric (`DSX-PAR-*`)
 
@@ -201,12 +201,12 @@ Every v2.0.0 requirement maps to exactly one phase. 53/53 mapped; no orphans, no
 | REQ-P7-07 | Phase 7 | Pending |
 | REQ-P7-08 | Phase 7 | Pending |
 | REQ-P7-09 | Phase 7 | Pending |
-| REQ-P8-01 | Phase 8 | Pending |
-| REQ-P8-02 | Phase 8 | Pending |
-| REQ-P8-03 | Phase 8 | Pending |
+| REQ-P8-01 | Phase 8 | Complete |
+| REQ-P8-02 | Phase 8 | Complete |
+| REQ-P8-03 | Phase 8 | Complete |
 | REQ-P8-04 | Phase 8 | Complete |
 | REQ-P8-05 | Phase 8 | Complete |
-| REQ-P8-06 | Phase 8 | Pending |
+| REQ-P8-06 | Phase 8 | Complete |
 | REQ-P9-01 | Phase 9 | Complete |
 | REQ-P9-02 | Phase 9 | Complete |
 | REQ-P9-03 | Phase 9 | Complete |

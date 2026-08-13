@@ -2,24 +2,24 @@
 gsd_state_version: 1.0
 milestone: v2.0.0
 milestone_name: DSX Validity Frame
-current_phase: 08
-current_phase_name: interference-triggering-stability-dsx-int
+current_phase: 07
+current_phase_name: validity-frame-checks-dsx-val
 status: executing
-stopped_at: Phase 10 context gathered (assumptions mode)
-last_updated: "2026-08-13T22:18:12.902Z"
+stopped_at: Phase 08 complete and verified; Phase 07 still open (plan 07-08 unexecuted, UAT pending)
+last_updated: "2026-08-13T22:41:08.226Z"
 last_activity: 2026-08-14
-last_activity_desc: Phase 08 execution started
+last_activity_desc: Phase 08 complete and verified (6/6 must-haves)
 progress:
   total_phases: 5
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 44
-  completed_plans: 36
-  percent: 40
+  completed_plans: 37
+  percent: 60
 ---
 
 # Project state
 
-**Status:** Executing Phase 08
+**Status:** Phase 08 complete — Phase 07 still open
 **Progress:** [███████████████████░] 34/35 plans (97%)  
 **Locked decisions:** DQ = profile runner + hermetic gates; Glyph = hermetic svg_sha256 only (no MCP dep); forbidden claims = universal pack + optional phase YAML; repro_lock = ARS-style honest-null (not byte-replay); decision replay = structured thresholds only; suppressions = ADR/SPEC authority required (unknown codes → exit 2)  
 **v2.0.0 locked decisions:** DSX-PAR-010 is a distinct code, DSX-EXP-060 untouched (M-01); no `inference.stopping_rule` — PAR-010/011 read the existing `design.peeking_policy` (M-02); PEEKING_POLICIES gains an uncontrolled-continuous-monitoring value (M-03); automated import test enforces the D-03a boundary from M1 (M-04); SELF-001 stays a convention, REVERSALS.md template seeded in M1 (M-05); `validity_frame` sub-block requiredness gated by `question_type` (M-06); existing `suppressions[]` is the pre-v2.0.0 grandfather path (M-07); D-05 citation enforcement automated via `gen-finding-catalogue.py` (M-08); `dependence.method_family_required` reuses `VARIANCE_ADJUSTMENTS` (M-09)
@@ -76,10 +76,10 @@ progress:
 
 ## Current Position
 
-Phase: 08 (interference-triggering-stability-dsx-int) — EXECUTING
-Plan: 1 of 10
-Status: Executing Phase 08
-Last activity: 2026-08-14 — Phase 08 execution started
+Phase: 07 — Validity frame checks (`DSX-VAL-*`) — INCOMPLETE (plan 07-08 unexecuted, UAT pending)
+Plan: 07-08 of 8
+Status: Phase 08 complete and verified; Phase 07 is the lowest open phase
+Last activity: 2026-08-14 — Phase 08 complete and verified (6/6 must-haves)
 
 ## Project Reference
 
