@@ -474,6 +474,43 @@ def design_effect(m: float, icc: float) -> float:
     return 1.0 + (m - 1.0) * icc
 
 
+def diluted_effect(delta_triggered: float, user_trigger_rate: float) -> float:
+    """The naive all-up ("diluted") effect obtained by scaling a triggered-subgroup
+    effect by the share of the eligible population that triggered.
+
+    Citation: Deng, A. & Hu, V. (2015), "Diluted Treatment Effect Estimation for
+    Trigger Analysis in Online Controlled Experiments", WSDM '15, Formula (1) in
+    section 2.1, derived in section 3.2; camera-ready at
+    https://alexdeng.github.io/public/files/wsdm2015-dilution.pdf, ACM Digital
+    Library DOI 10.1145/2684822.2685307. The formula as printed:
+    ∆overall = ∆Tr × N_Tr/N. This identity holds under three preconditions
+    stated in the same section: the metric is additive, there is no treatment
+    effect for untriggered units, and the treatment has no effect on the
+    trigger complement.
+    Reference value: the paper's own time-to-success counterexample (section
+    2.1) publishes a true effect of -26 msec against a naive-formula value of
+    -18 msec for that example. Time-to-success is a ratio metric, and the
+    paper prints this pair precisely to show the additive formula above does
+    not hold there — this function is therefore scoped to additive metrics
+    only. The ratio case is Formula (3) in section 3.3; it sums over
+    individual users, has no closed-form scalar multiplier, and is
+    deliberately not implemented here. The exact triggered effect (∆Tr) and
+    user trigger rate (N_Tr/N) behind the published -18 msec are UNVERIFIED —
+    the -26/-18 msec pair itself was confirmed in the paper's own text, the
+    two individual inputs that multiply to -18 were not. Do not invent them,
+    and do not back-solve a pair that happens to multiply to -18.
+
+    ``user_trigger_rate`` is the paper's N_Tr/N — the share of the eligible
+    population that triggered. It is deliberately not named ``trigger_rate``:
+    the paper's own ``TR`` symbol means a different, per-user quantity
+    (section 3.3), and the contract field is
+    ``validity_frame.triggering.expected_trigger_rate``, not ``trigger_rate``.
+    """
+    if not 0.0 <= user_trigger_rate <= 1.0:
+        raise ValueError(f"user_trigger_rate must be in [0, 1], got {user_trigger_rate!r}")
+    return delta_triggered * user_trigger_rate
+
+
 # ── Sample ratio mismatch ────────────────────────────────────────────────────
 
 

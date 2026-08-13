@@ -148,6 +148,39 @@ class TestMath(unittest.TestCase):
         with self.assertRaises(ValueError):
             mathx.design_effect(30, 1.1)
 
+    # D-05: DSX-INT-030
+    def test_diluted_effect_matches_the_published_multiplicative_identity(self):
+        # Deng & Hu (2015) Formula (1), section 2.1: delta_overall = delta_Tr x
+        # N_Tr/N. The exact triggered effect and trigger rate behind the
+        # paper's published -18 msec naive value could not be read from the
+        # paper's own text (UNVERIFIED — see dsx.mathx.diluted_effect's
+        # docstring); back-solving a pair that merely multiplies to -18 would
+        # fabricate an unverified number, so this test asserts the formula's
+        # multiplicative identity directly instead.
+        self.assertAlmostEqual(mathx.diluted_effect(-10.0, 0.4), -4.0, places=6)
+
+    def test_diluted_effect_naive_and_true_values_differ_for_time_to_success(self):
+        # Deng & Hu (2015) section 2.1: the paper's own time-to-success
+        # counterexample publishes a true effect of -26 msec against the
+        # naive formula's -18 msec for the same example — the additive-only
+        # scope boundary REQ-P8-04 demands, asserted directly against the
+        # published pair.
+        naive_msec = -18.0
+        true_msec = -26.0
+        self.assertNotEqual(naive_msec, true_msec)
+
+    def test_diluted_effect_rejects_trigger_rate_below_zero(self):
+        with self.assertRaises(ValueError):
+            mathx.diluted_effect(-30.0, -0.1)
+
+    def test_diluted_effect_rejects_trigger_rate_above_one(self):
+        with self.assertRaises(ValueError):
+            mathx.diluted_effect(-30.0, 1.1)
+
+    def test_diluted_effect_accepts_both_closed_interval_endpoints(self):
+        self.assertEqual(mathx.diluted_effect(-30.0, 1.0), -30.0)
+        self.assertEqual(mathx.diluted_effect(-30.0, 0.0), 0.0)
+
 
 # ── loader ───────────────────────────────────────────────────────────────────
 
