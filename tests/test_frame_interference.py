@@ -92,6 +92,17 @@ class TestInterferenceUnaddressed(unittest.TestCase):
         self.assertEqual(found[0].where, "spec.validity_frame.interference.mitigation")
         self.assertNotIn("DSX-INT-010", codes(report))
 
+    # 08-REVIEW.md CR-01: an unrecognised mitigation string made the risk look
+    # addressed, so a typo cleared a CRITICAL-threshold gate that an honest
+    # `mitigation: none` would have blocked.
+    def test_out_of_vocabulary_mitigation_with_blank_residual_still_fires_int_010(self):
+        report = interference.check(_causal_spec(mitigation="buget_isolation"))
+        found = [f for f in report.findings if f.code == "DSX-INT-010"]
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0].severity, Severity.CRITICAL)
+        self.assertEqual(found[0].where, "spec.validity_frame.interference.mitigation")
+        self.assertNotIn("DSX-INT-011", codes(report))
+
     def test_same_mitigation_different_risk_produces_no_findings(self):
         report = interference.check(
             _causal_spec(risk="marketplace", mitigation="cluster_randomisation")
@@ -441,6 +452,23 @@ class TestInterferenceGateLevel(unittest.TestCase):
                             ["gate", point, "--spec", str(spec_path), "--phase-dir", phase_dir]
                         )
                         self.assertEqual(code, 0, f"gate {point} unexpectedly blocked:\n{err}")
+
+    # 08-REVIEW.md CR-01: an unrecognised mitigation string made the risk look
+    # addressed, so a typo cleared a CRITICAL-threshold gate that an honest
+    # `mitigation: none` would have blocked. DSX-SPEC-082 must still fire
+    # beside DSX-INT-010 — the vocabulary violation and the unaddressed risk
+    # are different facts about the same spec, not a double report of one.
+    def test_out_of_vocabulary_mitigation_variant_blocks_plan_naming_both_int_010_and_spec_082(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            spec_path = self._copied_fixture(tmp)
+            self._mutate_interference(spec_path, mitigation="buget_isolation")
+            with tempfile.TemporaryDirectory() as phase_dir:
+                code, out, err = self._run(
+                    ["gate", "plan", "--spec", str(spec_path), "--phase-dir", phase_dir]
+                )
+                self.assertEqual(code, 1)
+                self.assertIn("DSX-INT-010", out + err)
+                self.assertIn("DSX-SPEC-082", out + err)
 
 
 def _stability_causal_spec(**overrides: object) -> dict:
