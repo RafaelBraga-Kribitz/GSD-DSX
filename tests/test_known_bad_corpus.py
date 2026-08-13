@@ -582,6 +582,34 @@ class TestKnownBadCorpus(unittest.TestCase):
                     "prior-averaged bound must remain stated, not merely un-misattributed",
                 )
 
+    def test_brief_states_the_ratio_metric_dilution_entry_condition_as_a_falsifiable_blocker(self):
+        """D-18's fourth artifact: the negative guards elsewhere in this module (and in
+        this test file's own retired-phrase constants) can tell that a *false* claim was
+        removed, but none of them can tell a *corrected* row from one that was quietly
+        dropped or softened back to the access premise research proved false (D-12:
+        the Deng & Hu (2015) paper is freely public and Formula (3) in section 3.3 is
+        readable today — access was never the real blocker). Without this positive
+        assertion, brief.md section 6.5's ratio-metric dilution row could be edited back
+        to "obtained from primary source" and nothing here would notice.
+
+        Modeled on test_bayesian_postmortem_states_the_deng_bound_and_its_value: normalise
+        with whitespace collapse (never a line-anchored regex — this checkout is CRLF) and
+        assert a small, deliberately pinned set of substrings that name the claim rather
+        than its exact prose.
+        """
+        normalized = " ".join((ROOT / "brief.md").read_text(encoding="utf-8").split())
+        for required in (
+            "Ratio-metric dilution for trigger analysis",
+            "Formula (3)",
+            "per-unit trigger and outcome data reaching the gate",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(
+                    required, normalized,
+                    f"brief.md no longer states {required!r} — the corrected ratio-metric "
+                    "dilution entry condition must remain stated, not softened or dropped",
+                )
+
     def test_paradigm_symmetry_audit_enumerates_both_halves(self):
         """The negative drift guards elsewhere in this module can tell a
         corrected file from a misattributing one, but none of them can tell a
