@@ -1,18 +1,19 @@
 # A known-bad ANALYSIS-SPEC (REQ-P6-13, D-06). This file is structurally valid —
-# it parses, and it accepts dsx validate and both CRITICAL-threshold gate points,
-# dsx gate plan and dsx gate execute (both exit 0) — but it encodes a real,
-# documented interference failure: a declared shared-budget interference risk with
-# no mitigation and no residual note. It currently also blocks dsx gate verify and
-# dsx gate ship (both exit 1), on five unrelated corpus-completeness gaps —
-# DSX-CLM-031 (evidence pointer does not resolve), DSX-COH-031 (an unchecked,
-# unwaived assumption), DSX-MET-040 (a warehouse-like metric with no sql),
-# DSX-NAR-001 (no narrative.path) and DSX-REP-030 (no reproducibility.entrypoint)
-# — none of which is the interference defect this fixture exists to encode; see
-# tests/test_known_bad_corpus.py's _INCIDENTAL_GAP_CODES for the full measured
-# list. Phase 8's DSX-INT-010 is the code that will block the interference
-# pattern itself once it ships; nothing in this repository adjudicates it
-# today, which is correct — Phase 6 checks shape, not semantics. See the
-# paired POSTMORTEM.md.
+# it parses and accepts dsx validate — and encodes a real, documented interference
+# failure: a declared shared-budget interference risk with no mitigation and no
+# residual note. Phase 8's DSX-INT-010 (dsx/frame/interference.py) is the code that
+# catches this pattern: it now blocks dsx gate plan with exit 1, naming DSX-INT-010.
+# It still clears dsx gate execute with exit 0, because the "interference" check is
+# deliberately absent from that gate profile (dsx/cli.py::GATE_PROFILES, D-03). It
+# also blocks dsx gate verify and dsx gate ship (both exit 1), on five unrelated
+# corpus-completeness gaps — DSX-CLM-031 (evidence pointer does not resolve),
+# DSX-COH-031 (an unchecked, unwaived assumption), DSX-MET-040 (a warehouse-like
+# metric with no sql), DSX-NAR-001 (no narrative.path) and DSX-REP-030 (no
+# reproducibility.entrypoint) — none of which is the interference defect this
+# fixture exists to encode; see tests/test_known_bad_corpus.py's
+# _INCIDENTAL_GAP_CODES for the full measured list. DSX-INT-010 is this fixture's
+# own target defect, recorded in tests/test_known_bad_corpus.py's
+# _TARGET_DEFECT_CODES map. See the paired POSTMORTEM.md.
 #
 #   dsx validate --spec examples/known-bad/interference-shared-budget-ANALYSIS-SPEC.yaml
 
@@ -99,8 +100,8 @@ limitations:
 # question_type: causal + design.kind: experiment, so all ten sub-blocks are
 # required from plan onward (R-01 / M-06). The defect: interference.risk is
 # declared as shared_budget with mitigation: none and an empty residual_note —
-# a declared, unaddressed interference risk. DSX-INT-010 (Phase 8) is the code
-# that will block this once it ships.
+# a declared, unaddressed interference risk. DSX-INT-010 (Phase 8,
+# dsx/frame/interference.py) is the code that blocks this at dsx gate plan.
 #
 # units.observation (impression) is finer than units.assignment (user), which
 # is a real, honestly-declared clustered dependence — impressions nest inside
