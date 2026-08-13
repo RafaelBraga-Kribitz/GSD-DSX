@@ -367,15 +367,14 @@ Plans:
       bypass (08-VERIFICATION.md gap 2 / 08-REVIEW.md CR-02), correct the decision trail, and
       tighten the weak `DSX-SPEC-082` gate assertion (WR-01) (wave 8)
 
-**Wave 10** *(gap closure — blocked on Wave 8 completion; wave 9 is intentionally unused, so the
-wave number matches the plan number for this closure round)*
+**Wave 9** *(gap closure — blocked on Wave 8 completion; closes `08-VERIFICATION.md`)*
 
 - [ ] 08-10-PLAN.md — close the last `08-VERIFICATION.md` gap: an out-of-vocabulary
       `interference.risk` paired with a real, recognised mitigation reached neither `DSX-INT-010` nor
       `DSX-INT-011` and cleared `dsx gate plan`. Drops the risk-vocabulary clause from
       `_check_interference_mitigation_admissibility`'s guard, corrects the three prose sites that
       describe the routing, and turns the disjointness invariant into two executable grid tests
-      (08-REVIEW.md CR-01; REQ-P8-01, REQ-P8-02) (wave 10)
+      (08-REVIEW.md CR-01; REQ-P8-01, REQ-P8-02) (wave 9)
 
 ### Phase 9: Monitoring discipline, symmetric (`DSX-PAR-*`)
 
