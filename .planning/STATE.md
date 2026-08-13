@@ -2,24 +2,24 @@
 gsd_state_version: 1.0
 milestone: v2.0.0
 milestone_name: DSX Validity Frame
-current_phase: 07
-current_phase_name: validity-frame-checks-dsx-val
+current_phase: 08
+current_phase_name: interference-triggering-stability-dsx-int
 status: executing
 stopped_at: Phase 9 complete; Phase 7 human verification and Phase 8 blocking gap remain
-last_updated: "2026-08-13T14:25:36.386Z"
+last_updated: "2026-08-13T15:50:56.180Z"
 last_activity: 2026-08-13
-last_activity_desc: Phase 09 UAT accepted the `DSX-PAR-002` / `DSX-SPEC-085` split
+last_activity_desc: Phase 08 execution started
 progress:
-  total_phases: 7
+  total_phases: 5
   completed_phases: 2
-  total_plans: 35
+  total_plans: 43
   completed_plans: 34
-  percent: 60
+  percent: 40
 ---
 
 # Project state
 
-**Status:** Ready to execute
+**Status:** Executing Phase 08
 **Progress:** [███████████████████░] 34/35 plans (97%)  
 **Locked decisions:** DQ = profile runner + hermetic gates; Glyph = hermetic svg_sha256 only (no MCP dep); forbidden claims = universal pack + optional phase YAML; repro_lock = ARS-style honest-null (not byte-replay); decision replay = structured thresholds only; suppressions = ADR/SPEC authority required (unknown codes → exit 2)  
 **v2.0.0 locked decisions:** DSX-PAR-010 is a distinct code, DSX-EXP-060 untouched (M-01); no `inference.stopping_rule` — PAR-010/011 read the existing `design.peeking_policy` (M-02); PEEKING_POLICIES gains an uncontrolled-continuous-monitoring value (M-03); automated import test enforces the D-03a boundary from M1 (M-04); SELF-001 stays a convention, REVERSALS.md template seeded in M1 (M-05); `validity_frame` sub-block requiredness gated by `question_type` (M-06); existing `suppressions[]` is the pre-v2.0.0 grandfather path (M-07); D-05 citation enforcement automated via `gen-finding-catalogue.py` (M-08); `dependence.method_family_required` reuses `VARIANCE_ADJUSTMENTS` (M-09)
@@ -75,17 +75,17 @@ progress:
 
 ## Current Position
 
-Phase: 07 (validity-frame-checks-dsx-val) — executed, UAT complete, verification `human_needed`
-Plan: 7 of 7 executed
-Status: Ready to execute
-Last activity: 2026-08-13 — Phase 09 UAT accepted the `DSX-PAR-002` / `DSX-SPEC-085` split
+Phase: 08 (interference-triggering-stability-dsx-int) — EXECUTING
+Plan: 1 of 9
+Status: Executing Phase 08
+Last activity: 2026-08-13 — Phase 08 execution started
 
 ## Project Reference
 
 See: .planning/PROJECT.md (updated 2026-08-13)
 
 **Core value:** Gate analytical work on validity before the data is touched.
-**Current focus:** Close Phase 7 (human verification) and Phase 8 (blocking gap). Do not start Phase 10 until those two are closed — Phase 10 soft-depends on 7, Phase 11 hard-depends on 7.
+**Current focus:** Phase 08 — interference-triggering-stability-dsx-int
 
 ## Session
 
