@@ -23,7 +23,12 @@ from dsx import cli  # noqa: E402
 from dsx.findings import Report, Severity  # noqa: E402
 from dsx.frame import interference  # noqa: E402
 from dsx.loader import load  # noqa: E402
-from dsx.spec import INTERFERENCE_MITIGATIONS, INTERFERENCE_RISKS, needs_causal_block  # noqa: E402
+from dsx.spec import (  # noqa: E402
+    ANALYSIS_POPULATIONS,
+    INTERFERENCE_MITIGATIONS,
+    INTERFERENCE_RISKS,
+    needs_causal_block,
+)
 from dsx.suppressions import known_codes  # noqa: E402
 
 
@@ -277,6 +282,31 @@ def _triggering_causal_spec(**overrides: object) -> dict:
     }
 
 
+def _mutated_triggering_fixture(tmp: str, **overrides: object) -> Path:
+    """Copy ``examples/known-bad/`` into ``tmp`` and apply the given overrides
+    to the triggering-dilution fixture's ``validity_frame.triggering``
+    sub-block, returning the path to the mutated copy.
+
+    Copies the whole directory, not just the one file — the corpus fixtures
+    resolve sibling artifacts from their own directory, matching
+    ``TestInterferenceGateLevel._copied_fixture``'s idiom. Never edits the
+    committed fixture in place. 08-VERIFICATION.md gap 2 / 08-REVIEW.md
+    CR-02: an out-of-vocabulary ``analysis_population`` string (a
+    one-character misspelling of ``eligible``) silenced the CRITICAL
+    DSX-INT-030 check the committed fixture exists to demonstrate, because
+    any population string other than the literal ``eligible`` was treated as
+    an honest declaration of the triggered population.
+    """
+    target = Path(tmp) / "known-bad"
+    shutil.copytree(ROOT / "examples" / "known-bad", target)
+    spec_path = target / "triggering-dilution-ANALYSIS-SPEC.yaml"
+    spec = load(spec_path)
+    triggering = spec.setdefault("validity_frame", {}).setdefault("triggering", {})
+    triggering.update(overrides)
+    spec_path.write_text(json.dumps(spec), encoding="utf-8")
+    return spec_path
+
+
 class TestTriggeringDilution(unittest.TestCase):
     # D-05: DSX-INT-030
     def test_eligible_population_not_adjusted_additive_metric_fires_critical_int_030(self):
@@ -298,6 +328,19 @@ class TestTriggeringDilution(unittest.TestCase):
                 )
                 report = interference.check(spec)
                 self.assertNotIn("DSX-INT-030", codes(report))
+
+    # 08-VERIFICATION.md gap 2 / 08-REVIEW.md CR-02: an out-of-vocabulary
+    # analysis_population string (a one-character misspelling of `eligible`)
+    # was treated as an honest declaration of the triggered population, so a
+    # typo silenced the CRITICAL check the committed fixture exists to
+    # demonstrate.
+    def test_out_of_vocabulary_analysis_population_still_fires_int_030(self):
+        spec = _triggering_causal_spec(analysis_population="eligable")
+        report = interference.check(spec)
+        found = [f for f in report.findings if f.code == "DSX-INT-030"]
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0].severity, Severity.CRITICAL)
+        self.assertEqual(found[0].where, "spec.validity_frame.triggering.dilution_adjusted")
 
     def test_ratio_scope_boundary_ratio_metric_produces_no_finding(self):
         spec = _triggering_causal_spec()
@@ -372,6 +415,16 @@ class TestTriggeringDilution(unittest.TestCase):
         self.assertEqual(additive & ratio, frozenset())
         self.assertLess(additive | ratio, METRIC_TYPES)
 
+    # 08-VERIFICATION.md gap 2 / 08-REVIEW.md CR-02: the corrected
+    # `_check_triggering_dilution` guard names `triggered` as a literal
+    # string, which is only a complete description of the not-adjudicated
+    # branch while this vocabulary has exactly two members. A third member
+    # added without revisiting the guard would be adjudicated as if it were
+    # a misspelling of `eligible`, which may or may not be right, and this
+    # test forces that decision to be made rather than defaulted.
+    def test_analysis_populations_vocabulary_is_exactly_eligible_and_triggered(self):
+        self.assertEqual(set(ANALYSIS_POPULATIONS), {"eligible", "triggered"})
+
     def test_descriptive_observational_spec_produces_no_finding_despite_full_dilution_defect(self):
         spec = _triggering_causal_spec()
         spec["question_type"] = "descriptive"
@@ -426,25 +479,80 @@ class TestTriggeringDilution(unittest.TestCase):
                 )
             self.assertEqual(code, 0, f"gate execute unexpectedly blocked:\n{err.getvalue()}")
 
+    # 08-VERIFICATION.md gap 2 / 08-REVIEW.md CR-02: an out-of-vocabulary
+    # analysis_population string (a one-character misspelling of `eligible`)
+    # was treated as an honest declaration of the triggered population, so a
+    # typo silenced the CRITICAL check the committed fixture exists to
+    # demonstrate. The `where` assertion on DSX-SPEC-082 pins that the
+    # vocabulary violation fired for the `analysis_population` field
+    # specifically, which no substring assertion can establish, and
+    # documents that the two findings are two different facts about one
+    # spec rather than one defect reported twice.
+    def test_out_of_vocabulary_analysis_population_variant_blocks_plan_naming_int_030(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            spec_path = _mutated_triggering_fixture(tmp, analysis_population="eligable")
+            code, findings = _gate_findings(spec_path, "plan")
+            by_code = {f["code"]: f for f in findings}
+            self.assertEqual(code, 1)
+            self.assertIn("DSX-INT-030", by_code)
+            self.assertEqual(by_code["DSX-INT-030"]["severity"], "CRITICAL")
+            self.assertIn("DSX-SPEC-082", by_code)
+            self.assertEqual(by_code["DSX-SPEC-082"]["severity"], "HIGH")
+            self.assertEqual(
+                by_code["DSX-SPEC-082"]["where"],
+                "spec.validity_frame.triggering.analysis_population",
+            )
+
+    # 08-REVIEW.md WR-01's negative counterpart: an absence assertion against
+    # rendered text would silently start failing the day any finding's
+    # detail names DSX-INT-030, the same contamination WR-01 documents in
+    # the opposite direction. Asserts against the structured finding list
+    # instead, and pins the exit code it never checked before.
+    #
+    # Plan 08-09 deviation (documented in the plan's SUMMARY.md): this test's
+    # own name has claimed all four fixtures "clear plan" since it was
+    # written in feat(08-04), commit 36ff448 — before Phase 9 shipped
+    # DSX-PAR-010/DSX-PAR-011. Those two CRITICAL checks now legitimately
+    # block `plan` for the two monitoring fixtures, for reasons entirely
+    # unrelated to DSX-INT-030 (verified by hand: DSX-PAR-010 fires on
+    # frequentist-uncontrolled-continuous-ANALYSIS-SPEC.yaml, DSX-PAR-011 on
+    # bayesian-continuous-monitoring-ANALYSIS-SPEC.yaml). The original
+    # assertion never checked exit codes, so this drift went unnoticed.
+    # Pinning the real, observed per-fixture exit code is strictly stronger
+    # than the plan's stated "assert 0 for all four" without asserting
+    # something false about fixtures this plan does not own.
     def test_good_and_monitoring_fixtures_and_template_still_clear_plan(self):
         good = ROOT / "examples" / "good-ANALYSIS-SPEC.yaml"
-        monitoring = [
-            ROOT / "examples" / "known-bad" / "bayesian-continuous-monitoring-ANALYSIS-SPEC.yaml",
-            ROOT / "examples" / "known-bad" / "frequentist-uncontrolled-continuous-ANALYSIS-SPEC.yaml",
-        ]
+        bayesian_monitoring = (
+            ROOT / "examples" / "known-bad" / "bayesian-continuous-monitoring-ANALYSIS-SPEC.yaml"
+        )
+        frequentist_monitoring = (
+            ROOT
+            / "examples"
+            / "known-bad"
+            / "frequentist-uncontrolled-continuous-ANALYSIS-SPEC.yaml"
+        )
         template = ROOT / "templates" / "ANALYSIS-SPEC.yaml"
-        for fixture in [good, template, *monitoring]:
+        expected_exit_code = {
+            good.name: 0,
+            template.name: 0,
+            # Blocked by DSX-PAR-011 (CRITICAL), unrelated to DSX-INT-030.
+            bayesian_monitoring.name: 1,
+            # Blocked by DSX-PAR-010 (CRITICAL), unrelated to DSX-INT-030.
+            frequentist_monitoring.name: 1,
+        }
+        for fixture in [good, template, bayesian_monitoring, frequentist_monitoring]:
             with self.subTest(fixture=fixture.name):
-                with tempfile.TemporaryDirectory() as phase_dir:
-                    out, err = io.StringIO(), io.StringIO()
-                    with redirect_stdout(out), redirect_stderr(err):
-                        code = cli.main(
-                            ["gate", "plan", "--spec", str(fixture), "--phase-dir", phase_dir]
-                        )
-                    self.assertNotIn(
-                        "DSX-INT-030", out.getvalue() + err.getvalue(),
-                        f"{fixture.name} unexpectedly names DSX-INT-030 at plan",
-                    )
+                code, findings = _gate_findings(fixture, "plan")
+                self.assertEqual(
+                    code, expected_exit_code[fixture.name],
+                    f"{fixture.name} exit code drifted from the observed baseline",
+                )
+                by_code = {f["code"]: f for f in findings}
+                self.assertNotIn(
+                    "DSX-INT-030", by_code,
+                    f"{fixture.name} unexpectedly names DSX-INT-030 at plan",
+                )
 
     def test_good_fixture_clears_ship_resolving_sibling_artifacts_from_its_own_directory(self):
         # No --phase-dir here, deliberately: dsx/cli.py::cmd_gate resolves relative
@@ -523,17 +631,28 @@ class TestInterferenceGateLevel(unittest.TestCase):
     # `mitigation: none` would have blocked. DSX-SPEC-082 must still fire
     # beside DSX-INT-010 — the vocabulary violation and the unaddressed risk
     # are different facts about the same spec, not a double report of one.
+    # 08-REVIEW.md WR-01: the rendered report prints each finding's `detail`,
+    # and DSX-INT-010's `detail` quotes DSX-SPEC-082 unconditionally, so a
+    # substring assertion on the rendered text is satisfied by prose whenever
+    # DSX-INT-010 fires at all, whether or not DSX-SPEC-082 actually fired.
+    # Asserts against the structured finding list instead, which is the only
+    # evidence source that can distinguish a fired finding from a code merely
+    # quoted inside another finding's prose.
     def test_out_of_vocabulary_mitigation_variant_blocks_plan_naming_both_int_010_and_spec_082(self):
         with tempfile.TemporaryDirectory() as tmp:
             spec_path = self._copied_fixture(tmp)
             self._mutate_interference(spec_path, mitigation="buget_isolation")
-            with tempfile.TemporaryDirectory() as phase_dir:
-                code, out, err = self._run(
-                    ["gate", "plan", "--spec", str(spec_path), "--phase-dir", phase_dir]
-                )
-                self.assertEqual(code, 1)
-                self.assertIn("DSX-INT-010", out + err)
-                self.assertIn("DSX-SPEC-082", out + err)
+            code, findings = _gate_findings(spec_path, "plan")
+            by_code = {f["code"]: f for f in findings}
+            self.assertEqual(code, 1)
+            self.assertIn("DSX-INT-010", by_code)
+            self.assertEqual(by_code["DSX-INT-010"]["severity"], "CRITICAL")
+            self.assertIn("DSX-SPEC-082", by_code)
+            self.assertEqual(by_code["DSX-SPEC-082"]["severity"], "HIGH")
+            self.assertEqual(
+                by_code["DSX-SPEC-082"]["where"], "spec.validity_frame.interference.mitigation"
+            )
+            self.assertNotIn("DSX-INT-011", by_code)
 
     # 08-VERIFICATION.md gap 1 / 08-REVIEW.md CR-01: same defect class as the
     # mitigation-field variant above, on the adjacent `risk` field. Asserts

@@ -375,11 +375,16 @@ def _check_triggering_dilution(spec: dict, frame: dict, report: Report) -> None:
     """Emit DSX-INT-030 when an additive metric is analysed on the eligible
     population with no declared dilution adjustment.
 
-    Fires when ``validity_frame.triggering.analysis_population`` is
-    ``eligible``, ``validity_frame.triggering.dilution_adjusted`` is not the
-    literal boolean ``True``, and at least one declared top-level ``metrics``
-    entry has a normalized ``type`` that is a member of
-    ``_ADDITIVE_METRIC_TYPES``. One finding is emitted for the spec, not one
+    Fires unless the declared ``validity_frame.triggering.analysis_population``
+    is the member ``triggered`` or is not declared at all — so ``eligible``
+    and any unrecognised string both reach the judgment — provided
+    ``validity_frame.triggering.dilution_adjusted`` is not the literal
+    boolean ``True`` and at least one declared top-level ``metrics`` entry
+    has a normalized ``type`` that is a member of ``_ADDITIVE_METRIC_TYPES``.
+    A population string the closed two-member vocabulary does not contain is
+    a misspelling, not a declaration of ``triggered``, and reading it as
+    ``triggered`` would make a typo the cheapest way past a
+    CRITICAL-threshold gate. One finding is emitted for the spec, not one
     per metric — the defect is the single missing adjustment declaration.
     A metric with no declared ``type`` is neither additive nor ratio; it
     cannot be classified, so it is skipped rather than adjudicated, and one
@@ -422,12 +427,22 @@ def _check_triggering_dilution(spec: dict, frame: dict, report: Report) -> None:
 
     population = get(triggering, "analysis_population")
     normalized_population = normalize(population) if not is_blank(population) else ""
-    if normalized_population != "eligible":
+    if normalized_population == "triggered" or not normalized_population:
+        # Honestly declared as the triggered population, or not declared at
+        # all — dsx.spec.ANALYSIS_POPULATIONS' other member, or absence,
+        # which is DSX-SPEC-081 and DSX-SPEC-082 territory rather than this
+        # check's. Nothing for this check to adjudicate.
         return
-
-    # Judgment point: the analysis population is eligible. The rest of this
-    # function decides whether an additive metric was analysed with no
-    # declared dilution adjustment.
+    # Judgment point: "eligible" or any unrecognised string reaches here.
+    # ANALYSIS_POPULATIONS is a closed two-member vocabulary
+    # (test_analysis_populations_vocabulary_is_exactly_eligible_and_triggered
+    # pins it to exactly those two members), so an out-of-vocabulary value is
+    # a misspelling, not a declaration of `triggered`, and it must not be
+    # cheaper at the gate than writing analysis_population: eligible
+    # honestly. DSX-SPEC-082 still fires independently for the vocabulary
+    # violation itself, so the two findings are two facts about one spec.
+    # The rest of this function decides whether an additive metric was
+    # analysed with no declared dilution adjustment.
     dilution_adjusted = triggering.get("dilution_adjusted")
     # Deliberate identity comparison, never is_blank(): is_blank(False) is
     # False (a bool is none of is_blank's blank shapes — None, empty string,
@@ -528,10 +543,11 @@ def _check_triggering_dilution(spec: dict, frame: dict, report: Report) -> None:
                 "metrics[].type",
             ],
             rule=(
-                "DSX-INT-030 fires when triggering.analysis_population is "
-                "'eligible', triggering.dilution_adjusted is not the literal "
-                "boolean True, and at least one declared metric's normalized "
-                "type is a member of _ADDITIVE_METRIC_TYPES."
+                "DSX-INT-030 fires unless triggering.analysis_population is "
+                "the member 'triggered' or is not declared at all, provided "
+                "triggering.dilution_adjusted is not the literal boolean "
+                "True and at least one declared metric's normalized type is "
+                "a member of _ADDITIVE_METRIC_TYPES."
             ),
             citation=(
                 "Deng & Hu (2015), Diluted Treatment Effect Estimation for "
