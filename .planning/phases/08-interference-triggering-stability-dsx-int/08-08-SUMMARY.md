@@ -282,3 +282,12 @@ None — no external service configuration required.
 ---
 *Phase: 08-interference-triggering-stability-dsx-int*
 *Completed: 2026-08-13*
+
+## Self-Check: PASSED
+
+- FOUND: `tests/test_frame_interference.py`
+- FOUND: `dsx/frame/interference.py`
+- FOUND: `.planning/phases/08-interference-triggering-stability-dsx-int/08-08-SUMMARY.md`
+- FOUND commit `eb8ae4c` (test(08-08): add failing out-of-vocabulary-risk regression tests)
+- FOUND commit `cf4da61` (fix(08-08): adjudicate an unrecognised interference risk instead of dropping it)
+- FOUND commit `3de6ee3` (docs(08-08): add plan summary)
