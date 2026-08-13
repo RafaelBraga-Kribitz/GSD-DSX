@@ -175,9 +175,15 @@ Requirements: REQ-P10-01 … REQ-P10-04 (4 requirements, `.planning/REQUIREMENTS
     a sha256 over `json.dumps({"validity_frame": …, "inference": …}, sort_keys=True)`, documented as
     "Key-order invariant … unchanged by edits elsewhere in the spec. Change-detection, not a security
     control." It is carried on `InvocationHeader` and appended by `_write_decision_trail`
-    (`dsx/cli.py:302-313`) on **every** gate point. The committed `examples/DECISIONS.jsonl` proves it
-    in the artifact: line 1 is a `record_type: invocation` row carrying `frame_digest` and
-    `gate_point: plan`.
+    (`dsx/cli.py:302-313`) on **every** gate point.
+  - **Correction, made after research (2026-08-13):** this decision originally cited
+    "the committed `examples/DECISIONS.jsonl`" as proof. **That file is gitignored** — `.gitignore:7`
+    carries the bare pattern `DECISIONS.jsonl`, `git ls-files` returns nothing and it has no history
+    (**re-verified by the orchestrator**). The 8,487-line copy on disk is local accumulation from
+    repeated test and gate runs, not a checked-in fixture. **The planner must not cite it as a stable
+    version-controlled artifact.** The decision itself stands unchanged — `frame_digest()` is genuinely
+    written on every gate run, and the researcher reproduced that independently — but the mechanism is
+    proved by the code and by running the gate, not by a committed file.
   - This is precisely what `.planning/research/PITFALLS.md:88-92` prescribed and `:721` mapped to M3
     as "reconciliation checks the lock, not the string".
   - **A second lock artifact must not be built.** Two digests over the same bytes immediately raises
@@ -423,6 +429,23 @@ None — `todo.match-phase 10` returned zero matches.
 
 **Downstream agents MUST read these before planning or implementing.**
 
+> **⚠ Line-number corrections (post-research, 2026-08-13).** Research re-read every citation below and
+> found **seven test line references in this file point to the wrong location** — they name comment
+> prose, loop setup, or an adjacent unrelated test rather than the code claimed. **Read
+> `10-RESEARCH.md` §"Corrections to 10-CONTEXT.md" and use its corrected line numbers**, not the ones
+> in this file, for: `tests/test_dsx.py:1390-1393`, `:2830-2834`, `:2849-2850`;
+> `tests/test_frame_interference.py:169-185`; `tests/test_known_bad_corpus.py:243-253`, `:259-265`,
+> `:270-326`. **No corrected citation changes a decision** — every guard named here is real and still
+> flips; only the coordinates were off. Every other citation in this section was independently re-read
+> and confirmed accurate.
+>
+> **⚠ New blocking finding not anticipated here.** `tests/test_known_bad_corpus.py`'s `_gate_findings()`
+> helper builds a fresh empty temp directory per call, so no `verify`/`ship` call ever has a prior
+> plan-time header on file. The moment `prereg` is registered, **D-09's exit-2 rule fires on every
+> existing fixture**, and because a `CheckError` exit prints plain text even under `--json`, the
+> harness fails with an unrelated JSON decode error rather than a legible assertion. This must be
+> fixed in the same commit that edits `GATE_PROFILES`. See `10-RESEARCH.md` Pitfall 1.
+
 ### Binding inputs — not re-litigable
 
 - `brief.md` §4 — brief D-01…D-14. D-01, D-02, D-04, D-05, D-06, D-10 and D-11 are directly
@@ -471,7 +494,9 @@ None — `todo.match-phase 10` returned zero matches.
   (`fallback_rule`) — the scaffold, and the suppressions comment documenting the exit-2 precedent.
 - `examples/good-ANALYSIS-SPEC.yaml:150` (`analysis.test`), `:231-255` (`results.tests[]` — **no
   procedure field**), `:359-364` (the `inference:` block).
-- `examples/DECISIONS.jsonl` — the committed artifact proving `frame_digest` reaches disk.
+- `examples/DECISIONS.jsonl` — **gitignored working-directory output, NOT a committed fixture**
+  (`.gitignore:7`; verified). Useful to inspect locally to see the real record shape; never cite it as
+  a stable artifact and never assert its contents in a test.
 - `examples/known-bad/*` — the five existing fixtures; one new fixture joins them (D-16).
 - `tests/test_known_bad_corpus.py:134-138` `_TARGET_DEFECT_CODES`; `:176` the CRITICAL filter that
   makes D-11's severity load-bearing; `:243-253` the comment on why both maps exist; `:259-265`
@@ -533,9 +558,9 @@ None — `todo.match-phase 10` returned zero matches.
 
 ### Reusable Assets
 
-- **`frame_digest()`** (`dsx/decisions.py:181-190`) — the content lock, shipped in Phase 6, written on
-  every gate run, and provably reaching disk (`examples/DECISIONS.jsonl`). Phase 10's single largest
-  saving: ROADMAP SC 4's hardest clause is already built.
+- **`frame_digest()`** (`dsx/decisions.py:181-190`) — the content lock, shipped in Phase 6 and written
+  on every gate run (reproduced independently during research). Phase 10's single largest saving:
+  ROADMAP SC 4's hardest clause is already built. Note the trail file it writes to is gitignored.
 - **`normalize()`** (`dsx/spec.py:409-410`) — solves the free-string comparison brittleness between
   `wild cluster bootstrap` and `wild_cluster_bootstrap` without coining a vocabulary.
 - **`CheckError` raised from inside a check** — the only route to exit 2, with `apply_suppressions` as

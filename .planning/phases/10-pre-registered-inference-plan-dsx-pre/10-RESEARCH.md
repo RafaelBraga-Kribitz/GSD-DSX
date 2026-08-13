@@ -841,7 +841,10 @@ A plain comment line immediately above the test method, naming exactly one code.
 `tests/*.py` file's text, but placing it directly above the specific test that proves the code is the
 established convention.
 
-## Research Target 9 — Validation Architecture
+## Validation Architecture
+
+*(Research Target 9. This heading is matched literally by plan-phase step 5.5's
+`grep -l "## Validation Architecture"` — do not re-title it.)*
 
 ### Test Framework
 
