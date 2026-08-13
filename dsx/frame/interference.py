@@ -134,13 +134,28 @@ def _check_interference_unaddressed(frame: dict, report: Report) -> None:
 
     Fires when ``validity_frame.interference.risk`` is a member of
     ``dsx.spec.INTERFERENCE_RISKS`` other than ``none``, the declared
-    ``mitigation`` is ``none`` or absent, and ``residual_note`` is blank, an
+    ``mitigation`` is ``none``, absent, or not a recognised member of
+    ``dsx.spec.INTERFERENCE_MITIGATIONS``, and ``residual_note`` is blank, an
     angle-bracket placeholder, or a refusal token
-    (``is_placeholder_or_refusal()``). A declared, non-``none`` mitigation
-    routes to ``_check_interference_mitigation_admissibility`` (DSX-INT-011)
-    instead — the two codes are disjoint by construction: this one requires
-    the absence of a declared mitigation, that one requires its presence
-    (proven by Test 6 in ``tests/test_frame_interference.py``).
+    (``is_placeholder_or_refusal()``). An unrecognised mitigation string is
+    treated identically to an absent one: a mitigation the vocabulary does
+    not contain cannot be admissible for any risk, so it addresses nothing,
+    and treating a misspelling as a declared mitigation made a typo the
+    cheapest way past this CRITICAL-threshold gate — the same "cheapest way
+    past the gate" failure mode ``dsx/frame/paradigm.py``'s D-10 commentary
+    is explicit about avoiding for the paradigm family. ``DSX-SPEC-082``
+    keeps firing independently for the vocabulary violation itself; the two
+    findings describe different facts about the same spec, not a double
+    report of one defect.
+
+    Disjointness from ``_check_interference_mitigation_admissibility``
+    (DSX-INT-011) now rests on vocabulary membership, not merely on presence:
+    this check requires a mitigation that is absent, ``none``, or
+    unrecognised; DSX-INT-011 requires one that is present, not ``none``, and
+    recognised. Those two conditions cannot both hold, so a declared,
+    non-``none``, in-vocabulary mitigation routes to
+    ``_check_interference_mitigation_admissibility`` instead (proven by Test
+    6 in ``tests/test_frame_interference.py``).
 
     Citation: Imbens, G.W. and Rubin, D.B. (2015), *Causal Inference for
     Statistics, Social, and Biomedical Sciences*, Cambridge University Press,
@@ -169,7 +184,10 @@ def _check_interference_unaddressed(frame: dict, report: Report) -> None:
     mitigation = get(frame, "interference.mitigation")
     residual_note = get(frame, "interference.residual_note")
     normalized_mitigation = normalize(mitigation) if not is_blank(mitigation) else "none"
-    mitigation_absent = normalized_mitigation == "none"
+    mitigation_absent = (
+        normalized_mitigation == "none"
+        or normalized_mitigation not in INTERFERENCE_MITIGATIONS
+    )
     residual_missing = is_placeholder_or_refusal(residual_note)
     unaddressed = mitigation_absent and residual_missing
 
@@ -185,7 +203,12 @@ def _check_interference_unaddressed(frame: dict, report: Report) -> None:
                 "is present: no mitigation admissible for this risk was declared, "
                 "and no non-placeholder residual note explains what remains "
                 "unaddressed. A declared interference risk with no design-level "
-                "answer and no honest acknowledgement asserts SUTVA by silence."
+                "answer and no honest acknowledgement asserts SUTVA by silence. "
+                "If the declared mitigation string is not a recognised member of "
+                "INTERFERENCE_MITIGATIONS, DSX-SPEC-082 also fires on the same "
+                "input — that finding says the string is not in the vocabulary, "
+                "this one says the risk is left unaddressed, and both are true "
+                "at once about the same spec; this is not a double report."
             ),
             remedy=(
                 "Declare a mitigation admissible for the declared risk — for "
@@ -212,9 +235,10 @@ def _check_interference_unaddressed(frame: dict, report: Report) -> None:
             ],
             rule=(
                 "DSX-INT-010 fires when interference.risk is a non-'none' member "
-                "of INTERFERENCE_RISKS, interference.mitigation is 'none' or "
-                "blank, and interference.residual_note is blank, an "
-                "angle-bracket placeholder, or a refusal token under "
+                "of INTERFERENCE_RISKS, interference.mitigation is 'none', blank, "
+                "or not a recognised member of INTERFERENCE_MITIGATIONS, and "
+                "interference.residual_note is blank, an angle-bracket "
+                "placeholder, or a refusal token under "
                 "is_placeholder_or_refusal()."
             ),
             citation=(
