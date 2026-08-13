@@ -204,8 +204,8 @@ Every v2.0.0 requirement maps to exactly one phase. 53/53 mapped; no orphans, no
 | REQ-P8-01 | Phase 8 | Pending |
 | REQ-P8-02 | Phase 8 | Pending |
 | REQ-P8-03 | Phase 8 | Pending |
-| REQ-P8-04 | Phase 8 | Pending |
-| REQ-P8-05 | Phase 8 | Pending |
+| REQ-P8-04 | Phase 8 | Complete |
+| REQ-P8-05 | Phase 8 | Complete |
 | REQ-P8-06 | Phase 8 | Pending |
 | REQ-P9-01 | Phase 9 | Pending |
 | REQ-P9-02 | Phase 9 | Pending |

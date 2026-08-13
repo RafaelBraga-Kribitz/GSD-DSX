@@ -319,7 +319,7 @@ the brief fixes verbatim and D-06 makes irreversible.
      verify/ship with the assessment method cited, and a test asserts no
      `dsx/frame/interference.py` code path reads `inference.paradigm` (D-11).
 
-**Plans:** 5/6 plans executed
+**Plans:** 6/6 plans executed
 
 Plans:
 **Wave 1**
@@ -347,7 +347,7 @@ Plans:
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
-- [ ] 08-06-PLAN.md — the two success-criteria corrections and the matching REQ-P8-04
+- [x] 08-06-PLAN.md — the two success-criteria corrections and the matching REQ-P8-04
       amendment; the phase's only writer of the tracking files (wave 5)
 
 ### Phase 9: Monitoring discipline, symmetric (`DSX-PAR-*`)
@@ -567,7 +567,7 @@ cases where absence permitted a false pass" is a debate, not a count.
 | 5. Chart review + suppressions | — | Complete | v1.5.0 |
 | 6. Contract extension, decision record, paradigm manifest | 13/13 | Complete | 2026-08-10 |
 | 7. Validity frame checks (`DSX-VAL-*`) | 7/7 | In Progress|  |
-| 8. Interference, triggering, stability (`DSX-INT-*`) | 5/6 | In Progress|  |
+| 8. Interference, triggering, stability (`DSX-INT-*`) | 6/6 | In Progress|  |
 | 9. Monitoring discipline, symmetric (`DSX-PAR-*`) | 5/5 | In Progress|  |
 | 10. Pre-registered inference plan (`DSX-PRE-*`) | 0/TBD | Not started | - |
 | 11. Frequentist admissibility adjudicator (`DSX-ADM-*`) | 0/TBD | Not started | - |
