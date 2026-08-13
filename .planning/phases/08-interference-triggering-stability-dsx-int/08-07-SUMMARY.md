@@ -164,6 +164,7 @@ Each task was committed atomically, with the RED (test) commit landing before th
 ### Notes (not auto-fixed — pre-existing, out of scope)
 
 **1. Plan acceptance criterion for Task 3 states `python3 -m dsx validate --spec examples/bad-ANALYSIS-SPEC.yaml` exits 0; actual observed behavior is exit 1.**
+
 - **Found during:** Task 3, final proof
 - **Issue:** `dsx validate` uses `--block-on CRITICAL` by default. `examples/bad-ANALYSIS-SPEC.yaml` is a deliberately defective fixture that already carries multiple CRITICAL findings unrelated to interference (`DSX-SPEC-010` missing `decision_rule`, six `DSX-SPEC-081` missing `validity_frame` sub-blocks) — pre-existing in the committed tree, confirmed by running `dsx validate` against `git show HEAD:examples/bad-ANALYSIS-SPEC.yaml` (i.e. the file as committed before this plan's comment-only edit) and observing the identical exit code 1 with the identical CRITICAL findings. This plan's IN-02 change is a comment-only edit to an already-commented line; it cannot and does not change the exit code either way.
 - **Resolution:** Did not "fix" this — it is out of this plan's scope (`_check_interference_unaddressed` and friends are the only intended production surface; the plan's `prohibitions` block does not authorize touching `DSX-SPEC-010`/`DSX-SPEC-081` severities). The acceptance criterion's actual intent — "confirm the comment edit didn't break the subset YAML loader" (stated explicitly in the plan's action text: "confirm that with `dsx validate` rather than assuming it") — is satisfied: the fixture still parses and still produces its full, correct finding set (no exit 2 / parse error). Documented here per the project's "Verification Before Claiming" working agreement rather than silently reporting the literal criterion as passed.
@@ -194,3 +195,16 @@ None — no external service configuration required.
 ---
 *Phase: 08-interference-triggering-stability-dsx-int*
 *Completed: 2026-08-13*
+
+## Self-Check: PASSED
+
+- FOUND: `dsx/frame/interference.py`
+- FOUND: `tests/test_frame_interference.py`
+- FOUND: `tests/test_known_bad_corpus.py`
+- FOUND: `tests/test_dsx.py`
+- FOUND: `examples/bad-ANALYSIS-SPEC.yaml`
+- FOUND: `.planning/phases/08-interference-triggering-stability-dsx-int/08-07-SUMMARY.md`
+- FOUND commit `21cdc04` (test(08-07): add failing bypass tests and the two corpus guards)
+- FOUND commit `f669607` (fix(08-07): treat an unrecognised interference.mitigation as absent for DSX-INT-010)
+- FOUND commit `7c5cfec` (fix(08-07): close WR-02, WR-03 and IN-02; record IN-01 as deferred)
+- FOUND commit `cbb6eff` (docs(08-07): add SUMMARY)
