@@ -3052,6 +3052,81 @@ class TestPhase9MonitoringDiscipline(unittest.TestCase):
         self.assertEqual(1 / (15 + 1), 0.0625)
         # D-05: DSX-PAR-011
 
+    # ── type-domain closure (09-06-PLAN.md gap closure, REQ-P9-06) ──────────
+    # A bare 0, 0.0 or False previously read as "declared" and cleared the
+    # CRITICAL pair with no declared content. These tests pin the full type
+    # domain of all three clearing declarations, on both paradigms, as a
+    # genuine runtime cross product over _MONITORING_DISCIPLINE rather than
+    # a hand-written list of the three field names.
+
+    NON_CLEARING_VALUES = (
+        None, "", "   ", 0, 0.0, False, True, [], ["a"], {}, {"m": "obf"},
+    )
+
+    def test_non_text_and_blank_values_never_clear_either_half(self):
+        from dsx.frame import paradigm
+
+        all_codes = {code for code, _fields in paradigm._MONITORING_DISCIPLINE.values()}
+        for member, (code, clearing_fields) in paradigm._MONITORING_DISCIPLINE.items():
+            for field in clearing_fields:
+                for value in self.NON_CLEARING_VALUES:
+                    with self.subTest(paradigm=member, field=field, value=repr(value)):
+                        spec = self._spec(paradigm=member, **{field: value})
+                        found = codes(paradigm.check(spec))
+                        self.assertIn(code, found)
+                        # Declaring one paradigm applies only that paradigm's
+                        # row (see _check_monitoring_discipline), so the other
+                        # code must never appear here — this is what proves
+                        # the tightening did not start firing the other half.
+                        other_codes = all_codes - {code}
+                        self.assertFalse(other_codes & found, other_codes & found)
+
+    def test_non_blank_string_still_clears(self):
+        from dsx.frame import paradigm
+
+        for member, (code, clearing_fields) in paradigm._MONITORING_DISCIPLINE.items():
+            for field in clearing_fields:
+                with self.subTest(paradigm=member, field=field):
+                    spec = self._spec(paradigm=member, **{field: "a spending function"})
+                    found = codes(paradigm.check(spec))
+                    self.assertNotIn(code, found)
+
+    def test_single_character_string_zero_still_clears(self):
+        # The audit's documented cheapest dishonest path is one free-text
+        # declaration, unchanged — a string is text regardless of content.
+        from dsx.frame import paradigm
+
+        for member, (code, clearing_fields) in paradigm._MONITORING_DISCIPLINE.items():
+            for field in clearing_fields:
+                with self.subTest(paradigm=member, field=field):
+                    spec = self._spec(paradigm=member, **{field: "0"})
+                    found = codes(paradigm.check(spec))
+                    self.assertNotIn(code, found)
+
+    def test_is_blank_unchanged_for_numeric_and_boolean_scalars(self):
+        # Blast-radius guard: fails loudly if a future change moves the
+        # tightening into the shared helper where 138 other call sites would
+        # inherit it.
+        from dsx.spec import is_blank
+
+        for value in (0, 0.0, False, True):
+            with self.subTest(value=repr(value)):
+                self.assertFalse(is_blank(value))
+
+    def test_numeric_threshold_calibration_blocks_plan_with_both_codes(self):
+        spec_dict = {
+            "design": {"peeking_policy": "uncontrolled_continuous", "alpha": 0.05},
+            "inference": {"threshold_calibration": 0},
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            spec_path = Path(tmp) / "numeric-threshold-ANALYSIS-SPEC.json"
+            spec_path.write_text(json.dumps(spec_dict), encoding="utf-8")
+            code, findings = self._gate_plan(spec_path)
+        self.assertEqual(code, 1)
+        critical_codes = {f["code"] for f in findings if f["severity"] == "CRITICAL"}
+        self.assertIn("DSX-PAR-010", critical_codes)
+        self.assertIn("DSX-PAR-011", critical_codes)
+
     # ── end-to-end: both known-bad fixtures, both retype directions ─────────
 
     def test_frequentist_known_bad_fixture_blocks_plan_with_dsx_par_010(self):

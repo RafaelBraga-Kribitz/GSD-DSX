@@ -25,7 +25,15 @@ from __future__ import annotations
 from ..decisions import DecisionRecord
 from ..findings import Report
 from ..mathx import inflation_from_peeking
-from ..spec import PARADIGM_JUSTIFICATIONS, PARADIGMS, as_number, get, is_blank, normalize
+from ..spec import (
+    PARADIGM_JUSTIFICATIONS,
+    PARADIGMS,
+    as_number,
+    get,
+    is_blank,
+    is_blank_text,
+    normalize,
+)
 
 # Frame/contract families that apply regardless of the declared paradigm
 # (D-11: frame-layer checks never branch on paradigm). DSX-PAR-002 is this
@@ -81,9 +89,9 @@ _UNCONTROLLED_POLICY = "uncontrolled_continuous"
 #      the same field, checked by the same predicate, on either side.
 #   3. Each row's one paradigm-specific declaration (alpha_spending for
 #      frequentist, prior_justification for bayesian) is a non-blank free-text
-#      scalar evaluated by the same blank-check predicate as the shared field —
-#      no field on either side carries a stronger evidentiary bar than the
-#      other.
+#      scalar evaluated by the same text-only predicate (is_blank_text) as the
+#      shared field — no field on either side carries a stronger evidentiary
+#      bar than the other.
 _MONITORING_DISCIPLINE: "dict[str, tuple[str, tuple[str, ...]]]" = {
     "frequentist": ("DSX-PAR-010", ("alpha_spending", "threshold_calibration")),
     "bayesian": ("DSX-PAR-011", ("prior_justification", "threshold_calibration")),
@@ -98,9 +106,13 @@ def _blank_clearing_declarations(
     The mechanical proof of cost symmetry (brief D-12): every clearing
     declaration for every paradigm in ``_MONITORING_DISCIPLINE`` is evaluated
     by this one function — no per-paradigm and no per-field code path exists
-    anywhere in the pair.
+    anywhere in the pair. A clearing declaration is satisfied only by
+    non-blank text (``is_blank_text``), identically for every paradigm and
+    every field, so no row can be cleared by a value that carries no declared
+    content — a bare number, boolean, list or mapping is blank here even
+    though ``is_blank`` itself would call it present.
     """
-    return [name for name in fields if is_blank(inference.get(name))]
+    return [name for name in fields if is_blank_text(inference.get(name))]
 
 
 def _check_monitoring_discipline(spec: dict, report: Report) -> None:
@@ -222,10 +234,11 @@ def _check_monitoring_discipline(spec: dict, report: Report) -> None:
                     "(dsx.mathx.inflation_from_peeking; no second table)."
                 ),
                 remedy=(
-                    "Declare a non-blank inference.alpha_spending or "
-                    "inference.threshold_calibration to satisfy this check "
-                    "structurally (presence, not quality). The honest fix is "
-                    "to change design.peeking_policy to sequential_obf, "
+                    "Declare a non-blank text value in inference.alpha_spending "
+                    "or inference.threshold_calibration to satisfy this check "
+                    "structurally (presence, not quality) — a number, a "
+                    "boolean, or an empty value does not clear it. The honest "
+                    "fix is to change design.peeking_policy to sequential_obf, "
                     "sequential_pocock, or always_valid, which is the only "
                     "fix that actually controls the error rate a peeked test "
                     "accumulates."
@@ -251,11 +264,13 @@ def _check_monitoring_discipline(spec: dict, report: Report) -> None:
                     "operator-declared value."
                 ),
                 remedy=(
-                    "Declare a non-blank inference.prior_justification or "
+                    "Declare a non-blank text value in "
+                    "inference.prior_justification or "
                     "inference.threshold_calibration to satisfy this check "
                     "structurally (presence, not quality — prior-justification "
                     "quality is DSX-PAR-020's job, deferred to a later "
-                    "milestone). The honest fix is to change "
+                    "milestone) — a number, a boolean, or an empty value does "
+                    "not clear it. The honest fix is to change "
                     "design.peeking_policy to sequential_obf, "
                     "sequential_pocock, or always_valid."
                 ),
