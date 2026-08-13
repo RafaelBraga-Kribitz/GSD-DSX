@@ -358,9 +358,10 @@ inference:
   fallback_rule: "<what happens if an assumption fails, e.g. switch to a bootstrap>"
   # The next three fields clear DSX-PAR-010 (frequentist) / DSX-PAR-011 (bayesian)
   # monitoring discipline when design.peeking_policy is uncontrolled_continuous —
-  # see references/paradigm-symmetry.md for the full clearing-condition table.
-  threshold_calibration: null       # DSX-PAR-010 / DSX-PAR-011: non-blank clears either
-  prior_justification: null         # DSX-PAR-011: non-blank clears the Bayesian check
+  # a non-blank text value clears; a number, a boolean, or an empty value does
+  # not. See references/paradigm-symmetry.md for the full clearing-condition table.
+  threshold_calibration: null       # DSX-PAR-010 / DSX-PAR-011: a non-blank text value clears either
+  prior_justification: null         # DSX-PAR-011: a non-blank text value clears the Bayesian check
   decision_threshold: "<the posterior-probability decision rule, e.g. P(B>A) > 0.95 — recorded, never parsed>"
 
 # ── Suppressions (optional) ──────────────────────────────────────────────────

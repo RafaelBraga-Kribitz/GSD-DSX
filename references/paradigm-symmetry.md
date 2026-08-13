@@ -31,8 +31,8 @@ it is readable from `design.peeking_policy` alone.
 
 | Paradigm | Code | Cleared by |
 |---|---|---|
-| `frequentist` | `DSX-PAR-010` | a non-blank `inference.alpha_spending` **or** a non-blank `inference.threshold_calibration` |
-| `bayesian` | `DSX-PAR-011` | a non-blank `inference.prior_justification` **or** a non-blank `inference.threshold_calibration` |
+| `frequentist` | `DSX-PAR-010` | a non-blank text value in `inference.alpha_spending` **or** a non-blank text value in `inference.threshold_calibration` |
+| `bayesian` | `DSX-PAR-011` | a non-blank text value in `inference.prior_justification` **or** a non-blank text value in `inference.threshold_calibration` |
 
 Three structural facts make this table symmetric, and all three are load-bearing:
 
@@ -43,10 +43,10 @@ Three structural facts make this table symmetric, and all three are load-bearing
    regardless of which paradigm declared it.
 3. **Each paradigm-specific declaration (`alpha_spending` for frequentist,
    `prior_justification` for bayesian) is a non-blank free-text scalar,
-   evaluated by the same blank-check predicate as the shared field.** No
-   field on either side carries a stronger evidentiary bar than the other —
-   there is no numeric sub-dict on one side and a free-text field on the
-   other.
+   evaluated by the same text-only predicate (`dsx.spec.is_blank_text`) as
+   the shared field.** No field on either side carries a stronger
+   evidentiary bar than the other — there is no numeric sub-dict on one side
+   and a free-text field on the other.
 
 No per-paradigm code path and no per-member branch exists anywhere in this
 design. A dict keyed by every member of `PARADIGMS`, evaluated by one shared
@@ -68,7 +68,10 @@ error rate a peeked test accumulates.
 string into the paradigm-specific clearing field — `alpha_spending` on the
 frequentist side, `prior_justification` on the bayesian side — while leaving
 `design.peeking_policy` at `uncontrolled_continuous` and changing nothing
-about how the analysis is actually monitored.
+about how the analysis is actually monitored. A value that carries no text —
+a bare number, a boolean, an empty string, or a container — does not clear
+either half, so this one-free-text-declaration cost is a floor, not an
+overstatement: nothing cheaper than typing an actual string exists.
 
 This cheapest dishonest path costs **exactly the same on both sides: one
 free-text declaration.** That equality — not the mere existence of two codes
@@ -80,6 +83,26 @@ the dimension D-12 cares about, even though the catalogue shows two rows
 both sides a free-text scalar as their paradigm-specific declaration and the
 identical shared field as their alternative — same shape, same predicate,
 same cost, on both rows of the table above.
+
+## What does not clear either half
+
+None of the following clears `DSX-PAR-010` or `DSX-PAR-011`, for any
+clearing field, on either paradigm: an absent field, a `null`, an empty or
+whitespace-only string, a number, a boolean, or a list or mapping of any
+size, empty or not — an `int`, a `float`, and a Python `bool` are all
+included. This list is pinned by a committed test,
+`tests/test_dsx.py::TestPhase9MonitoringDiscipline`, rather than by this
+document, so it cannot silently drift from the code's actual behaviour.
+
+Until this closed, the predicate deciding whether a clearing field was
+"declared" was the general blank check (`dsx.spec.is_blank`), under which a
+bare `0` or `false` reads as present. A spec whose only monitoring-discipline
+content was `inference.threshold_calibration: 0` therefore cleared the
+CRITICAL pair with zero declared content — cheaper than the one-free-text-
+declaration path this document names as the cheapest dishonest fix. That gap
+is what this section exists to say is closed: the clearing predicate is now
+`dsx.spec.is_blank_text`, which treats every non-string value as blank
+regardless of what `is_blank` itself would say about it.
 
 ## What the gate cannot adjudicate
 
