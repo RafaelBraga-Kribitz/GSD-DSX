@@ -152,19 +152,19 @@ def _check_interference_unaddressed(frame: dict, report: Report) -> None:
     about the same spec, not a double report of one defect.
 
     Disjointness from ``_check_interference_mitigation_admissibility``
-    (DSX-INT-011) rests on vocabulary membership on the mitigation side, and
-    on risk declaration alone on the risk side: this check judges any
-    declared risk other than ``none``, recognised or not, paired with a
-    mitigation that is absent, ``none``, or unrecognised; DSX-INT-011 judges
-    only a recognised, non-``none`` risk paired with a mitigation that is
-    present, not ``none``, and recognised. An unrecognised risk therefore
-    reaches DSX-INT-010 alone — DSX-INT-011's own risk guard returns before
-    its judgment point for exactly that input, because ``_RISK_MITIGATION_MAP``
-    has no admissibility cell for a risk it does not contain. Those two
-    conditions still cannot both hold, so a declared, non-``none``,
-    in-vocabulary mitigation paired with a recognised risk routes to
-    ``_check_interference_mitigation_admissibility`` instead (proven by Test
-    6 in ``tests/test_frame_interference.py``).
+    (DSX-INT-011) rests on the mitigation dimension alone, never on
+    risk-vocabulary membership: both checks judge any declared risk other
+    than ``none``, recognised or not; which of the two judges a given spec is
+    decided entirely by the mitigation — absent, ``none``, or unrecognised
+    routes to this check, present, recognised, and non-``none`` routes to
+    DSX-INT-011 — so the two conditions still cannot both hold. For an
+    unrecognised risk the admissible set DSX-INT-011 reads is empty (its
+    ``_RISK_MITIGATION_MAP.get(..., frozenset())`` fallback), so a recognised,
+    non-``none`` mitigation paired with it is always inadmissible and fires
+    DSX-INT-011, not this check (proven by Test 6 in
+    ``tests/test_frame_interference.py`` and by
+    ``test_int_010_and_int_011_are_disjoint_across_the_risk_and_mitigation_grid``
+    in the same module).
 
     Citation: Imbens, G.W. and Rubin, D.B. (2015), *Causal Inference for
     Statistics, Social, and Biomedical Sciences*, Cambridge University Press,
@@ -277,13 +277,30 @@ def _check_interference_mitigation_admissibility(frame: dict, report: Report) ->
     """Emit DSX-INT-011 when a declared mitigation is not admissible for the
     declared interference risk.
 
-    Fires only when ``validity_frame.interference.mitigation`` is a member of
-    ``dsx.spec.INTERFERENCE_MITIGATIONS`` other than ``none`` and is not a
-    member of ``_RISK_MITIGATION_MAP[risk]`` for the declared, normalized
-    risk. Because it requires a declared non-``none`` mitigation and
-    DSX-INT-010 (``_check_interference_unaddressed``) requires the absence of
-    one, the two codes are disjoint by construction (proven by Test 6 in
-    ``tests/test_frame_interference.py``).
+    Fires when the declared ``validity_frame.interference.risk`` is anything
+    other than ``none`` — a recognised member of
+    ``dsx.spec.INTERFERENCE_RISKS``, or a string that vocabulary does not
+    contain at all — and the declared ``mitigation`` is a member of
+    ``dsx.spec.INTERFERENCE_MITIGATIONS`` other than ``none`` that is not in
+    the admissible set for that risk, where the admissible set is read from
+    ``_RISK_MITIGATION_MAP`` with a ``.get`` fallback and is empty for a risk
+    the map has no cell for. An unrecognised risk is judged here
+    rather than skipped because nothing can be admissible for a risk that
+    names no channel, so a declared mitigation cannot have addressed it, and
+    skipping it made a misspelling the cheapest way past this
+    CRITICAL-threshold gate — the same "cheapest way past the gate" failure
+    mode ``dsx/frame/paradigm.py``'s D-10 commentary is explicit about
+    avoiding for the paradigm family.
+
+    Disjointness from DSX-INT-010 (``_check_interference_unaddressed``) rests
+    on the mitigation dimension alone, and not on risk-vocabulary membership:
+    DSX-INT-010 fires only when the mitigation is absent, ``none``, or
+    unrecognised; this check fires only when the mitigation is present,
+    recognised, and non-``none``. Those two conditions still cannot both
+    hold, whatever the risk side declares (proven by Test 6 in
+    ``tests/test_frame_interference.py`` and by
+    ``test_int_010_and_int_011_are_disjoint_across_the_risk_and_mitigation_grid``
+    in the same module).
 
     Citation: Kohavi, R., Tang, D. and Xu, Y. (2020), *Trustworthy Online
     Controlled Experiments: A Practical Guide to A/B Testing*, Cambridge
@@ -310,7 +327,14 @@ def _check_interference_mitigation_admissibility(frame: dict, report: Report) ->
     """
     risk = get(frame, "interference.risk")
     normalized_risk = normalize(risk) if not is_blank(risk) else "none"
-    if normalized_risk == "none" or normalized_risk not in INTERFERENCE_RISKS:
+    if normalized_risk == "none":
+        # Only the honestly-declared no-risk case is exempt. An
+        # out-of-vocabulary risk string is not nothing — the author declared
+        # a risk and spelled it wrong. Nothing can be admissible for a risk
+        # _RISK_MITIGATION_MAP has no cell for, so the judgment point below
+        # still runs for it. DSX-SPEC-082 still fires independently for the
+        # vocabulary violation itself; that finding and this one describe
+        # two different facts about the same spec, not a double report.
         return
 
     mitigation = get(frame, "interference.mitigation")
@@ -355,9 +379,13 @@ def _check_interference_mitigation_admissibility(frame: dict, report: Report) ->
                 "validity_frame.interference.mitigation",
             ],
             rule=(
-                "DSX-INT-011 fires when interference.mitigation is a non-'none' "
-                "member of INTERFERENCE_MITIGATIONS and is not a member of "
-                "_RISK_MITIGATION_MAP[normalize(risk)]."
+                "DSX-INT-011 fires when interference.risk is declared as "
+                "anything other than 'none' — a recognised member of "
+                "INTERFERENCE_RISKS or an unrecognised string — "
+                "interference.mitigation is a non-'none' member of "
+                "INTERFERENCE_MITIGATIONS, and that mitigation is not in "
+                "_RISK_MITIGATION_MAP.get(normalize(risk), frozenset()), "
+                "which is empty for a risk the map has no cell for."
             ),
             citation="Kohavi, Tang & Xu (2020), Trustworthy Online Controlled Experiments, Chapter 22",
             counterfactual=(
