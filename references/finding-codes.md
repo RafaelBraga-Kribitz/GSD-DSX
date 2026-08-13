@@ -13,7 +13,7 @@ a suppression or a reference in a review stays valid across versions.
 **Gate thresholds.** `plan` and `execute` block at CRITICAL; `verify` and
 `ship` block at HIGH.
 
-**Total: 224 codes.**
+**Total: 226 codes.**
 
 ## Contract structure — `DSX-SPEC-*`
 
@@ -371,3 +371,12 @@ Estimand, unit triad, dependence, identification, sampling frame, missingness an
 | `DSX-VAL-050` | HIGH | sampling frame is not internally consistent |
 | `DSX-VAL-060` | CRITICAL | missingness mechanism paired with a method it does not license |
 | `DSX-VAL-070` | HIGH | measurement construct declared with no operationalisation |
+
+## Interference, triggering and stability — `DSX-INT-*`
+
+Interference and SUTVA risk, triggered-versus-eligible dilution, and novelty or primacy over the declared stability window.
+
+| Code | Severity | Finding |
+|---|---|---|
+| `DSX-INT-010` | CRITICAL | interference risk <…> declared with no mitigation and no residual note |
+| `DSX-INT-011` | CRITICAL | mitigation <…> is not admissible for interference risk <…> |
