@@ -138,7 +138,10 @@ _PARADIGM_FIELD_NAME = "paradigm"
 
 # The one legitimate reader: paradigm.py IS the paradigm manifest, whose entire job is to
 # report what inference.paradigm was declared. D-11 constrains the checks that adjudicate
-# the frame, not the manifest that describes it.
+# the frame, not the manifest that describes it. dsx/frame/interference.py (Phase 8,
+# DSX-INT-*) is deliberately NOT excluded here: unlike the paradigm manifest, it
+# adjudicates the frame rather than describing what was declared, so D-11 applies to it
+# in full — it is covered by the FRAME_DIR.rglob("*.py") scan below like any other check.
 _PARADIGM_READ_EXCLUDED_FILENAMES = {"paradigm.py"}
 
 
@@ -245,6 +248,22 @@ class TestFrameParadigmReadBoundary(unittest.TestCase):
         )
         self.assertEqual(_scan_source_for_paradigm_reads_text(source), [])
         self.assertEqual(_scan_source_for_paradigm_reads_ast(source), [])
+
+    def test_interference_module_is_inside_the_paradigm_read_scan_and_clean(self):
+        """REQ-P8-06 traceability (08-03 Task 2): a named test proving
+        ``dsx/frame/interference.py`` is inside ``FRAME_DIR.rglob("*.py")`` — the
+        real-tree scan the class above runs — and reads the declared paradigm
+        field by neither detector, rather than this being merely inferable from
+        the glob covering every file under the package."""
+        files = sorted(FRAME_DIR.rglob("*.py"))
+        interference_path = FRAME_DIR / "interference.py"
+        self.assertIn(
+            interference_path, files,
+            "dsx/frame/interference.py is not visible to the FRAME_DIR.rglob scan",
+        )
+        text = interference_path.read_text(encoding="utf-8")
+        self.assertEqual(_scan_source_for_paradigm_reads_text(text), [])
+        self.assertEqual(_scan_source_for_paradigm_reads_ast(text), [])
 
 
 if __name__ == "__main__":
