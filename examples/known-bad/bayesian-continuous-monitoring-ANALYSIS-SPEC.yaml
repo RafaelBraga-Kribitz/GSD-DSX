@@ -26,16 +26,22 @@
 # list. See the paired POSTMORTEM.md.
 #
 # ── Formulation note (T-6-17) ────────────────────────────────────────────────
-# This fixture's defect is stated relative to the PRIOR-AVERAGED bound: Deng,
-# Lu & Chen (2016) Theorem 1 caps the false-discovery risk of stopping at a
-# posterior-odds threshold K at 1/(K+1). At the P(B>A) > 0.95 decision
-# threshold used below, K = 19 and the bound is 1/20 = 0.05 exactly. Do not
-# substitute Ville's inequality, which gives the different bound 1/k (1/19 ~
-# 0.0526 here) and is not the argument Theorem 1 makes. This is NOT the
-# point-null / law-of-iterated-logarithm formulation, under which the error
-# rate over an unbounded horizon grows without a useful ceiling — both are
-# correct statements about different quantities (brief.md section 6.5). See
-# the paired POSTMORTEM.md for the full derivation and citation.
+# This fixture's defect is stated relative to the PRIOR-AVERAGED bound. Deng,
+# Lu & Chen (2016) Theorem 1 states an optional-stopping equality under known
+# prior odds, for any proper stopping time — that is what licenses this
+# figure under continuous peeking, not a fixed final look. The bound itself,
+# that stopping at a posterior-odds threshold K caps the false-discovery risk
+# at 1/(K+1), is unnumbered prose immediately following Theorem 1 and again,
+# in its operational "at most" form, in the paper's Section 3.2; citing
+# Theorem 1 alone for the number 1/(K+1) would be a locator error. At the
+# P(B>A) > 0.95 decision threshold used below, K = 19 and the bound is
+# 1/20 = 0.05 exactly. Do not substitute Ville's inequality, which gives
+# the different bound 1/k (1/19 ~ 0.0526 here) — a separate result Deng,
+# Lu & Chen never cite. This is NOT the point-null / law-of-iterated-logarithm
+# formulation, under which the error rate over an unbounded horizon grows
+# without a useful ceiling — both are correct statements about different
+# quantities (brief.md section 6.5). See the paired POSTMORTEM.md for the
+# full derivation and citation.
 #
 #   dsx validate --spec examples/known-bad/bayesian-continuous-monitoring-ANALYSIS-SPEC.yaml
 

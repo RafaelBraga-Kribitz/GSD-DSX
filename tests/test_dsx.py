@@ -3161,6 +3161,44 @@ class TestPhase9MonitoringDiscipline(unittest.TestCase):
         self.assertIn("DSX-PAR-010", found)
         self.assertNotIn("DSX-PAR-011", found)
 
+    # ── 09-07 gap closure (REQ-P9-03): DSX-PAR-011's detail= attribution ────
+    # The docstring already states the correct three-part attribution (Theorem
+    # 1 licenses the bound under optional stopping; the bound itself is
+    # unnumbered prose at Theorem 1 and again at Section 3.2); the emitted
+    # detail= string did not. This asserts on the emitted finding, not the
+    # source file — the operator reads the emitted string, and a source grep
+    # would pass on a docstring that never reaches a user.
+
+    def test_dsx_par_011_detail_attributes_the_bound_without_a_locator_error(self):
+        from dsx.frame import paradigm
+
+        spec = self._spec(paradigm="bayesian", prior_justification="", threshold_calibration="")
+        report = paradigm.check(spec)
+        found = [f for f in report.findings if f.code == "DSX-PAR-011"]
+        self.assertEqual(len(found), 1)
+        detail = " ".join(found[0].detail.split())
+
+        required = (
+            "(Deng, Lu & Chen 2016)",
+            "1/(K+1) = 1/20 = 0.05 at K = 19",
+            "Theorem 1 licenses",
+            "unnumbered prose",
+            "Section 3.2",
+        )
+        for substring in required:
+            with self.subTest(required=substring):
+                self.assertIn(
+                    substring, detail,
+                    f"DSX-PAR-011 detail no longer states {substring!r}",
+                )
+
+        self.assertNotIn(
+            "2016, Theorem 1", detail,
+            "DSX-PAR-011 detail still pairs the theorem number with the "
+            "1/(K+1) parenthetical — this is the locator error REQ-P9-03 "
+            "exists to retire",
+        )
+
 
 # ── Phase 9 (09-05): DSX-PAR-002 requiredness and symmetry ──────────────────
 # (REQ-P9-04, D-08, D-09, brief D-12). DSX-PAR-002 owns absence only — the

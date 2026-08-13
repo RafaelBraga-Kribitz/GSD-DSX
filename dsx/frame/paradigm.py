@@ -257,11 +257,14 @@ def _check_monitoring_discipline(spec: dict, report: Report) -> None:
                     "design.peeking_policy is uncontrolled_continuous: interim "
                     "looks continue with no sequential correction and no "
                     "anytime-valid method. Under the prior-averaged "
-                    "formulation (Deng, Lu & Chen 2016, Theorem 1), the risk "
-                    "of false discovery at a P(B>A) > 0.95 decision threshold "
-                    "is bounded by 1/(K+1) = 1/20 = 0.05 at K = 19 — a fixed "
+                    "formulation (Deng, Lu & Chen 2016), the risk of false "
+                    "discovery at a P(B>A) > 0.95 decision threshold is "
+                    "bounded by 1/(K+1) = 1/20 = 0.05 at K = 19 — a fixed "
                     "reference anchor, never a computation over any "
-                    "operator-declared value."
+                    "operator-declared value. Theorem 1 licenses that bound "
+                    "under optional stopping with known prior odds; the "
+                    "bound itself is unnumbered prose following Theorem 1 "
+                    "and again in the paper's Section 3.2."
                 ),
                 remedy=(
                     "Declare a non-blank text value in "
