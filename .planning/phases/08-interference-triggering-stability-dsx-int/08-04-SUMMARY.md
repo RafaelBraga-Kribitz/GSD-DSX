@@ -223,3 +223,17 @@ None — no external service configuration required.
 ---
 *Phase: 08-interference-triggering-stability-dsx-int*
 *Completed: 2026-08-13*
+
+## Self-Check: PASSED
+
+- FOUND: dsx/frame/interference.py
+- FOUND: tests/test_frame_interference.py
+- FOUND: tests/test_known_bad_corpus.py
+- FOUND: references/finding-codes.md
+- FOUND: brief.md
+- FOUND: .planning/phases/08-interference-triggering-stability-dsx-int/08-04-SUMMARY.md
+- FOUND commit: 36ff448 (feat(08-04): ship DSX-INT-030 with the additive metric partition)
+- FOUND commit: c1a7307 (docs(08-04): rewrite the ratio-metric dilution gated-backlog row (D-12))
+- FOUND commit: cb62892 (docs(08-04): add plan summary)
+- `python3 -m unittest discover -s tests` — 502 tests, OK (skipped=2)
+- `sh scripts/check.sh` — all checks passed
