@@ -319,7 +319,7 @@ the brief fixes verbatim and D-06 makes irreversible.
      verify/ship with the assessment method cited, and a test asserts no
      `dsx/frame/interference.py` code path reads `inference.paradigm` (D-11).
 
-**Plans:** 10 plans — 9 executed, 1 planned
+**Plans:** 10/10 plans executed
 
 Plans:
 **Wave 1**
@@ -369,7 +369,7 @@ Plans:
 
 **Wave 9** *(gap closure — blocked on Wave 8 completion; closes `08-VERIFICATION.md`)*
 
-- [ ] 08-10-PLAN.md — close the last `08-VERIFICATION.md` gap: an out-of-vocabulary
+- [x] 08-10-PLAN.md — close the last `08-VERIFICATION.md` gap: an out-of-vocabulary
       `interference.risk` paired with a real, recognised mitigation reached neither `DSX-INT-010` nor
       `DSX-INT-011` and cleared `dsx gate plan`. Drops the risk-vocabulary clause from
       `_check_interference_mitigation_admissibility`'s guard, corrects the three prose sites that
@@ -625,7 +625,7 @@ cases where absence permitted a false pass" is a debate, not a count.
 | 5. Chart review + suppressions | — | Complete | v1.5.0 |
 | 6. Contract extension, decision record, paradigm manifest | 13/13 | Complete | 2026-08-10 |
 | 7. Validity frame checks (`DSX-VAL-*`) | 7/7 | In Progress|  |
-| 8. Interference, triggering, stability (`DSX-INT-*`) | 9/9 | In Progress|  |
+| 8. Interference, triggering, stability (`DSX-INT-*`) | 10/10 | In Progress|  |
 | 9. Monitoring discipline, symmetric (`DSX-PAR-*`) | 7/7 | Complete | 2026-08-13 |
 | 10. Pre-registered inference plan (`DSX-PRE-*`) | 0/TBD | Not started | - |
 | 11. Frequentist admissibility adjudicator (`DSX-ADM-*`) | 0/TBD | Not started | - |
