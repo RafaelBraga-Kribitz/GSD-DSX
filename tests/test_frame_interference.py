@@ -23,7 +23,12 @@ from dsx import cli  # noqa: E402
 from dsx.findings import Report, Severity  # noqa: E402
 from dsx.frame import interference  # noqa: E402
 from dsx.loader import load  # noqa: E402
-from dsx.spec import INTERFERENCE_MITIGATIONS, INTERFERENCE_RISKS, needs_causal_block  # noqa: E402
+from dsx.spec import (  # noqa: E402
+    ANALYSIS_POPULATIONS,
+    INTERFERENCE_MITIGATIONS,
+    INTERFERENCE_RISKS,
+    needs_causal_block,
+)
 from dsx.suppressions import known_codes  # noqa: E402
 
 
@@ -277,6 +282,31 @@ def _triggering_causal_spec(**overrides: object) -> dict:
     }
 
 
+def _mutated_triggering_fixture(tmp: str, **overrides: object) -> Path:
+    """Copy ``examples/known-bad/`` into ``tmp`` and apply the given overrides
+    to the triggering-dilution fixture's ``validity_frame.triggering``
+    sub-block, returning the path to the mutated copy.
+
+    Copies the whole directory, not just the one file — the corpus fixtures
+    resolve sibling artifacts from their own directory, matching
+    ``TestInterferenceGateLevel._copied_fixture``'s idiom. Never edits the
+    committed fixture in place. 08-VERIFICATION.md gap 2 / 08-REVIEW.md
+    CR-02: an out-of-vocabulary ``analysis_population`` string (a
+    one-character misspelling of ``eligible``) silenced the CRITICAL
+    DSX-INT-030 check the committed fixture exists to demonstrate, because
+    any population string other than the literal ``eligible`` was treated as
+    an honest declaration of the triggered population.
+    """
+    target = Path(tmp) / "known-bad"
+    shutil.copytree(ROOT / "examples" / "known-bad", target)
+    spec_path = target / "triggering-dilution-ANALYSIS-SPEC.yaml"
+    spec = load(spec_path)
+    triggering = spec.setdefault("validity_frame", {}).setdefault("triggering", {})
+    triggering.update(overrides)
+    spec_path.write_text(json.dumps(spec), encoding="utf-8")
+    return spec_path
+
+
 class TestTriggeringDilution(unittest.TestCase):
     # D-05: DSX-INT-030
     def test_eligible_population_not_adjusted_additive_metric_fires_critical_int_030(self):
@@ -298,6 +328,19 @@ class TestTriggeringDilution(unittest.TestCase):
                 )
                 report = interference.check(spec)
                 self.assertNotIn("DSX-INT-030", codes(report))
+
+    # 08-VERIFICATION.md gap 2 / 08-REVIEW.md CR-02: an out-of-vocabulary
+    # analysis_population string (a one-character misspelling of `eligible`)
+    # was treated as an honest declaration of the triggered population, so a
+    # typo silenced the CRITICAL check the committed fixture exists to
+    # demonstrate.
+    def test_out_of_vocabulary_analysis_population_still_fires_int_030(self):
+        spec = _triggering_causal_spec(analysis_population="eligable")
+        report = interference.check(spec)
+        found = [f for f in report.findings if f.code == "DSX-INT-030"]
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0].severity, Severity.CRITICAL)
+        self.assertEqual(found[0].where, "spec.validity_frame.triggering.dilution_adjusted")
 
     def test_ratio_scope_boundary_ratio_metric_produces_no_finding(self):
         spec = _triggering_causal_spec()
@@ -372,6 +415,16 @@ class TestTriggeringDilution(unittest.TestCase):
         self.assertEqual(additive & ratio, frozenset())
         self.assertLess(additive | ratio, METRIC_TYPES)
 
+    # 08-VERIFICATION.md gap 2 / 08-REVIEW.md CR-02: the corrected
+    # `_check_triggering_dilution` guard names `triggered` as a literal
+    # string, which is only a complete description of the not-adjudicated
+    # branch while this vocabulary has exactly two members. A third member
+    # added without revisiting the guard would be adjudicated as if it were
+    # a misspelling of `eligible`, which may or may not be right, and this
+    # test forces that decision to be made rather than defaulted.
+    def test_analysis_populations_vocabulary_is_exactly_eligible_and_triggered(self):
+        self.assertEqual(set(ANALYSIS_POPULATIONS), {"eligible", "triggered"})
+
     def test_descriptive_observational_spec_produces_no_finding_despite_full_dilution_defect(self):
         spec = _triggering_causal_spec()
         spec["question_type"] = "descriptive"
@@ -425,6 +478,30 @@ class TestTriggeringDilution(unittest.TestCase):
                     ["gate", "execute", "--spec", str(fixture), "--phase-dir", phase_dir]
                 )
             self.assertEqual(code, 0, f"gate execute unexpectedly blocked:\n{err.getvalue()}")
+
+    # 08-VERIFICATION.md gap 2 / 08-REVIEW.md CR-02: an out-of-vocabulary
+    # analysis_population string (a one-character misspelling of `eligible`)
+    # was treated as an honest declaration of the triggered population, so a
+    # typo silenced the CRITICAL check the committed fixture exists to
+    # demonstrate. The `where` assertion on DSX-SPEC-082 pins that the
+    # vocabulary violation fired for the `analysis_population` field
+    # specifically, which no substring assertion can establish, and
+    # documents that the two findings are two different facts about one
+    # spec rather than one defect reported twice.
+    def test_out_of_vocabulary_analysis_population_variant_blocks_plan_naming_int_030(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            spec_path = _mutated_triggering_fixture(tmp, analysis_population="eligable")
+            code, findings = _gate_findings(spec_path, "plan")
+            by_code = {f["code"]: f for f in findings}
+            self.assertEqual(code, 1)
+            self.assertIn("DSX-INT-030", by_code)
+            self.assertEqual(by_code["DSX-INT-030"]["severity"], "CRITICAL")
+            self.assertIn("DSX-SPEC-082", by_code)
+            self.assertEqual(by_code["DSX-SPEC-082"]["severity"], "HIGH")
+            self.assertEqual(
+                by_code["DSX-SPEC-082"]["where"],
+                "spec.validity_frame.triggering.analysis_population",
+            )
 
     def test_good_and_monitoring_fixtures_and_template_still_clear_plan(self):
         good = ROOT / "examples" / "good-ANALYSIS-SPEC.yaml"
