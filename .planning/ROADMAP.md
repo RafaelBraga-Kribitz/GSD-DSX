@@ -477,11 +477,24 @@ reconcile against at plan or execute.
 **Plans**: 6 plans
 
 Plans:
+**Wave 1**
 
 - [ ] 10-01-PLAN.md — Fact registry and the arrow-triggered fallback-rule mini-language (wave 1)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 10-02-PLAN.md — `DSX-PRE-010` and `DSX-PRE-030`, plus all five D-13 guards in one commit (wave 2)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
 - [ ] 10-03-PLAN.md — `DSX-PRE-020` content-lock reconciliation and the missing-header exit 2 (wave 3)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
 - [ ] 10-04-PLAN.md — Registration at verify/ship and the test-harness blast radius (wave 4)
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
 - [ ] 10-05-PLAN.md — The `post-hoc-procedure-switch` known-bad fixture pair and its corpus test (wave 5)
 - [ ] 10-06-PLAN.md — README known limits, the `brief.md` §7 citation anchor, STATE.md (wave 5)
 
