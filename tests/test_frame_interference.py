@@ -204,6 +204,187 @@ class TestMalformedShapesDegradeGracefully(unittest.TestCase):
                 self.assertEqual(codes(report), set())
 
 
+def _triggering_causal_spec(**overrides: object) -> dict:
+    """A minimal causal spec carrying one additive metric and a triggering
+    sub-block that declares the full DSX-INT-030 defect by default, with the
+    given triggering fields overridden to isolate one condition at a time."""
+    block = {
+        "analysis_population": "eligible",
+        "dilution_adjusted": False,
+        "expected_trigger_rate": 0.41,
+    }
+    block.update(overrides)
+    return {
+        "question_type": "causal",
+        "validity_frame": {"triggering": block},
+        "metrics": [{"name": "revenue_per_eligible_session", "type": "average"}],
+    }
+
+
+class TestTriggeringDilution(unittest.TestCase):
+    # D-05: DSX-INT-030
+    def test_eligible_population_not_adjusted_additive_metric_fires_critical_int_030(self):
+        report = interference.check(_triggering_causal_spec())
+        found = [f for f in report.findings if f.code == "DSX-INT-030"]
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0].severity, Severity.CRITICAL)
+        self.assertEqual(found[0].where, "spec.validity_frame.triggering.dilution_adjusted")
+
+    def test_dilution_adjusted_true_produces_no_finding(self):
+        report = interference.check(_triggering_causal_spec(dilution_adjusted=True))
+        self.assertNotIn("DSX-INT-030", codes(report))
+
+    def test_triggered_population_produces_no_finding_whatever_dilution_adjusted_says(self):
+        for dilution_adjusted in (True, False):
+            with self.subTest(dilution_adjusted=dilution_adjusted):
+                spec = _triggering_causal_spec(
+                    analysis_population="triggered", dilution_adjusted=dilution_adjusted
+                )
+                report = interference.check(spec)
+                self.assertNotIn("DSX-INT-030", codes(report))
+
+    def test_ratio_scope_boundary_ratio_metric_produces_no_finding(self):
+        spec = _triggering_causal_spec()
+        spec["metrics"] = [{"name": "conversion_rate", "type": "ratio"}]
+        report = interference.check(spec)
+        self.assertNotIn("DSX-INT-030", codes(report))
+
+    def test_ratio_scope_boundary_rate_metric_produces_no_finding(self):
+        spec = _triggering_causal_spec()
+        spec["metrics"] = [{"name": "orders_per_minute", "type": "rate"}]
+        report = interference.check(spec)
+        self.assertNotIn("DSX-INT-030", codes(report))
+
+    def test_percentile_metric_is_unadjudicated_not_caught(self):
+        spec = _triggering_causal_spec()
+        spec["metrics"] = [{"name": "p95_latency", "type": "percentile"}]
+        report = interference.check(spec)
+        self.assertNotIn("DSX-INT-030", codes(report))
+
+    def test_metric_with_no_declared_type_produces_no_finding_and_one_skip_decision_record(self):
+        spec = _triggering_causal_spec()
+        spec["metrics"] = [{"name": "revenue_per_eligible_session"}]
+        report = interference.check(spec)
+        self.assertNotIn("DSX-INT-030", codes(report))
+        decisions = report.context.get("decisions") or []
+        self.assertEqual(len(decisions), 1)
+        self.assertIn("skip", decisions[0]["choice"])
+        self.assertIn("revenue_per_eligible_session", decisions[0]["choice"])
+        self.assertIn("declared type", decisions[0]["rule"])
+
+    def test_mixed_metrics_one_ratio_two_additive_produces_one_finding_naming_both_additive(self):
+        spec = _triggering_causal_spec()
+        spec["metrics"] = [
+            {"name": "conversion_rate", "type": "ratio"},
+            {"name": "revenue_per_session", "type": "average"},
+            {"name": "orders_per_session", "type": "count"},
+        ]
+        report = interference.check(spec)
+        found = [f for f in report.findings if f.code == "DSX-INT-030"]
+        self.assertEqual(len(found), 1)
+        self.assertIn("revenue_per_session", found[0].detail)
+        self.assertIn("orders_per_session", found[0].detail)
+        self.assertNotIn("conversion_rate", found[0].detail)
+
+    def test_additive_and_ratio_metric_type_partitions_are_subsets_disjoint_and_proper(self):
+        from dsx.spec import METRIC_TYPES
+
+        additive = interference._ADDITIVE_METRIC_TYPES
+        ratio = interference._RATIO_METRIC_TYPES
+        self.assertLessEqual(additive, METRIC_TYPES)
+        self.assertLessEqual(ratio, METRIC_TYPES)
+        self.assertEqual(additive & ratio, frozenset())
+        self.assertLess(additive | ratio, METRIC_TYPES)
+
+    def test_descriptive_observational_spec_produces_no_finding_despite_full_dilution_defect(self):
+        spec = _triggering_causal_spec()
+        spec["question_type"] = "descriptive"
+        report = interference.check(spec)
+        self.assertEqual(codes(report), set())
+
+    def test_malformed_triggering_and_metrics_values_degrade_to_no_findings(self):
+        for bad_triggering in ("s", [], None, 3):
+            with self.subTest(bad_triggering=bad_triggering):
+                report = interference.check(
+                    {
+                        "question_type": "causal",
+                        "validity_frame": {"triggering": bad_triggering},
+                        "metrics": [{"name": "m", "type": "average"}],
+                    }
+                )
+                self.assertNotIn("DSX-INT-030", codes(report))
+        for bad_metrics in ("s", [], None, 3):
+            with self.subTest(bad_metrics=bad_metrics):
+                report = interference.check(
+                    {
+                        "question_type": "causal",
+                        "validity_frame": {
+                            "triggering": {
+                                "analysis_population": "eligible",
+                                "dilution_adjusted": False,
+                            }
+                        },
+                        "metrics": bad_metrics,
+                    }
+                )
+                self.assertNotIn("DSX-INT-030", codes(report))
+
+    def test_committed_triggering_dilution_fixture_blocks_plan_naming_int_030(self):
+        fixture = ROOT / "examples" / "known-bad" / "triggering-dilution-ANALYSIS-SPEC.yaml"
+        with tempfile.TemporaryDirectory() as phase_dir:
+            out, err = io.StringIO(), io.StringIO()
+            with redirect_stdout(out), redirect_stderr(err):
+                code = cli.main(
+                    ["gate", "plan", "--spec", str(fixture), "--phase-dir", phase_dir]
+                )
+            self.assertEqual(code, 1)
+            self.assertIn("DSX-INT-030", out.getvalue() + err.getvalue())
+
+    def test_committed_triggering_dilution_fixture_clears_execute(self):
+        fixture = ROOT / "examples" / "known-bad" / "triggering-dilution-ANALYSIS-SPEC.yaml"
+        with tempfile.TemporaryDirectory() as phase_dir:
+            out, err = io.StringIO(), io.StringIO()
+            with redirect_stdout(out), redirect_stderr(err):
+                code = cli.main(
+                    ["gate", "execute", "--spec", str(fixture), "--phase-dir", phase_dir]
+                )
+            self.assertEqual(code, 0, f"gate execute unexpectedly blocked:\n{err.getvalue()}")
+
+    def test_good_and_monitoring_fixtures_and_template_still_clear_plan(self):
+        good = ROOT / "examples" / "good-ANALYSIS-SPEC.yaml"
+        monitoring = [
+            ROOT / "examples" / "known-bad" / "bayesian-continuous-monitoring-ANALYSIS-SPEC.yaml",
+            ROOT / "examples" / "known-bad" / "frequentist-uncontrolled-continuous-ANALYSIS-SPEC.yaml",
+        ]
+        template = ROOT / "templates" / "ANALYSIS-SPEC.yaml"
+        for fixture in [good, template, *monitoring]:
+            with self.subTest(fixture=fixture.name):
+                with tempfile.TemporaryDirectory() as phase_dir:
+                    out, err = io.StringIO(), io.StringIO()
+                    with redirect_stdout(out), redirect_stderr(err):
+                        code = cli.main(
+                            ["gate", "plan", "--spec", str(fixture), "--phase-dir", phase_dir]
+                        )
+                    self.assertNotIn(
+                        "DSX-INT-030", out.getvalue() + err.getvalue(),
+                        f"{fixture.name} unexpectedly names DSX-INT-030 at plan",
+                    )
+
+    def test_good_fixture_clears_ship_resolving_sibling_artifacts_from_its_own_directory(self):
+        # No --phase-dir here, deliberately: dsx/cli.py::cmd_gate resolves relative
+        # evidence/profile paths from `args.phase_dir or path.parent`, and the good
+        # fixture's sibling artifacts (DATA-PROFILE.yaml, figures/, NARRATIVE.md,
+        # the reproducibility entrypoint) live next to it under examples/, not in a
+        # throwaway temp directory. Matches the plan's own acceptance-criteria
+        # invocation (`dsx gate ship --spec examples/good-ANALYSIS-SPEC.yaml`, no
+        # --phase-dir) rather than this module's usual phase-dir idiom.
+        good = ROOT / "examples" / "good-ANALYSIS-SPEC.yaml"
+        out, err = io.StringIO(), io.StringIO()
+        with redirect_stdout(out), redirect_stderr(err):
+            code = cli.main(["gate", "ship", "--spec", str(good)])
+        self.assertEqual(code, 0, f"gate ship unexpectedly blocked:\n{err.getvalue()}")
+
+
 class TestInterferenceGateLevel(unittest.TestCase):
     """Gate-level proofs against the real fixture, never edited in place —
     every mutated variant is built in a temporary copy (D-17 idiom, matching

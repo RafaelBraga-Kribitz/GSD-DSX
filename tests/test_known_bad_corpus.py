@@ -102,34 +102,39 @@ _INCIDENTAL_GAP_CODES = {
 # A later Phase 9 plan adds the two monitoring fixtures for its own atomic pair
 # (DSX-PAR-010/DSX-PAR-011).
 #
-# Fragility note (measured 2026-08-12, plan 08-02): both bayesian-continuous-monitoring
-# and frequentist-uncontrolled-continuous declare validity_frame.triggering with
-# analysis_population: eligible and dilution_adjusted: false — two of DSX-INT-030's
-# three trigger conditions. Both escape only because each declares a single metric of
-# type: ratio, outside the additive partition {count, sum, average}. Adding a metric of
-# type count, sum or average to either fixture will make it block dsx gate plan on
-# DSX-INT-030 and will require an entry in this map.
+# Fragility note (measured 2026-08-12, plan 08-02; re-measured 2026-08-13, plan 08-04):
+# both bayesian-continuous-monitoring and frequentist-uncontrolled-continuous declare
+# validity_frame.triggering with analysis_population: eligible and dilution_adjusted:
+# false — two of DSX-INT-030's three trigger conditions. Both still escape (confirmed
+# once DSX-INT-030 shipped) only because each declares a single metric of type: ratio,
+# outside the additive partition {count, sum, average}. Adding a metric of type count,
+# sum or average to either fixture will make it block dsx gate plan on DSX-INT-030 and
+# will require an entry in this map.
 #
-# Second fragility note, a live one rather than hypothetical (measured 2026-08-12, plan
-# 08-02): weak-identification-mmm declares analysis_population: eligible,
-# dilution_adjusted: false, AND a metrics[0].type of sum (additive) — three of
-# DSX-INT-030's structural conditions, exactly as D-01 states them (an additive metric
-# analysed on the eligible population with dilution_adjusted not true). It escapes only
-# because its expected_trigger_rate is 1.0 (every observed week is in scope; there is no
-# untriggered eligible population, so the diluted-effect formula collapses to the
-# undiluted one and there is nothing to adjust for) — a materiality condition D-01's own
-# wording does not name, but which this plan's own triggering-dilution fixture treats as
-# load-bearing (Task 3 chose expected_trigger_rate 0.41 specifically because it "is what
-# makes the dilution material rather than negligible"). Whether plan 08-04's
-# implementation gates on trigger_rate < 1.0 is that plan's decision, not this one's; if
-# it does not, weak-identification-mmm will need an entry here too the moment DSX-INT-030
-# ships. Not fixed in this plan: editing its triggering block would touch a Phase 7
-# fixture's own encoded scenario (a full-period national aggregate with no eligibility
-# gate below 100% coverage, which is itself an honest declaration, not a defect) for a
-# risk that has not yet materialised into an actual gate finding.
+# Resolved fragility note (plan 08-04): weak-identification-mmm declares
+# analysis_population: eligible, dilution_adjusted: false, AND a metrics[0].type of sum
+# (additive) — three of DSX-INT-030's structural conditions, exactly as D-01/D-09 state
+# them (an additive metric analysed on the eligible population with dilution_adjusted
+# not true). D-09's stated firing condition names only those two triggering-block
+# fields plus D-11's additive-metric-type test — no expected_trigger_rate/materiality
+# gate — so plan 08-04's implementation deliberately does NOT special-case
+# expected_trigger_rate: 1.0, and this fixture now blocks dsx gate plan/verify/ship on
+# DSX-INT-030 alongside its own DSX-VAL-040. The "verify" key below is not a claim that
+# DSX-INT-030 fires ONLY at verify for this fixture — it also fires at plan and ship,
+# same as "interference" is registered everywhere "val" is (dsx/cli.py::GATE_PROFILES)
+# — it is a second, distinct key so its value can live beside "plan": "DSX-VAL-040" in
+# this per-fixture dict without colliding; _own_target_codes() flattens every point's
+# value for a slug into one set regardless of which key holds it, which is what the
+# ship-completeness test (test_ship_gate_findings_are_all_documented_incidental_corpus_gaps)
+# actually consults. Not fixed by editing the fixture: its expected_trigger_rate: 1.0
+# is an honest declaration (a full-period national aggregate with no eligibility gate
+# below 100% coverage), not a defect, and DSX-INT-030 correctly names an additive metric
+# is analysed on that eligible population with no adjustment declared — a second,
+# genuine defect this fixture happens to also encode, not a false positive.
 _TARGET_DEFECT_CODES: "dict[str, dict[str, str]]" = {
-    "weak-identification-mmm": {"plan": "DSX-VAL-040"},
+    "weak-identification-mmm": {"plan": "DSX-VAL-040", "verify": "DSX-INT-030"},
     "interference-shared-budget": {"plan": "DSX-INT-010"},
+    "triggering-dilution": {"plan": "DSX-INT-030"},
 }
 
 
@@ -575,6 +580,34 @@ class TestKnownBadCorpus(unittest.TestCase):
                     required, normalized,
                     f"{matches[0].name} no longer states {required!r} — the corrected "
                     "prior-averaged bound must remain stated, not merely un-misattributed",
+                )
+
+    def test_brief_states_the_ratio_metric_dilution_entry_condition_as_a_falsifiable_blocker(self):
+        """D-18's fourth artifact: the negative guards elsewhere in this module (and in
+        this test file's own retired-phrase constants) can tell that a *false* claim was
+        removed, but none of them can tell a *corrected* row from one that was quietly
+        dropped or softened back to the access premise research proved false (D-12:
+        the Deng & Hu (2015) paper is freely public and Formula (3) in section 3.3 is
+        readable today — access was never the real blocker). Without this positive
+        assertion, brief.md section 6.5's ratio-metric dilution row could be edited back
+        to "obtained from primary source" and nothing here would notice.
+
+        Modeled on test_bayesian_postmortem_states_the_deng_bound_and_its_value: normalise
+        with whitespace collapse (never a line-anchored regex — this checkout is CRLF) and
+        assert a small, deliberately pinned set of substrings that name the claim rather
+        than its exact prose.
+        """
+        normalized = " ".join((ROOT / "brief.md").read_text(encoding="utf-8").split())
+        for required in (
+            "Ratio-metric dilution for trigger analysis",
+            "Formula (3)",
+            "per-unit trigger and outcome data reaching the gate",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(
+                    required, normalized,
+                    f"brief.md no longer states {required!r} — the corrected ratio-metric "
+                    "dilution entry condition must remain stated, not softened or dropped",
                 )
 
     def test_paradigm_symmetry_audit_enumerates_both_halves(self):

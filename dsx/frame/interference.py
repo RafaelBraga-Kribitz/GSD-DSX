@@ -8,12 +8,13 @@ vocabulary. A missing sub-block is ``DSX-SPEC-080``/``DSX-SPEC-081``
 territory, never a ``DSX-INT-*`` finding; firing here on top of that would
 double-report a single defect.
 
-Two of the family's four codes ship in this plan: ``DSX-INT-010`` (a declared
-risk with no mitigation and no real residual note) and ``DSX-INT-011`` (a
-declared mitigation that is not admissible for the declared risk). The
-remaining two — ``DSX-INT-030`` (triggering/dilution) and ``DSX-INT-040``
-(novelty/primacy) — arrive behind the same ``check()`` dispatcher in later
-plans of this phase.
+Three of the family's four codes ship as of this plan: ``DSX-INT-010`` (a
+declared risk with no mitigation and no real residual note), ``DSX-INT-011``
+(a declared mitigation that is not admissible for the declared risk), and
+``DSX-INT-030`` (an additive metric analysed on the eligible population with
+no declared dilution adjustment). The remaining one — ``DSX-INT-040``
+(novelty/primacy) — arrives behind the same ``check()`` dispatcher in a
+later plan of this phase.
 
 D-11/D-16 (mechanically proven by ``tests/test_frame_boundary.py``'s
 ``TestFrameParadigmReadBoundary``): no code path in this module reads the
@@ -30,9 +31,11 @@ from ..findings import Report
 from ..spec import (
     INTERFERENCE_MITIGATIONS,
     INTERFERENCE_RISKS,
+    METRIC_TYPES,
     get,
     is_blank,
     is_placeholder_or_refusal,
+    items,
     needs_causal_block,
     normalize,
     section,
@@ -104,6 +107,23 @@ _RISK_MITIGATION_MAP: "dict[str, frozenset[str]]" = {
         }
     ),
 }
+
+# A partition over dsx.spec.METRIC_TYPES (D-11), not a parallel metric vocabulary — the
+# split-vocabulary pattern decisions M-02 and M-09 already rejected for this codebase.
+# _ADDITIVE_METRIC_TYPES is the set DSX-INT-030 adjudicates: a metric of one of these
+# types, analysed on the eligible population with no declared dilution adjustment,
+# reports an effect diluted toward zero by the untriggered share (Deng & Hu 2015,
+# Formula (1)). _RATIO_METRIC_TYPES — ratio and rate — is explicitly OUT OF SCOPE for
+# this milestone under REQ-P8-04: Deng & Hu's ratio-metric equation (Formula (3), §3.3)
+# sums over individual users and has no closed-form scalar multiplier, so it cannot be
+# evaluated from a declaration alone (see brief.md §6.5's ratio-metric dilution row).
+# percentile and index are in neither set and are therefore unadjudicated by
+# DSX-INT-030 — not swept into either bucket by default (D-11; decision D-11 in
+# 08-CONTEXT.md is explicit that this silence is deliberate). Neither constant is
+# registered in dsx.spec._VOCABULARIES, for the same reason DEPENDENCE_ADMISSIBLE_METHODS
+# is not: each references an existing vocabulary's members rather than defining new ones.
+_ADDITIVE_METRIC_TYPES: "frozenset[str]" = frozenset({"count", "sum", "average"})
+_RATIO_METRIC_TYPES: "frozenset[str]" = frozenset({"ratio", "rate"})
 
 
 def _check_interference_unaddressed(frame: dict, report: Report) -> None:
@@ -308,6 +328,176 @@ def _check_interference_mitigation_admissibility(frame: dict, report: Report) ->
     )
 
 
+def _check_triggering_dilution(spec: dict, frame: dict, report: Report) -> None:
+    """Emit DSX-INT-030 when an additive metric is analysed on the eligible
+    population with no declared dilution adjustment.
+
+    Fires when ``validity_frame.triggering.analysis_population`` is
+    ``eligible``, ``validity_frame.triggering.dilution_adjusted`` is not the
+    literal boolean ``True``, and at least one declared top-level ``metrics``
+    entry has a normalized ``type`` that is a member of
+    ``_ADDITIVE_METRIC_TYPES``. One finding is emitted for the spec, not one
+    per metric — the defect is the single missing adjustment declaration.
+    A metric with no declared ``type`` is neither additive nor ratio; it
+    cannot be classified, so it is skipped rather than adjudicated, and one
+    ``DecisionRecord`` naming the skip and its reason is appended for each —
+    never a finding (``dsx.spec._validate_metrics`` already treats ``type``
+    as optional; firing on an undeclared type would be a new requiredness
+    rule this phase is not scoped to add). The check's own fire/clear
+    judgment is recorded exactly once, and only when at least one additive
+    metric was found to adjudicate: a spec whose only declared metrics carry
+    no type has nothing for this check to judge, and produces only the skip
+    record(s) (Test 7 in ``tests/test_frame_interference.py``).
+
+    Citation: Deng, A. and Hu, V. (2015), "Diluted Treatment Effect
+    Estimation for Trigger Analysis in Online Controlled Experiments", WSDM
+    '15, Formula (1) in section 2.1, derived in section 3.2; camera-ready at
+    https://alexdeng.github.io/public/files/wsdm2015-dilution.pdf, ACM
+    Digital Library DOI 10.1145/2684822.2685307. The formula as printed:
+    ∆overall = ∆Tr × N_Tr/N, under three preconditions stated in the same
+    section: the metric is additive, there is no treatment effect for
+    untriggered units, and the treatment has no effect on the trigger
+    complement. The paper writes the user trigger rate as N_Tr/N; its own
+    symbol TR means a different, per-user quantity in section 3.3, and the
+    contract field this check reads is ``expected_trigger_rate`` — never
+    ``trigger_rate``.
+    Structural criterion: analysing an additive metric on the eligible
+    population when treatment can only have reached the triggered subset,
+    with no adjustment declared, reports an effect diluted toward zero by
+    the untriggered share; this check adjudicates the declaration rather
+    than computing the correction. Ratio metrics are explicitly out of
+    scope: the paper's own time-to-success counterexample shows the additive
+    formula above failing for a ratio metric, and the ratio-metric equation
+    (Formula (3), section 3.3) sums over individual users with no
+    closed-form scalar multiplier. ``dsx.mathx.diluted_effect`` holds the
+    reference implementation of the additive formula above and is never
+    called from this gate path (D-09).
+    """
+    triggering = section(frame, "triggering")
+    if not triggering:
+        return
+
+    population = get(triggering, "analysis_population")
+    normalized_population = normalize(population) if not is_blank(population) else ""
+    if normalized_population != "eligible":
+        return
+
+    # Judgment point: the analysis population is eligible. The rest of this
+    # function decides whether an additive metric was analysed with no
+    # declared dilution adjustment.
+    dilution_adjusted = triggering.get("dilution_adjusted")
+    # Deliberate identity comparison, never is_blank(): is_blank(False) is
+    # False (a bool is none of is_blank's blank shapes — None, empty string,
+    # empty collection), so an is_blank() check here would never fire on the
+    # literal `dilution_adjusted: false` the template and three of the four
+    # corpus fixtures all declare. Do not "simplify" this back to is_blank().
+    not_adjusted = dilution_adjusted is not True
+    expected_trigger_rate = get(triggering, "expected_trigger_rate")
+
+    additive_metrics: "list[str]" = []
+    for metric in items(spec, "metrics"):
+        if not isinstance(metric, dict):
+            continue
+        name = metric.get("name")
+        mtype = normalize(metric.get("type", ""))
+        if not mtype:
+            report.context.setdefault("decisions", []).append(
+                DecisionRecord(
+                    id="",
+                    invocation_id="",
+                    layer="deterministic",
+                    choice=f"DSX-INT-030 skip: metric {name!r} has no declared type",
+                    inputs=[f"metrics[].type (metric {name!r})"],
+                    rule=(
+                        "A metric with no declared type cannot be classified "
+                        "additive or ratio and is therefore not adjudicated by "
+                        "DSX-INT-030."
+                    ),
+                    counterfactual=(
+                        f"Declaring an additive type ({', '.join(sorted(_ADDITIVE_METRIC_TYPES))}) "
+                        f"for metric {name!r} would have made it eligible for this "
+                        "check's judgment."
+                    ),
+                ).to_dict()
+            )
+            continue
+        if mtype in _ADDITIVE_METRIC_TYPES:
+            additive_metrics.append(f"{name} ({mtype})")
+        # Every other declared type — ratio, rate, percentile, index, or any
+        # value outside dsx.spec.METRIC_TYPES — is neither additive nor
+        # skipped; it is simply not this check's concern and is ignored.
+
+    if not additive_metrics:
+        return
+
+    fired = not_adjusted
+
+    if fired:
+        listed_metrics = ", ".join(additive_metrics)
+        rate_note = (
+            f" The declared expected_trigger_rate is {expected_trigger_rate!r}."
+            if not is_blank(expected_trigger_rate)
+            else ""
+        )
+        report.add(
+            "DSX-INT-030",
+            "CRITICAL",
+            "additive metric analysed on the eligible population with no dilution adjustment declared",
+            detail=(
+                f"validity_frame.triggering.analysis_population is {population!r} with "
+                f"dilution_adjusted {dilution_adjusted!r}. Additive metric(s) analysed: "
+                f"{listed_metrics}.{rate_note} A metric with no declared type is not "
+                "adjudicated by this check — deleting a metric's type declaration is a "
+                "live escape from this CRITICAL check; the decision trail records each "
+                "such skip but does not close the hole."
+            ),
+            remedy=(
+                "Declare validity_frame.triggering.dilution_adjusted: true once the "
+                "adjustment has actually been made, or analyse the triggered population "
+                "instead. dsx.mathx.diluted_effect is the reference implementation of "
+                "the additive dilution arithmetic."
+            ),
+            where="spec.validity_frame.triggering.dilution_adjusted",
+        )
+
+    report.context.setdefault("decisions", []).append(
+        DecisionRecord(
+            id="",
+            invocation_id="",
+            layer="deterministic",
+            choice=(
+                f"DSX-INT-030 {'fired' if fired else 'clear'}: "
+                f"analysis_population={normalized_population}, "
+                f"dilution_adjusted={dilution_adjusted!r}, "
+                f"additive_metrics={additive_metrics}"
+            ),
+            inputs=[
+                "validity_frame.triggering.analysis_population",
+                "validity_frame.triggering.dilution_adjusted",
+                "metrics[].type",
+            ],
+            rule=(
+                "DSX-INT-030 fires when triggering.analysis_population is "
+                "'eligible', triggering.dilution_adjusted is not the literal "
+                "boolean True, and at least one declared metric's normalized "
+                "type is a member of _ADDITIVE_METRIC_TYPES."
+            ),
+            citation=(
+                "Deng & Hu (2015), Diluted Treatment Effect Estimation for "
+                "Trigger Analysis in Online Controlled Experiments, Formula (1)"
+            ),
+            counterfactual=(
+                "Declaring dilution_adjusted: true, or analysing the triggered "
+                "population instead, would have cleared DSX-INT-030."
+                if fired
+                else "An eligible-population analysis of these additive "
+                "metric(s) with dilution_adjusted not true would have fired "
+                "DSX-INT-030."
+            ),
+        ).to_dict()
+    )
+
+
 def check(spec: dict) -> Report:
     """Emit the interference-family findings (``DSX-INT-*``).
 
@@ -333,5 +523,6 @@ def check(spec: dict) -> Report:
 
     _check_interference_unaddressed(frame, report)
     _check_interference_mitigation_admissibility(frame, report)
+    _check_triggering_dilution(spec, frame, report)
 
     return report
