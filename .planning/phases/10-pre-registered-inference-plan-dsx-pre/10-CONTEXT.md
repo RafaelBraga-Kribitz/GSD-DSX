@@ -83,8 +83,8 @@ Requirements: REQ-P10-01 … REQ-P10-04 (4 requirements, `.planning/REQUIREMENTS
   - The arrow is the brief's own grammar token (`brief.md:204-205`) and has zero collisions in any
     `fallback_rule` value.
 
-- **D-02: exit `2` is produced by raising `CheckError` from inside the check. There is no
-  finding-based route, and the plan must say so rather than discovering it.**
+- **D-02: exit `2` is produced only by raising `CheckError` from inside the check.**
+  There is no finding-based route, and the plan must say so rather than discovering it.
   - **Verified during discuss, by direct read:** `Report.exit_code()` returns only `EXIT_BLOCK` or
     `EXIT_PASS` (`dsx/findings.py:181-182`). `EXIT_ERROR = 2` (`dsx/findings.py:23`) is returned in
     exactly two places, both exception handlers in `main()` (`dsx/cli.py:765`, `:768`). **No
@@ -99,8 +99,8 @@ Requirements: REQ-P10-01 … REQ-P10-04 (4 requirements, `.planning/REQUIREMENTS
     treat this as a defect to work around, and the finding-free output must be legible enough that an
     operator can tell an aborted run from a clean one.
 
-- **D-04: the mini-language coins NO new contract field. Its fact namespace is restricted to a
-  closed, tested registry of fields that already exist.**
+- **D-04: the mini-language coins NO new contract field.**
+  Its fact namespace is restricted to a closed, tested registry of fields that already exist.
   - **Verified during discuss:** `clusters` — the brief's own example fact
     (`brief.md:204-205`, `if clusters < 30 -> wild cluster bootstrap`) — **appears in zero `.yaml`
     files in this repository.** `validity_frame.dependence` holds `structure`, `cluster_var` and
@@ -125,9 +125,9 @@ Requirements: REQ-P10-01 … REQ-P10-04 (4 requirements, `.planning/REQUIREMENTS
 
 ### Reconciling the declared procedure against the executed one
 
-- **D-05: the declared side is `inference.primary_procedure`; the executed side is `analysis.test`.
+- **D-05: the declared side is `inference.primary_procedure`, the executed side is `analysis.test`.**
   Both are free strings, and the existing `normalize()` is the brittleness fix — Phase 10 builds no
-  procedure vocabulary.**
+  procedure vocabulary.
   - `_INFERENCE_MEMBERSHIP` vocabulary-checks only `paradigm`, `paradigm_justification` and
     `declared_at` (`dsx/spec.py:990-994`), so `primary_procedure` is unconstrained free text.
   - `results.tests[]` entries carry `metric`, `p_value`, `effect`, `standardized_effect`, `ci`,
@@ -169,8 +169,8 @@ Requirements: REQ-P10-01 … REQ-P10-04 (4 requirements, `.planning/REQUIREMENTS
 
 ### The content lock and `declared_at` provenance
 
-- **D-08: the plan-time content lock already exists and already ships. Phase 10 reads it; it does not
-  build it.**
+- **D-08: the plan-time content lock already exists and already ships.**
+  Phase 10 reads it; it does not build it.
   - **Verified during discuss, by direct read:** `frame_digest(spec)` (`dsx/decisions.py:181-190`) is
     a sha256 over `json.dumps({"validity_frame": …, "inference": …}, sort_keys=True)`, documented as
     "Key-order invariant … unchanged by edits elsewhere in the spec. Change-detection, not a security
@@ -189,9 +189,9 @@ Requirements: REQ-P10-01 … REQ-P10-04 (4 requirements, `.planning/REQUIREMENTS
   - **A second lock artifact must not be built.** Two digests over the same bytes immediately raises
     the question of which is authoritative.
 
-- **D-09: reading that lock promotes `DECISIONS.jsonl` from side channel to gate input. The
-  unconditional invariant in `_write_decision_trail`'s docstring is narrowed to the WRITE path, with
-  the reason stated in the docstring itself.**
+- **D-09: reading that lock promotes `DECISIONS.jsonl` from side channel to gate input.**
+  The unconditional invariant in `_write_decision_trail`'s docstring is narrowed to the WRITE path,
+  with the reason stated in the docstring itself.
   - **Verified during discuss, by direct read:** `_write_decision_trail` is wrapped in
     `except Exception` and swallowed, and its docstring states the invariant without qualification —
     "the write is a side channel, never part of the block contract, so it can never change `point`'s
@@ -216,8 +216,9 @@ Requirements: REQ-P10-01 … REQ-P10-04 (4 requirements, `.planning/REQUIREMENTS
       authority requirement as the intended route, so the grandfather path stays walkable and
       attributable. **Do not solve this by making the missing header pass.**
 
-- **D-10: `declared_at: post_data` on its own stays legal and silent. Phase 10 documents its limit; it
-  does not block on it.**
+- **D-10: an honest `post_data` declaration stays legal and silent.**
+  `declared_at` set to `post_data`, on its own, produces no finding. Phase 10 documents its limit; it
+  does not block on it.
   - REQ-P10-02 says "recorded and its limits are documented", not "blocked". Blocking honest
     post-hoc declaration would make honesty more expensive than dishonesty — the exact brief-D-10
     incentive distortion this project keeps closing, arriving through a different door.
@@ -234,8 +235,8 @@ Requirements: REQ-P10-01 … REQ-P10-04 (4 requirements, `.planning/REQUIREMENTS
 
 ### Module, registration, severity, numbering
 
-- **D-11: a new `dsx/frame/prereg.py`, registered as `CHECKS["prereg"]` in `verify` and `ship` only,
-  at `CRITICAL`. Registration and severity are complementary here, not redundant.**
+- **D-11: a new `dsx/frame/prereg.py`, registered as `CHECKS["prereg"]` at `verify` and `ship` only, at `CRITICAL`.**
+  Registration and severity are complementary here, not redundant.
   - **Verified during discuss, by direct read:** `GATE_PROFILES` (`dsx/cli.py:90-103`) has no
     `prereg` entry; `verify` and `ship` carry identical tuples. `GATE_THRESHOLDS` (`dsx/cli.py:107-112`)
     is CRITICAL at plan/execute and HIGH at verify/ship. **Registration is what keeps the check off
@@ -275,8 +276,9 @@ Requirements: REQ-P10-01 … REQ-P10-04 (4 requirements, `.planning/REQUIREMENTS
     available; **but the decade must not be spent speculatively.** Getting the count wrong is worse
     than getting the digits wrong.
 
-- **D-13: five specific guards go red in the landing commit. Each is a designed forcing edit, not a
-  defect, and each must be fixed in the same commit that lands its code.**
+- **D-13: five specific guards go red in the landing commit.**
+  Each is a designed forcing edit, not a defect, and each must be fixed in the same commit that lands
+  its code.
   1. `_NOT_SHIPPED` names `"DSX-PRE-"` (`dsx/frame/paradigm.py:66`, **verified**) and
      `tests/test_dsx.py:2849-2850` asserts every `_NOT_SHIPPED` prefix resolves to **zero** known
      codes. The entry must be deleted.
@@ -297,8 +299,8 @@ Requirements: REQ-P10-01 … REQ-P10-04 (4 requirements, `.planning/REQUIREMENTS
 
 ### Citation — external research applied
 
-- **D-14: the brief-D-05 anchor is Gelman & Loken (2014), and Phase 10 takes ROADMAP SC 5's
-  `Structural criterion:` branch rather than `Reference value:`.**
+- **D-14: the brief-D-05 anchor is Gelman & Loken (2014).**
+  Phase 10 takes ROADMAP SC 5's `Structural criterion:` branch rather than `Reference value:`.
   - **The anchor.** Gelman, A. & Loken, E. (2014), "The Statistical Crisis in Science", *American
     Scientist*, volume 102, issue 6, pages 460-465. Full text read during discuss from two
     independent free copies (the authors' copy at `sites.stat.columbia.edu` and a second at
@@ -358,8 +360,8 @@ Requirements: REQ-P10-01 … REQ-P10-04 (4 requirements, `.planning/REQUIREMENTS
     amended in this phase** with the Gelman & Loken record. This is a citation addition, not a
     brief-D-14 reversal: it adds an anchor where none existed rather than reversing a D-table row.
 
-- **D-15: no published number is asserted, and the reason is recorded so a future reader does not
-  "helpfully" add one.**
+- **D-15: no published number is asserted as a reference value.**
+  The reason is recorded so a future reader does not "helpfully" add one.
   - Simmons et al. Table 1, page 1361 gives a **verified 60.7%** false-positive rate at p<.05 for the
     combination of all four researcher degrees of freedom, over 15,000 simulated samples with a
     two-condition baseline of 20 observations per cell. (The paper's own prose rounds this to 61%;
@@ -379,9 +381,8 @@ Requirements: REQ-P10-01 … REQ-P10-04 (4 requirements, `.planning/REQUIREMENTS
 
 ### Fixtures
 
-- **D-16: one new known-bad fixture carrying a post-hoc procedure switch, registered in the
-  per-gate-point map. The strictly-more-conservative case lives as a synthetic spec in the unit
-  suite.**
+- **D-16: one new known-bad fixture carrying a post-hoc procedure switch, registered in the per-gate-point map.**
+  The strictly-more-conservative case lives as a synthetic spec in the unit suite.
   - `tests/test_known_bad_corpus.py` now carries **two** live maps whose comment at `:243-253` states
     plainly that "neither shape subsumes the other": `_TARGET_DEFECT_CODES` (`:134-138`), keyed by
     gate point, for a check registered at some points but not others — `weak-identification-mmm` uses
