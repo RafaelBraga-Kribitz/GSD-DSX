@@ -5,21 +5,21 @@ milestone_name: DSX Validity Frame
 current_phase: 08
 current_phase_name: interference-triggering-stability-dsx-int
 status: executing
-stopped_at: Phase 9 complete; Phase 7 human verification and Phase 8 blocking gap remain
-last_updated: "2026-08-13T20:41:01.938Z"
-last_activity: 2026-08-13
+stopped_at: Phase 10 context gathered (assumptions mode)
+last_updated: "2026-08-13T22:18:12.902Z"
+last_activity: 2026-08-14
 last_activity_desc: Phase 08 execution started
 progress:
   total_phases: 5
   completed_phases: 2
-  total_plans: 43
-  completed_plans: 34
+  total_plans: 44
+  completed_plans: 36
   percent: 40
 ---
 
 # Project state
 
-**Status:** Ready to execute
+**Status:** Executing Phase 08
 **Progress:** [███████████████████░] 34/35 plans (97%)  
 **Locked decisions:** DQ = profile runner + hermetic gates; Glyph = hermetic svg_sha256 only (no MCP dep); forbidden claims = universal pack + optional phase YAML; repro_lock = ARS-style honest-null (not byte-replay); decision replay = structured thresholds only; suppressions = ADR/SPEC authority required (unknown codes → exit 2)  
 **v2.0.0 locked decisions:** DSX-PAR-010 is a distinct code, DSX-EXP-060 untouched (M-01); no `inference.stopping_rule` — PAR-010/011 read the existing `design.peeking_policy` (M-02); PEEKING_POLICIES gains an uncontrolled-continuous-monitoring value (M-03); automated import test enforces the D-03a boundary from M1 (M-04); SELF-001 stays a convention, REVERSALS.md template seeded in M1 (M-05); `validity_frame` sub-block requiredness gated by `question_type` (M-06); existing `suppressions[]` is the pre-v2.0.0 grandfather path (M-07); D-05 citation enforcement automated via `gen-finding-catalogue.py` (M-08); `dependence.method_family_required` reuses `VARIANCE_ADJUSTMENTS` (M-09)
@@ -41,7 +41,7 @@ progress:
 
 - Phase 7 (M2a) — executed, UAT complete; verification still `human_needed` (citation-admissibility judgment). Lowest outstanding phase.
 - Phase 8 (M2b) — executed; verification `gaps_found` (5/7). Blocking: out-of-vocabulary `interference.risk` still bypasses `DSX-INT-010`/`-011` (same class as the 08-07 mitigation fix, unpatched on `risk`). A second gap on out-of-vocabulary `triggering.analysis_population` vs `DSX-INT-030`.
-- Then Phase 10 (M3, context gathered, soft-depends on 7), Phase 11 (M4, hard-depends on 7), Phase 12 (M5, terminal).
+- Then Phase 10 (M3, context re-verified 2026-08-14, 6 unexecuted plans already on disk, soft-depends on 7), Phase 11 (M4, hard-depends on 7), Phase 12 (M5, terminal).
 - Deferred, unchanged: Parquet profiler, live Glyph MCP, NLP decision_rule — out of scope for core gates.
 
 ## Accumulated Context
@@ -62,7 +62,8 @@ progress:
 - ~~Phase 9: omitting `inference.paradigm` produces no finding.~~ **Resolved in 09-03** — undeclared paradigm selects every `_MONITORING_DISCIPLINE` row, so both CRITICAL codes fire at `plan`.
 - Phase 9 D-08 (`DSX-PAR-002` membership-free; `DSX-SPEC-085` owns vocabulary): **accepted at UAT 2026-08-13**. ROADMAP SC 4 and REQ-P9-04 now name both codes.
 - Phase 10: numeric code assignments **resolved 2026-08-13 at discuss** — `DSX-PRE-010` (rule does not resolve to exactly one branch), `-020` (recorded plan-time `frame_digest` differs from verify-time bytes while `declared_at: pre_data` is claimed), `-030` (executed procedure differs from the selected branch, both labels named). `-011` deliberately unspent; the unparseable-rule case carries no code at all and is exit 2 (10-CONTEXT D-12, D-02). Note this phase was not named in the numbering open item above — it is recorded here because brief D-06 makes numbering irreversible.
-- Phase 10: **new, surfaced at discuss** — reading the plan-time content lock promotes `DECISIONS.jsonl` from side channel to gate input, narrowing the unconditional invariant at `dsx/cli.py:288-290` to the write path. A `verify` with no recorded `plan` header exits `2`, which collides with the M-07 grandfather path; the exit-2 message must name `suppressions[]` so that path stays walkable (10-CONTEXT D-09). **Do not solve this by making the missing header pass.**
+- Phase 10: **new, surfaced at discuss** — reading the plan-time content lock promotes `DECISIONS.jsonl` from side channel to gate input, narrowing the unconditional invariant at `dsx/cli.py:285-289` to the write path. A `verify` with no recorded `plan` header exits `2`, which collides with the M-07 grandfather path; the exit-2 message must name `suppressions[]` so that path stays walkable (10-CONTEXT D-09). **Do not solve this by making the missing header pass.** Locked 2026-08-14: compare by set membership over all recorded plan-time digests; missing-header exit 2 is `gate_invocation`-only (`dsx check` / `dsx audit` stay silent); `_gate_findings` must be repaired in the same commit as `GATE_PROFILES`.
+- Phase 10: fact registry locked 2026-08-14 as D-04a — exactly three scalars (`alpha`, `interim_looks`, `comparisons_looked_at`). Discretion items from the 2026-08-13 discuss are now locked in `10-CONTEXT.md`; do not re-open them at execute.
 - Phase 10: `_D05_ALLOWLIST_PREFIXES` (`scripts/gen-finding-catalogue.py:65`) is an **inclusion** list, not an exemption list, and does not cover `DSX-PRE-`. Without that edit the brief-D-05 citation gate is silently disabled for this family and `--check` still passes (10-CONTEXT D-13 item 4).
 - Phase 10: `brief.md` §7 names no pre-registration source and gains the Gelman & Loken (2014) anchor — a citation addition where none existed, not a brief-D-14 reversal (10-CONTEXT D-14).
 
@@ -76,9 +77,9 @@ progress:
 ## Current Position
 
 Phase: 08 (interference-triggering-stability-dsx-int) — EXECUTING
-Plan: 1 of 9
-Status: Ready to execute
-Last activity: 2026-08-13 — Phase 08 execution started
+Plan: 1 of 10
+Status: Executing Phase 08
+Last activity: 2026-08-14 — Phase 08 execution started
 
 ## Project Reference
 
@@ -89,11 +90,11 @@ See: .planning/PROJECT.md (updated 2026-08-13)
 
 ## Session
 
-**Last session:** 2026-08-13T15:30:00.000Z
-**Stopped at:** Phase 9 complete
-**Resume file:** None
+**Last session:** 2026-08-13T22:18:12.891Z
+**Stopped at:** Phase 10 context gathered (assumptions mode)
+**Resume file:** .planning/phases/10-pre-registered-inference-plan-dsx-pre/10-CONTEXT.md
 
-Phase 10 context remains at `.planning/phases/10-pre-registered-inference-plan-dsx-pre/10-CONTEXT.md` for when 7 and 8 are closed. Phase 8's blocking gap is in `08-VERIFICATION.md` (out-of-vocabulary `interference.risk` bypass).
+Phase 10 context was re-verified 2026-08-14 (assumptions mode). Six unexecuted plans (`10-01` … `10-06`) already exist; this refresh did not rewrite them. Phase 8's blocking gap is in `08-VERIFICATION.md` (out-of-vocabulary `interference.risk` bypass).
 
 ## Performance Metrics
 
