@@ -400,7 +400,7 @@ depend on it.
      route is no weaker than the sequential-method requirement (D-12); the `DSX-PAR-011`
      simulation lives under `tests/`, seeded and reproducible, and never on the gate path (D-02).
 
-**Plans**: 6/7 plans executed
+**Plans**: 7/7 plans executed
 
 Plans:
 **Wave 1**
@@ -423,7 +423,7 @@ Plans:
 
 **Wave 5** *(gap closure — `09-VERIFICATION.md` gap 2 / `09-REVIEW.md` CR-02, REQ-P9-03)*
 
-- [ ] 09-07-PLAN.md — `DSX-PAR-011`'s emitted finding text and the known-bad fixture comment stop committing the Theorem 1 locator error (wave 5)
+- [x] 09-07-PLAN.md — `DSX-PAR-011`'s emitted finding text and the known-bad fixture comment stop committing the Theorem 1 locator error (wave 5)
 
 **Wave note (atomicity, D-12):** `DSX-PAR-010` and `DSX-PAR-011` are both delivered by a single
 plan, 09-03, in a single commit at the identical severity `CRITICAL`. They cannot land separately.
@@ -568,7 +568,7 @@ cases where absence permitted a false pass" is a debate, not a count.
 | 6. Contract extension, decision record, paradigm manifest | 13/13 | Complete | 2026-08-10 |
 | 7. Validity frame checks (`DSX-VAL-*`) | 7/7 | In Progress|  |
 | 8. Interference, triggering, stability (`DSX-INT-*`) | 6/6 | In Progress|  |
-| 9. Monitoring discipline, symmetric (`DSX-PAR-*`) | 6/7 | In Progress|  |
+| 9. Monitoring discipline, symmetric (`DSX-PAR-*`) | 7/7 | In Progress|  |
 | 10. Pre-registered inference plan (`DSX-PRE-*`) | 0/TBD | Not started | - |
 | 11. Frequentist admissibility adjudicator (`DSX-ADM-*`) | 0/TBD | Not started | - |
 | 12. Calibration | 0/TBD | Not started | - |
