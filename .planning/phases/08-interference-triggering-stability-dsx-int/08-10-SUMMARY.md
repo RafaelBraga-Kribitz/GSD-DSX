@@ -181,3 +181,13 @@ None - no external service configuration required.
 ---
 *Phase: 08-interference-triggering-stability-dsx-int*
 *Completed: 2026-08-14*
+
+## Self-Check: PASSED
+
+- `dsx/frame/interference.py` — FOUND
+- `tests/test_frame_interference.py` — FOUND
+- `.planning/phases/08-interference-triggering-stability-dsx-int/08-10-SUMMARY.md` — FOUND
+- Commit `38ba7be` (test, Task 1) — FOUND in `git log --oneline --all`
+- Commit `5d95091` (fix, Task 2) — FOUND in `git log --oneline --all`
+- Commit `243dc11` (test, Task 3) — FOUND in `git log --oneline --all`
+- Commit `9d8a13a` (docs, this summary) — FOUND in `git log --oneline --all`
