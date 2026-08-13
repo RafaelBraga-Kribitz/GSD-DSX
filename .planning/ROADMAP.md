@@ -306,7 +306,7 @@ the brief fixes verbatim and D-06 makes irreversible.
      verify/ship with the assessment method cited, and a test asserts no
      `dsx/frame/interference.py` code path reads `inference.paradigm` (D-11).
 
-**Plans:** 3/6 plans executed
+**Plans:** 4/6 plans executed
 
 Plans:
 **Wave 1**
@@ -324,7 +324,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 08-04-PLAN.md — `DSX-INT-030`, the additive metric partition, and the gated-backlog
+- [x] 08-04-PLAN.md — `DSX-INT-030`, the additive metric partition, and the gated-backlog
       row recording why ratio-metric dilution stays out of scope (wave 3)
 
 **Wave 4** *(blocked on Wave 3 completion)*
@@ -554,7 +554,7 @@ cases where absence permitted a false pass" is a debate, not a count.
 | 5. Chart review + suppressions | — | Complete | v1.5.0 |
 | 6. Contract extension, decision record, paradigm manifest | 13/13 | Complete | 2026-08-10 |
 | 7. Validity frame checks (`DSX-VAL-*`) | 7/7 | In Progress|  |
-| 8. Interference, triggering, stability (`DSX-INT-*`) | 3/6 | In Progress|  |
+| 8. Interference, triggering, stability (`DSX-INT-*`) | 4/6 | In Progress|  |
 | 9. Monitoring discipline, symmetric (`DSX-PAR-*`) | 5/5 | In Progress|  |
 | 10. Pre-registered inference plan (`DSX-PRE-*`) | 0/TBD | Not started | - |
 | 11. Frequentist admissibility adjudicator (`DSX-ADM-*`) | 0/TBD | Not started | - |
