@@ -36,11 +36,12 @@ progress:
 - v2.0.0 roadmap written — Phases 6–12, 53/53 requirements mapped, traceability populated
 - Phase 6 (M1, v2.0.0) — Contract extension, decision record, paradigm manifest. 13/13 plans, UAT 4/4, verification passed, security verified (35 threats, 0 open). Completed 2026-08-10.
 - Phase 9 (M2c, v2.0.0) — Monitoring discipline, symmetric (`DSX-PAR-010`/`-011` plus membership-free `DSX-PAR-002`). 7/7 plans, UAT 1/1 (split accepted), verification passed, security verified (24 threats, 0 open). Completed 2026-08-13.
+- Phase 8 (M2b, v2.0.0) — Interference, triggering, stability (`DSX-INT-010`/`-011`/`-030`/`-040`). 10/10 plans, verification passed 6/6 must-haves. The out-of-vocabulary `interference.risk` bypass is closed (08-10): the risk-vocabulary clause is gone from `_check_interference_mitigation_admissibility`'s guard, so a misspelled risk with a channel-inadmissible mitigation now fires `DSX-INT-011` at CRITICAL instead of clearing the gate. Security not yet run. Completed 2026-08-14.
 
 ## Next
 
 - Phase 7 (M2a) — executed, UAT complete; verification still `human_needed` (citation-admissibility judgment). Lowest outstanding phase.
-- Phase 8 (M2b) — executed; verification `gaps_found` (5/7). Blocking: out-of-vocabulary `interference.risk` still bypasses `DSX-INT-010`/`-011` (same class as the 08-07 mitigation fix, unpatched on `risk`). A second gap on out-of-vocabulary `triggering.analysis_population` vs `DSX-INT-030`.
+- Phase 8 (M2b) — **complete 2026-08-14**, verification passed 6/6. Outstanding, non-blocking: `/gsd-secure-phase 08` has not been run (security enforcement is active), and 08-REVIEW.md carries two WARNING findings (WR-01 self-contradictory DSX-INT-011 remedy text for an out-of-vocabulary risk; WR-02 `design.alpha: 0` silently defaulted in `dsx/frame/paradigm.py`).
 - Then Phase 10 (M3, context re-verified 2026-08-14, 6 unexecuted plans already on disk, soft-depends on 7), Phase 11 (M4, hard-depends on 7), Phase 12 (M5, terminal).
 - Deferred, unchanged: Parquet profiler, live Glyph MCP, NLP decision_rule — out of scope for core gates.
 

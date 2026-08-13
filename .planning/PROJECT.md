@@ -47,9 +47,9 @@ written profile.
   logic / stats extensions including decision replay and repro_lock, plus scored
   CHART-REVIEW and ADR-authorised suppressions).
 - **v2.0.0 in progress** — Phase 6 (M1) complete 2026-08-10. Phase 9 (M2c, monitoring
-  discipline) complete 2026-08-13. Package version is 2.0.0. Phases 7 and 8 are
-  executed but not closed (Phase 7: human verification still open; Phase 8: one
-  blocking verification gap). Phases 10–12 remain.
+  discipline) complete 2026-08-13. Phase 8 (M2b, interference/triggering/stability)
+  complete 2026-08-14. Package version is 2.0.0. Phase 7 is executed but not closed
+  (human verification still open). Phases 10–12 remain.
 
 ## Current Milestone: v2.0.0 DSX Validity Frame
 
@@ -94,6 +94,7 @@ specs without it begin to block — a breaking contract change.
 - ✓ ANALYSIS-SPEC `suppressions[]` with authority, scored CHART-REVIEW.md — v1.5.0
 - ✓ `validity_frame:`/`inference:` contract blocks, decision records + `dsx explain`, `DSX-PAR-001` paradigm manifest, `dsx/frame/` package with enforced D-03a boundary, mechanical D-05 citation enforcement, known-bad corpus — Phase 6 (REQ-P6-01 … REQ-P6-16)
 - ✓ Symmetric monitoring pair `DSX-PAR-010`/`DSX-PAR-011` plus membership-free `DSX-PAR-002` (requiredness; `DSX-SPEC-085` owns vocabulary membership) — Phase 9 (REQ-P9-01 … REQ-P9-07)
+- ✓ Interference adjudication `DSX-INT-010`/`-011` (unaddressed risk; channel-inadmissible mitigation, disjoint on the mitigation dimension alone), triggered-versus-eligible dilution `DSX-INT-030` (additive metrics only, ratio metrics explicitly out of scope), novelty/primacy `DSX-INT-040`, and the no-paradigm-read invariant — Phase 8 (REQ-P8-01 … REQ-P8-06)
 
 ### Active
 
@@ -188,4 +189,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-08-13 after Phase 9*
+*Last updated: 2026-08-14 after Phase 8*
