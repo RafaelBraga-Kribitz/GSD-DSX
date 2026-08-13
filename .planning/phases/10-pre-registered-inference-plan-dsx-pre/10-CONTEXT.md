@@ -243,8 +243,14 @@ Requirements: REQ-P10-01 … REQ-P10-04 (4 requirements, `.planning/REQUIREMENTS
     (`tests/test_frame_interference.py:169-185`). That pair is what ROADMAP SC 5's reachability test
     must assert, with `execute` **and** `plan` as the absent points.
 
-- **D-12: three codes — `DSX-PRE-010`, `DSX-PRE-020`, `DSX-PRE-030`. This resolves the STATE.md
-  standing open item for Phase 10 and is irreversible under brief D-06.**
+- **D-12: three codes — `DSX-PRE-010`, `DSX-PRE-020`, `DSX-PRE-030`. Irreversible under brief D-06.**
+  - **Correction to note:** STATE.md's standing "final numeric code assignments" open item names
+    **Phases 7, 8 and 11 — not Phase 10** (`.planning/STATE.md:57`, **verified**), and ROADMAP's
+    Phase 10 entry carries no "Open items" line at all (**verified**). So this was never a recorded
+    open item for this phase. It is settled here anyway, deliberately: brief D-06 makes numbering
+    irreversible regardless of which phase the tracker happened to name, and a phase that coins three
+    permanent codes without recording why should not exist. STATE.md gains a Phase 10 line recording
+    the resolution.
   - Follows the one-decade-per-concept convention `07-CONTEXT.md:69-88` set as a user decision, with
     `-001` reserved (in this catalogue's convention `-001` denotes structural absence of a whole
     block). Shipped families confirm the convention: `DSX-VAL-010/011/020/021/030/040/041/050/060/070`,
@@ -429,8 +435,9 @@ None — `todo.match-phase 10` returned zero matches.
 - `.planning/ROADMAP.md:432-470` — Phase 10 goal, dependencies, the verify/ship-only ordering
   constraint, and the five success criteria. `:579-592` — the dependency graph and the soft
   sequencing after Phase 7.
-- `.planning/STATE.md:54-60` — open items to resolve at discuss. **D-12 above resolves Phase 10's
-  numeric code assignments; STATE.md must be updated to record that.**
+- `.planning/STATE.md:54-60` — open items to resolve at discuss. **Note: the numbering item at `:57`
+  names Phases 7, 8 and 11, not Phase 10** (verified). D-12 above settles Phase 10's numeric code
+  assignments anyway, and STATE.md gains a line recording it.
 - `.planning/phases/07-.../07-CONTEXT.md:69-88` — the one-decade-per-concept numbering convention,
   set as a user decision and binding on D-12.
 - `.planning/phases/09-.../09-CONTEXT.md` — the house style for this milestone's decisions; §Citations

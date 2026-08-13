@@ -5,16 +5,16 @@ milestone_name: DSX Validity Frame
 current_phase: 08
 current_phase_name: interference-triggering-stability-dsx-int
 status: executing
-stopped_at: Phase 9 context gathered (assumptions mode)
-last_updated: "2026-08-13T12:34:56.360Z"
+stopped_at: Phase 10 context gathered (assumptions mode)
+last_updated: "2026-08-13T13:15:35.393Z"
 last_activity: 2026-08-13
 last_activity_desc: Phase 08 execution started
 progress:
   total_phases: 5
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 35
-  completed_plans: 33
-  percent: 40
+  completed_plans: 34
+  percent: 60
 ---
 
 # Project state
@@ -58,6 +58,10 @@ progress:
 - ~~Phase 9: whether the pre-existing `inflation_from_peeking()` docstring is upgraded to a full D-05 citation.~~ **Resolved 2026-08-12 at discuss** — yes, with an explicit unverified-locator flag (09-CONTEXT D-13). D-05 does not mechanically reach the function (no `report.add` call site), so this is elective; it is done because leaving it uncited puts a seam where a v2.0.0 check depends on a v1.5.0 computation. Anchor values verified by independent quadrature + Monte Carlo; the 1969 paper itself remains inaccessible, so **no table or page may be cited**.
 - Phase 9: the "prior-averaged Ville bound" name is retired. **Corrected further 2026-08-12** — Deng Theorem 1 does **not** state `1/(K+1)`; it states an optional-stopping equality. The bound is unnumbered prose, §3.2 in its operational form. Verified against the arXiv LaTeX source (09-CONTEXT D-10). Ville's `1/k` remains a separate result, and Ville is never cited in Deng et al. at all (D-12). **REQ-P9-02/03 and ROADMAP Phase 9 SC 2/SC 3 still carry the old attribution and must be amended during planning.** The three regression guards in `tests/test_known_bad_corpus.py` hold the Deng-vs-Ville line and should be re-read, not assumed stale (UAT gap G-01).
 - Phase 9: **new, surfaced at discuss** — omitting `inference.paradigm` (or the whole `inference:` block) produces no finding today (`dsx/spec.py:886-888`, `:917-919`), which becomes the cheapest escape from both halves of the pair the moment it ships. Mechanism preferred in 09-CONTEXT D-07; the severity question it raises is explicitly left for planning.
+- Phase 10: numeric code assignments **resolved 2026-08-13 at discuss** — `DSX-PRE-010` (rule does not resolve to exactly one branch), `-020` (recorded plan-time `frame_digest` differs from verify-time bytes while `declared_at: pre_data` is claimed), `-030` (executed procedure differs from the selected branch, both labels named). `-011` deliberately unspent; the unparseable-rule case carries no code at all and is exit 2 (10-CONTEXT D-12, D-02). Note this phase was not named in the numbering open item above — it is recorded here because brief D-06 makes numbering irreversible.
+- Phase 10: **new, surfaced at discuss** — reading the plan-time content lock promotes `DECISIONS.jsonl` from side channel to gate input, narrowing the unconditional invariant at `dsx/cli.py:288-290` to the write path. A `verify` with no recorded `plan` header exits `2`, which collides with the M-07 grandfather path; the exit-2 message must name `suppressions[]` so that path stays walkable (10-CONTEXT D-09). **Do not solve this by making the missing header pass.**
+- Phase 10: `_D05_ALLOWLIST_PREFIXES` (`scripts/gen-finding-catalogue.py:65`) is an **inclusion** list, not an exemption list, and does not cover `DSX-PRE-`. Without that edit the brief-D-05 citation gate is silently disabled for this family and `--check` still passes (10-CONTEXT D-13 item 4).
+- Phase 10: `brief.md` §7 names no pre-registration source and gains the Gelman & Loken (2014) anchor — a citation addition where none existed, not a brief-D-14 reversal (10-CONTEXT D-14).
 
 **Standing per-phase deliverables:**
 
@@ -82,9 +86,9 @@ See: .planning/PROJECT.md (updated 2026-08-10)
 
 ## Session
 
-**Last session:** 2026-08-12T13:27:45.455Z
-**Stopped at:** Phase 9 context gathered (assumptions mode)
-**Resume file:** .planning/phases/09-monitoring-discipline-symmetric-dsx-par/09-CONTEXT.md
+**Last session:** 2026-08-13T13:15:35.382Z
+**Stopped at:** Phase 10 context gathered (assumptions mode)
+**Resume file:** .planning/phases/10-pre-registered-inference-plan-dsx-pre/10-CONTEXT.md
 
 Note: a Phase 8 discuss ran concurrently on 2026-08-12 and produced
 `.planning/phases/08-interference-triggering-stability-dsx-int/08-CONTEXT.md`. Phase 8 is
