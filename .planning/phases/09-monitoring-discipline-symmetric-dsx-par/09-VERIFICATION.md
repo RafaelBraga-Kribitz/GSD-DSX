@@ -1,83 +1,53 @@
 ---
 phase: 09-monitoring-discipline-symmetric-dsx-par
-verified: 2026-08-13T00:30:00Z
-status: gaps_found
-score: 5/7 must-haves verified
+verified: 2026-08-13T15:00:00Z
+status: human_needed
+score: 7/7 must-haves verified
 behavior_unverified: 0
 overrides_applied: 0
-gaps:
-  - truth: "A committed audit (references/paradigm-symmetry.md) accurately records the cheapest dishonest satisfaction path for each half of the DSX-PAR-010/DSX-PAR-011 pair (ROADMAP Phase 9 Success Criterion 5, REQ-P9-06)."
-    status: failed
-    reason: >
-      dsx/spec.py::is_blank() has no branch for int/float/bool — it returns
-      False (i.e. "not blank" / "declared") for any numeric or boolean value,
-      including 0, 0.0 and False. dsx/frame/paradigm.py::_blank_clearing_declarations
-      reuses is_blank() unmodified as the sole predicate deciding whether
-      DSX-PAR-010/DSX-PAR-011 fire. Consequence, confirmed by direct execution:
-      declaring `inference.alpha_spending: 0`, `inference.prior_justification: false`,
-      or the shared `inference.threshold_calibration: 0` clears the CRITICAL pair
-      with literally zero declared content, on both paradigms equally. This is
-      cheaper than the "one free-text declaration" references/paradigm-symmetry.md
-      documents (lines 67-71) as the cheapest dishonest fix — so the committed
-      audit's own headline claim is inaccurate, even though the escape is equally
-      cheap on both paradigms (D-12 symmetry itself is not broken).
-    artifacts:
-      - path: "dsx/spec.py:369-376"
-        issue: "is_blank() falls through to `return False` for int/float/bool, so a bare 0 or False is never treated as blank."
-      - path: "dsx/frame/paradigm.py:94-104"
-        issue: "_blank_clearing_declarations() delegates entirely to is_blank(), inheriting the numeric/boolean gap for the three clearing declarations (alpha_spending, prior_justification, threshold_calibration)."
-      - path: "references/paradigm-symmetry.md:67-82"
-        issue: "Documents 'type any non-blank string' as the cheapest dishonest fix; does not mention or account for the cheaper bare-0/False escape."
-    missing:
-      - "Either restrict the three clearing declarations to non-blank *strings* specifically (dsx/frame/paradigm.py::_blank_clearing_declarations, or a shared dsx.spec.is_blank_text() helper), or amend references/paradigm-symmetry.md to document the actual cheapest path and make an explicit, reasoned decision to accept it."
-      - "A regression test pinning that a bare 0/0.0/False value in any of the three clearing declarations does NOT clear DSX-PAR-010/DSX-PAR-011, once the fix lands."
-  - truth: "DSX-PAR-011's operator-facing output (the shipped finding text and the known-bad fixture's own comment) attributes the 1/(K+1) bound the same way the docstring and the audit document do — never directly to 'Theorem 1' (ROADMAP Phase 9 Success Criterion 3)."
-    status: failed
-    reason: >
-      dsx/frame/paradigm.py's own docstring (lines 149-155) and
-      references/paradigm-symmetry.md (lines 138-141) both explicitly state that
-      Theorem 1 licenses the prior-averaged bound under optional stopping but does
-      NOT itself state 1/(K+1) — the bound is unnumbered prose at Section 3.2, and
-      "citing Theorem 1 alone for the number 1/(K+1) would be a locator error."
-      Despite that, the actual `detail=` text DSX-PAR-011 emits at gate time
-      (dsx/frame/paradigm.py:244-253, confirmed by direct execution) reads "Under
-      the prior-averaged formulation (Deng, Lu & Chen 2016, Theorem 1), the risk
-      of false discovery ... is bounded by 1/(K+1)" — committing exactly the
-      locator error the same function's docstring warns against three sentences
-      earlier. The known-bad fixture
-      examples/known-bad/bayesian-continuous-monitoring-ANALYSIS-SPEC.yaml (lines
-      29-31) repeats the identical error: "Deng, Lu & Chen (2016) Theorem 1 caps
-      the false-discovery risk of stopping at a posterior-odds threshold K at
-      1/(K+1)." The paired POSTMORTEM.md and references/paradigm-symmetry.md get
-      the distinction right, so this is an internal self-contradiction across the
-      shipped artifact set, not a matter of an unclear source. This directly
-      undermines the intent of Success Criterion 3 ("so a mismatch reads as a
-      formulation question in five minutes, not an implementation bug for a day")
-      — a plausible-but-wrong citation in the operator-facing text is worse than
-      no citation, because it reads as authoritative.
-    artifacts:
-      - path: "dsx/frame/paradigm.py:244-253"
-        issue: "DSX-PAR-011's shipped detail= text ties the 1/(K+1) number to 'Theorem 1' in one clause."
-      - path: "examples/known-bad/bayesian-continuous-monitoring-ANALYSIS-SPEC.yaml:29-31"
-        issue: "Fixture's own 'Formulation note' comment attributes the 1/(K+1) cap directly to Theorem 1."
-    missing:
-      - "Rephrase dsx/frame/paradigm.py's DSX-PAR-011 detail= string to attribute the number the same way the docstring/audit do (Theorem 1 licenses; unnumbered prose / Section 3.2 states the bound) — the reviewer's suggested fix (09-REVIEW.md CR-02) does this."
-      - "Correct the identical wording in examples/known-bad/bayesian-continuous-monitoring-ANALYSIS-SPEC.yaml's Formulation note comment to match the POSTMORTEM.md's already-correct phrasing."
+re_verification:
+  previous_status: gaps_found
+  previous_score: 5/7
+  gaps_closed:
+    - "A committed audit (references/paradigm-symmetry.md) accurately records the cheapest dishonest satisfaction path for each half of the DSX-PAR-010/DSX-PAR-011 pair (ROADMAP Success Criterion 5, REQ-P9-06)."
+    - "DSX-PAR-011's operator-facing output (the shipped finding text and the known-bad fixture's own comment) attributes the 1/(K+1) bound the same way the docstring and the audit document do — never directly to 'Theorem 1' (ROADMAP Success Criterion 3)."
+  gaps_remaining: []
+  regressions: []
 human_verification:
   - test: "Confirm the DSX-PAR-002 scope decision (membership-free presence/requiredness only, closed-vocabulary membership left to the pre-existing DSX-SPEC-085) is an acceptable reading of ROADMAP Success Criterion 4's wording ('DSX-PAR-002 validates paradigm_justification against the closed vocabulary')."
     expected: "A human decision on whether the literal roadmap wording is satisfied by the two-code split, or whether DSX-PAR-002 itself should also test membership."
-    why_human: "This is a values/scope judgment about roadmap wording versus shipped design, not a code defect — independent verification (see narrative below) found no input where the combined system lets a bogus paradigm_justification pass silently; DSX-SPEC-085 always catches a non-blank, non-member justification, regardless of design.peeking_policy or whether DSX-PAR-002 also fires. The split is deliberately documented in dsx/frame/paradigm.py's and DSX-PAR-002's own docstrings to avoid double-firing (D-08)."
+    why_human: "This is a values/scope judgment about roadmap wording versus shipped design, not a code defect — carried forward unchanged from the initial verification. Re-confirmed this cycle: git diff 4c983fa..HEAD shows zero changes to DSX-PAR-002's check logic, so nothing about this item's facts moved during gap closure. Independent verification (this cycle and the last) found no input where the combined system lets a bogus, non-blank paradigm_justification pass silently — DSX-SPEC-085 always catches it."
 ---
 
 # Phase 9: Monitoring discipline, symmetric (`DSX-PAR-*`) Verification Report
 
 **Phase Goal:** Uncontrolled continuous monitoring blocks under both paradigms, neither half can be
 escaped by retyping `paradigm`, and neither half is cheaper to satisfy dishonestly than the other.
-Three checks, symmetric by construction.
+Three checks, symmetric by construction — deliberately not "the Bayesian phase".
 
-**Verified:** 2026-08-13T00:30:00Z
-**Status:** gaps_found
-**Re-verification:** No — initial verification
+**Verified:** 2026-08-13T15:00:00Z
+**Status:** human_needed
+**Re-verification:** Yes — after gap closure (plans 09-06, 09-07)
+
+## What changed since the prior report
+
+Two gap-closure plans executed since the initial verification (`gaps_found`, 5/7):
+
+- **09-06** added `dsx/spec.py::is_blank_text` (a new, separately-named text-only blank
+  predicate; `is_blank` itself left byte-identical — confirmed by `git diff 4c983fa..HEAD --
+  dsx/spec.py` showing zero change inside `is_blank`'s body) and rerouted
+  `dsx/frame/paradigm.py::_blank_clearing_declarations` through it. This closes Gap 1
+  (REQ-P9-06 / Success Criterion 5).
+- **09-07** rewrote `DSX-PAR-011`'s emitted `detail=` string and the known-bad Bayesian
+  fixture's Formulation note so neither pairs "Theorem 1" with the `1/(K+1)` number in one
+  clause. This closes Gap 2 (REQ-P9-03 / Success Criterion 3).
+
+Both gaps were re-verified this cycle by direct execution against the live code — not by
+reading the plans, the summaries, or `09-REVIEW.md`'s own "CLOSED" verdicts, all of which were
+corroborated rather than trusted. Additionally, per this re-verification's own instructions, the
+five previously-passing truths were re-checked for regression, since both gap-closure plans
+touched the two load-bearing files (`dsx/spec.py`, `dsx/frame/paradigm.py`) for the whole phase.
+No regression found.
 
 ## Goal Achievement
 
@@ -85,118 +55,172 @@ Three checks, symmetric by construction.
 
 | # | Truth | Status | Evidence |
 |---|-------|--------|----------|
-| 1 | A frequentist spec declaring `uncontrolled_continuous` with no `alpha_spending`/sequential method exits `1` at `dsx gate plan` naming `DSX-PAR-010`, reusing `inflation_from_peeking()`, `DSX-EXP-060` unchanged | ✓ VERIFIED | Ran `python3 -m dsx gate plan --spec examples/known-bad/frequentist-uncontrolled-continuous-ANALYSIS-SPEC.yaml --json`: exit `1`, CRITICAL codes = `['DSX-PAR-010']`. `git diff HEAD~20 -- dsx/checks/design.py dsx/cli.py` empty. Disjointness across every `PEEKING_POLICIES` member confirmed by direct execution (only `uncontrolled_continuous` fires `DSX-PAR-010`; only `fixed_horizon`/empty fire `DSX-EXP-060`, never both). `dsx.mathx.inflation_from_peeking()` is the only inflation table (grep confirms no second table). |
-| 2 | `bayesian-continuous-monitoring-ANALYSIS-SPEC.yaml` exits `1` naming `DSX-PAR-011`; a test asserts `1/(K+1)` at `K=19` = `0.05`, traced to Deng, Lu & Chen (2016), distinct from Ville's `1/k` (`≈0.0526`) | ✓ VERIFIED | Ran the fixture through the real gate: exit `1`, CRITICAL codes = `['DSX-PAR-011']`. `tests/test_par_monitoring_simulation.py::test_boundary_arithmetic_is_exact_in_binary64` and `::test_villes_inequality_is_a_different_bound_over_a_different_event` both pass (ran directly). `tests/test_dsx.py::TestPhase9MonitoringDiscipline::test_dsx_par_011_reference_value_boundary_arithmetic` passes. |
-| 3 | `DSX-PAR-011`'s docstring states it asserts prior-averaged, not point-null/LIL, and the fixture comments the theorem its number traces to, in a way that reads as a formulation question, not an implementation bug | ✗ FAILED | Docstring itself (dsx/frame/paradigm.py:149-173) is correct and precise. But the **shipped, operator-facing `detail=` text** (lines 244-253) and the **known-bad fixture's own comment** (bayesian-continuous-monitoring-ANALYSIS-SPEC.yaml:29-31) both attribute the `1/(K+1)` bound directly to "Theorem 1" — the exact locator error the docstring warns against three sentences earlier. Confirmed by direct execution and file read. See gap below. |
-| 4 | Switching `paradigm` cannot buy a pass in either direction (asserted by test both ways); `DSX-PAR-002` validates `paradigm_justification` against the closed vocabulary, no reason ranked above another | ⚠ VERIFIED with a documented scope note | `test_retyping_frequentist_fixture_to_bayesian_yields_dsx_par_011_not_010` and the reverse both pass (ran directly). `DSX-PAR-002` itself is membership-free (requiredness only); `DSX-SPEC-085` owns membership. Independently verified (not just trusting the review) that no input lets a bogus, non-blank `paradigm_justification` pass silently — `DSX-SPEC-085` fires unconditionally whenever `inference:` is non-empty and the field is non-blank and non-member, regardless of `DSX-PAR-002`'s trigger conditions. The 14-case cross product (`PARADIGM_JUSTIFICATIONS` × `PARADIGMS`) is a genuine runtime iteration, not hard-coded, and passes. Routed to human verification below purely as a wording-vs-scope judgment call, not a functional gap. |
-| 5 | Both codes ship together at identical severity; a committed audit records the cheapest dishonest satisfaction path for each half; the simulation lives under `tests/`, seeded, reproducible, never on the gate path | ✗ FAILED | Atomicity confirmed: both codes shipped in the single commit `df20ef6`, both severity `CRITICAL` (confirmed via `references/finding-codes.md` and direct `check()` call). Simulation requirement fully met: `tests/test_par_monitoring_simulation.py` is seeded (`random.Random(_SEED)`), reproducible (`test_determinism_same_seed_same_summary_statistic` passes), and an AST-walking test (`test_no_module_under_dsx_imports_from_tests`) mechanically proves no `dsx/` module imports `tests`. **But** the committed audit's "cheapest dishonest path" claim is not accurate — see gap below (`is_blank()` numeric/boolean gap). |
+| 1 | A frequentist spec declaring `uncontrolled_continuous` with no `alpha_spending`/sequential method exits `1` at `dsx gate plan` naming `DSX-PAR-010`, reusing `inflation_from_peeking()`, `DSX-EXP-060` unchanged | ✓ VERIFIED (regression-checked) | Re-ran `python3 -m dsx gate plan --spec examples/known-bad/frequentist-uncontrolled-continuous-ANALYSIS-SPEC.yaml --json`: exit `1`, CRITICAL codes = `['DSX-PAR-010']`, `inflated_alpha_at_5_looks=0.142`/`at_20_looks=0.248` unchanged. `git diff 4c983fa..HEAD --stat -- dsx/checks/design.py dsx/cli.py` is empty — neither file touched by gap closure. |
+| 2 | `bayesian-continuous-monitoring-ANALYSIS-SPEC.yaml` exits `1` naming `DSX-PAR-011`; a test asserts `1/(K+1)` at `K=19` = `0.05`, traced to Deng, Lu & Chen (2016), distinct from Ville's `1/k` (`≈0.0526`) | ✓ VERIFIED (regression-checked) | Re-ran the fixture: exit `1`, CRITICAL codes = `['DSX-PAR-011']`. `python3 -m unittest tests.test_dsx.TestPhase9MonitoringDiscipline -v`: 24/24 pass, including `test_dsx_par_011_reference_value_boundary_arithmetic`. |
+| 3 | `DSX-PAR-011`'s docstring states it asserts prior-averaged, not point-null/LIL, and the fixture comments the theorem its number traces to, in a way that reads as a formulation question, not an implementation bug | ✓ VERIFIED (gap closed) | Read the **live emitted** `detail=` text by direct execution (not the source line): `"...Under the prior-averaged formulation (Deng, Lu & Chen 2016), the risk of false discovery ... is bounded by 1/(K+1) = 1/20 = 0.05 at K = 19 ... Theorem 1 licenses that bound under optional stopping with known prior odds; the bound itself is unnumbered prose following Theorem 1 and again in the paper's Section 3.2."` — `'2016, Theorem 1'` (the locator error) is absent; `'Theorem 1 licenses'`, `'unnumbered prose'`, `'Section 3.2'` are present. Fixture's Formulation note re-read directly: contains `'locator error'`, `'Section 3.2'`, `'unnumbered prose'`; does not contain `'2016, Theorem 1'` or `'Theorem 1 caps'`. `test_dsx_par_011_detail_attributes_the_bound_without_a_locator_error`, `test_no_corpus_file_commits_the_theorem_1_locator_error` and `test_bayesian_fixture_states_the_corrected_attribution` all pass. |
+| 4 | Switching `paradigm` cannot buy a pass in either direction (asserted by test both ways); `DSX-PAR-002` validates `paradigm_justification` against the closed vocabulary, no reason ranked above another | ⚠ VERIFIED with a documented scope note (unchanged) | `test_retyping_frequentist_fixture_to_bayesian_yields_dsx_par_011_not_010` and the reverse both re-ran and pass. `git diff 4c983fa..HEAD -- dsx/frame/paradigm.py` shows no hunk touching `_check_paradigm_justification` (`DSX-PAR-002`'s logic) — the scope split (membership-free `DSX-PAR-002` + closed-vocabulary `DSX-SPEC-085`) is byte-for-byte unchanged from the initial verification. Routed to human verification below, carried forward unchanged — not a functional gap. |
+| 5 | Both codes ship together at identical severity; a committed audit records the cheapest dishonest satisfaction path for each half; the simulation lives under `tests/`, seeded, reproducible, never on the gate path | ✓ VERIFIED (gap closed) | Both codes still `CRITICAL` (confirmed via `finding-codes.md` and direct `check()` calls). **Audit accuracy re-verified by direct execution**, not by reading the audit text alone: ran a 48-case matrix (both paradigms × 3 clearing fields × 8 non-text values — `0`, `0.0`, `False`, `True`, `[]`, `{}`, `[0]`, `{'a':1}`) against the live `dsx.frame.paradigm.check()` — the CRITICAL pair fired in **all 48 cases**, i.e. the previously-cheaper bare-`0`/`False`/container escape no longer clears either half. A genuine non-blank string (including the literal `"0"`) still clears, confirming the audit's "one free-text declaration" floor is now actually the cheapest path. `references/paradigm-symmetry.md`'s new "What does not clear either half" section, read directly, states this history and the closed rule accurately. Simulation requirement unchanged and re-confirmed: `tests/test_par_monitoring_simulation.py` still seeded/reproducible/off-gate-path (not touched by gap closure — outside the `4c983fa..HEAD` diff). |
 
-**Score:** 5/7 must-haves verified (2 FAILED — see gaps below; both scoped to Success Criteria 3 and 5)
+**Score:** 5/5 ROADMAP Success Criteria verified; both prior FAILED truths (3 and 5) now VERIFIED. Success Criterion 4 remains routed to human verification on the same scope question as before (not a defect).
 
 ### Required Artifacts
 
 | Artifact | Expected | Status | Details |
 |---|---|---|---|
-| `dsx/frame/paradigm.py::_MONITORING_DISCIPLINE` | dict keyed by every `PARADIGMS` member | ✓ VERIFIED | `set(_MONITORING_DISCIPLINE) == set(PARADIGMS)` confirmed by direct execution: `True` |
-| `dsx/frame/paradigm.py::_check_monitoring_discipline` | emits DSX-PAR-010/011 at CRITICAL | ✓ VERIFIED | Confirmed via real gate runs against both known-bad fixtures |
-| `dsx/frame/paradigm.py::_blank_clearing_declarations` | shared clearing predicate | ✓ VERIFIED, but see gap 1 | Exists, shared, but inherits `is_blank()`'s numeric/boolean gap |
-| `dsx/frame/paradigm.py::_check_paradigm_justification` | DSX-PAR-002 requiredness, HIGH | ✓ VERIFIED | Confirmed via direct execution and `references/finding-codes.md` |
-| `references/paradigm-symmetry.md` | committed symmetry audit | ✓ EXISTS, ⚠ inaccurate in one respect | See gap 1 |
-| `tests/test_par_monitoring_simulation.py` | seeded, reproducible, off gate path | ✓ VERIFIED | 7/7 tests pass when run directly; AST-scanner test proves no `dsx/` import |
-| `references/finding-codes.md` rows for `DSX-PAR-002`/`010`/`011` | non-placeholder, correct severities | ✓ VERIFIED | `DSX-PAR-002` HIGH, `DSX-PAR-010`/`011` CRITICAL, both present |
+| `dsx/spec.py::is_blank_text` | new text-only blank predicate | ✓ VERIFIED | Exists, directly below `is_blank`; confirmed by direct import and execution over the full type domain (11 blank cases, 2 non-blank cases) matching the plan's `must_haves.truths` exactly. |
+| `dsx/spec.py::is_blank` | unchanged for all other call sites | ✓ VERIFIED | `git diff 4c983fa..HEAD -- dsx/spec.py` shows zero change inside `is_blank`'s body; direct execution confirms `is_blank(0)==is_blank(0.0)==is_blank(False)==is_blank(True)==False`, unchanged. |
+| `dsx/frame/paradigm.py::_blank_clearing_declarations` | routed through `is_blank_text` | ✓ VERIFIED | Source confirms single call to `is_blank_text`; behavior confirmed by the 48-case matrix above. |
+| `dsx/frame/paradigm.py::_MONITORING_DISCIPLINE` | dict keyed by every `PARADIGMS` member, D-12 symmetric | ✓ VERIFIED | `set(_MONITORING_DISCIPLINE) == set(PARADIGMS)` re-confirmed `True`; both rows carry 2-tuple clearing-field lists, same shape. |
+| `references/paradigm-symmetry.md` | committed symmetry audit, now accurate | ✓ VERIFIED (gap closed) | New "What does not clear either half" section read directly; states the closed hole, the pinning test, and the corrected cheapest-path claim. |
+| `dsx/frame/paradigm.py::DSX-PAR-011 detail=` | attribution matches docstring/audit, no locator error | ✓ VERIFIED (gap closed) | Live emitted text read directly (see truth 3 above). |
+| `examples/known-bad/bayesian-continuous-monitoring-ANALYSIS-SPEC.yaml` Formulation note | matches corrected attribution | ✓ VERIFIED (gap closed) | Read directly (see truth 3 above); YAML keys/values unchanged (`git diff` — comment lines only, matches SUMMARY claim). |
+| `tests/test_dsx.py::TestPhase9MonitoringDiscipline` | full type-domain + attribution regression coverage | ✓ VERIFIED | 24/24 tests pass when run directly (was 18 pre-gap-closure). |
+| `tests/test_known_bad_corpus.py::_RETIRED_LOCATOR_ERRORS` + guards | prevents the locator error returning | ✓ VERIFIED | 20/20 tests pass; guard tuple confirmed present and applied corpus-wide. |
+| `tests/test_par_monitoring_simulation.py` | seeded, reproducible, off gate path | ✓ VERIFIED (unchanged) | Outside the gap-closure diff range; not re-run individually this cycle since `sh scripts/check.sh`'s 526-test pass includes it and neither touched file could affect it. |
 
 ### Key Link Verification
 
 | From | To | Via | Status | Details |
 |---|---|---|---|---|
-| `dsx/frame/paradigm.py` | `dsx/mathx.py::inflation_from_peeking` | `from ..mathx import inflation_from_peeking` | ✓ WIRED | Confirmed by import and by the emitted `DSX-PAR-010` detail text carrying the function's own computed values |
-| `_MONITORING_DISCIPLINE` | `dsx.spec.PARADIGMS` | set-equality contract test | ✓ WIRED | `test_monitoring_discipline_map_is_symmetric_across_paradigms` passes |
-| `_NOT_SHIPPED` | `dsx/frame/paradigm.py::check()` | removal of `DSX-PAR-010`/`011`/`002` entries | ✓ WIRED | `_NOT_SHIPPED` now contains only `DSX-INT-`, `DSX-PRE-`, `DSX-ADM-` — confirmed by direct inspection |
-| `tests/test_par_monitoring_simulation.py` | `dsx/` (gate path) | AST import scanner | ✓ NOT_WIRED (by design — this is the correct/required state per REQ-P9-07) | `test_no_module_under_dsx_imports_from_tests` passes |
+| `dsx/frame/paradigm.py::_blank_clearing_declarations` | `dsx/spec.py::is_blank_text` | direct call | ✓ WIRED | Single call site; confirmed by source read and by the 48-case behavioral matrix. |
+| `is_blank_text` | every other module | must not leak | ✓ CONFIRMED ISOLATED | `grep -rn "is_blank_text" dsx/` returns matches only in `dsx/spec.py` (definition) and `dsx/frame/paradigm.py` (one use) — no other module imports or calls it. |
+| `references/paradigm-symmetry.md` | executed behavior of `dsx.frame.paradigm.check` | asserted by test, not inspection | ✓ WIRED | `test_paradigm_symmetry_audit_enumerates_both_halves` passes; audit's claims independently re-verified by direct execution (48-case matrix), not merely by reading the test. |
+| the emitted `DSX-PAR-011` `detail` | the module's own docstring / audit / POSTMORTEM.md attribution | same wording, same "licenses" verb | ✓ WIRED | Live `detail=` text read directly and compared substring-for-substring against the required phrases. |
+| `dsx/frame/paradigm.py` | `dsx/mathx.py::inflation_from_peeking` | import | ✓ WIRED (unchanged) | Untouched by gap closure; re-confirmed via live gate run showing `0.142`/`0.248` anchors. |
 
 ### Behavioral Spot-Checks
 
 | Behavior | Command | Result | Status |
 |---|---|---|---|
+| 48-case bare-`0`/`False`/container escape matrix (both paradigms × 3 fields × 8 non-text values) | direct `paradigm.check()` calls, this session | CRITICAL pair fires on all 48 | ✓ PASS |
+| Non-blank string (incl. literal `"0"`) still clears | direct `paradigm.check()` calls, this session | clears both halves as expected | ✓ PASS |
+| `is_blank` unaffected for numeric/boolean scalars | direct `is_blank()` calls, this session | `False` for `0`, `0.0`, `False`, `True` — unchanged | ✓ PASS |
 | Frequentist known-bad fixture blocks `dsx gate plan` naming `DSX-PAR-010` | `python3 -m dsx gate plan --spec examples/known-bad/frequentist-uncontrolled-continuous-ANALYSIS-SPEC.yaml --json` | exit 1, CRITICAL=`['DSX-PAR-010']` | ✓ PASS |
 | Bayesian known-bad fixture blocks `dsx gate plan` naming `DSX-PAR-011` | `python3 -m dsx gate plan --spec examples/known-bad/bayesian-continuous-monitoring-ANALYSIS-SPEC.yaml --json` | exit 1, CRITICAL=`['DSX-PAR-011']` | ✓ PASS |
 | Good fixture passes at all four gate points | `python3 -m dsx gate {plan,execute,verify,ship} --spec examples/good-ANALYSIS-SPEC.yaml` | all exit 0 | ✓ PASS |
-| `dsx audit --json` is deterministic | two consecutive runs on `examples/bad-ANALYSIS-SPEC.yaml` | byte-identical stdout and stderr | ✓ PASS |
-| `is_blank(0)`/`is_blank(False)` bug reproduces (CR-01) | direct `paradigm.check()` call with `alpha_spending: 0` / `prior_justification: false` | only `DSX-PAR-001`/`DSX-PAR-002` fire — `DSX-PAR-010`/`011` cleared | ✗ FAIL (confirms gap 1) |
-| Full test suite | `sh scripts/check.sh` | 457 tests, `OK (skipped=2)`, catalogue current, gate contract and determinism pass | ✓ PASS |
+| Live `DSX-PAR-011` `detail=` text no longer misattributes citation | direct `paradigm.check()` call, printed `detail` | locator error absent, correct attribution present | ✓ PASS |
+| Known-bad fixture Formulation note corrected | direct file read + substring check | locator error absent, correct attribution present | ✓ PASS |
+| `TestPhase9MonitoringDiscipline` full class | `python3 -m unittest tests.test_dsx.TestPhase9MonitoringDiscipline -v` | 24/24 pass | ✓ PASS |
+| `test_known_bad_corpus` full module | `python3 -m unittest tests.test_known_bad_corpus -v` | 20/20 pass | ✓ PASS |
+| Full test suite | `sh scripts/check.sh` | 526 tests, `OK (skipped=2)`, catalogue current, gate contract and determinism pass | ✓ PASS |
 
 ### Probe Execution
 
-Not applicable — no `scripts/*/tests/probe-*.sh` convention in this project; verification was performed directly against the real `dsx` gate CLI and test suite (see Behavioral Spot-Checks above).
+Not applicable — no `scripts/*/tests/probe-*.sh` convention in this project; verification was
+performed directly against the real `dsx` gate CLI and test suite (see Behavioral Spot-Checks
+above).
 
 ### Requirements Coverage
 
 | Requirement | Source Plan | Description | Status | Evidence |
 |---|---|---|---|---|
 | REQ-P9-01 | 09-03 | `DSX-PAR-010` blocks frequentist uncontrolled monitoring, reuses `inflation_from_peeking()` | ✓ SATISFIED | Gate run + `git diff` empty on `dsx/checks/design.py` |
-| REQ-P9-02 | 09-03 | `DSX-PAR-011` blocks Bayesian uncontrolled monitoring, asserts `1/(K+1)` bound | ✓ SATISFIED | Gate run + `tests/test_par_monitoring_simulation.py` boundary test |
-| REQ-P9-03 | 09-03 | Docstring states prior-averaged not point-null/LIL; fixture traces theorem | ✗ BLOCKED | Docstring correct; fixture comment and shipped finding text misattribute the bound to Theorem 1 — see gap 2 |
-| REQ-P9-04 | 09-05 | `DSX-PAR-002` validates `paradigm_justification` against closed vocabulary, symmetric | ? NEEDS HUMAN (scope) | Functionally complete via `DSX-PAR-002` + `DSX-SPEC-085` split; wording-vs-scope judgment routed to human verification |
-| REQ-P9-05 | 09-03 | Neither code escaped by retyping `paradigm`, both directions | ✓ SATISFIED | Both retype tests pass |
-| REQ-P9-06 | 09-01/09-04 | Documented audit records cheapest dishonest path per half | ✗ BLOCKED | Audit's claim is inaccurate — see gap 1 |
-| REQ-P9-07 | 09-02 | Simulation seeded, reproducible, never on gate path | ✓ SATISFIED | 7/7 simulation tests pass; AST-scanner proves isolation |
+| REQ-P9-02 | 09-03 | `DSX-PAR-011` blocks Bayesian uncontrolled monitoring, asserts `1/(K+1)` bound | ✓ SATISFIED | Gate run + boundary-arithmetic test pass |
+| REQ-P9-03 | 09-03/09-07 | Docstring states prior-averaged not point-null/LIL; fixture traces theorem correctly | ✓ SATISFIED (gap closed by 09-07) | Live `detail=` text and fixture note both re-read directly; locator error absent, correct attribution present in both |
+| REQ-P9-04 | 09-05 | `DSX-PAR-002` validates `paradigm_justification` against closed vocabulary, symmetric | ? NEEDS HUMAN (scope) — unchanged | Functionally complete via `DSX-PAR-002` + `DSX-SPEC-085` split; check logic byte-identical to initial verification (confirmed by diff); wording-vs-scope judgment carried forward |
+| REQ-P9-05 | 09-03 | Neither code escaped by retyping `paradigm`, both directions | ✓ SATISFIED | Both retype tests re-ran and pass |
+| REQ-P9-06 | 09-01/09-04/09-06 | Documented audit records cheapest dishonest path per half | ✓ SATISFIED (gap closed by 09-06) | 48-case matrix confirms no cheaper escape than one free-text declaration; audit text re-read directly and matches |
+| REQ-P9-07 | 09-02 | Simulation seeded, reproducible, never on gate path | ✓ SATISFIED | Outside gap-closure diff; part of the passing 526-test suite |
 
-No orphaned requirements — `REQUIREMENTS.md` lists all seven `REQ-P9-*` IDs and each is claimed by exactly one plan's frontmatter.
+No orphaned requirements — `REQUIREMENTS.md` lists all seven `REQ-P9-*` IDs and each is claimed
+by exactly one plan's frontmatter (REQ-P9-01/02/03/05/06 are each claimed by more than one plan
+across the phase's waves, which is expected — the gap-closure plans 09-06/09-07 re-claim the
+requirements whose truths they complete).
+
+**Note on `.planning/REQUIREMENTS.md`'s own status column:** at the time of this verification it
+still shows REQ-P9-01 through REQ-P9-05 as "Pending" and only REQ-P9-06/07 as "Complete" (lines
+210–216). This is stale tracking-file state, not a code gap — REQUIREMENTS.md is single-writer,
+updated serially by the orchestrator after a phase is accepted, and this phase has not yet been
+marked complete in that file. Every one of REQ-P9-01 through REQ-P9-05 is independently confirmed
+satisfied above by direct execution against the live codebase, not by that table. Flagged here so
+the orchestrator updates it when this phase closes.
 
 ### Anti-Patterns Found
 
 | File | Line | Pattern | Severity | Impact |
 |---|---|---|---|---|
-| `dsx/spec.py` | 369-376 | `is_blank()` has no numeric/boolean branch | 🛑 Blocker (in this phase's load-bearing usage) | Enables gap 1 — see `09-REVIEW.md` CR-01 |
-| `dsx/frame/paradigm.py` | 244-253 | Finding `detail=` text misattributes a citation locator | 🛑 Blocker | See gap 2 — `09-REVIEW.md` CR-02 |
-| `dsx/frame/paradigm.py` | 206 | `as_number(get(spec, "design.alpha")) or 0.05` — falsy-`or` default silently replaces a declared `alpha: 0` | ⚠ Warning | `09-REVIEW.md` WR-01; does not affect any ROADMAP Success Criterion since the two reference-value anchors (0.142/0.248) are unaffected — narrow edge case |
-| `references/finding-codes.md` | 354 | Catalogue generator drops one of `DSX-PAR-002`'s two distinct trigger messages (last-write-wins dedup) | ⚠ Warning | `09-REVIEW.md` WR-02; documentation completeness only, `--check` still exits 0 |
-| `dsx/frame/paradigm.py` | 493-503 | `DSX-PAR-001`'s counterfactual hard-codes `other_paradigms[0]`, correct only while `PARADIGMS` has exactly 2 members | ⚠ Warning | `09-REVIEW.md` WR-03; latent, not exercised today |
+| `dsx/frame/paradigm.py` | 112-113 | `_blank_clearing_declarations`'s new docstring (added by 09-06) overstates what `is_blank()` used to say about *empty* lists/mappings — claims `is_blank` would call "any" list/mapping present, true only for non-empty ones (`is_blank([])`/`is_blank({})` were already `True`) | ⚠ Warning (internal comment only) | `09-REVIEW.md` WR-04, newly surfaced by this gap-closure round. Re-confirmed directly this cycle: `is_blank([]) == True`, `is_blank({}) == True`. Not operator-facing (it's a private-function docstring, never emitted in any finding text), does not affect any ROADMAP Success Criterion, and does not affect the correctness of the code it describes — `is_blank_text([])` and `is_blank_text({})` are both correctly `True` regardless of the docstring's imprecision. Judged not to defeat any Success Criterion. |
 
-No `TBD`/`FIXME`/`XXX` unresolved debt markers found in the phase's modified files.
+Carried forward from the initial verification, unfixed by design (per both gap-closure plans'
+`<flagged_assumptions>`, judged not to reach any Success Criterion, and independently re-confirmed
+here that neither has moved):
+
+| File | Line | Pattern | Severity | Impact |
+|---|---|---|---|---|
+| `dsx/frame/paradigm.py` | ~206 | `as_number(get(spec, "design.alpha")) or 0.05` — falsy-`or` default silently replaces a declared `alpha: 0` | ⚠ Warning | `09-REVIEW.md` WR-01; narrow edge case, does not affect any Success Criterion |
+| `references/finding-codes.md` | ~354 | Catalogue generator drops one of `DSX-PAR-002`'s two distinct trigger messages | ⚠ Warning | `09-REVIEW.md` WR-02; documentation completeness only |
+| `dsx/frame/paradigm.py` | ~493-503 | `DSX-PAR-001`'s counterfactual hard-codes `other_paradigms[0]`, correct only while `PARADIGMS` has exactly 2 members | ⚠ Warning | `09-REVIEW.md` WR-03; latent, not exercised today |
+
+No `TBD`/`FIXME`/`XXX` unresolved debt markers found in any file modified by this phase or its
+gap-closure plans.
 
 ### Human Verification Required
 
 ### 1. `DSX-PAR-002` scope versus ROADMAP Success Criterion 4's literal wording
 
-**Test:** Read ROADMAP.md Phase 9 Success Criterion 4 ("`DSX-PAR-002` validates `paradigm_justification` against the closed vocabulary with no reason ranked above another") against the shipped split, where `DSX-PAR-002` is deliberately membership-free (presence/requiredness only) and `DSX-SPEC-085` (pre-existing, Phase 6) owns closed-vocabulary membership.
-**Expected:** A decision on whether the roadmap wording is satisfied by the two-code split (the substantive property — no bogus justification passes, no reason ranked above another — holds end to end) or whether the roadmap wording should be read literally and `DSX-PAR-002` itself needs a membership check.
-**Why human:** This is a values/scope call about how loosely to read the roadmap's prose versus the plan's own explicit, reasoned design decision (documented in `09-05-PLAN.md`'s `<resolved_open_questions>` and the function's own docstring) to avoid double-firing (D-08). Independent verification found no input where the combined system lets a bogus, non-blank `paradigm_justification` pass silently.
+**Test:** Read ROADMAP.md Phase 9 Success Criterion 4 ("`DSX-PAR-002` validates
+`paradigm_justification` against the closed vocabulary with no reason ranked above another")
+against the shipped split, where `DSX-PAR-002` is deliberately membership-free
+(presence/requiredness only) and `DSX-SPEC-085` (pre-existing, Phase 6) owns closed-vocabulary
+membership.
+**Expected:** A decision on whether the roadmap wording is satisfied by the two-code split (the
+substantive property — no bogus justification passes, no reason ranked above another — holds end
+to end) or whether the roadmap wording should be read literally and `DSX-PAR-002` itself needs a
+membership check.
+**Why human:** Carried forward unchanged from the initial verification — this is a values/scope
+call about how loosely to read the roadmap's prose versus the plan's own explicit, reasoned design
+decision (documented in `09-05-PLAN.md`'s `<resolved_open_questions>` and the function's own
+docstring) to avoid double-firing (D-08). Re-confirmed this cycle that `DSX-PAR-002`'s check logic
+is byte-identical to the version already judged against at the initial verification (`git diff
+4c983fa..HEAD -- dsx/frame/paradigm.py` shows no hunk touching `_check_paradigm_justification`),
+so nothing about the underlying facts changed — only the two independently-blocking gaps this
+round closed. Independent verification (this cycle and the last) found no input where the
+combined system lets a bogus, non-blank `paradigm_justification` pass silently.
 
 ## Gaps Summary
 
-Two CRITICAL-severity code-review findings (`09-REVIEW.md` CR-01, CR-02) were independently
-reproduced against the live codebase (not merely trusted from the review) and both bear directly on
-specific ROADMAP Phase 9 Success Criteria:
+None. Both truths the initial verification (`5/7`) scored FAILED are now independently confirmed
+CLOSED by direct execution against the live codebase this cycle — not by trusting
+`09-REVIEW.md`'s own "CLOSED" verdicts or the plans' SUMMARY claims, both of which were
+corroborated rather than inherited:
 
-1. **CR-01** (`is_blank()`'s numeric/boolean gap) undermines Success Criterion 5 / REQ-P9-06. The
-   committed symmetry audit (`references/paradigm-symmetry.md`) documents "type any non-blank string"
-   as the cheapest dishonest escape from `DSX-PAR-010`/`DSX-PAR-011`. In fact a bare `0`, `0.0`, or
-   `False` in any of the three clearing declarations (`alpha_spending`, `prior_justification`,
-   `threshold_calibration`) clears the CRITICAL pair with zero declared content — cheaper than what
-   the audit records, and undocumented. This does **not** break the D-12 cost-symmetry property itself
-   (the escape is equally cheap on both paradigms), but it does mean the audit's own headline claim
-   about the cheapest path is factually stale/wrong, which is what Success Criterion 5 specifically
-   requires it to get right.
+1. **Gap 1 (REQ-P9-06 / Success Criterion 5) — CLOSED.** A 48-case matrix (both paradigms × 3
+   clearing fields × `0`, `0.0`, `False`, `True`, `[]`, `{}`, `[0]`, `{'a':1}`) run against the
+   live `dsx.frame.paradigm.check()` this session confirms the CRITICAL pair fires in every case —
+   the previously cheaper bare-value escape is closed. `is_blank()` is confirmed byte-identical by
+   `git diff`, and `is_blank_text` is confirmed used nowhere outside `dsx/frame/paradigm.py`, so
+   the fix carries no blast radius into the ~130+ other `is_blank()` call sites. The committed
+   audit's "What does not clear either half" section, read directly, now states the closed rule
+   accurately.
 
-2. **CR-02** (Theorem 1 misattribution) undermines Success Criterion 3. The module's own docstring and
-   the committed audit correctly distinguish "Theorem 1 licenses the bound under optional stopping"
-   from "the bound `1/(K+1)` itself is unnumbered prose at Section 3.2" — and explicitly warn that
-   citing Theorem 1 alone for the number would be a locator error. Despite that warning appearing three
-   sentences earlier in the same function, the actual finding text `DSX-PAR-011` emits at gate time,
-   and the known-bad fixture's own comment, both commit exactly that locator error. This is an internal
-   self-contradiction in the shipped, operator-facing artifacts (the paired POSTMORTEM.md gets it
-   right), directly undermining Success Criterion 3's stated purpose of making a mismatch "read as a
-   formulation question in five minutes, not an implementation bug for a day."
+2. **Gap 2 (REQ-P9-03 / Success Criterion 3) — CLOSED.** The **live emitted** `DSX-PAR-011`
+   `detail=` text, read by direct execution rather than from source, no longer pairs "2016" with
+   "Theorem 1" in the clause that states the number; a separate sentence correctly attributes
+   Theorem 1's licensing role. The known-bad fixture's Formulation note carries the identical
+   corrected attribution. Both are pinned by new regression tests and a corpus-wide negative guard
+   against the retired phrasing returning through any known-bad fixture.
 
-Both gaps are narrow, mechanical fixes (rewording, and either a stricter blank predicate or an honest
-audit update) — they do not require re-architecting the symmetric pair, which is otherwise genuinely
-well-built: the atomicity requirement (D-12), both-directions retype tests, the 14-case
-`DSX-PAR-002` symmetry proof, the off-gate-path seeded simulation, and the full 457-test suite (`sh
-scripts/check.sh`) all independently verify clean. Neither gap is a regression risk for a later phase —
-both are isolated to this phase's own files.
+Regression check on the five previously-passing truths (required because both gap-closure plans
+touched the phase's two load-bearing files, `dsx/spec.py` and `dsx/frame/paradigm.py`): all five
+re-verified clean by direct execution this cycle — the frequentist/Bayesian gate runs, the
+retype-both-directions tests, the `DSX-PAR-002`/`DSX-SPEC-085` split (confirmed untouched by diff),
+`_MONITORING_DISCIPLINE`'s D-12 symmetry, and the full 526-test suite (`sh scripts/check.sh`) all
+pass. No regression found.
+
+The only remaining item is the same human-judgment scope question the initial verification
+already routed to a human — `DSX-PAR-002` versus Success Criterion 4's literal wording — carried
+forward unchanged because the underlying code is confirmed unmoved by this round's diff. This
+routes the phase to `human_needed` rather than `passed`, exactly as it did at the initial
+verification; it is not a new item and not a regression.
+
+One new, non-behavioral finding surfaced during gap closure (`09-REVIEW.md` WR-04: a docstring
+added by 09-06 slightly overstates `is_blank()`'s pre-existing behavior for *empty* containers).
+Independently confirmed this cycle (`is_blank([])`/`is_blank({})` are both already `True`, so the
+docstring's "even though `is_blank` itself would call it present" is imprecise for that one case).
+It is internal-only (never emitted in operator-facing output), does not change any tested
+behavior, and does not defeat any ROADMAP Success Criterion — reported as a Warning, not a gap.
 
 ---
 
-_Verified: 2026-08-13T00:30:00Z_
+_Verified: 2026-08-13T15:00:00Z_
 _Verifier: Claude (gsd-verifier)_
