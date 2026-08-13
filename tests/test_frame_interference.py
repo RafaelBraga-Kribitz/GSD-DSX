@@ -153,6 +153,20 @@ class TestInterferenceUnaddressed(unittest.TestCase):
         self.assertEqual(found[0].where, "spec.validity_frame.interference.mitigation")
         self.assertNotIn("DSX-INT-011", codes(report))
 
+    # 08-VERIFICATION.md's remaining gap / 08-REVIEW.md CR-01: a misspelled
+    # risk paired with a real, recognised, channel-inadmissible mitigation
+    # routed to neither check — DSX-INT-010's mitigation test found a
+    # recognised mitigation, and DSX-INT-011's risk guard returned before its
+    # judgment point — so a typo was cheaper at this CRITICAL-threshold gate
+    # than an honest declaration of the same risk.
+    def test_out_of_vocabulary_risk_with_real_mitigation_still_fires_int_011(self):
+        report = interference.check(_causal_spec(risk="shared_buget", mitigation="geo_split"))
+        found = [f for f in report.findings if f.code == "DSX-INT-011"]
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0].severity, Severity.CRITICAL)
+        self.assertEqual(found[0].where, "spec.validity_frame.interference.mitigation")
+        self.assertNotIn("DSX-INT-010", codes(report))
+
     def test_same_mitigation_different_risk_produces_no_findings(self):
         report = interference.check(
             _causal_spec(risk="marketplace", mitigation="cluster_randomisation")
@@ -191,6 +205,42 @@ class TestInterferenceUnaddressed(unittest.TestCase):
         report = interference.check(_causal_spec(mitigation="cluster_randomisation"))
         decisions = report.context.get("decisions") or []
         self.assertEqual(len(decisions), 2)
+
+    # 08-VERIFICATION.md's remaining gap / 08-REVIEW.md CR-01: the rationale
+    # recorded in 08-08-PLAN.md and 08-08-SUMMARY.md claimed judging an
+    # out-of-vocabulary risk in DSX-INT-011 would make it double-report what
+    # DSX-INT-010 already reports. That claim was never executable and it
+    # was false, which is why this gap stayed open a whole round.
+    def test_int_010_and_int_011_are_disjoint_across_the_risk_and_mitigation_grid(self):
+        """Protects the invariant that DSX-INT-010 and DSX-INT-011 never both
+        fire for the same spec. Disjointness rests on the mitigation
+        dimension alone — absent, 'none' or unrecognised on one side;
+        present, recognised and non-'none' on the other — and never on
+        risk-vocabulary membership. This grid passes both before and after
+        this plan's fix, so it is not the regression proof; the single-case
+        test above (and its gate-level sibling in TestInterferenceGateLevel)
+        are. Does not assert which code fires for a given cell — that is the
+        single-case tests' job, and pinning the whole matrix would make every
+        future vocabulary addition a test edit.
+        """
+        risks = list(INTERFERENCE_RISKS) + ["shared_buget", "marketplce", "", None]
+        mitigations = list(INTERFERENCE_MITIGATIONS) + ["buget_isolation", "", None]
+        residual_notes = ["", "<what remains unaddressed, if anything>", _REAL_RESIDUAL_NOTE]
+        for risk in risks:
+            for mitigation in mitigations:
+                for residual_note in residual_notes:
+                    with self.subTest(risk=risk, mitigation=mitigation, residual_note=residual_note):
+                        report = interference.check(
+                            _causal_spec(
+                                risk=risk, mitigation=mitigation, residual_note=residual_note
+                            )
+                        )
+                        found_codes = codes(report)
+                        self.assertFalse(
+                            {"DSX-INT-010", "DSX-INT-011"} <= found_codes,
+                            f"both codes fired for risk={risk!r} mitigation={mitigation!r} "
+                            f"residual_note={residual_note!r}",
+                        )
 
 
 class TestRiskMitigationMap(unittest.TestCase):
@@ -676,6 +726,35 @@ class TestInterferenceGateLevel(unittest.TestCase):
                 by_code["DSX-SPEC-082"]["where"], "spec.validity_frame.interference.risk"
             )
             self.assertNotIn("DSX-INT-011", by_code)
+
+    # 08-VERIFICATION.md's remaining gap / 08-REVIEW.md CR-01: the gate-level
+    # half of the same defect — a misspelled risk paired with a real,
+    # recognised, channel-inadmissible mitigation cleared dsx gate plan with
+    # exit 0 and no DSX-INT-* finding at all, so a typo was cheaper at this
+    # CRITICAL-threshold gate than declaring the same risk honestly. Asserts
+    # against the structured finding list, not rendered report text, because
+    # DSX-INT-010's own detail names DSX-SPEC-082 unconditionally (WR-01) —
+    # a substring assertion on out + err cannot tell a fired finding from a
+    # code merely quoted inside another finding's prose. Does not assert the
+    # finding list equals a fixed set: this fixture also emits DSX-EXP-040,
+    # DSX-MET-040 and DSX-PAR-001, none of which this plan is about.
+    def test_out_of_vocabulary_risk_with_real_mitigation_variant_blocks_plan_naming_both_int_011_and_spec_082(
+        self,
+    ):
+        with tempfile.TemporaryDirectory() as tmp:
+            spec_path = self._copied_fixture(tmp)
+            self._mutate_interference(spec_path, risk="shared_buget", mitigation="geo_split")
+            code, findings = _gate_findings(spec_path, "plan")
+            by_code = {f["code"]: f for f in findings}
+            self.assertEqual(code, 1)
+            self.assertIn("DSX-INT-011", by_code)
+            self.assertEqual(by_code["DSX-INT-011"]["severity"], "CRITICAL")
+            self.assertIn("DSX-SPEC-082", by_code)
+            self.assertEqual(by_code["DSX-SPEC-082"]["severity"], "HIGH")
+            self.assertEqual(
+                by_code["DSX-SPEC-082"]["where"], "spec.validity_frame.interference.risk"
+            )
+            self.assertNotIn("DSX-INT-010", by_code)
 
 
 def _stability_causal_spec(**overrides: object) -> dict:
