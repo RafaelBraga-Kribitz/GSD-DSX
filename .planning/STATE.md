@@ -5,10 +5,10 @@ milestone_name: DSX Validity Frame
 current_phase: 07
 current_phase_name: validity-frame-checks-dsx-val
 status: executing
-stopped_at: Phase 08 complete and verified; Phase 07 still open (plan 07-08 unexecuted, UAT pending)
-last_updated: "2026-08-14T11:40:13.754Z"
+stopped_at: Phase 07 gap closure 07-08 executed and merged; phase verification not yet re-run
+last_updated: "2026-08-14T11:58:00.000Z"
 last_activity: 2026-08-14
-last_activity_desc: Phase 07 execution started
+last_activity_desc: Phase 07 plan 07-08 complete — gap G-07-4 closed
 progress:
   total_phases: 5
   completed_phases: 3
@@ -19,7 +19,7 @@ progress:
 
 # Project state
 
-**Status:** Executing Phase 07
+**Status:** Phase 07 — all 8 plans executed; verification pending re-run
 **Progress:** [███████████████████░] 34/35 plans (97%)  
 **Locked decisions:** DQ = profile runner + hermetic gates; Glyph = hermetic svg_sha256 only (no MCP dep); forbidden claims = universal pack + optional phase YAML; repro_lock = ARS-style honest-null (not byte-replay); decision replay = structured thresholds only; suppressions = ADR/SPEC authority required (unknown codes → exit 2)  
 **v2.0.0 locked decisions:** DSX-PAR-010 is a distinct code, DSX-EXP-060 untouched (M-01); no `inference.stopping_rule` — PAR-010/011 read the existing `design.peeking_policy` (M-02); PEEKING_POLICIES gains an uncontrolled-continuous-monitoring value (M-03); automated import test enforces the D-03a boundary from M1 (M-04); SELF-001 stays a convention, REVERSALS.md template seeded in M1 (M-05); `validity_frame` sub-block requiredness gated by `question_type` (M-06); existing `suppressions[]` is the pre-v2.0.0 grandfather path (M-07); D-05 citation enforcement automated via `gen-finding-catalogue.py` (M-08); `dependence.method_family_required` reuses `VARIANCE_ADJUSTMENTS` (M-09)
@@ -40,7 +40,7 @@ progress:
 
 ## Next
 
-- Phase 7 (M2a) — executed, UAT complete; verification still `human_needed` (citation-admissibility judgment). Lowest outstanding phase.
+- Phase 7 (M2a) — all 8/8 plans executed. Gap G-07-4 (UAT test 4) closed 2026-08-14 by plan 07-08: the four Kish (1965) citation sites in `dsx/frame/val.py`, `dsx/mathx.py` and `brief.md` now name one locator set (section 8.2, page 258, pages 161-162), and the honesty disclosure is narrowed to the design-effect formula's section number, which no source reading confirmed. `07-VERIFICATION.md` still carries the pre-closure `human_needed` verdict on citation admissibility — **re-run verification**; it was deliberately not re-run at gap closure because a concurrent `/gsd-secure-phase 08` session was writing STATE.md at the same time. Lowest outstanding phase.
 - Phase 8 (M2b) — **complete 2026-08-14**, verification passed 6/6. Outstanding, non-blocking: `/gsd-secure-phase 08` has not been run (security enforcement is active), and 08-REVIEW.md carries two WARNING findings (WR-01 self-contradictory DSX-INT-011 remedy text for an out-of-vocabulary risk; WR-02 `design.alpha: 0` silently defaulted in `dsx/frame/paradigm.py`).
 - Then Phase 10 (M3, context re-verified 2026-08-14, 6 unexecuted plans already on disk, soft-depends on 7), Phase 11 (M4, hard-depends on 7), Phase 12 (M5, terminal).
 - Deferred, unchanged: Parquet profiler, live Glyph MCP, NLP decision_rule — out of scope for core gates.
@@ -77,10 +77,10 @@ progress:
 
 ## Current Position
 
-Phase: 07 (validity-frame-checks-dsx-val) — EXECUTING
-Plan: 1 of 8
-Status: Executing Phase 07
-Last activity: 2026-08-14 — Phase 07 execution started
+Phase: 07 (validity-frame-checks-dsx-val) — ALL PLANS EXECUTED, VERIFICATION PENDING
+Plan: 8 of 8
+Status: Gap G-07-4 closed by 07-08; post-merge suite green (543 tests / 929 subtests), catalogue --check exit 0
+Last activity: 2026-08-14 — Phase 07 plan 07-08 complete, gap G-07-4 closed
 
 ## Project Reference
 
