@@ -1454,5 +1454,165 @@ class TestValCitationObligations(unittest.TestCase):
         )
 
 
+# ── Kish citation coherence (gap G-07-4, 07-UAT.md test 4, plan 07-08) ──────
+#
+# A citation may not simultaneously name a section locator for a source and
+# also claim that only page-level locators were confirmed for that source —
+# that self-contradiction is exactly the defect UAT test 4 found in
+# _UNIT_TRIAD_CITATION. Nor may two citation sites for the same source and
+# the same result silently disagree about what locators were confirmed, the
+# way dsx/frame/val.py and dsx/mathx.py disagreed before this plan. This
+# class enforces both, and holds every file the collector below reaches to
+# the same locator set — including one that does not exist yet.
+
+_DSX_PACKAGE_DIR = _VAL_MODULE_PATH.parent.parent
+_REPO_ROOT = _DSX_PACKAGE_DIR.parent
+_BRIEF_MD_PATH = _REPO_ROOT / "brief.md"
+
+# Distinct from an empty frozenset(): "found no locators" and "could not even
+# find the Kish clause to look inside" are different failures.
+_UNPARSEABLE_KISH_CLAUSE = object()
+
+_KISH_CLAUSE_RE = re.compile(r"Kish.*?Survey Sampling,(.*?);")
+_KISH_LOCATOR_RE = re.compile(r"\b(section|sections|page|pages)\s+(\d+(?:\.\d+)?(?:\s*-\s*\d+)?)")
+
+# A family of wordings for one claim — that page-level locators were the
+# only ones confirmed for Kish — rather than one exact string, because what
+# this forbids is the claim, not the sentence it happens to be written in
+# today.
+_PAGES_ONLY_KISH_DETECTOR_PATTERNS = (
+    # dsx/frame/val.py's _UNIT_TRIAD_CITATION and _check_unit_triad docstring, before this plan
+    re.compile(r"only the page numbers", re.IGNORECASE),
+    # dsx/mathx.py's design_effect docstring, before this plan
+    re.compile(
+        r"page numbers[^.;]*were confirmed,[^.]*section number was not", re.IGNORECASE
+    ),
+    # the generalisation: any future wording of the same claim
+    re.compile(r"(?:only|nothing but)(?:\s+the)?\s+pages?[^.;]*confirmed", re.IGNORECASE),
+)
+
+
+def _collect_kish_strings() -> "list[tuple[str, Path, int]]":
+    """Every string constant mentioning Kish in every ``*.py`` file beneath
+    the ``dsx`` package, collected by walking each file's AST rather than
+    its raw text — this catches module constants and docstrings alike, and
+    Python has already folded adjacent parenthesised string literals into
+    one constant by the time the AST exists, so a citation split across
+    several physical lines arrives already joined. Each string is
+    normalised by collapsing whitespace runs to a single space, so the
+    repository's CRLF checkout and its hard line-wrapping cannot change a
+    match. Scoped to the ``dsx`` package and nowhere else — not the
+    repository root, not the tests directory, because the detector patterns
+    live in this file and a collector reaching the tests directory would
+    match its own patterns and fail permanently for the wrong reason."""
+    collected: "list[tuple[str, Path, int]]" = []
+    for path in sorted(_DSX_PACKAGE_DIR.rglob("*.py")):
+        tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Constant) or not isinstance(node.value, str):
+                continue
+            if "Kish" not in node.value:
+                continue
+            normalized = re.sub(r"\s+", " ", node.value).strip()
+            collected.append((normalized, path, node.lineno))
+    return collected
+
+
+def _kish_locators(normalized_string: str):
+    """The set of ``(kind, number)`` locator pairs (``kind`` one of
+    ``"section"``/``"page"``) named inside the Kish clause of a normalised
+    citation string, or the ``_UNPARSEABLE_KISH_CLAUSE`` sentinel when the
+    clause itself cannot be found — distinct from an empty set, so a future
+    citation mentioning Kish in a shape this helper does not understand
+    fails loudly instead of silently passing as having no locators. The
+    clause is bounded by the work's title and a comma at the start and the
+    first semicolon at the end, which is what keeps the Cochrane Handbook's
+    own section numbers out of the Kish locator set."""
+    match = _KISH_CLAUSE_RE.search(normalized_string)
+    if not match:
+        return _UNPARSEABLE_KISH_CLAUSE
+    clause = match.group(1)
+    locators = set()
+    for kind, number in _KISH_LOCATOR_RE.findall(clause):
+        normalized_kind = "section" if kind.startswith("section") else "page"
+        locators.add((normalized_kind, number.replace(" ", "")))
+    return frozenset(locators)
+
+
+class TestKishCitationCoherence(unittest.TestCase):
+    """Written against the defect recorded as gap G-07-4 in 07-UAT.md test 4:
+    dsx/frame/val.py's Kish citation named section 8.2 as a confirmed locator
+    and, one sentence later, claimed only page numbers were confirmed — a
+    self-contradiction — and dsx/mathx.py's Kish citation named a different
+    locator set for the same source and the same result."""
+
+    def test_no_kish_citation_both_names_a_section_and_claims_pages_only(self):
+        collected = _collect_kish_strings()
+        self.assertTrue(collected, f"no string mentioning Kish found under {_DSX_PACKAGE_DIR}")
+        violations = []
+        for text, path, lineno in collected:
+            locators = _kish_locators(text)
+            if locators is _UNPARSEABLE_KISH_CLAUSE:
+                continue
+            if not any(kind == "section" for kind, _number in locators):
+                continue
+            for pattern in _PAGES_ONLY_KISH_DETECTOR_PATTERNS:
+                if pattern.search(text):
+                    violations.append(
+                        f"{path}:{lineno} names a section locator "
+                        f"({sorted(locators)}) and also matches the pages-only "
+                        f"pattern {pattern.pattern!r}"
+                    )
+        self.assertEqual(
+            violations, [],
+            "a Kish citation both names a section locator and claims pages were "
+            "the only confirmed locators:\n" + "\n".join(violations),
+        )
+
+    def test_every_kish_citation_in_the_dsx_package_names_the_same_locators(self):
+        """This is the assertion that would have caught the divergence between
+        dsx/frame/val.py and dsx/mathx.py, and it holds for a file that does
+        not exist yet — any future ``*.py`` under dsx/ citing Kish for the
+        same result must name this same locator set."""
+        collected = _collect_kish_strings()
+        self.assertTrue(collected, f"no string mentioning Kish found under {_DSX_PACKAGE_DIR}")
+        unparseable_sites = []
+        groups: "dict[frozenset, list[str]]" = {}
+        for text, path, lineno in collected:
+            locators = _kish_locators(text)
+            site = f"{path}:{lineno}"
+            if locators is _UNPARSEABLE_KISH_CLAUSE:
+                unparseable_sites.append(site)
+                continue
+            if not locators:
+                continue
+            groups.setdefault(locators, []).append(site)
+        self.assertEqual(
+            unparseable_sites, [],
+            f"Kish clause could not be located/parsed at: {unparseable_sites}",
+        )
+        self.assertEqual(
+            len(groups), 1,
+            "the dsx package's Kish citations do not all name the same locators:\n"
+            + "\n".join(
+                f"  {sorted(locator_set)}: {sites}" for locator_set, sites in groups.items()
+            ),
+        )
+
+    def test_brief_md_citation_ledger_does_not_claim_pages_were_the_only_kish_locators(self):
+        text = _BRIEF_MD_PATH.read_text(encoding="utf-8")
+        normalized = re.sub(r"\s+", " ", text)
+        matched = [
+            pattern.pattern
+            for pattern in _PAGES_ONLY_KISH_DETECTOR_PATTERNS
+            if pattern.search(normalized)
+        ]
+        self.assertEqual(
+            matched, [],
+            f"{_BRIEF_MD_PATH} still claims pages were the only confirmed Kish "
+            f"locators (matched pattern(s): {matched})",
+        )
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
