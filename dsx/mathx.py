@@ -458,12 +458,14 @@ def design_effect(m: float, icc: float) -> float:
     inside a cluster are correlated and the analysis is run at a level finer than the
     true dependence unit.
 
-    Citation: Kish, L. (1965), Survey Sampling, page 258 (design-effect definition)
-    and pages 161-162 (intraclass correlation); Higgins, J.P.T., Eldridge, S. and Li,
-    T. (2024), Cochrane Handbook for Systematic Reviews of Interventions version 6.5,
-    sections 23.1.4 and 23.1.4.1.
-    The section number inside Kish for the formula itself is UNVERIFIED — the page
-    numbers above were confirmed, the section number was not. Do not invent one.
+    Citation: Kish, L. (1965), Survey Sampling, section 8.2, page 258
+    (design-effect definition) and pages 161-162 (intraclass correlation);
+    Higgins, J.P.T., Eldridge, S. and Li, T. (2024), Cochrane Handbook for
+    Systematic Reviews of Interventions version 6.5, sections 23.1.4 and
+    23.1.4.1.
+    Section 8.2 was confirmed for the design-effect definition; no section
+    number was confirmed for the design-effect formula itself, and that
+    locator is UNVERIFIED — do not invent one.
     Reference value: an intraclass correlation of 0.02 and an average cluster size of
     29.8 yield 1.576 — the Cochrane Handbook's own published worked example.
     """
