@@ -79,9 +79,10 @@ _UNIT_TRIAD_CITATION = (
     "Kish, L. (1965), Survey Sampling, section 8.2, page 258 (design-effect "
     "definition) and pages 161-162 (intraclass correlation); Higgins, J.P.T., "
     "Eldridge, S. and Li, T. (2024), Cochrane Handbook for Systematic Reviews "
-    "of Interventions version 6.5, sections 23.1.4 and 23.1.4.1. The section "
-    "number inside Kish for the design-effect formula itself is UNVERIFIED — "
-    "only the page numbers above were confirmed; do not invent one."
+    "of Interventions version 6.5, sections 23.1.4 and 23.1.4.1. Section 8.2 "
+    "was confirmed for the design-effect definition; no section number was "
+    "confirmed for the design-effect formula itself, and that locator is "
+    "UNVERIFIED — do not invent one."
 )
 
 _UNIT_DRIFT_CITATION = (
@@ -672,9 +673,9 @@ def _check_unit_triad(spec: dict, frame: dict, report: Report) -> None:
     (design-effect definition) and pages 161-162 (intraclass correlation);
     Higgins, J.P.T., Eldridge, S. and Li, T. (2024), Cochrane Handbook for
     Systematic Reviews of Interventions version 6.5, sections 23.1.4 and
-    23.1.4.1. The section number inside Kish for the design-effect formula
-    itself is UNVERIFIED — only the page numbers above were confirmed; do not
-    invent one.
+    23.1.4.1. Section 8.2 was confirmed for the design-effect definition; no
+    section number was confirmed for the design-effect formula itself, and
+    that locator is UNVERIFIED — do not invent one.
 
     The number this function prints (the Cochrane Handbook's own worked
     example: an intraclass correlation of 0.02 and an average cluster size of

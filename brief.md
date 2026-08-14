@@ -458,10 +458,11 @@ third edition, Chapter 3 section 3.2 (mechanisms, the source for `DSX-VAL-060`).
 Carlin (2010), *Statistics in Medicine* volume 29 issue 28, pages 2920 to 2931, digital object
 identifier 10.1002/sim.3944 (the companion source establishing that complete-case analysis can
 be unbiased under missing-at-random, also anchoring `DSX-VAL-060`). Senn, *Statistical Issues
-in Drug Development* (design, units, multiplicity). Kish (1965), *Survey Sampling*, page 258
-for the design-effect definition and pages 161 to 162 for the intraclass correlation (the
-source for `DSX-VAL-020`; a section number for the design-effect formula itself is unverified —
-only the page numbers were confirmed). Higgins, Eldridge and Li (2024), the *Cochrane Handbook
+in Drug Development* (design, units, multiplicity). Kish (1965), *Survey Sampling*, section 8.2
+and page 258 for the design-effect definition and pages 161 to 162 for the intraclass
+correlation (the source for `DSX-VAL-020`; section 8.2 was confirmed for the design-effect
+definition, and a section number for the design-effect formula itself is unverified). Higgins,
+Eldridge and Li (2024), the *Cochrane Handbook
 for Systematic Reviews of Interventions*, version 6.5, sections 23.1.4 and 23.1.4.1 (carrying
 the published design-effect worked value, also anchoring `DSX-VAL-020`). Gelman et al.,
 *Bayesian Data Analysis*, 3rd ed. (priors, sensitivity). Vehtari et al. (2021), "Rank-normalized
