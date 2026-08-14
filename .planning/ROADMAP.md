@@ -233,13 +233,15 @@ assignments within `DSX-VAL-*` beyond those the brief fixes (D-06 makes numberin
   5. A test asserts that no `dsx/frame/val.py` code path reads `inference.paradigm` (D-11),
      failing the suite if one is introduced.
 
-**Plans:** 7/7 plans executed
+**Plans:** 8/8 plans executed
 
 Plans:
+
 **Wave 1**
 
 - [x] 07-01-PLAN.md — shared contract constants and the design-effect helper (wave 1)
 - [x] 07-02-PLAN.md — citation ledger extension and the unpublished-number correction (wave 1)
+- [x] 07-08-PLAN.md — gap closure G-07-4: Kish citation locator coherence across val.py, mathx.py and brief.md (wave 1)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -624,7 +626,7 @@ cases where absence permitted a false pass" is a debate, not a count.
 | 4. Analytical logic depth + stats extensions | — | Complete | v1.4.0 |
 | 5. Chart review + suppressions | — | Complete | v1.5.0 |
 | 6. Contract extension, decision record, paradigm manifest | 13/13 | Complete | 2026-08-10 |
-| 7. Validity frame checks (`DSX-VAL-*`) | 7/7 | In Progress|  |
+| 7. Validity frame checks (`DSX-VAL-*`) | 8/8 | In Progress|  |
 | 8. Interference, triggering, stability (`DSX-INT-*`) | 10/10 | Complete | 2026-08-14 |
 | 9. Monitoring discipline, symmetric (`DSX-PAR-*`) | 7/7 | Complete | 2026-08-13 |
 | 10. Pre-registered inference plan (`DSX-PRE-*`) | 0/TBD | Not started | - |
