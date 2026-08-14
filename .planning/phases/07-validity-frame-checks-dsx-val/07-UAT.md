@@ -1,9 +1,9 @@
 ---
 status: complete
 phase: 07-validity-frame-checks-dsx-val
-source: [07-01-SUMMARY.md, 07-02-SUMMARY.md, 07-03-SUMMARY.md, 07-04-SUMMARY.md, 07-05-SUMMARY.md, 07-06-SUMMARY.md, 07-07-SUMMARY.md]
+source: [07-01-SUMMARY.md, 07-02-SUMMARY.md, 07-03-SUMMARY.md, 07-04-SUMMARY.md, 07-05-SUMMARY.md, 07-06-SUMMARY.md, 07-07-SUMMARY.md, 07-08-SUMMARY.md]
 started: 2026-08-12T00:00:00Z
-updated: 2026-08-12T00:00:00Z
+updated: 2026-08-14T00:00:00Z
 ---
 
 ## Current Test
@@ -48,15 +48,21 @@ read:
 
 ### 4. Citation honesty — unit-triad citation (Kish / Cochrane / Hernan & Robins)
 expected: Citation text (Kish 1965, Cochrane Handbook v6.5, Hernan & Robins 2020) and the UNVERIFIED-locator/fixed-illustration honesty disclosures in both new docstrings are accurate and not laundered from a plausible-sounding but uncited source
-result: issue
-reported: "Citation contradiction (defect found). val.py:79 states 'section 8.2, page 258' while val.py:83-84 says the section number is UNVERIFIED and 'do not invent one'. mathx.py omits the section number and is self-consistent. D-05 violation — citation should match mathx.py: omit 'section 8.2', cite page numbers only, disclosure intact."
-severity: major
+result: pass
+retested_at: 2026-08-14
+retest_note: "User confirmed the reworded citation against the four live passages read back from HEAD and against 07-DISCUSSION-LOG.md:102-103. The section-8.2/UNVERIFIED contradiction is gone; all four sites name the same locator set."
+retest_of: "issue (2026-08-12) — see prior_report below"
+prior_report: "Citation contradiction (defect found). val.py:79 states 'section 8.2, page 258' while val.py:83-84 says the section number is UNVERIFIED and 'do not invent one'. mathx.py omits the section number and is self-consistent. D-05 violation."
+prior_severity: major
+remediated_by: 07-08-PLAN.md (gap G-07-4, commits adc1ad2 + cb074c4)
 coverage_id: D6
 source_plan: 07-04
 reason: human_judgment
 read:
-  - "dsx/frame/val.py:78-90 — the _UNIT_TRIAD_CITATION constant"
-  - "dsx/frame/val.py:~660-700 — the _check_unit_triad docstring"
+  - "dsx/frame/val.py:78-85 — the _UNIT_TRIAD_CITATION constant (reworded)"
+  - "dsx/frame/val.py:671-677 — the _check_unit_triad docstring Citation: paragraph (reworded)"
+  - "dsx/mathx.py:461-468 — the design_effect docstring Citation: paragraph (now names section 8.2)"
+  - "brief.md section 7 — the Kish sentence (reworded to match)"
 rationale: "Citation-accuracy review is a human judgment call per this plan's threat model (T-7-04) and prohibitions; automated tests confirm the Citation:/Reference value:/Structural criterion: regex markers and the '# D-05: <CODE>' test markers are present, but cannot confirm the underlying bibliographic claims are accurate."
 
 ### 5. Citation honesty — identification citation and the four-against-one partition
@@ -386,11 +392,37 @@ verification:
   - unit: "tests/test_frame_val.py#TestValCitationObligations.test_every_emitted_code_appears_in_the_rendered_catalogue" (pass)
   - other: "python3 scripts/gen-finding-catalogue.py --check" (pass)
 
+### 37. [07-08/D1] TestKishCitationCoherence added to tests/test_frame_val.py (3 assertions, 2 module-level helpers) and observ...
+expected: TestKishCitationCoherence added to tests/test_frame_val.py (3 assertions, 2 module-level helpers) and observed failing against the unfixed tree before any production file was touched
+result: pass
+source: automated
+coverage_id: D1
+source_plan: 07-08
+requirement: REQ-P7-02
+verification:
+  - unit: "tests/test_frame_val.py::TestKishCitationCoherence (3 tests, all FAIL at commit adc1ad2)" (pass)
+  - unit: "python3 -m unittest tests.test_frame_val.TestKishCitationCoherence -v (3/3 pass at commit cb074c4)" (pass)
+
+### 38. [07-08/D2] Kish (1965) citation reconciled across val.py (two sites), mathx.py and brief.md — no new bibliographic claim
+expected: Kish (1965) citation reconciled across dsx/frame/val.py (two sites), dsx/mathx.py and brief.md: section 8.2 kept as a confirmed locator, disclosure narrowed to flag only the design-effect formula's section number as unverified, no new bibliographic claim added
+result: pass
+coverage_id: D2
+source_plan: 07-08
+reason: human_judgment
+requirement: REQ-P7-02
+read:
+  - "dsx/frame/val.py:78-85 and 671-677 — the two reworded Kish passages"
+  - "dsx/mathx.py:461-468 — the design_effect Citation: paragraph"
+  - "brief.md section 7 — the Kish sentence"
+  - "07-DISCUSSION-LOG.md:102-103 and 07-CONTEXT.md:284/303-304 — the research ledger the wording must not exceed"
+rationale: "Whether the reworded disclosure states only what 07-DISCUSSION-LOG.md:102-103 and 07-CONTEXT.md:284/303-304 record, and no more, is a citation-accuracy judgment call this plan's own threat model (T-7-18) and human-check step assign to a human reader — automated tests confirm the Citation:/Reference value:/Structural criterion: shapes and the locator-set/pages-only-claim invariants, but cannot confirm the underlying bibliographic claim is exactly what the research log supports."
+note: "Presented as the residual delta over test 4's retest rather than a full re-read: the over-claim ('and no more') clause, checked against 07-CONTEXT.md:303-304's parenthetical. User confirmed the shipped wording restates the ledger fact positively without widening it."
+
 ## Summary
 
-total: 36
-passed: 35
-issues: 1
+total: 38
+passed: 38
+issues: 0
 pending: 0
 skipped: 0
 blocked: 0
@@ -406,11 +438,33 @@ blocked: 0
 - No cold-start smoke test injected: no SUMMARY touches server/app/index/main entrypoints,
   database/, db/, seed(s)/, migrations/, startup*, docker-compose* or Dockerfile*.
 
+**Session 2 (2026-08-14) — resumed after gap closure:**
+
+- Gap G-07-4 reconciled to `resolved`: 07-08-PLAN.md carries `gap_ids: [G-07-4]` and has a
+  matching 07-08-SUMMARY.md (status: complete). 1 gap resolved, 0 still open.
+- 07-08-SUMMARY.md added to `source`. Its coverage block classified `mode: coverage`, 2 entries:
+  D1 auto-passed (test 37), D2 human checkpoint (test 38).
+- Test 4 reopened as a retest rather than left as `issue` — the defect it reported was fixed by
+  07-08, and the fix needs the same human citation-accuracy judgment that found it.
+- Re-run this session against live HEAD: `TestKishCitationCoherence` 3/3 pass;
+  `gen-finding-catalogue.py --check` exit 0 ("finding catalogue is current"; the four
+  "declared twice" warnings are pre-existing and name no Kish/DSX-VAL-020 code);
+  `check_brief_refs.py` exit 0 (14/14 ok).
+- `verify:pre` gates: `api-coverage.verify-pre` → `block: false` (no external-API integration
+  detected). The `dsx` capability's `dsx-statistician` step hook is registered and active
+  (`dsx.enforce` default true) but was skipped per its own `onError: skip` — `dsx audit
+  --phase-dir` reports no ANALYSIS-SPEC for this phase, which is correct: Phase 07 builds the
+  validity-frame checker, it does not produce a statistical analysis to review. No STATS-REVIEW.md
+  is expected or produced.
+
 ## Gaps
 
 - gap_id: G-07-4
   truth: "The unit-triad citation's Kish locator and its UNVERIFIED disclosure agree with each other and with the phase's own research ledger."
-  status: failed
+  status: resolved
+  resolved_by: 07-08-PLAN.md
+  resolved_at: 2026-08-14
+  resolution_note: "Reading B implemented across all four sites. Re-verified this session: TestKishCitationCoherence 3/3 pass, gen-finding-catalogue.py --check exit 0, check_brief_refs.py exit 0. Human re-confirmation of the reworded citation text is UAT test 4 (retest) and test 38."
   reason: "User reported: Citation contradiction (defect found). val.py:79 states 'section 8.2, page 258' while val.py:83-84 says the section number is UNVERIFIED and 'do not invent one'. D-05 violation."
   severity: major
   test: 4
