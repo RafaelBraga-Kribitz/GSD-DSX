@@ -605,18 +605,41 @@ class TestTriggeringDilution(unittest.TestCase):
                 )
 
     def test_good_fixture_clears_ship_resolving_sibling_artifacts_from_its_own_directory(self):
-        # No --phase-dir here, deliberately: dsx/cli.py::cmd_gate resolves relative
+        # Still no --phase-dir, deliberately: dsx/cli.py::cmd_gate resolves relative
         # evidence/profile paths from `args.phase_dir or path.parent`, and the good
         # fixture's sibling artifacts (DATA-PROFILE.yaml, figures/, NARRATIVE.md,
-        # the reproducibility entrypoint) live next to it under examples/, not in a
-        # throwaway temp directory. Matches the plan's own acceptance-criteria
-        # invocation (`dsx gate ship --spec examples/good-ANALYSIS-SPEC.yaml`, no
-        # --phase-dir) rather than this module's usual phase-dir idiom.
-        good = ROOT / "examples" / "good-ANALYSIS-SPEC.yaml"
-        out, err = io.StringIO(), io.StringIO()
-        with redirect_stdout(out), redirect_stderr(err):
-            code = cli.main(["gate", "ship", "--spec", str(good)])
-        self.assertEqual(code, 0, f"gate ship unexpectedly blocked:\n{err.getvalue()}")
+        # the reproducibility entrypoint) must resolve from the spec's own directory.
+        # The whole examples/ tree is copied first so the siblings come with it and
+        # the decision-record trail is written into the copy — without the copytree
+        # this run appends to the committed tree's examples/DECISIONS.jsonl, which is
+        # gitignored and so never showed up in `git status` (threat T-8-23). Matches
+        # test_stability_gate_level_severity_alone_selects_verify_not_plan's idiom.
+        committed_trail = ROOT / "examples" / "DECISIONS.jsonl"
+        size_before = committed_trail.stat().st_size if committed_trail.exists() else None
+
+        with tempfile.TemporaryDirectory() as tmp:
+            target = Path(tmp) / "examples"
+            # The trail is excluded from the copy so its appearance below proves
+            # this run wrote it, rather than copytree having carried it across.
+            shutil.copytree(
+                ROOT / "examples", target,
+                ignore=shutil.ignore_patterns("DECISIONS.jsonl"),
+            )
+            good = target / "good-ANALYSIS-SPEC.yaml"
+            out, err = io.StringIO(), io.StringIO()
+            with redirect_stdout(out), redirect_stderr(err):
+                code = cli.main(["gate", "ship", "--spec", str(good)])
+            self.assertEqual(code, 0, f"gate ship unexpectedly blocked:\n{err.getvalue()}")
+            self.assertTrue(
+                (target / "DECISIONS.jsonl").exists(),
+                "gate wrote no decision-record trail into the temporary copy",
+            )
+
+        size_after = committed_trail.stat().st_size if committed_trail.exists() else None
+        self.assertEqual(
+            size_before, size_after,
+            "this run appended to the committed tree's examples/DECISIONS.jsonl",
+        )
 
 
 class TestInterferenceGateLevel(unittest.TestCase):
