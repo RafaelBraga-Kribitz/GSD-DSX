@@ -144,3 +144,14 @@ None - no external service configuration required.
 - `PREREG_FACTS`, `_parse_fallback_rule` and `_resolve_branch` are ready for `10-02` to build the three `DSX-PRE-*` finding checks (`_check_rule_resolves`, `_check_content_lock`, `_check_procedure_reconciliation`) and the `check()` dispatcher on top of them.
 - No `report.add("DSX-PRE-...")` call site exists yet, so none of the five D-13 guards (`_NOT_SHIPPED`, `_PARADIGM_INDEPENDENT`, `PREFIX_GROUPS`, `_D05_ALLOWLIST_PREFIXES`, the pinned covered-code test) have flipped — this is by design; `10-02` and later plans land those forcing edits alongside the first finding code.
 - No blockers. Full suite green (573/573), finding catalogue current, D-03a and D-11 boundary scanners both clean against the new module.
+
+## Self-Check: PASSED
+
+- FOUND: dsx/spec.py
+- FOUND: dsx/frame/prereg.py
+- FOUND: tests/test_frame_prereg.py
+- FOUND: .planning/phases/10-pre-registered-inference-plan-dsx-pre/10-01-SUMMARY.md
+- FOUND: 6713e10 (Task 1 commit)
+- FOUND: 91f85a5 (Task 2 commit)
+- FOUND: 7d425f6 (Task 3 commit)
+- FOUND: 041b1f6 (SUMMARY.md commit)
