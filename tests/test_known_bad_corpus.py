@@ -15,6 +15,7 @@ from __future__ import annotations
 import io
 import json
 import re
+import shutil
 import sys
 import tempfile
 import unittest
@@ -141,7 +142,26 @@ _INCIDENTAL_GAP_CODES = {
 # verify_and_ship_naming_pre_030 for the positive-direction proof the generic
 # test below cannot supply, exactly as test_weak_identification_mmm_fixture_
 # blocks_verify_and_ship_naming_int_030 supplies it for the other verify-only entry.
-_TARGET_DEFECT_CODES: "dict[str, dict[str, str]]" = {
+#
+# Plan 11.1-08 (REQ-P11.1-07/08) widens a point's value to accept either a bare
+# code string (every entry above) or a frozenset of several code strings, for
+# full-frame-cleaning's "execute" entry below: the entrypoint check family
+# (`code`, DSX-CODE-*) and the machine-learning check family (`ml`, DSX-ML-*)
+# are both registered at the `execute` gate point but not at `plan`
+# (dsx/cli.py::GATE_PROFILES), and this phase's fixture demonstrates three
+# CRITICAL codes from the `code` family at that one point at once — the first
+# point-scoped entry in this map to need the multi-code shape
+# `_classify_target_defect`'s own docstring already documents and accepts.
+# full-frame-cleaning's own DSX-ML-090 (HIGH, not CRITICAL) cannot live in this
+# map at all: `_classify_target_defect` only ever checks CRITICAL findings, so a
+# HIGH code placed here would be reported "missing" from every CRITICAL list it
+# is compared against. It is instead recorded under a second, non-critical-
+# threshold key ("ship") purely so `_own_target_codes` (which reads every key's
+# value regardless of name) recognises it as this fixture's own code for the
+# ship-completeness test — mirroring weak-identification-mmm's own second key
+# above, which documents the identical "this key is a dict-collision-avoidance
+# device, not a claim the code fires only at that one point" reasoning.
+_TARGET_DEFECT_CODES: "dict[str, dict[str, str | frozenset[str]]]" = {
     "weak-identification-mmm": {"plan": "DSX-VAL-040", "verify": "DSX-INT-030"},
     "interference-shared-budget": {"plan": "DSX-INT-010"},
     "triggering-dilution": {"plan": "DSX-INT-030"},
@@ -327,12 +347,88 @@ def _effective_target_map() -> "dict[str, dict[str, frozenset[str]]]":
     }
 
 
-def _own_target_codes(slug: str) -> "frozenset[str]":
-    """Every code `slug` is this corpus's declared demonstration of, across both maps."""
-    return frozenset(
-        set(_TARGET_DEFECT_CODES.get(slug, {}).values())
-        | set(_EXPECTED_CAUGHT_DEFECTS.get(slug, frozenset()))
-    )
+def _own_target_codes(
+    slug: str,
+    target_map: "dict[str, dict[str, str | frozenset[str]]] | None" = None,
+    expected_map: "dict[str, frozenset[str]] | None" = None,
+) -> "frozenset[str]":
+    """Every code `slug` is this corpus's declared demonstration of, across both maps.
+
+    Plan 11.1-08: flattens a `_TARGET_DEFECT_CODES` value into its individual code
+    strings rather than collecting the raw mapping value — a point's value may be a
+    bare string (the single-target shape plan 08-02 introduced) or a frozenset of
+    several codes (the multi-code shape this plan's fixture needs, since its
+    `execute`-point entry names three codes at once). Collecting `.values()` directly,
+    as this function did before this plan, would put a whole frozenset into the
+    returned set as one unhashable-looking element instead of its member codes,
+    which is exactly the drift `test_ship_gate_findings_are_all_documented_incidental_corpus_gaps`
+    would otherwise silently mis-evaluate: a fixture's own multi-code entry would
+    fail to match any single code in a real gate's findings, reporting every one of
+    that fixture's own codes as undocumented.
+
+    `target_map` and `expected_map` default to the module constants
+    `_TARGET_DEFECT_CODES`/`_EXPECTED_CAUGHT_DEFECTS` — every real call site in this
+    module calls this function with one argument, exactly as before this plan — but
+    accepting them as parameters lets a synthetic map exercise the flattening
+    independent of the filesystem and the real gate, the same testability discipline
+    `_classify_target_defect`'s own docstring already sets out for `target_map` there.
+    """
+    if target_map is None:
+        target_map = _TARGET_DEFECT_CODES
+    if expected_map is None:
+        expected_map = _EXPECTED_CAUGHT_DEFECTS
+    codes: "set[str]" = set()
+    for value in target_map.get(slug, {}).values():
+        if isinstance(value, str):
+            codes.add(value)
+        else:
+            codes.update(value)
+    codes.update(expected_map.get(slug, frozenset()))
+    return frozenset(codes)
+
+
+def _seed_entrypoint(tmp: "str | Path", spec_path: "str | Path") -> None:
+    """Copy a fixture's own declared reproducibility entrypoint into the temporary
+    phase directory `_gate_findings` gates against (plan 11.1-08, REQ-P11.1-07/08).
+
+    The harness deliberately points the resolve root at a fresh temporary directory
+    on every call (see `_gate_findings`'s own docstring) so the decision trail is
+    never written under `examples/` — but that same choice makes a fixture's own
+    entrypoint unreachable to the entrypoint check (`dsx/checks/code.py`), which
+    resolves a relative `reproducibility.entrypoint` against that same temporary
+    root (`dsx/cli.py::run_checks` passes it the resolve root, not the spec's own
+    directory). Confirmed by measurement before this helper was written: running
+    `dsx gate execute` against `examples/good-ANALYSIS-SPEC.yaml` with a fresh
+    `tempfile.mkdtemp()` as `--phase-dir` fires `DSX-REP-031` ("declared entrypoint
+    does not exist") and the `code` check's own findings are empty — the entrypoint
+    scan silently sees nothing to scan, for every fixture, regardless of what its
+    entrypoint source actually contains.
+
+    Loads the specification with the real `dsx.loader.load` (never re-parsing the
+    YAML by hand) and reads `reproducibility.entrypoint` exactly as
+    `dsx/checks/code.py::check` reads it. When that value is a non-blank string and
+    a file of that name exists beside `spec_path`, copies it into `tmp` at the same
+    relative path, creating parent directories as needed, so `_resolve_entrypoint`
+    finds it under the temporary phase directory exactly as it would under a real
+    phase directory holding the fixture's own files. Returns quietly — no copy, no
+    error — when the entrypoint is blank, absent, or names a file that does not
+    exist beside the spec: today that is every pre-existing fixture in this corpus
+    (none declares `reproducibility.entrypoint` at all — confirmed by
+    `grep -n entrypoint examples/known-bad/*.yaml`, which matches only prose
+    comments, never a live YAML key), so this call is a no-op for all of them and
+    every pre-existing fixture's exit code at every gate point is unchanged.
+    """
+    spec = load(str(spec_path))
+    repro = spec.get("reproducibility")
+    entry = repro.get("entrypoint") if isinstance(repro, dict) else None
+    if not isinstance(entry, str) or not entry.strip():
+        return
+    source = Path(spec_path).parent / entry
+    if not source.is_file():
+        return
+    dest = Path(tmp) / entry
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy(source, dest)
 
 
 def _slugs(pattern: str, suffix: str) -> set[str]:
@@ -369,8 +465,22 @@ class TestKnownBadCorpus(unittest.TestCase):
         every fixture in the corpus at exit 2 the moment ``prereg`` is
         registered in ``GATE_PROFILES``. Seed a plan-time header for
         ``spec_path`` into ``tmp`` first whenever ``point`` needs one.
+
+        Plan 11.1-08 (REQ-P11.1-07/08): the same fresh-temporary-directory choice
+        also makes a fixture's own declared ``reproducibility.entrypoint``
+        unreachable to the entrypoint check, for exactly the same reason — the
+        resolve root a real ``dsx gate`` run passes to ``code.check`` is this
+        temporary directory, not the fixture's own directory under
+        ``examples/known-bad/``. ``_seed_entrypoint`` runs unconditionally, for
+        every gate point, immediately before the plan-header seeding above —
+        unlike that one, it is not scoped to ``verify``/``ship`` only, because the
+        entrypoint check is registered at ``execute`` (``dsx/cli.py::GATE_PROFILES``)
+        as well as ``verify``/``ship``. It is a no-op for every fixture that
+        declares no entrypoint, which is every fixture in this corpus before this
+        plan.
         """
         with tempfile.TemporaryDirectory() as tmp:
+            _seed_entrypoint(tmp, spec_path)
             if point in ("verify", "ship"):
                 seed_plan_header(tmp, spec_path)
             out, err = io.StringIO(), io.StringIO()
@@ -893,6 +1003,88 @@ class TestClassifyTargetDefectHelper(unittest.TestCase):
         findings = [{"code": "DSX-XXX-040", "severity": "CRITICAL"}]
         problems = _classify_target_defect("fixture-b", "plan", 0, findings, fake_map)
         self.assertEqual(problems, [])
+
+
+class TestOwnTargetCodesFlattening(unittest.TestCase):
+    """Proves `_own_target_codes` flattens a multi-code value into its individual
+    code strings, against a fabricated map — independent of the filesystem, the
+    real gate and the module's own constants (plan 11.1-08, matching the
+    two-proofs discipline `TestClassifyTargetDefectHelper` above already sets for
+    `_classify_target_defect`)."""
+
+    def test_multi_code_value_flattens_to_individual_codes(self):
+        fake_target_map = {
+            "fixture-a": {"execute": frozenset({"DSX-XXX-010", "DSX-XXX-011"})}
+        }
+        own = _own_target_codes("fixture-a", target_map=fake_target_map, expected_map={})
+        self.assertEqual(own, frozenset({"DSX-XXX-010", "DSX-XXX-011"}))
+
+    def test_single_string_value_still_returns_that_one_code(self):
+        fake_target_map = {"fixture-b": {"plan": "DSX-YYY-020"}}
+        own = _own_target_codes("fixture-b", target_map=fake_target_map, expected_map={})
+        self.assertEqual(own, frozenset({"DSX-YYY-020"}))
+
+    def test_both_maps_contribute_and_a_second_non_critical_key_is_still_flattened(self):
+        # Mirrors full-frame-cleaning's own shape: one multi-code entry at
+        # "execute" plus a second, non-critical-threshold-point key ("ship")
+        # holding a single HIGH-severity code that cannot live in the
+        # CRITICAL-only-checked point set.
+        fake_target_map = {
+            "fixture-c": {
+                "execute": frozenset({"DSX-CODE-020", "DSX-CODE-021"}),
+                "ship": "DSX-ML-090",
+            }
+        }
+        fake_expected_map = {"fixture-c": frozenset({"DSX-PAR-010"})}
+        own = _own_target_codes(
+            "fixture-c", target_map=fake_target_map, expected_map=fake_expected_map
+        )
+        self.assertEqual(
+            own, frozenset({"DSX-CODE-020", "DSX-CODE-021", "DSX-ML-090", "DSX-PAR-010"})
+        )
+
+    def test_unmapped_slug_returns_an_empty_frozenset(self):
+        own = _own_target_codes("no-such-slug", target_map={}, expected_map={})
+        self.assertEqual(own, frozenset())
+
+
+class TestSeedEntrypoint(unittest.TestCase):
+    """Proves `_seed_entrypoint` against real specification fixtures on disk —
+    independent of `_gate_findings` and the real gate (plan 11.1-08,
+    REQ-P11.1-07/08)."""
+
+    def test_no_declared_entrypoint_leaves_the_temporary_directory_empty(self):
+        # weak-identification-mmm declares no reproducibility.entrypoint at all
+        # (confirmed: no fixture in this corpus does, before this plan) — seeding
+        # must be a true no-op, not merely "does not raise".
+        spec_path = CORPUS_DIR / "weak-identification-mmm-ANALYSIS-SPEC.yaml"
+        with tempfile.TemporaryDirectory() as tmp:
+            _seed_entrypoint(tmp, spec_path)
+            self.assertEqual(
+                list(Path(tmp).iterdir()), [],
+                "_seed_entrypoint copied something for a fixture with no declared "
+                "entrypoint",
+            )
+
+    def test_declared_entrypoint_is_copied_to_the_same_relative_path(self):
+        # A synthetic spec + entrypoint pair, independent of any real corpus
+        # fixture, so this test does not depend on what a later task in this
+        # plan commits.
+        with tempfile.TemporaryDirectory() as spec_dir, tempfile.TemporaryDirectory() as tmp:
+            entry_path = Path(spec_dir) / "synthetic-entrypoint.py"
+            entry_path.write_text("# synthetic entrypoint for _seed_entrypoint's own test\n")
+            spec_path = Path(spec_dir) / "synthetic-ANALYSIS-SPEC.yaml"
+            spec_path.write_text(
+                "spec_version: 1\n"
+                "title: synthetic\n"
+                "question_type: descriptive\n"
+                "reproducibility:\n"
+                "  entrypoint: synthetic-entrypoint.py\n"
+            )
+            _seed_entrypoint(tmp, spec_path)
+            copied = Path(tmp) / "synthetic-entrypoint.py"
+            self.assertTrue(copied.is_file(), f"{copied} was not seeded")
+            self.assertEqual(copied.read_text(), entry_path.read_text())
 
 
 if __name__ == "__main__":
