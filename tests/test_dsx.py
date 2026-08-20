@@ -1471,12 +1471,22 @@ class TestPhase11_1ML(unittest.TestCase):
 
     # ── DSX-ML-090/091/092: selection ledger (REQ-P11.1-06) ──────────────────
 
-    def test_selection_bases_vocabulary_is_locked_and_disjoint_from_score_sources(self):
+    def test_selection_bases_vocabulary_is_locked(self):
+        # Plan 11.1-07's acceptance criteria also assert
+        # `not (SELECTION_BASES & SCORE_SOURCES)`, which is unsatisfiable as
+        # written: SCORE_SOURCES already carries 'nested_cv' (shipped and
+        # test-locked in plan 11.1-06's test_accepted_score_sources_produce_no_052),
+        # and this plan's own <action> text and its embedded <automated>
+        # verify commands require SELECTION_BASES to carry 'nested_cv' too —
+        # the two vocabularies share one term for one concept ("a nested
+        # cross-validation protocol") used in two different roles. Rewriting
+        # SCORE_SOURCES to drop 'nested_cv' would break the prior plan's
+        # shipped test, which this plan's own prohibitions forbid. See
+        # 11.1-07-SUMMARY.md's Deviations section.
         self.assertEqual(
             ml.SELECTION_BASES,
             frozenset({"train", "validation", "test", "cv_same_fold", "nested_cv"}),
         )
-        self.assertFalse(ml.SELECTION_BASES & ml.SCORE_SOURCES)
 
     def test_algorithm_declared_no_ledger_key_produces_090_at_high(self):
         # D-05: DSX-ML-090
