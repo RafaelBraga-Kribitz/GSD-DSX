@@ -13,7 +13,7 @@ a suppression or a reference in a review stays valid across versions.
 **Gate thresholds.** `plan` and `execute` block at CRITICAL; `verify` and
 `ship` block at HIGH.
 
-**Total: 233 codes.**
+**Total: 235 codes.**
 
 ## Contract structure — `DSX-SPEC-*`
 
@@ -236,6 +236,8 @@ Fit-before-split and leakage smells in the entrypoint.
 | `DSX-CODE-010` | MEDIUM | model: block present but entrypoint has no declared split marker |
 | `DSX-CODE-020` | CRITICAL | Full-frame cleaning statistic computed before the split |
 | `DSX-CODE-021` | CRITICAL | Fit call after the split is not fitted on a recognised training frame |
+| `DSX-CODE-030` | CRITICAL | Statistical test references the declared target before the split |
+| `DSX-CODE-031` | HIGH | Statistical test references the declared target at or after the split |
 
 ## Decision replay — `DSX-DEC-*`
 

@@ -14,6 +14,12 @@ from ..decisions import DecisionRecord, record_decision
 from ..findings import Report
 from ..spec import is_blank, section
 
+# Phase 11.1 (REQ-P11.1-03): how many lines a target reference is allowed to
+# trail behind the statistical-test call it explains. Fixed, not derived, so
+# the number is a stated decision (see `_stat_test_lines_referencing`'s
+# docstring) rather than a magic constant scattered through the function body.
+_TARGET_REFERENCE_LOOKBACK = 3
+
 SPLIT_MARKERS = (
     "train_test_split",
     "TimeSeriesSplit",
@@ -85,6 +91,19 @@ FIT_CALL_RE = re.compile(
     r"\.fit(?:_transform)?\s*\(\s*([A-Za-z_][\w.\[\]'\"]*)\s*[),]"
 )
 
+# Phase 11.1 (REQ-P11.1-03): the statistical-test call idiom the reproduction's
+# hypothesis stage uses in place of any `.fit(`-shaped call — a co-occurrence
+# match, not a fit-scan, is what catches it. One bounded alternation of
+# literal function names followed by one bounded whitespace repetition and an
+# opening parenthesis: no nested quantifier, linear in line length, matching
+# the discipline `FULL_FRAME_IMPUTE_RE`'s comment documents (threat T-11.1-12).
+# A leading `\b` keeps a longer identifier that merely contains one of these
+# names (e.g. `my_ttest_ind_variant(`) from matching.
+STAT_TEST_CALL_RE = re.compile(
+    r"\b(?:chi2_contingency|ttest_ind|ttest_rel|pearsonr|mannwhitneyu|f_oneway|kruskal)"
+    r"\s*\("
+)
+
 
 def check(spec: dict, phase_dir: "str | None" = None) -> Report:
     """Entrypoint fit-before-split, full-frame-cleaning and fit-after-split scans
@@ -116,6 +135,31 @@ def check(spec: dict, phase_dir: "str | None" = None) -> Report:
     first-argument token against TRAINING_FRAME_NAMES (matched as a prefix, not
     equality), combined with a >= index comparison between the triggering
     fit-call line and the first split-marker line.
+
+    Phase 11.1 (REQ-P11.1-03) adds DSX-CODE-030 (a statistical-test call whose
+    argument text references the declared `model.target` column, occurring
+    before the first split marker, or occurring at all when no split marker
+    exists) and DSX-CODE-031 (the same call at or after the first split
+    marker). This closes the check's other blind spot: the reproduction's
+    hypothesis stage contains no fit call at all — it cross-tabulates a
+    candidate feature against the target and runs a chi-square test, then
+    appends accepted hypotheses to the dataset for the downstream stages
+    (`references/The AI Data Scientist.md`, Table 1 / section 2.2).
+
+    Citation: Kaufman, S., Rosset, S., Perlich, C. and Stitelman, O. (2012),
+    "Leakage in Data Mining: Formulation, Detection, and Avoidance," ACM
+    Transactions on Knowledge Discovery from Data, 6(4), Article 15, DOI
+    10.1145/2382577.2382579. The section stating that leakage can be
+    introduced through the evaluation path rather than the training path is
+    UNVERIFIED — the full paper text was not independently re-read in this
+    session; do not invent a locator.
+
+    Structural criterion: DSX-CODE-030 and DSX-CODE-031 are a co-occurrence of
+    a statistical-test-function name match (STAT_TEST_CALL_RE) and a target-
+    column reference within a bounded line window (see
+    `_stat_test_lines_referencing`), compared against the first split-marker
+    line index with the same strictly-less-than / >= split DSX-CODE-020 and
+    DSX-CODE-021 already use.
     """
     report = Report(check="code")
     repro = section(spec, "reproducibility")
@@ -134,7 +178,8 @@ def check(spec: dict, phase_dir: "str | None" = None) -> Report:
     lines = source.splitlines()
     first_split = _first_line_matching(lines, SPLIT_MARKERS)
     first_fit = _first_fit_leak_line(lines)
-    has_model = bool(section(spec, "model"))
+    model_section = section(spec, "model")
+    has_model = bool(model_section)
 
     if first_fit is not None and (first_split is None or first_fit < first_split):
         # Allow Pipeline(...).fit(X_train after a split — only when split precedes.
@@ -244,6 +289,108 @@ def check(spec: dict, phase_dir: "str | None" = None) -> Report:
                 "DSX-CODE-020; a fit call whose first-argument token begins "
                 "with a TRAINING_FRAME_NAMES member would have cleared "
                 "DSX-CODE-021."
+            ),
+        ),
+    )
+
+    # Phase 11.1 (REQ-P11.1-03): statistical-test-sees-target scan. The target
+    # is read from the model section already resolved above, through the same
+    # `section()`/`is_blank()` accessors `_check_features` uses for the same
+    # field in dsx/checks/ml.py — this keeps whitespace/blank handling
+    # identical across both check families without adding a parameter to
+    # check()'s signature (dsx/cli.py::run_checks calls it with exactly two
+    # arguments; has_model above is already derived internally the same way).
+    raw_target = model_section.get("target")
+    target_text = raw_target if isinstance(raw_target, str) else ""
+    stat_test_lines = (
+        [] if is_blank(target_text) else _stat_test_lines_referencing(lines, target_text)
+    )
+
+    stat_before_index: "int | None" = None
+    stat_after_index: "int | None" = None
+    for index in stat_test_lines:
+        if first_split is None or index < first_split:
+            if stat_before_index is None:
+                stat_before_index = index
+        elif stat_after_index is None:
+            stat_after_index = index
+
+    stat_before_blocked = stat_before_index is not None
+    if stat_before_blocked:
+        report.add(
+            "DSX-CODE-030",
+            "CRITICAL",
+            "Statistical test references the declared target before the split",
+            detail=(
+                f"Line {stat_before_index + 1}: "
+                f"{lines[stat_before_index].strip()[:120]} (target: "
+                f"{target_text!r}, split: "
+                f"{'none' if first_split is None else f'line {first_split + 1}'})."
+            ),
+            remedy=(
+                "Compute the test on the training rows only, or state the test "
+                "as exploratory and exclude any feature it selected."
+            ),
+            where=f"entrypoint:{entry}",
+        )
+
+    stat_after_blocked = stat_after_index is not None
+    if stat_after_blocked:
+        report.add(
+            "DSX-CODE-031",
+            "HIGH",
+            "Statistical test references the declared target at or after the split",
+            detail=(
+                f"Line {stat_after_index + 1}: "
+                f"{lines[stat_after_index].strip()[:120]} (target: "
+                f"{target_text!r}, split: line {first_split + 1})."
+            ),
+            remedy="Name the frame the test was computed on.",
+            where=f"entrypoint:{entry}",
+        )
+
+    # Phase 11.1 (D-04): a second decision record covering both DSX-CODE-030
+    # and DSX-CODE-031, appended at the point where the index split has been
+    # made — the same shape plan 11.1-01 established above for DSX-CODE-020/
+    # DSX-CODE-021, kept as its own record rather than folded into the first
+    # because it judges a different scan (target reference, not cleaning/fit).
+    record_decision(
+        report,
+        DecisionRecord(
+            id="",
+            invocation_id="",
+            layer="deterministic",
+            choice=(
+                "statistical test on target before split: "
+                + ("blocked" if stat_before_blocked else "passed")
+                + "; statistical test on target at or after split: "
+                + ("blocked" if stat_after_blocked else "passed")
+            ),
+            inputs=[
+                f"entrypoint:{entry}",
+                f"target:{'none' if is_blank(target_text) else target_text}",
+                f"split_line:{'none' if first_split is None else first_split + 1}",
+                f"stat_before_line:{'none' if stat_before_index is None else stat_before_index + 1}",
+                f"stat_after_line:{'none' if stat_after_index is None else stat_after_index + 1}",
+            ],
+            rule=(
+                "DSX-CODE-030 fires when a statistical-test call referencing "
+                "model.target has a line index strictly less than the first "
+                "split-marker line index, or when no split marker exists at "
+                "all. DSX-CODE-031 fires when such a call's line index is "
+                "greater than or equal to the first split-marker line index. "
+                "A blank or absent target skips the scan entirely."
+            ),
+            citation=(
+                "Kaufman, S., Rosset, S., Perlich, C. and Stitelman, O. (2012), "
+                "\"Leakage in Data Mining: Formulation, Detection, and "
+                "Avoidance,\" ACM Transactions on Knowledge Discovery from "
+                "Data, 6(4), Article 15."
+            ),
+            counterfactual=(
+                "A split marker present above the statistical-test call would "
+                "have moved the finding from DSX-CODE-030 to DSX-CODE-031; a "
+                "blank model.target would have cleared both."
             ),
         ),
     )
@@ -407,3 +554,53 @@ def _is_training_frame(token: str) -> bool:
     subscripted training frame (`X_train_scaled`, `X_train.values`,
     `train_df[cols]`) without a second pattern."""
     return any(token.startswith(name) for name in TRAINING_FRAME_NAMES)
+
+
+def _stat_test_lines_referencing(lines: list[str], target: str) -> list[int]:
+    """Indices of non-comment, non-import lines where `STAT_TEST_CALL_RE`
+    matches, and either that line itself or one of the
+    `_TARGET_REFERENCE_LOOKBACK` (three) lines immediately preceding it
+    references `target` (REQ-P11.1-03).
+
+    The lookback exists because the reproduction's own idiom
+    (`references/The AI Data Scientist.md`, Table 1) builds the contingency
+    table — the line that actually carries the target reference — on one
+    line, then calls the statistical test on the very next line. A lookback
+    of one would already catch that exact idiom; three lines is a stated
+    margin, not a magic constant.
+
+    The target-reference recogniser is built fresh from the escaped target
+    text (`re.escape`), so a column name containing regular-expression
+    metacharacters cannot change the pattern's meaning or complexity class
+    (threat T-11.1-11). It recognises exactly three forms: a bracket
+    subscript with single quotes (`['target']`), a bracket subscript with
+    double quotes (`["target"]`), and an attribute access (`.target`). The
+    bracket forms are exact by construction — the closing quote immediately
+    follows the target text, so a longer identifier sharing that text as a
+    substring cannot match. The attribute form requires a literal `.`
+    (a non-identifier character) immediately before the target text and a
+    trailing `\\b` immediately after it, so neither a longer identifier that
+    merely starts with the target text (`.targetted`) nor one that merely
+    ends with it (`.my_target`, no literal dot before `target`) is treated as
+    a reference — only a real dotted attribute access on exactly that name.
+    """
+    escaped = re.escape(target)
+    reference_re = re.compile(
+        r"\['" + escaped + r"'\]"
+        r"|\[\"" + escaped + r"\"\]"
+        r"|\." + escaped + r"\b"
+    )
+    results: list[int] = []
+    for index, line in enumerate(lines):
+        stripped = line.strip()
+        if stripped.startswith("#"):
+            continue
+        if re.match(r"^(from|import)\b", stripped):
+            continue
+        if not STAT_TEST_CALL_RE.search(line):
+            continue
+        window_start = max(0, index - _TARGET_REFERENCE_LOOKBACK)
+        window = lines[window_start : index + 1]
+        if any(reference_re.search(candidate) for candidate in window):
+            results.append(index)
+    return results
