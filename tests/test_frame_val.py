@@ -1226,6 +1226,14 @@ _EXPECTED_VAL_CODES: "dict[str, set[str]]" = {
     # validity_frame sub-block is populated the same way the good fixture's are,
     # so no DSX-VAL-* code fires.
     "post-hoc-procedure-switch-ANALYSIS-SPEC.yaml": set(),
+    # Measured 2026-08-20 (plan 11.1-08) against the fixture as committed in this
+    # plan: loaded via dsx.loader.load(), ran dsx.frame.val.check(spec), recorded
+    # {f.code for f in report.findings}. This fixture's encoded defect lives in
+    # reproducibility.entrypoint and model: (DSX-CODE-020/021/030,
+    # DSX-ML-090, Phase 11.1) — the validity_frame block is a wholesale clone
+    # of post-hoc-procedure-switch's own (renamed session -> customer), so no
+    # DSX-VAL-* code fires here either.
+    "full-frame-cleaning-ANALYSIS-SPEC.yaml": set(),
 }
 
 

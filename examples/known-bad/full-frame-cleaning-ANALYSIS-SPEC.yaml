@@ -1,0 +1,236 @@
+# A known-bad ANALYSIS-SPEC (REQ-P11.1-07, REQ-P11.1-08, ROADMAP Phase 11.1
+# Success Criterion 1). Unlike every sibling in this directory, the encoded
+# defect is NOT in the validity_frame:/inference: contract this corpus's other
+# fixtures target — those blocks, and the design:/metrics:/data:/analysis:
+# blocks, are cloned wholesale from
+# examples/known-bad/post-hoc-procedure-switch-ANALYSIS-SPEC.yaml (a fixture
+# already measured to clear `dsx gate plan` and `dsx gate execute` cleanly),
+# renamed to a customer-churn retention narrative, so this fixture trips only
+# its own defect and not an unrelated shape finding. The `inference:` block
+# below is deliberately NOT a byte clone of that source — its fallback_rule
+# and primary_procedure are written so `prereg` (dsx/frame/prereg.py) finds
+# nothing to reconcile, because a second, unrelated blocking defect at
+# verify/ship would violate this plan's own prohibition against adding one.
+#
+# The encoded defect lives in reproducibility.entrypoint (paired
+# full-frame-cleaning-entrypoint.py) and in model:, reproducing the case this
+# phase exists to close: a paper's own reference implementation — "The AI Data
+# Scientist" (arXiv:2508.18113v1), Sections 2.1-2.3 — imputes and filters a
+# column over the full frame before any split, forms and tests a hypothesis
+# against the declared target before that split, and fits a preprocessing
+# scaler on the full frame after the split rather than on the training frame
+# alone — while model.preprocessing_fit_on honestly declares train_only for
+# the whole pipeline and model.selection_ledger is not declared at all.
+#
+# It is EXPECTED TO CLEAR `dsx gate plan` (exit 0) — the entrypoint check
+# (`code`) and the machine-learning check (`ml`) that catch this defect are
+# both registered at the `execute` gate point only (dsx/cli.py::GATE_PROFILES),
+# never at `plan`. It is EXPECTED TO BLOCK at `dsx gate execute` (exit 1),
+# naming DSX-CODE-020, DSX-CODE-021 and DSX-CODE-030 among its CRITICAL
+# findings — measured, not predicted; see the paired POSTMORTEM.md for the
+# full recorded set at every gate point.
+#
+#   dsx validate --spec examples/known-bad/full-frame-cleaning-ANALYSIS-SPEC.yaml
+#   dsx gate execute --spec examples/known-bad/full-frame-cleaning-ANALYSIS-SPEC.yaml --phase-dir examples/known-bad
+
+spec_version: 1
+title: "Does a personalized retention outreach reduce churn among customers flagged by a churn-risk model, compared across five candidate campaign designs?"
+owner: "retention-analytics"
+created: "2026-07-01"
+
+question_type: causal
+
+decision:
+  owner: "VP Retention"
+  decision_rule: >
+    Roll out the winning outreach campaign design to 100% of flagged at-risk
+    customers if its 95% CI lower bound on the churn-rate reduction, after a
+    Holm correction across the comparison family, exceeds +1.0pp. Otherwise
+    hold at the current retention process.
+  action_if_null: "Keep the current retention process; close the initiative and reallocate the squad."
+  minimum_practical_effect: 0.02
+  reversible: true
+  deadline: "2026-08-15"
+
+metrics:
+  - name: churn_rate
+    type: ratio
+    definition: "Share of flagged at-risk customers who churned within the observation window"
+    grain: customer
+    numerator: "count(distinct customer_id) where churned_at is not null"
+    denominator: "count(distinct customer_id) where flagged_at_risk_at is not null"
+    source: warehouse.fct_customer_churn
+    owner: retention-analytics
+
+data:
+  - name: flagged_customers
+    source: warehouse.fct_customer_churn
+    period: "2026-07-01..2026-07-21"
+    rows: 63104
+
+design:
+  kind: experiment
+  identification: randomized_experiment
+  randomization_unit: customer
+  analysis_unit: customer
+  arms: [control, treatment]
+  expected_allocation: [0.5, 0.5]
+  baseline_rate: 0.24
+  mde: 0.02
+  alpha: 0.05
+  power: 0.80
+  planned_n_per_arm: 7400
+  duration_days: 21
+  peeking_policy: fixed_horizon
+
+analysis:
+  outcome_type: proportion
+  n_groups: 2
+  paired: false
+  n_per_group: 7462
+  test: two_proportion_z
+  normality_ok: true
+  equal_variance: true
+  independence_ok: true
+
+# ── Model (REQ-P11.1-07) ─────────────────────────────────────────────────────
+# The churn-risk model that flags the at-risk population the experiment above
+# draws its arms from. Declares a whole-pipeline preprocessing boundary of
+# training rows only (honest — the model's own preprocessing_fit_on really is
+# train_only) and no selection ledger (DSX-ML-090 fires). Neither field
+# contradicts the entrypoint's own defect, which the entrypoint scan catches
+# independently: model.preprocessing_fit_on says nothing about a per-step
+# cleaning boundary, and no data[].cleaning block is declared here, so the
+# per-step cleaning codes (DSX-ML-023/024) stay silent by design — the
+# requirement's own claim is that the entrypoint scan catches this without any
+# new declaration.
+model:
+  task: binary_classification
+  target: Exited
+  algorithm: gradient_boosting
+  split: random
+  features:
+    - CreditScore
+    - Age
+    - Tenure
+    - Balance
+    - NumOfProducts
+    - IsActiveMember
+    - EstimatedSalary
+  prediction_time_definition: "Scored nightly at 02:00 for all active accounts; the churn-risk score selects the flagged population for the retention-outreach experiment above."
+  positive_rate: 0.20
+  preprocessing_fit_on: train_only
+  primary_metric: pr_auc
+  baseline: majority_class
+  threshold_selected_on: validation
+
+reproducibility:
+  entrypoint: full-frame-cleaning-entrypoint.py
+  random_seed: 42
+
+results:
+  observed_n: [7462, 7431]
+  interim_looks: 1
+  comparisons_looked_at: 5
+  overall_effect: 0.021
+
+claims:
+  - text: >
+      The fifth candidate retention-outreach campaign design decreases churn
+      rate by 2.1 percentage points among flagged at-risk customers in the
+      test window.
+    type: causal
+    evidence: "RESULTS.md#retention-campaign-uplift"
+    population: "Flagged at-risk customers, 2026-07-01 to 2026-07-21"
+    identification: randomized_experiment
+
+assumptions:
+  - assumption: "Bucketing is stable across a customer for a given customer_id."
+    rationale: "Assignment is hashed on customer_id and persisted server-side."
+    impact_if_wrong: "Contamination between arms would bias the estimate toward zero."
+    checked: false
+
+limitations:
+  - "The churn-risk model flagging the at-risk population for this experiment carries its own encoded defect; see model: above and the paired POSTMORTEM.md."
+
+# ── Validity frame (REQ-P6-02) ───────────────────────────────────────────────
+# question_type: causal + design.kind: experiment, so all ten sub-blocks are
+# required from plan onward (R-01 / M-06). This block is clean — the encoded
+# defect lives entirely in reproducibility/model above, not here. Cloned
+# wholesale (renamed session -> customer) from
+# post-hoc-procedure-switch-ANALYSIS-SPEC.yaml, a fixture already measured to
+# clear dsx gate plan and dsx gate execute.
+validity_frame:
+  estimand:
+    quantity: "difference in churn rate"
+    type: difference_in_proportions
+    population: "flagged at-risk customers, 2026-07-01 to 2026-07-21"
+    contrast: "fifth candidate retention-outreach campaign design (treatment) vs current retention process (control)"
+    time_window: "within-customer, 2026-07-01 to 2026-07-21"
+    falsifier: "the Holm-corrected 95% CI on the churn-rate reduction includes zero, or its lower bound sits below +1.0pp"
+
+  units:
+    observation: customer
+    assignment: customer
+    analysis: customer
+
+  identification:
+    strength: strong               # strong | moderate | weak
+    evidence: "Assignment is randomized per customer at flagging time and persisted server-side."
+    constraint_source: none        # none | informative_priors | penalisation | design_restriction | hierarchical_pooling
+    constraint_justification: ""
+
+  dependence:
+    structure: none                # none | clustered | repeated_measures | temporal | spatial | hierarchical
+    cluster_var: ""
+    method_family_required: ""
+
+  interference:
+    risk: none                     # none | shared_budget | marketplace | geo_spillover | social_graph | shared_inventory
+    mechanism: ""
+    mitigation: none               # none | geo_split | cluster_randomisation | time_split | budget_isolation | modelled
+    residual_note: ""
+
+  triggering:
+    eligible_population: "all customers flagged at-risk in the window"
+    triggered_definition: "received the outreach campaign"
+    analysis_population: eligible  # eligible | triggered
+    expected_trigger_rate: 1.0
+    dilution_adjusted: false
+
+  stability:
+    window: "21 days"
+    novelty_primacy_assessed: true
+    evidence: "RESULTS.md#retention-campaign-stability"
+
+  sampling_frame:
+    source: "warehouse.fct_customer_churn, all regions"
+    claim_population: "all customers flagged at-risk in the window"
+    known_exclusions: []
+    selection_risk: "none identified"
+
+  missingness:
+    mechanism: not_assessed        # MCAR | MAR | MNAR | not_assessed
+    rate: 0.0
+    method_implied: complete_case
+
+  measurement:
+    construct: "customer churn"
+    operationalisation: "an account closure or cancellation recorded within the observation window"
+    known_gaps: "none identified"
+
+# ── Inference plan (REQ-P6-04) ───────────────────────────────────────────────
+# Deliberately NOT a byte clone of post-hoc-procedure-switch's inference block:
+# primary_procedure equals the executed analysis.test exactly and
+# fallback_rule carries no "->" arrow, so dsx/frame/prereg.py's
+# _parse_fallback_rule reads it as inert prose (no rule to resolve) and
+# _check_procedure_reconciliation compares the same label to itself. This
+# fixture's encoded defect is in reproducibility/model above; a second,
+# unrelated blocking defect here would violate this plan's own prohibition.
+inference:
+  paradigm: frequentist            # frequentist | bayesian
+  paradigm_justification: team_convention
+  declared_at: pre_data            # pre_data | post_data
+  primary_procedure: two_proportion_z
+  alpha_spending: null
+  fallback_rule: "No mid-study procedure switch was declared or performed; the single pre-registered two-proportion z-test was run as declared."
