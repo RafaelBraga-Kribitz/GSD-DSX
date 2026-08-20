@@ -145,6 +145,14 @@ analysis:
 #   task: binary_classification
 #   target: <column>
 #   algorithm: <e.g. gradient_boosting>
+#   # Optional. Owed once an algorithm is declared: a declared algorithm is a
+#   # declaration that a choice among candidates was made. Leaving this block
+#   # out fires DSX-ML-090 (HIGH); an out-of-vocabulary selected_on, including
+#   # a misspelling, fires it too.
+#   selection_ledger:
+#     candidates_evaluated: []
+#     configurations_tried: null
+#     selected_on: null                 # train | validation | nested_cv (accepted) | test (DSX-ML-091 CRITICAL) | cv_same_fold (DSX-ML-092 HIGH)
 #   split: temporal                     # random | stratified | temporal | grouped | grouped_temporal | nested_cv
 #   time_column: <column>
 #   entity_column: <column>             # set when entities repeat across rows

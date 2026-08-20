@@ -72,6 +72,15 @@ TRAIN_ONLY_FIT_VALUES = frozenset({"train_only", "train_fold_only", "none"})
 # also excludes the last two.
 SCORE_SOURCES = frozenset({"cv_mean", "holdout", "nested_cv", "best_fold", "unknown"})
 
+# Phase 11.1 (REQ-P11.1-06): where a model-selection choice was made — not
+# where a reported score came from (SCORE_SOURCES, above). The two vocabularies
+# describe different things and must not be merged: a selection basis of
+# 'test' says the test set chose the model; a score source of 'holdout' says
+# the reported number came from a held-out set. A spec can name either
+# independently of the other, and a value valid in one is not automatically
+# valid in the other.
+SELECTION_BASES = frozenset({"train", "validation", "test", "cv_same_fold", "nested_cv"})
+
 
 def check(spec: dict) -> Report:
     report = Report(check="ml")
@@ -103,6 +112,7 @@ def check(spec: dict) -> Report:
     _check_prediction_time_definition(model, report)
     _check_metric_choice(model, spec, report, task)
     _check_baseline(model, spec, report)
+    _check_selection_ledger(model, report)
     _check_overfit(spec, report)
     _check_test_set_hygiene(model, spec, report)
     _check_calibration(model, spec, report, task)
@@ -861,6 +871,166 @@ def _check_baseline(model: dict, spec: dict, report: Report) -> None:
                 "A declared score source inside the accepted three (cv_mean, holdout, "
                 "nested_cv) and a margin at or above the fold spread would have cleared both "
                 "codes."
+            ),
+        ),
+    )
+
+
+def _check_selection_ledger(model: dict, report: Report) -> None:
+    """Selection-ledger completeness and basis-branch check (DSX-ML-090/091/092).
+
+    Phase 11.1 (REQ-P11.1-06): a declared model.algorithm is a declaration
+    that a choice was made among candidates. This check returns immediately
+    when the algorithm is blank — nothing is owed when no choice was
+    declared at all. Otherwise it reads three declared fields under
+    model.selection_ledger — candidates_evaluated, configurations_tried and
+    selected_on, through the mapping-section idiom (`section`), so a ledger
+    declared as a list or any other non-mapping value is treated as absent
+    rather than raising — and asks whether the account of that choice is
+    complete, and if it is, whether the basis the choice was made on
+    invalidates the reported score.
+
+    An unrecognised selected_on value (blank, or any string outside
+    SELECTION_BASES after normalisation, including a misspelling of an
+    accepted value) is counted as a missing field, not as a distinct
+    finding: the alternative would let a misspelling of the test-set value
+    clear DSX-ML-091's CRITICAL, the bypass class this milestone has
+    already closed for _check_cleaning's fit_on vocabulary and
+    _check_metric_choice's metric vocabulary.
+
+    Citation: Cawley, G.C. and Talbot, N.L.C. (2010), "On Over-fitting in
+    Model Selection and Subsequent Selection Bias in Performance
+    Evaluation," Journal of Machine Learning Research, 11, pages 2079 to
+    2107. The paper's central result — that selecting a model by the same
+    cross-validated performance figure later reported as its score is
+    optimistically biased, and that nested cross-validation removes the
+    bias — is stated in the paper's own Abstract. The exact section locator
+    for the fuller treatment of nested cross-validation as the recommended
+    remedy is UNVERIFIED — the PDF's section numbering was not
+    independently re-read in this session (the paper is open access at
+    JMLR); do not invent a locator.
+
+    Structural criterion: the three codes are a completeness test over
+    three declared fields (candidates_evaluated, configurations_tried,
+    selected_on — the first two blank-checked via is_blank, the third
+    additionally checked for membership in SELECTION_BASES after
+    normalisation) followed by a membership branch on that one closed
+    vocabulary. No statistic is computed; the check reads three declared
+    fields and branches on one of them.
+    """
+    if is_blank(model.get("algorithm")):
+        return
+
+    ledger = section(model, "selection_ledger")
+    candidates = ledger.get("candidates_evaluated")
+    configurations = ledger.get("configurations_tried")
+    basis_raw = ledger.get("selected_on")
+    basis = normalize(basis_raw) if not is_blank(basis_raw) else ""
+
+    missing: list[str] = []
+    if is_blank(candidates):
+        missing.append("candidates evaluated")
+    if is_blank(configurations):
+        missing.append("configurations tried")
+    # Phase 11.1: an unrecognised basis (blank, or out of SELECTION_BASES —
+    # including a misspelling of an accepted value) is counted as missing,
+    # not as a distinct finding. See this function's own docstring for why.
+    if is_blank(basis_raw) or basis not in SELECTION_BASES:
+        missing.append("selection basis")
+
+    fired_090 = bool(missing)
+    fired_091 = False
+    fired_092 = False
+    listing = ", ".join(missing)
+
+    if fired_090:
+        report.add(
+            "DSX-ML-090",
+            "HIGH",
+            "Declared algorithm has no complete selection ledger",
+            detail=(
+                f"Missing: {listing}. A model chosen from a set of candidates carries an "
+                "optimistic bias that depends on how many candidates were tried and on what "
+                "data the trying was scored against — neither of which can be read from a "
+                "specification that does not record them."
+            ),
+            remedy=(
+                "Declare the candidates evaluated, the number of configurations tried, and "
+                "the basis the selection was made on, under model.selection_ledger."
+            ),
+            where="spec.model.selection_ledger",
+        )
+    elif basis == "test":
+        fired_091 = True
+        report.add(
+            "DSX-ML-091",
+            "CRITICAL",
+            "Model was selected on the test set",
+            detail=(
+                "Once the test set chooses the model it has become a validation set, and the "
+                "reported score is an optimistic estimate of nothing in particular."
+            ),
+            remedy=(
+                "Select on a validation split or a nested protocol, and hold out a fresh test "
+                "set."
+            ),
+            where="spec.model.selection_ledger.selected_on",
+        )
+    elif basis == "cv_same_fold":
+        fired_092 = True
+        report.add(
+            "DSX-ML-092",
+            "HIGH",
+            "The selection and the reported score share their folds",
+            detail=(
+                "Tuning inside the same resampling loop that produces the reported estimate "
+                "biases it upward by an amount nobody can bound from the specification alone."
+            ),
+            remedy="Use a nested protocol with separate inner and outer loops.",
+            where="spec.model.selection_ledger.selected_on",
+        )
+    else:
+        report.ok(f"model selection basis declared: '{basis}'")
+
+    # Phase 11.1 (D-04): a decision record covering all three codes, appended
+    # once per report whenever a model algorithm is declared — the only
+    # gate that makes this check applicable at all.
+    record_decision(
+        report,
+        DecisionRecord(
+            id="",
+            invocation_id="",
+            layer="deterministic",
+            choice=(
+                f"DSX-ML-090 fired: missing {listing}" if fired_090
+                else "DSX-ML-091 fired: selected on the test set" if fired_091
+                else "DSX-ML-092 fired: selected on the same folds as the reported score"
+                if fired_092
+                else f"cleared: complete ledger, selection basis declared as {basis!r}"
+            ),
+            inputs=[
+                f"selection_ledger.candidates_evaluated:"
+                f"{'declared' if not is_blank(candidates) else 'missing'}",
+                f"selection_ledger.configurations_tried:"
+                f"{'declared' if not is_blank(configurations) else 'missing'}",
+                f"selection_ledger.selected_on:{basis_raw if not is_blank(basis_raw) else 'undeclared'}",
+            ],
+            rule=(
+                "DSX-ML-090 fires when model.algorithm is declared and any of "
+                "selection_ledger.candidates_evaluated, .configurations_tried or "
+                ".selected_on is blank, or .selected_on does not normalise to a member of "
+                "SELECTION_BASES. Otherwise DSX-ML-091 fires when .selected_on normalises to "
+                "'test'; DSX-ML-092 fires when it normalises to 'cv_same_fold'; every other "
+                "member of SELECTION_BASES clears all three codes."
+            ),
+            citation=(
+                "Cawley, G.C. and Talbot, N.L.C. (2010), \"On Over-fitting in Model "
+                "Selection and Subsequent Selection Bias in Performance Evaluation,\" "
+                "Journal of Machine Learning Research, 11, pages 2079 to 2107."
+            ),
+            counterfactual=(
+                "A complete ledger whose basis names a nested protocol (or a validation or "
+                "training set) would have cleared all three codes."
             ),
         ),
     )
