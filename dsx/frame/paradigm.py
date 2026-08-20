@@ -321,11 +321,17 @@ def _check_paradigm_justification(spec: dict, report: Report) -> None:
       - ``inference.paradigm`` normalizes to a member of ``PARADIGMS`` and
         ``inference.paradigm_justification`` is blank or absent: a paradigm
         was declared but the reason for it was not.
-      - ``inference.paradigm`` is blank or absent *and*
-        ``design.peeking_policy`` normalizes to ``uncontrolled_continuous``:
-        no paradigm was declared at all, under a design that needs one.
+      - ``inference.paradigm`` does not normalize to a member of
+        ``PARADIGMS`` — blank, absent, or a non-blank string outside the
+        vocabulary — *and* ``design.peeking_policy`` normalizes to
+        ``uncontrolled_continuous``: no paradigm this spec can actually be
+        checked against was declared, under a design that needs one. The
+        unrecognised case reads the same as the blank one deliberately:
+        ``_check_monitoring_discipline`` already treats it that way, and
+        before 07-REVIEW.md CR-01 a typo'd paradigm matched neither branch
+        and cleared this code entirely.
 
-    Never tests membership. ``DSX-SPEC-085``
+    Never *reports* membership. ``DSX-SPEC-085``
     (``dsx/spec.py::_validate_inference_shape``) owns whether a declared
     ``paradigm_justification`` is a recognised member of
     ``PARADIGM_JUSTIFICATIONS`` — a committed test pins the real
@@ -349,11 +355,16 @@ def _check_paradigm_justification(spec: dict, report: Report) -> None:
     locator within this paper is unverified at time of writing — the same
     unverified-locator flag carried by this module's other citations of the
     same source, escalated per D-05 rather than invented.
-    Structural criterion: a presence test over one field at a time, never a
-    membership test (``DSX-SPEC-085`` owns membership). The identical path
+    Structural criterion: a usability test over one field at a time — is
+    there a value here this spec can be checked against — never a
+    membership *report* (``DSX-SPEC-085`` owns emitting the vocabulary
+    violation, and a spec whose only defect is an out-of-vocabulary
+    ``paradigm_justification`` still yields exactly one ``DSX-SPEC-085``
+    finding and zero ``DSX-PAR-002`` findings, T-9-14). The identical path
     applies to every member of ``PARADIGM_JUSTIFICATIONS`` and of
     ``PARADIGMS``: no per-member or per-paradigm branch exists in this
-    function.
+    function — the only vocabulary read is the whole-set membership test
+    that folds an unrecognised ``paradigm`` into the undeclared case.
     """
     declared_paradigm = get(spec, "inference.paradigm")
     paradigm = normalize(declared_paradigm) if not is_blank(declared_paradigm) else ""
@@ -383,7 +394,15 @@ def _check_paradigm_justification(spec: dict, report: Report) -> None:
             "Declaring a non-blank inference.paradigm_justification (any "
             f"of: {allowed}) would have cleared DSX-PAR-002."
         )
-    elif not paradigm and policy == _UNCONTROLLED_POLICY:
+    elif paradigm not in PARADIGMS and policy == _UNCONTROLLED_POLICY:
+        # `paradigm not in PARADIGMS` covers blank/absent *and* the third
+        # reachable state: a non-blank string outside the vocabulary. This
+        # is a usability test on one field ("is there a paradigm this spec
+        # can actually be checked against"), not the membership *report* —
+        # DSX-SPEC-085 still owns telling the author their value is not a
+        # member, and still fires alone for that. Without this, a typo'd
+        # paradigm passed both branches and silently cleared DSX-PAR-002
+        # under a design that needs a declaration (07-REVIEW.md CR-01).
         members = ", ".join(sorted(PARADIGMS))
         report.add(
             "DSX-PAR-002",
@@ -391,7 +410,8 @@ def _check_paradigm_justification(spec: dict, report: Report) -> None:
             "inference.paradigm is not declared under an uncontrolled continuous design",
             detail=(
                 "design.peeking_policy is uncontrolled_continuous and no "
-                "inference.paradigm is declared. With no paradigm declared, "
+                "recognised inference.paradigm is declared. With no "
+                "recognised paradigm declared, "
                 "every paradigm-conditional check currently applies — "
                 "declaring one narrows the checks that apply to this spec, "
                 "it never adds to them."
@@ -444,7 +464,12 @@ def check(spec: dict) -> Report:
     Structural criterion: a set-membership computation over a data-driven
     applicability map (``_PARADIGM_INDEPENDENT``, ``_PARADIGM_CONDITIONAL``,
     ``_NOT_SHIPPED``), keyed by every member of ``PARADIGMS`` plus the
-    undeclared case — no numeric threshold or statistic is computed here.
+    no-usable-declaration case — no numeric threshold or statistic is
+    computed here. "No usable declaration" covers blank, absent, and a
+    non-blank value outside ``PARADIGMS``; all three take the union of
+    every conditional family, matching ``_check_monitoring_discipline``'s
+    own fallback so this manifest can never report a family as not applied
+    in a report where that family fired (07-REVIEW.md CR-01).
     """
     report = Report(check="paradigm")
 
@@ -458,12 +483,26 @@ def check(spec: dict) -> Report:
     selected: "set[str]" = set(_PARADIGM_INDEPENDENT)
     if paradigm in _PARADIGM_CONDITIONAL:
         selected.update(_PARADIGM_CONDITIONAL[paradigm])
-    elif not paradigm:
-        # Undeclared: select every paradigm-conditional family's prefixes
-        # (the union), not none of them. Declaring a paradigm never adds a
-        # finding, it only ever removes one (brief D-10) — this is what
-        # closes the undeclared-paradigm escape from DSX-PAR-010/DSX-PAR-011
-        # at CRITICAL without spending a new code (09-03-PLAN.md, Question 1).
+    else:
+        # Undeclared *or* unrecognised: select every paradigm-conditional
+        # family's prefixes (the union), not none of them. Declaring a
+        # paradigm never adds a finding, it only ever removes one (brief
+        # D-10) — this is what closes the undeclared-paradigm escape from
+        # DSX-PAR-010/DSX-PAR-011 at CRITICAL without spending a new code
+        # (09-03-PLAN.md, Question 1).
+        #
+        # The `else` covers both because inference.paradigm has a third
+        # reachable state beyond "member of PARADIGMS" and "blank": a
+        # non-blank string outside the vocabulary (a typo such as
+        # `bayesain`). Membership is not enforced anywhere that blocks
+        # `dsx gate plan` — DSX-SPEC-085 reports it at HIGH, below plan's
+        # CRITICAL threshold — so that state reaches this function live.
+        # _check_monitoring_discipline below already treats it exactly like
+        # an undeclared paradigm and evaluates both DSX-PAR-010 and
+        # DSX-PAR-011 for it. An `elif not paradigm` here would leave those
+        # two out of `selected` while they fired, making this manifest
+        # assert the opposite of what the same run evaluated — the one
+        # failure mode D-10 exists to prevent.
         for prefixes in _PARADIGM_CONDITIONAL.values():
             selected.update(prefixes)
 
@@ -478,16 +517,25 @@ def check(spec: dict) -> Report:
     not_applied_text = "; ".join(
         f"{prefix} ({reason})" for prefix, reason in not_applied.items()
     ) or "(none)"
-    detail = (
-        f"applied: {applied_text}\n"
-        f"not applied: {not_applied_text}"
-        + (
-            ""
-            if paradigm
-            else "\nno paradigm is declared, so every paradigm-conditional "
+    # Three cases, not two — an unrecognised paradigm widens the applied set
+    # exactly like an undeclared one, and the manifest has to say why, or a
+    # reader sees both DSX-PAR-010 and DSX-PAR-011 applied under a declared
+    # paradigm with no explanation. The vocabulary itself stays
+    # DSX-SPEC-085's to report; this only names the consequence.
+    if paradigm in _PARADIGM_CONDITIONAL:
+        applicability_note = ""
+    elif paradigm:
+        applicability_note = (
+            f"\ninference.paradigm ({paradigm}) is not a recognised paradigm, "
+            "so every paradigm-conditional family applies until a recognised "
+            "one is declared"
+        )
+    else:
+        applicability_note = (
+            "\nno paradigm is declared, so every paradigm-conditional "
             "family applies until one is"
         )
-    )
+    detail = f"applied: {applied_text}\nnot applied: {not_applied_text}{applicability_note}"
     remedy = (
         "Informational only — naming the gap plainly is what removes the "
         "incentive to misdeclare a paradigm just to look checked (D-10)."
