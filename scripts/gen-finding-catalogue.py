@@ -49,6 +49,9 @@ PREFIX_GROUPS = [
     ("DSX-INT", "Interference, triggering and stability",
      "Interference and SUTVA risk, triggered-versus-eligible dilution, and novelty or primacy "
      "over the declared stability window."),
+    ("DSX-PRE", "Pre-registered inference plan",
+     "The declared fallback rule resolved against the declared observed facts, the plan-time "
+     "content lock, and reconciliation of the declared branch against the executed procedure."),
 ]
 
 # D-20: the finite, visible exemption boundary for D-05 citation/reference-value
@@ -62,7 +65,7 @@ PREFIX_GROUPS = [
 # human noticing the allow-list needs updating. A single code that lives inside a
 # pre-existing family — where a family prefix would drag the whole legacy family
 # into enforcement — is named individually in `_D05_ALLOWLIST_CODES` instead.
-_D05_ALLOWLIST_PREFIXES = ("DSX-PAR-", "DSX-VAL-", "DSX-INT-")
+_D05_ALLOWLIST_PREFIXES = ("DSX-PAR-", "DSX-VAL-", "DSX-INT-", "DSX-PRE-")
 
 # The individually-enumerated half of D-20's finite, visible boundary: exact
 # codes this milestone introduced inside a pre-existing family (DSX-SPEC-*),

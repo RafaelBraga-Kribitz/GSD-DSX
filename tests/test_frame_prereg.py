@@ -8,8 +8,10 @@ Run:  python3 -m unittest tests.test_frame_prereg -v
 
 from __future__ import annotations
 
+import copy
 import io
 import json
+import re
 import shutil
 import sys
 import tempfile
@@ -20,7 +22,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from dsx.findings import CheckError  # noqa: E402
+from dsx.findings import CheckError, Report, Severity  # noqa: E402
 from dsx.frame import prereg  # noqa: E402
 from dsx.loader import load  # noqa: E402
 from dsx.spec import PREREG_FACTS, as_number, describe_vocabulary, get  # noqa: E402
@@ -279,3 +281,374 @@ class TestBranchResolution(unittest.TestCase):
         }
         resolution = prereg._resolve_branch(spec)
         self.assertEqual(resolution.branch, "Wild Cluster Bootstrap")
+
+
+class TestRuleResolutionFindings(unittest.TestCase):
+    # D-05: DSX-PRE-010
+    def test_rule_naming_a_fact_outside_the_registry_fires_naming_it_and_the_accepted_names(self):
+        spec = {
+            "inference": {
+                "primary_procedure": "two_proportion_z",
+                "fallback_rule": "clusters < 30 -> wild cluster bootstrap",
+            },
+        }
+        report = prereg.check(spec)
+        findings = [f for f in report.findings if f.code == "DSX-PRE-010"]
+        self.assertEqual(len(findings), 1)
+        self.assertEqual(findings[0].severity, Severity.CRITICAL)
+        self.assertIn("clusters", findings[0].detail)
+        for name in ("alpha", "comparisons_looked_at", "interim_looks"):
+            with self.subTest(name=name):
+                self.assertIn(name, findings[0].detail)
+
+    def test_rule_naming_an_undeclared_registry_fact_fires_naming_the_dotted_path(self):
+        spec = {
+            "inference": {
+                "primary_procedure": "two_proportion_z",
+                "fallback_rule": "alpha < 0.01 -> alpha_spending_obf",
+            },
+        }
+        report = prereg.check(spec)
+        findings = [f for f in report.findings if f.code == "DSX-PRE-010"]
+        self.assertEqual(len(findings), 1)
+        self.assertIn("design.alpha", findings[0].detail)
+
+    def test_good_fixture_produces_zero_dsx_pre_010_findings(self):
+        spec = load(str(ROOT / "examples" / "good-ANALYSIS-SPEC.yaml"))
+        report = prereg.check(spec)
+        findings = [f for f in report.findings if f.code == "DSX-PRE-010"]
+        self.assertEqual(findings, [])
+
+    def test_cleanly_resolving_rule_produces_zero_dsx_pre_010_findings(self):
+        spec = {
+            "inference": {
+                "primary_procedure": "two_proportion_z",
+                "fallback_rule": "interim_looks >= 1 -> alpha_spending_obf",
+            },
+            "results": {"interim_looks": 1},
+        }
+        report = prereg.check(spec)
+        findings = [f for f in report.findings if f.code == "DSX-PRE-010"]
+        self.assertEqual(findings, [])
+
+    def test_unparseable_arrow_bearing_rule_raises_check_error_not_a_finding(self):
+        spec = {
+            "inference": {
+                "primary_procedure": "two_proportion_z",
+                "fallback_rule": "if clusters is small -> bootstrap",
+            },
+        }
+        with self.assertRaises(CheckError):
+            prereg.check(spec)
+
+    def test_check_appends_one_decision_record_for_dsx_pre_010_fired_and_clear(self):
+        fired_spec = {
+            "inference": {
+                "primary_procedure": "two_proportion_z",
+                "fallback_rule": "clusters < 30 -> wild cluster bootstrap",
+            },
+        }
+        fired_report = prereg.check(fired_spec)
+        fired_decisions = fired_report.context.get("decisions") or []
+        self.assertEqual(len(fired_decisions), 1)
+        self.assertEqual(fired_decisions[0]["layer"], "deterministic")
+        self.assertTrue(fired_decisions[0]["counterfactual"].strip())
+
+        clear_spec = {
+            "inference": {
+                "primary_procedure": "two_proportion_z",
+                "fallback_rule": "interim_looks >= 1 -> alpha_spending_obf",
+            },
+            "results": {"interim_looks": 1},
+        }
+        clear_report = prereg.check(clear_spec)
+        clear_decisions = clear_report.context.get("decisions") or []
+        self.assertEqual(len(clear_decisions), 1)
+        self.assertTrue(clear_decisions[0]["counterfactual"].strip())
+
+    def test_check_returns_empty_report_for_non_dict_spec(self):
+        report = prereg.check("not a dict")
+        self.assertIsInstance(report, Report)
+        self.assertEqual(report.findings, [])
+
+
+class TestProcedureReconciliation(unittest.TestCase):
+    # D-05: DSX-PRE-030
+    def test_branch_mismatch_fires_naming_both_labels(self):
+        spec = {
+            "inference": {
+                "primary_procedure": "two_proportion_z",
+                "fallback_rule": "interim_looks >= 1 -> wild_cluster_bootstrap",
+            },
+            "results": {"interim_looks": 1},
+            "analysis": {"test": "two_proportion_z"},
+        }
+        report = prereg.check(spec)
+        findings = [f for f in report.findings if f.code == "DSX-PRE-030"]
+        self.assertEqual(len(findings), 1)
+        self.assertEqual(findings[0].severity, Severity.CRITICAL)
+        self.assertIn("wild_cluster_bootstrap", findings[0].detail)
+        self.assertIn("two_proportion_z", findings[0].detail)
+
+    def test_detail_names_the_source_of_each_label(self):
+        spec = {
+            "inference": {
+                "primary_procedure": "two_proportion_z",
+                "fallback_rule": "interim_looks >= 1 -> wild_cluster_bootstrap",
+            },
+            "results": {"interim_looks": 1},
+            "analysis": {"test": "two_proportion_z"},
+        }
+        report = prereg.check(spec)
+        findings = [f for f in report.findings if f.code == "DSX-PRE-030"]
+        self.assertEqual(len(findings), 1)
+        self.assertIn("fallback_rule", findings[0].detail)
+        self.assertIn("analysis.test", findings[0].detail)
+
+    def test_spacing_and_hyphenation_difference_alone_produces_zero_findings(self):
+        spec = {
+            "inference": {
+                "primary_procedure": "two_proportion_z",
+                "fallback_rule": "interim_looks >= 1 -> wild cluster bootstrap",
+            },
+            "results": {"interim_looks": 1},
+            "analysis": {"test": "wild-cluster-bootstrap"},
+        }
+        report = prereg.check(spec)
+        findings = [f for f in report.findings if f.code == "DSX-PRE-030"]
+        self.assertEqual(findings, [])
+
+    def test_good_fixture_produces_zero_dsx_pre_030_findings(self):
+        spec = load(str(ROOT / "examples" / "good-ANALYSIS-SPEC.yaml"))
+        report = prereg.check(spec)
+        findings = [f for f in report.findings if f.code == "DSX-PRE-030"]
+        self.assertEqual(findings, [])
+
+    def test_unresolved_rule_produces_no_dsx_pre_030(self):
+        spec = {
+            "inference": {
+                "primary_procedure": "two_proportion_z",
+                "fallback_rule": "clusters < 30 -> wild_cluster_bootstrap",
+            },
+            "analysis": {"test": "something_else"},
+        }
+        report = prereg.check(spec)
+        pre010 = [f for f in report.findings if f.code == "DSX-PRE-010"]
+        pre030 = [f for f in report.findings if f.code == "DSX-PRE-030"]
+        self.assertEqual(len(pre010), 1)
+        self.assertEqual(pre030, [])
+
+    def test_blank_or_missing_executed_procedure_produces_no_dsx_pre_030(self):
+        for analysis_block in (None, {}, {"test": ""}, {"test": "   "}):
+            with self.subTest(analysis_block=analysis_block):
+                spec = {
+                    "inference": {
+                        "primary_procedure": "two_proportion_z",
+                        "fallback_rule": "interim_looks >= 1 -> wild_cluster_bootstrap",
+                    },
+                    "results": {"interim_looks": 1},
+                }
+                if analysis_block is not None:
+                    spec["analysis"] = analysis_block
+                report = prereg.check(spec)
+                pre030 = [f for f in report.findings if f.code == "DSX-PRE-030"]
+                self.assertEqual(pre030, [])
+
+    def test_decision_record_appended_fired_and_clear(self):
+        fired_spec = {
+            "inference": {
+                "primary_procedure": "two_proportion_z",
+                "fallback_rule": "interim_looks >= 1 -> wild_cluster_bootstrap",
+            },
+            "results": {"interim_looks": 1},
+            "analysis": {"test": "two_proportion_z"},
+        }
+        fired_report = prereg.check(fired_spec)
+        fired_pre030_decisions = [
+            d for d in (fired_report.context.get("decisions") or [])
+            if d["choice"].startswith("DSX-PRE-030")
+        ]
+        self.assertEqual(len(fired_pre030_decisions), 1)
+        self.assertTrue(fired_pre030_decisions[0]["counterfactual"].strip())
+
+        clear_spec = {
+            "inference": {
+                "primary_procedure": "two_proportion_z",
+                "fallback_rule": "interim_looks >= 1 -> wild cluster bootstrap",
+            },
+            "results": {"interim_looks": 1},
+            "analysis": {"test": "wild-cluster-bootstrap"},
+        }
+        clear_report = prereg.check(clear_spec)
+        clear_pre030_decisions = [
+            d for d in (clear_report.context.get("decisions") or [])
+            if d["choice"].startswith("DSX-PRE-030")
+        ]
+        self.assertEqual(len(clear_pre030_decisions), 1)
+        self.assertTrue(clear_pre030_decisions[0]["counterfactual"].strip())
+
+
+class TestNoMeritConsultation(unittest.TestCase):
+    def test_strictly_more_conservative_substitute_still_blocks(self):
+        # two_proportion_z declared, fishers_exact executed — fishers_exact is the
+        # strictly more conservative substitute (exact test vs. a normal
+        # approximation). A more conservative substitution is still a substitution.
+        spec = {
+            "inference": {
+                "primary_procedure": "welch_t",
+                "fallback_rule": "interim_looks >= 1 -> two_proportion_z",
+            },
+            "results": {"interim_looks": 1},
+            "analysis": {"test": "fishers_exact"},
+        }
+        report = prereg.check(spec)
+        findings = [f for f in report.findings if f.code == "DSX-PRE-030"]
+        self.assertEqual(
+            len(findings),
+            1,
+            "a more conservative substitution is still a substitution",
+        )
+
+    def test_firing_is_symmetric_in_the_direction_of_the_swap(self):
+        # Same pair, values swapped: fishers_exact declared, two_proportion_z
+        # executed (strictly less conservative substitute). Same code, same
+        # severity — the check consults no merit ordering in either direction.
+        spec = {
+            "inference": {
+                "primary_procedure": "welch_t",
+                "fallback_rule": "interim_looks >= 1 -> fishers_exact",
+            },
+            "results": {"interim_looks": 1},
+            "analysis": {"test": "two_proportion_z"},
+        }
+        report = prereg.check(spec)
+        findings = [f for f in report.findings if f.code == "DSX-PRE-030"]
+        self.assertEqual(len(findings), 1)
+        self.assertEqual(findings[0].severity, Severity.CRITICAL)
+
+
+class TestMalformedShapesDegradeGracefully(unittest.TestCase):
+    def test_non_dict_spec_returns_empty_report_no_raise(self):
+        for bad_spec in ("not a dict", [], None, 3):
+            with self.subTest(bad_spec=bad_spec):
+                report = prereg.check(bad_spec)
+                self.assertIsInstance(report, Report)
+                self.assertEqual(report.findings, [])
+
+    def test_malformed_inference_block_degrades_no_findings(self):
+        for bad_inference in ("not a dict", [], None, 3):
+            with self.subTest(bad_inference=bad_inference):
+                spec = {"inference": bad_inference}
+                report = prereg.check(spec)
+                pre_findings = [f for f in report.findings if f.code.startswith("DSX-PRE-")]
+                self.assertEqual(pre_findings, [])
+
+    def test_malformed_analysis_block_produces_no_dsx_pre_030_no_raise(self):
+        for bad_analysis in ("not a dict", [], None, 3):
+            with self.subTest(bad_analysis=bad_analysis):
+                spec = {
+                    "inference": {
+                        "primary_procedure": "two_proportion_z",
+                        "fallback_rule": "interim_looks >= 1 -> wild_cluster_bootstrap",
+                    },
+                    "results": {"interim_looks": 1},
+                    "analysis": bad_analysis,
+                }
+                report = prereg.check(spec)
+                pre030 = [f for f in report.findings if f.code == "DSX-PRE-030"]
+                self.assertEqual(pre030, [])
+
+    def test_non_string_fallback_rule_produces_no_finding_no_exception(self):
+        for bad_rule in ([], {}, 3, None):
+            with self.subTest(bad_rule=bad_rule):
+                spec = {
+                    "inference": {
+                        "primary_procedure": "two_proportion_z",
+                        "fallback_rule": bad_rule,
+                    },
+                }
+                report = prereg.check(spec)
+                pre_findings = [f for f in report.findings if f.code.startswith("DSX-PRE-")]
+                self.assertEqual(pre_findings, [])
+
+
+class TestParadigmIndependence(unittest.TestCase):
+    """Test 5 (behavioural) is the primary proof; test 6 (source-level) is the
+    corroborating one. A source-level grep proves only that a string is absent
+    today; the behavioural comparison proves the property the requirement
+    actually cares about, and survives a refactor that reads the field
+    indirectly. Mirrors REQ-P7-09 and REQ-P8-06, which Phase 10 has no numbered
+    requirement for but which 10-CONTEXT.md's locked-upstream section says
+    should ship anyway.
+    """
+
+    def _scenarios(self):
+        return {
+            "clear": {
+                "inference": {
+                    "primary_procedure": "two_proportion_z",
+                    "fallback_rule": "interim_looks >= 1 -> wild_cluster_bootstrap",
+                },
+                "results": {"interim_looks": 1},
+                "analysis": {"test": "wild_cluster_bootstrap"},
+            },
+            "dsx_pre_010_fired": {
+                "inference": {
+                    "primary_procedure": "two_proportion_z",
+                    "fallback_rule": "clusters < 30 -> wild_cluster_bootstrap",
+                },
+            },
+            "dsx_pre_030_fired": {
+                "inference": {
+                    "primary_procedure": "welch_t",
+                    "fallback_rule": "interim_looks >= 1 -> two_proportion_z",
+                },
+                "results": {"interim_looks": 1},
+                "analysis": {"test": "fishers_exact"},
+            },
+            # No "inference:" block at all — there is nothing to declare a
+            # paradigm into, so both variants below are the same spec by
+            # construction. The property under test holds trivially and
+            # unconditionally for this scenario, and it still exercises the
+            # same comparison harness as the other three.
+            "no_inference_block": {
+                "results": {"interim_looks": 1},
+                "analysis": {"test": "two_proportion_z"},
+            },
+        }
+
+    def test_finding_sequences_identical_across_paradigms(self):
+        for name, base in self._scenarios().items():
+            variants = {}
+            for paradigm in ("frequentist", "bayesian"):
+                spec = copy.deepcopy(base)
+                if "inference" in spec:
+                    spec["inference"]["paradigm"] = paradigm
+                variants[paradigm] = spec
+
+            with self.subTest(scenario=name):
+                freq_report = prereg.check(variants["frequentist"])
+                bayes_report = prereg.check(variants["bayesian"])
+
+                freq_signature = [
+                    (f.code, f.severity, f.detail) for f in freq_report.findings
+                ]
+                bayes_signature = [
+                    (f.code, f.severity, f.detail) for f in bayes_report.findings
+                ]
+                self.assertEqual(freq_signature, bayes_signature)
+
+    def test_source_contains_no_attribute_access_to_paradigm_field(self):
+        source = Path(prereg.__file__).read_text(encoding="utf-8")
+        # Tolerate CRLF: the repository checks out with carriage returns.
+        normalized = source.replace("\r\n", "\n")
+        # The attribute-access form, not the bare word "paradigm" — the module
+        # docstring and _resolve_branch's docstring legitimately mention the
+        # concept in prose ("inferential paradigm field"); the concern is code
+        # reading the field, not English describing why it never does.
+        access_pattern = re.compile(r'''["']paradigm["']''')
+        self.assertEqual(
+            access_pattern.findall(normalized),
+            [],
+            "dsx/frame/prereg.py contains a quoted 'paradigm' key/string access",
+        )

@@ -23,8 +23,9 @@ import operator
 import re
 from dataclasses import dataclass
 
+from ..decisions import DecisionRecord
 from ..findings import CheckError, Report
-from ..spec import PREREG_FACTS, as_number, get, normalize
+from ..spec import PREREG_FACTS, as_number, get, is_blank, normalize
 
 _ARROW = "->"
 
@@ -191,3 +192,212 @@ def _resolve_branch(spec: dict) -> _Resolution:
     return _Resolution(
         branch=primary_procedure, reason=None, source="primary_procedure"
     )
+
+
+def _check_rule_resolves(spec: dict, resolution: "_Resolution", report: Report) -> None:
+    """Emit DSX-PRE-010 when the declared fallback rule does not resolve to a branch.
+
+    Fires when ``resolution.reason`` is set — the rule named a fact outside the closed
+    ``PREREG_FACTS`` registry, or named a registry fact the spec does not declare as a
+    number. Clears, with no finding, when the rule resolves cleanly, including the
+    inert no-arrow-prose case, where ``resolution.reason`` is always ``None``.
+
+    Citation: Gelman, A. and Loken, E. (2014), "The Statistical Crisis in Science",
+    American Scientist volume 102 issue 6 pages 460-465, page 460, unnumbered section
+    "How to Test a Hypothesis" — the passage distinguishing a classical test prechosen
+    from a set of possible tests, with preregistered phi, from a test computed from the
+    data in an environment where a different test would have been performed given
+    different data, T(y; phi(y)). The article carries no numbered sections, tables or
+    theorems, so page plus unnumbered heading is the most precise locator that exists;
+    naming a section number would be the fabricated locator brief D-05 exists to
+    prevent.
+    Structural criterion: a declared rule must resolve to exactly one branch against the
+    declared observed facts; this function fires when it resolves to none, which
+    happens in exactly two ways — the named fact is outside PREREG_FACTS, or the spec
+    does not declare it as a number — and no threshold, effect size or statistic is
+    computed anywhere on this path (brief D-02). Falsifier: any rule naming a registry
+    fact that the spec declares as a number still resolves and never fires (proved by
+    TestRuleResolutionFindings test 4). The one available number — Simmons et al.
+    (2011) Table 1's 60.7% false-positive rate for the combination of four researcher
+    degrees of freedom — quantifies a different quantity entirely, so it is not
+    asserted here as a Reference value.
+    """
+    fired = resolution.reason is not None
+
+    inputs = ["inference.fallback_rule"]
+    if fired:
+        inference = spec.get("inference")
+        if isinstance(inference, dict):
+            parsed = _parse_fallback_rule(inference.get("fallback_rule"))
+            if parsed is not None:
+                path = PREREG_FACTS.get(parsed.fact)
+                if path:
+                    inputs.append(path)
+
+        report.add(
+            "DSX-PRE-010",
+            "CRITICAL",
+            "Declared fallback rule does not resolve to a branch",
+            detail=resolution.reason,
+            remedy=(
+                "Declare the fact the rule names in the closed prereg fact registry "
+                f"({', '.join(sorted(PREREG_FACTS))}), or rewrite the rule to "
+                "reference one of those registry facts."
+            ),
+            where="inference.fallback_rule",
+        )
+
+    report.context.setdefault("decisions", []).append(
+        DecisionRecord(
+            id="",
+            invocation_id="",
+            layer="deterministic",
+            choice=(
+                f"DSX-PRE-010 {'fired' if fired else 'clear'}: "
+                f"{resolution.reason or 'rule resolves to exactly one branch, or is inert prose'}"
+            ),
+            inputs=inputs,
+            rule=(
+                "DSX-PRE-010 fires when the declared fallback rule's resolution "
+                "carries a reason — the named fact is outside PREREG_FACTS, or is a "
+                "registry fact the spec does not declare as a number."
+            ),
+            citation="Gelman & Loken (2014), The Statistical Crisis in Science, page 460",
+            counterfactual=(
+                "Declaring the named fact as a number at its registry path, or "
+                "rewriting the rule to reference a registry fact, would have "
+                "cleared DSX-PRE-010."
+                if fired
+                else "Naming a fact outside PREREG_FACTS, or a registry fact the "
+                "spec does not declare as a number, would have fired DSX-PRE-010."
+            ),
+        ).to_dict()
+    )
+
+
+def _check_procedure_reconciliation(spec: dict, resolution: "_Resolution", report: Report) -> None:
+    """Emit DSX-PRE-030 when the executed procedure differs from the declared branch.
+
+    Returns early, emitting nothing, when ``resolution.branch`` is ``None`` — an
+    unresolved rule is DSX-PRE-010's territory, and one defect must not produce two
+    codes — or when the executed side, ``analysis.test``, is blank: there is no
+    executed side to reconcile against, and a missing ``analysis:`` block (e.g. the
+    committed ``weak-identification-mmm`` known-bad fixture, which declares
+    ``primary_procedure`` and has no ``analysis:`` block at all) must not read as a
+    switch. Otherwise compares ``normalize(resolution.branch)`` against
+    ``normalize(executed)`` and fires on any inequality.
+
+    The declared fallback rule is the preregistered test-selection function, phi; the
+    executed procedure is that function evaluated on the data, phi(y).
+
+    Citation: Gelman, A. and Loken, E. (2014), "The Statistical Crisis in Science",
+    American Scientist volume 102 issue 6 pages 460-465, page 463, unnumbered section
+    "Menstrual Cycles and Voting": "For a p-value to be interpreted as evidence, it
+    requires a strong claim that the same analysis would have been performed had the
+    data been different." Same no-numbered-structure locator flag as
+    ``_check_rule_resolves``. Secondary citation: Simmons, J. P., Nelson, L. D. and
+    Simonsohn, U. (2011), "False-Positive Psychology", Psychological Science volume 22
+    issue 11 pages 1359-1366, DOI 10.1177/0956797611417632, page 1365, "General
+    Discussion", "Nonsolutions", "Correcting alpha levels" — read from the
+    publisher-typeset PDF, no scanning risk.
+    Structural criterion: branch identity, never procedure merit — the check resolves
+    the declared fallback rule to exactly one branch against the declared observed
+    facts and blocks on any inequality between that branch label and the executed
+    procedure label, reading no admissibility, power or conservatism ordering on the
+    gate path (brief D-02); falsified by any fixture whose substituted procedure is
+    strictly more conservative and passes.
+    """
+    if resolution.branch is None:
+        return
+
+    executed = get(spec, "analysis.test")
+    if is_blank(executed):
+        return
+
+    fired = normalize(resolution.branch) != normalize(executed)
+
+    if fired:
+        report.add(
+            "DSX-PRE-030",
+            "CRITICAL",
+            "Executed procedure differs from the declared branch",
+            detail=(
+                f"The declared fallback rule resolves to branch {resolution.branch!r} "
+                f"(source: inference.{resolution.source}), but the executed procedure "
+                f"at analysis.test is {executed!r} — a different label."
+            ),
+            remedy=(
+                "Either run the procedure the declared rule selects, or amend the "
+                "declared plan and record why the amendment happened before the data "
+                "was seen. A more conservative substituted procedure still blocks: "
+                "the substitution is itself a new researcher degree of freedom "
+                "(Simmons, Nelson & Simonsohn 2011, p. 1365), so its merit is not the "
+                "question and this check does not evaluate it. Honest caveat: "
+                "analysis.test is scaffolded in templates/ANALYSIS-SPEC.yaml and is "
+                "therefore a plan-time declaration too — 'executed' is a convention "
+                "imposed by this gate point, not a property of the field, the same "
+                "class of limit as declared_at."
+            ),
+            where="analysis.test",
+        )
+
+    report.context.setdefault("decisions", []).append(
+        DecisionRecord(
+            id="",
+            invocation_id="",
+            layer="deterministic",
+            choice=(
+                f"DSX-PRE-030 {'fired' if fired else 'clear'}: "
+                f"declared={resolution.branch!r} ({resolution.source}), "
+                f"executed={executed!r}"
+            ),
+            inputs=[
+                "inference.fallback_rule"
+                if resolution.source == "fallback_rule"
+                else "inference.primary_procedure",
+                "analysis.test",
+            ],
+            rule=(
+                "DSX-PRE-030 fires when normalize(resolution.branch) != "
+                "normalize(analysis.test), for a resolved branch and a non-blank "
+                "executed procedure."
+            ),
+            citation=(
+                "Gelman & Loken (2014), page 463; Simmons, Nelson & Simonsohn "
+                "(2011), page 1365"
+            ),
+            counterfactual=(
+                "Running the procedure the declared rule selects would have "
+                "cleared DSX-PRE-030."
+                if fired
+                else "Executing a different procedure than the declared branch "
+                "would have fired DSX-PRE-030, regardless of its relative merit."
+            ),
+        ).to_dict()
+    )
+
+
+def check(spec: dict, root: "str | None" = None, *, reconcile_trail: bool = False) -> Report:
+    """Emit the pre-registered inference plan findings (``DSX-PRE-*``).
+
+    Degrades to an empty report, never a traceback, when ``spec`` is not a dict,
+    matching ``interference.check``'s habit. Resolves the declared fallback rule once
+    per run and dispatches to one private helper per adjudicated concept.
+
+    ``root`` and ``reconcile_trail`` are unused in this plan — both parameters are
+    defaulted so that a future ``CHECKS["prereg"]`` registration without a matching
+    ``elif`` branch in ``run_checks`` degrades to this documented no-trail path via the
+    generic ``CHECKS[name](spec)`` fallback, instead of raising ``TypeError``. Plan 03
+    wires ``root`` to the plan-time content lock; plan 04 wires ``reconcile_trail`` to
+    the missing-plan-header reconciliation.
+    """
+    report = Report(check="prereg")
+
+    if not isinstance(spec, dict):
+        return report
+
+    resolution = _resolve_branch(spec)
+    _check_rule_resolves(spec, resolution, report)
+    _check_procedure_reconciliation(spec, resolution, report)
+
+    return report
