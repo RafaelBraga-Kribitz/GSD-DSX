@@ -13,7 +13,7 @@ a suppression or a reference in a review stays valid across versions.
 **Gate thresholds.** `plan` and `execute` block at CRITICAL; `verify` and
 `ship` block at HIGH.
 
-**Total: 229 codes.**
+**Total: 230 codes.**
 
 ## Contract structure — `DSX-SPEC-*`
 
@@ -390,3 +390,4 @@ The declared fallback rule resolved against the declared observed facts, the pla
 | Code | Severity | Finding |
 |---|---|---|
 | `DSX-PRE-010` | CRITICAL | Declared fallback rule does not resolve to a branch |
+| `DSX-PRE-030` | CRITICAL | Executed procedure differs from the declared branch |

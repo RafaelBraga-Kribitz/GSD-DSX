@@ -368,3 +368,158 @@ class TestRuleResolutionFindings(unittest.TestCase):
         report = prereg.check("not a dict")
         self.assertIsInstance(report, Report)
         self.assertEqual(report.findings, [])
+
+
+class TestProcedureReconciliation(unittest.TestCase):
+    # D-05: DSX-PRE-030
+    def test_branch_mismatch_fires_naming_both_labels(self):
+        spec = {
+            "inference": {
+                "primary_procedure": "two_proportion_z",
+                "fallback_rule": "interim_looks >= 1 -> wild_cluster_bootstrap",
+            },
+            "results": {"interim_looks": 1},
+            "analysis": {"test": "two_proportion_z"},
+        }
+        report = prereg.check(spec)
+        findings = [f for f in report.findings if f.code == "DSX-PRE-030"]
+        self.assertEqual(len(findings), 1)
+        self.assertEqual(findings[0].severity, Severity.CRITICAL)
+        self.assertIn("wild_cluster_bootstrap", findings[0].detail)
+        self.assertIn("two_proportion_z", findings[0].detail)
+
+    def test_detail_names_the_source_of_each_label(self):
+        spec = {
+            "inference": {
+                "primary_procedure": "two_proportion_z",
+                "fallback_rule": "interim_looks >= 1 -> wild_cluster_bootstrap",
+            },
+            "results": {"interim_looks": 1},
+            "analysis": {"test": "two_proportion_z"},
+        }
+        report = prereg.check(spec)
+        findings = [f for f in report.findings if f.code == "DSX-PRE-030"]
+        self.assertEqual(len(findings), 1)
+        self.assertIn("fallback_rule", findings[0].detail)
+        self.assertIn("analysis.test", findings[0].detail)
+
+    def test_spacing_and_hyphenation_difference_alone_produces_zero_findings(self):
+        spec = {
+            "inference": {
+                "primary_procedure": "two_proportion_z",
+                "fallback_rule": "interim_looks >= 1 -> wild cluster bootstrap",
+            },
+            "results": {"interim_looks": 1},
+            "analysis": {"test": "wild-cluster-bootstrap"},
+        }
+        report = prereg.check(spec)
+        findings = [f for f in report.findings if f.code == "DSX-PRE-030"]
+        self.assertEqual(findings, [])
+
+    def test_good_fixture_produces_zero_dsx_pre_030_findings(self):
+        spec = load(str(ROOT / "examples" / "good-ANALYSIS-SPEC.yaml"))
+        report = prereg.check(spec)
+        findings = [f for f in report.findings if f.code == "DSX-PRE-030"]
+        self.assertEqual(findings, [])
+
+    def test_unresolved_rule_produces_no_dsx_pre_030(self):
+        spec = {
+            "inference": {
+                "primary_procedure": "two_proportion_z",
+                "fallback_rule": "clusters < 30 -> wild_cluster_bootstrap",
+            },
+            "analysis": {"test": "something_else"},
+        }
+        report = prereg.check(spec)
+        pre010 = [f for f in report.findings if f.code == "DSX-PRE-010"]
+        pre030 = [f for f in report.findings if f.code == "DSX-PRE-030"]
+        self.assertEqual(len(pre010), 1)
+        self.assertEqual(pre030, [])
+
+    def test_blank_or_missing_executed_procedure_produces_no_dsx_pre_030(self):
+        for analysis_block in (None, {}, {"test": ""}, {"test": "   "}):
+            with self.subTest(analysis_block=analysis_block):
+                spec = {
+                    "inference": {
+                        "primary_procedure": "two_proportion_z",
+                        "fallback_rule": "interim_looks >= 1 -> wild_cluster_bootstrap",
+                    },
+                    "results": {"interim_looks": 1},
+                }
+                if analysis_block is not None:
+                    spec["analysis"] = analysis_block
+                report = prereg.check(spec)
+                pre030 = [f for f in report.findings if f.code == "DSX-PRE-030"]
+                self.assertEqual(pre030, [])
+
+    def test_decision_record_appended_fired_and_clear(self):
+        fired_spec = {
+            "inference": {
+                "primary_procedure": "two_proportion_z",
+                "fallback_rule": "interim_looks >= 1 -> wild_cluster_bootstrap",
+            },
+            "results": {"interim_looks": 1},
+            "analysis": {"test": "two_proportion_z"},
+        }
+        fired_report = prereg.check(fired_spec)
+        fired_pre030_decisions = [
+            d for d in (fired_report.context.get("decisions") or [])
+            if d["choice"].startswith("DSX-PRE-030")
+        ]
+        self.assertEqual(len(fired_pre030_decisions), 1)
+        self.assertTrue(fired_pre030_decisions[0]["counterfactual"].strip())
+
+        clear_spec = {
+            "inference": {
+                "primary_procedure": "two_proportion_z",
+                "fallback_rule": "interim_looks >= 1 -> wild cluster bootstrap",
+            },
+            "results": {"interim_looks": 1},
+            "analysis": {"test": "wild-cluster-bootstrap"},
+        }
+        clear_report = prereg.check(clear_spec)
+        clear_pre030_decisions = [
+            d for d in (clear_report.context.get("decisions") or [])
+            if d["choice"].startswith("DSX-PRE-030")
+        ]
+        self.assertEqual(len(clear_pre030_decisions), 1)
+        self.assertTrue(clear_pre030_decisions[0]["counterfactual"].strip())
+
+
+class TestNoMeritConsultation(unittest.TestCase):
+    def test_strictly_more_conservative_substitute_still_blocks(self):
+        # two_proportion_z declared, fishers_exact executed — fishers_exact is the
+        # strictly more conservative substitute (exact test vs. a normal
+        # approximation). A more conservative substitution is still a substitution.
+        spec = {
+            "inference": {
+                "primary_procedure": "welch_t",
+                "fallback_rule": "interim_looks >= 1 -> two_proportion_z",
+            },
+            "results": {"interim_looks": 1},
+            "analysis": {"test": "fishers_exact"},
+        }
+        report = prereg.check(spec)
+        findings = [f for f in report.findings if f.code == "DSX-PRE-030"]
+        self.assertEqual(
+            len(findings),
+            1,
+            "a more conservative substitution is still a substitution",
+        )
+
+    def test_firing_is_symmetric_in_the_direction_of_the_swap(self):
+        # Same pair, values swapped: fishers_exact declared, two_proportion_z
+        # executed (strictly less conservative substitute). Same code, same
+        # severity — the check consults no merit ordering in either direction.
+        spec = {
+            "inference": {
+                "primary_procedure": "welch_t",
+                "fallback_rule": "interim_looks >= 1 -> fishers_exact",
+            },
+            "results": {"interim_looks": 1},
+            "analysis": {"test": "two_proportion_z"},
+        }
+        report = prereg.check(spec)
+        findings = [f for f in report.findings if f.code == "DSX-PRE-030"]
+        self.assertEqual(len(findings), 1)
+        self.assertEqual(findings[0].severity, Severity.CRITICAL)
