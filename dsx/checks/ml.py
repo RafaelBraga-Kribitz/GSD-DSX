@@ -59,6 +59,19 @@ DECISION_TASKS = {"binary_classification", "multiclass_classification"}
 # counts as "training rows only".
 TRAIN_ONLY_FIT_VALUES = frozenset({"train_only", "train_fold_only", "none"})
 
+# Phase 11.1 (REQ-P11.1-05): where a reported model score claims to have come
+# from. Five declared values are recognised at all — but only the first three
+# are *accepted*: a cross-validation mean, a held-out set and a nested
+# protocol are three different ways to honestly estimate performance. The
+# other two members of this same set are declared-but-disqualifying answers:
+# "best_fold" names a selection artefact (the largest of several noisy draws,
+# chosen after seeing them, not an estimate), and "unknown" is an honest
+# admission that provenance was never tracked. A reader who sees five members
+# and one membership test (`in SCORE_SOURCES`) would otherwise assume all
+# five pass — they do not; see `_check_baseline` for the two-part test that
+# also excludes the last two.
+SCORE_SOURCES = frozenset({"cv_mean", "holdout", "nested_cv", "best_fold", "unknown"})
+
 
 def check(spec: dict) -> Report:
     report = Report(check="ml")
@@ -661,6 +674,44 @@ def _check_metric_choice(model: dict, spec: dict, report: Report, task: str) -> 
 
 
 def _check_baseline(model: dict, spec: dict, report: Report) -> None:
+    """Baseline comparison: declared, beaten, its score provenance and its fold-to-fold margin.
+
+    Phase 11.1 (REQ-P11.1-05) adds two checks, both inside the branch below
+    where the model already beats its baseline — a model that loses gets the
+    existing CRITICAL (DSX-ML-051) and neither of these, because a negative
+    margin is a different finding than a small one. DSX-ML-052 tests whether
+    `results.model_score_source` is one of the three accepted values (see
+    `SCORE_SOURCES`'s own comment) versus blank, disqualifying or
+    unrecognised — an unrecognised value is deliberately folded into the same
+    failing branch as a blank one, the same bypass class this milestone has
+    already closed for `_check_cleaning`'s `fit_on` and `_check_metric_choice`'s
+    metric vocabulary; a misspelling must not buy silence. DSX-ML-053 tests
+    whether the margin by which the model beats its baseline is strictly
+    smaller than the spread of the model's own declared `results.fold_scores`
+    — a margin exactly equal to the spread does not fire, since the advisory
+    is for a margin genuinely inside the model's own run-to-run variation, and
+    equal-to is the boundary of that, not inside it.
+
+    Citation: Varma, S. and Simon, R. (2006), "Bias in Error Estimation When
+    Using Cross-Validation for Model Selection," BMC Bioinformatics, 7,
+    article 91. The paper's result that selecting the best of several
+    cross-validated scores yields an optimistically biased performance
+    estimate is stated in the paper's own Abstract and Conclusions. The exact
+    page locator within the PDF is UNVERIFIED — the paper's pagination was
+    not independently re-read in this session (the paper is open access);
+    do not invent a locator.
+
+    Structural criterion: DSX-ML-052 is a membership test of a declared,
+    normalised `results.model_score_source` value against `SCORE_SOURCES`,
+    with two of that set's five members ('best_fold', 'unknown') treated as
+    failing rather than passing, and any value outside the set (including a
+    blank one) also failing. DSX-ML-053 is an ordering comparison between two
+    quantities derived by subtraction from declared numbers — margin
+    (model_score − baseline_score) against spread (max − min of the
+    parseable `results.fold_scores`) — never a corrected estimate, a
+    confidence interval, a standard deviation or any other inferential
+    quantity computed from those numbers.
+    """
     baseline = model.get("baseline")
     if is_blank(baseline):
         report.add(
@@ -694,9 +745,118 @@ def _check_baseline(model: dict, spec: dict, report: Report) -> None:
             remedy="Ship the baseline, or state explicitly why the model is worth its complexity.",
             where="spec.results.model_score",
         )
-    else:
-        lift = (model_score - baseline_score) / abs(baseline_score) if baseline_score else float("inf")
-        report.ok(f"model beats baseline by {lift:.1%}")
+        return
+
+    lift = (model_score - baseline_score) / abs(baseline_score) if baseline_score else float("inf")
+    report.ok(f"model beats baseline by {lift:.1%}")
+
+    # Phase 11.1 (REQ-P11.1-05): score provenance. Blank source reads as "".
+    # An unrecognised (misspelled or otherwise out-of-vocabulary) value is
+    # deliberately treated the same as a blank one — see this function's own
+    # docstring for why.
+    score_source_raw = get(spec, "results.model_score_source")
+    score_source = normalize(score_source_raw) if not is_blank(score_source_raw) else ""
+    fired_052 = score_source not in SCORE_SOURCES or score_source in ("best_fold", "unknown")
+    if fired_052:
+        report.add(
+            "DSX-ML-052",
+            "HIGH",
+            (
+                f"Reported score's provenance is disqualifying ('{score_source_raw}')"
+                if score_source_raw
+                else "Reported score's provenance is not stated"
+            ),
+            detail=(
+                "A cross-validation mean, a held-out score and a best-fold score are three "
+                "different claims about the same model. The best fold is a selection artefact "
+                "— the largest of several noisy draws, chosen after seeing them — not a "
+                "performance estimate. A comparison whose provenance is unstated cannot be "
+                "read as a performance claim."
+            ),
+            remedy=(
+                "Declare results.model_score_source as one of cv_mean, holdout or nested_cv. "
+                "If the reported number really is a best fold, report the mean instead."
+            ),
+            where="spec.results.model_score_source",
+        )
+
+    # Phase 11.1 (REQ-P11.1-05): fold-to-fold margin. The spread is derived
+    # here, at check time, from declared numbers — never accepted as a
+    # pre-computed field, and never a standard deviation or confidence
+    # interval. Non-numeric entries (an unparseable string, a boolean) are
+    # skipped via `as_number`, not raised on.
+    raw_fold_scores = get(spec, "results.fold_scores")
+    if not isinstance(raw_fold_scores, list):
+        raw_fold_scores = []
+    parsed_fold_scores = [n for n in (as_number(v) for v in raw_fold_scores) if n is not None]
+    fired_053 = False
+    spread = margin = None
+    if len(parsed_fold_scores) >= 2:
+        spread = max(parsed_fold_scores) - min(parsed_fold_scores)
+        margin = model_score - baseline_score
+        # Strictly less-than: a margin exactly equal to the spread does not
+        # fire. Do not widen this to <= without a reason.
+        if margin < spread:
+            fired_053 = True
+            report.add(
+                "DSX-ML-053",
+                "MEDIUM",
+                f"Margin over baseline ({margin:.4g}) is inside the model's own fold-to-fold "
+                f"variation ({spread:.4g})",
+                detail=(
+                    f"The model beats its baseline by {margin:.4g}, but its own "
+                    f"{len(parsed_fold_scores)} declared fold scores span {spread:.4g} "
+                    f"(from {min(parsed_fold_scores):.4g} to {max(parsed_fold_scores):.4g}). "
+                    "A difference smaller than the model's own fold-to-fold variation is not "
+                    "evidence the model is better than the baseline."
+                ),
+                remedy=(
+                    "Report the fold spread alongside the margin, or run enough folds to "
+                    "separate the two."
+                ),
+                where="spec.results.fold_scores",
+            )
+
+    # Phase 11.1 (D-04): a decision record covering both codes, appended once
+    # per report inside this branch — the only branch where either code is
+    # reachable, since both are gated on the model already beating its
+    # baseline.
+    record_decision(
+        report,
+        DecisionRecord(
+            id="",
+            invocation_id="",
+            layer="deterministic",
+            choice=(
+                "DSX-ML-052 and DSX-ML-053 fired" if fired_052 and fired_053
+                else "DSX-ML-052 fired; fold spread did not additionally trigger DSX-ML-053"
+                if fired_052
+                else "DSX-ML-053 fired; score provenance cleared" if fired_053
+                else "cleared: score provenance accepted and margin at or above fold spread "
+                "(or fewer than two parseable fold scores to compare)"
+            ),
+            inputs=[
+                f"results.model_score_source:{score_source_raw or 'undeclared'}",
+                f"fold_scores_parsed:{len(parsed_fold_scores)}",
+            ],
+            rule=(
+                "DSX-ML-052 fires when results.model_score_source, after normalisation, is "
+                "blank, is 'best_fold' or 'unknown', or is not a member of SCORE_SOURCES at "
+                "all. DSX-ML-053 fires when at least two fold scores parse and the margin over "
+                "baseline (model_score − baseline_score) is strictly less than the spread "
+                "(max − min) of the parseable results.fold_scores."
+            ),
+            citation=(
+                "Varma, S. and Simon, R. (2006), \"Bias in Error Estimation When Using "
+                "Cross-Validation for Model Selection,\" BMC Bioinformatics, 7, article 91."
+            ),
+            counterfactual=(
+                "A declared score source inside the accepted three (cv_mean, holdout, "
+                "nested_cv) and a margin at or above the fold spread would have cleared both "
+                "codes."
+            ),
+        ),
+    )
 
 
 def _check_overfit(spec: dict, report: Report) -> None:
