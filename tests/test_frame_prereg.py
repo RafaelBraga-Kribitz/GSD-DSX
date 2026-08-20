@@ -22,6 +22,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
+from dsx import __version__  # noqa: E402
+from dsx.decisions import InvocationHeader  # noqa: E402
+from dsx.decisions import append as append_decision  # noqa: E402
+from dsx.decisions import decisions_path  # noqa: E402
 from dsx.findings import CheckError, Report, Severity  # noqa: E402
 from dsx.frame import prereg  # noqa: E402
 from dsx.loader import load  # noqa: E402
@@ -652,3 +656,86 @@ class TestParadigmIndependence(unittest.TestCase):
             [],
             "dsx/frame/prereg.py contains a quoted 'paradigm' key/string access",
         )
+
+
+class TestMissingPlanHeader(unittest.TestCase):
+    """`_check_content_lock`'s missing-plan-header guard (Task 1): a trail with no
+    recorded `plan`-gate-point header stops the run at exit 2 (`CheckError`) rather
+    than passing silently, and names the M-07 grandfather route so a pre-v2.0.0 spec
+    stays walkable."""
+
+    def _spec(self):
+        return {"inference": {"declared_at": "pre_data"}}
+
+    def test_1_reconcile_false_with_no_trail_file_produces_no_findings_no_exception(self):
+        with tempfile.TemporaryDirectory() as root:
+            report = prereg.check(self._spec(), root, reconcile_trail=False)
+            self.assertIsInstance(report, Report)
+            self.assertEqual(report.findings, [])
+
+    def test_2_reconcile_true_with_no_trail_file_raises_check_error(self):
+        with tempfile.TemporaryDirectory() as root:
+            with self.assertRaises(CheckError):
+                prereg.check(self._spec(), root, reconcile_trail=True)
+
+    def test_3_trail_with_no_plan_header_raises_check_error(self):
+        with tempfile.TemporaryDirectory() as root:
+            target = decisions_path(root)
+            for point in ("execute", "verify", "ship"):
+                append_decision(
+                    target,
+                    InvocationHeader(
+                        invocation_id=f"INV-{point}",
+                        gate_point=point,
+                        dsx_version=__version__,
+                        frame_digest="deadbeef",
+                    ),
+                )
+            with self.assertRaises(CheckError):
+                prereg.check(self._spec(), root, reconcile_trail=True)
+
+    def test_4_message_names_suppressions_and_authority_and_trail_path(self):
+        with tempfile.TemporaryDirectory() as root:
+            with self.assertRaises(CheckError) as ctx:
+                prereg.check(self._spec(), root, reconcile_trail=True)
+            message = str(ctx.exception)
+            self.assertIn("suppressions", message)
+            self.assertIn("authority", message)
+            self.assertIn(str(decisions_path(root)), message)
+
+    def test_5_message_states_gate_plan_has_never_run(self):
+        with tempfile.TemporaryDirectory() as root:
+            with self.assertRaises(CheckError) as ctx:
+                prereg.check(self._spec(), root, reconcile_trail=True)
+            message = str(ctx.exception)
+            self.assertIn("dsx gate plan", message)
+            self.assertIn("never run", message)
+
+    def test_6_trail_with_a_plan_header_raises_no_check_error(self):
+        with tempfile.TemporaryDirectory() as root:
+            target = decisions_path(root)
+            append_decision(
+                target,
+                InvocationHeader(
+                    invocation_id="INV-0001",
+                    gate_point="plan",
+                    dsx_version=__version__,
+                    frame_digest="deadbeef",
+                ),
+            )
+            report = prereg.check(self._spec(), root, reconcile_trail=True)
+            self.assertIsInstance(report, Report)
+
+    def test_7_corrupt_trail_lines_treated_as_no_headers_raises_check_error(self):
+        with tempfile.TemporaryDirectory() as root:
+            target = decisions_path(root)
+            target.write_text("not json\n{also not json\n", encoding="utf-8")
+            with self.assertRaises(CheckError):
+                prereg.check(self._spec(), root, reconcile_trail=True)
+
+    def test_8_root_none_with_reconcile_true_raises_check_error_not_type_error(self):
+        with self.assertRaises(CheckError) as ctx:
+            prereg.check(self._spec(), None, reconcile_trail=True)
+        message = str(ctx.exception)
+        self.assertIn("suppressions", message)
+        self.assertIn("dsx gate plan", message)
