@@ -6,7 +6,7 @@ current_phase: 11
 current_phase_name: Frequentist admissibility adjudicator (DSX-ADM-*
 status: executing
 stopped_at: Phase 11 planning complete — 8 plans, checker passed, ready to execute
-last_updated: "2026-08-20T17:12:04.440Z"
+last_updated: "2026-08-20T21:03:46.450Z"
 last_activity: 2026-08-20
 last_activity_desc: Phase 11 execution started
 progress:
@@ -19,7 +19,7 @@ progress:
 
 # Project state
 
-**Status:** Executing Phase 11
+**Status:** Ready to execute
 **Progress:** [███████████████████░] 34/35 plans (97%)  
 **Locked decisions:** DQ = profile runner + hermetic gates; Glyph = hermetic svg_sha256 only (no MCP dep); forbidden claims = universal pack + optional phase YAML; repro_lock = ARS-style honest-null (not byte-replay); decision replay = structured thresholds only; suppressions = ADR/SPEC authority required (unknown codes → exit 2)  
 **v2.0.0 locked decisions:** DSX-PAR-010 is a distinct code, DSX-EXP-060 untouched (M-01); no `inference.stopping_rule` — PAR-010/011 read the existing `design.peeking_policy` (M-02); PEEKING_POLICIES gains an uncontrolled-continuous-monitoring value (M-03); automated import test enforces the D-03a boundary from M1 (M-04); SELF-001 stays a convention, REVERSALS.md template seeded in M1 (M-05); `validity_frame` sub-block requiredness gated by `question_type` (M-06); existing `suppressions[]` is the pre-v2.0.0 grandfather path (M-07); D-05 citation enforcement automated via `gen-finding-catalogue.py` (M-08); `dependence.method_family_required` reuses `VARIANCE_ADJUSTMENTS` (M-09)
@@ -92,7 +92,7 @@ progress:
 
 Phase: 11 (Frequentist admissibility adjudicator (DSX-ADM-*)) — EXECUTING
 Plan: 1 of 8
-Status: Executing Phase 11
+Status: Ready to execute
 Last activity: 2026-08-20 — Phase 11 execution started
 
 ## Project Reference
