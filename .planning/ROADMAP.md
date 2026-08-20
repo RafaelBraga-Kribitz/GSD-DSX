@@ -497,12 +497,12 @@ reconcile against at plan or execute.
      a test against a published reference value or a named structural criterion, and a test
      asserts every `DSX-PRE-*` code is reachable from at least one `GATE_PROFILES` entry.
 
-**Plans**: 6 plans
+**Plans**: 1/6 plans executed
 
 Plans:
 **Wave 1**
 
-- [ ] 10-01-PLAN.md — Fact registry and the arrow-triggered fallback-rule mini-language (wave 1)
+- [x] 10-01-PLAN.md — Fact registry and the arrow-triggered fallback-rule mini-language (wave 1)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -629,7 +629,7 @@ cases where absence permitted a false pass" is a debate, not a count.
 | 7. Validity frame checks (`DSX-VAL-*`) | 8/8 | Complete | 2026-08-20 |
 | 8. Interference, triggering, stability (`DSX-INT-*`) | 10/10 | Complete | 2026-08-14 |
 | 9. Monitoring discipline, symmetric (`DSX-PAR-*`) | 7/7 | Complete | 2026-08-13 |
-| 10. Pre-registered inference plan (`DSX-PRE-*`) | 0/TBD | Not started | - |
+| 10. Pre-registered inference plan (`DSX-PRE-*`) | 1/6 | In Progress|  |
 | 11. Frequentist admissibility adjudicator (`DSX-ADM-*`) | 0/TBD | Not started | - |
 | 12. Calibration | 0/TBD | Not started | - |
 
