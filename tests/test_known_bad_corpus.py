@@ -23,7 +23,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(ROOT / "tests"))
 
+from _trail_seed import seed_plan_header  # noqa: E402
 from dsx import cli  # noqa: E402
 from dsx.frame.paradigm import _MONITORING_DISCIPLINE  # noqa: E402
 from dsx.loader import load  # noqa: E402
@@ -341,15 +343,41 @@ class TestKnownBadCorpus(unittest.TestCase):
         pattern. Blocking output goes to stderr and passing output to stdout
         (``dsx/findings.py::emit``), so whichever stream is non-empty is the
         one holding the JSON report.
+
+        This fresh-directory-per-call design was correct until Phase 10: no
+        check had ever depended on prior gate-run state, so an empty
+        temporary directory was as good a root as any other. Phase 10's
+        ``prereg`` is the first check to make the decision trail a gate
+        input at verify and ship (``dsx/frame/prereg.py::
+        _check_content_lock``) — a ``verify`` or ``ship`` call into a
+        directory with no recorded plan-time header would otherwise stop
+        every fixture in the corpus at exit 2 the moment ``prereg`` is
+        registered in ``GATE_PROFILES``. Seed a plan-time header for
+        ``spec_path`` into ``tmp`` first whenever ``point`` needs one.
         """
         with tempfile.TemporaryDirectory() as tmp:
+            if point in ("verify", "ship"):
+                seed_plan_header(tmp, spec_path)
             out, err = io.StringIO(), io.StringIO()
             with redirect_stdout(out), redirect_stderr(err):
                 code = cli.main(
                     ["gate", point, "--spec", str(spec_path), "--phase-dir", tmp, "--json"]
                 )
             raw = err.getvalue() or out.getvalue()
-            report = json.loads(raw)
+            # The --json flag is silently ignored on the CheckError path — the
+            # exception handler in main() runs entirely outside the emitter —
+            # so a missing-plan-header CheckError (or any other exit-2 plain
+            # text) would otherwise surface here as an opaque JSONDecodeError
+            # rather than a readable assertion failure naming the raw text.
+            # This guard is correct independently of anything Phase 10 does
+            # and should stay even if every call site above always seeds.
+            try:
+                report = json.loads(raw)
+            except json.JSONDecodeError as exc:
+                raise AssertionError(
+                    f"dsx gate {point} --spec {spec_path} did not emit parseable "
+                    f"JSON (exit code {code}): {raw!r}"
+                ) from exc
         return code, report["findings"]
 
     def test_every_spec_has_a_sibling_postmortem_and_vice_versa(self):
