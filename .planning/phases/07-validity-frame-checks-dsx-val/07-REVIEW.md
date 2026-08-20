@@ -26,6 +26,10 @@ findings:
   warning: 4
   info: 1
   total: 6
+resolved:
+  - id: CR-01
+    commits: [e523a70, 2160cde]
+    date: 2026-08-20
 status: issues_found
 ---
 
@@ -175,6 +179,16 @@ policy == _UNCONTROLLED_POLICY:` (adjusting the message to distinguish
 `design.peeking_policy: uncontrolled_continuous`, asserting the manifest's
 `not_applied` never contradicts findings that actually fired in the same
 report, and that `DSX-PAR-002` still fires.
+
+**Resolved 2026-08-20** — `test(07)` e523a70 pinned the defect (12 subtest
+failures across the manifest honesty invariant, the applied-set fallback and
+the `DSX-PAR-002` requiredness half, on four out-of-vocabulary values);
+`fix(07)` 2160cde folded the unrecognised case into the undeclared one in both
+`check()` and `_check_paradigm_justification`, keying on `PARADIGMS` membership
+after `normalize()` — the same fallback `_check_monitoring_discipline` already
+used. `DSX-PAR-001`'s detail gained a third branch naming the unrecognised
+case. Membership *reporting* stays `DSX-SPEC-085`'s (D-08): T-9-14 passes
+unchanged. Full suite 549 tests OK; `gen-finding-catalogue.py --check` exit 0.
 
 ## Warnings
 
