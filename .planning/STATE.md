@@ -4,11 +4,11 @@ milestone: v2.0.0
 milestone_name: DSX Validity Frame
 current_phase: 10
 current_phase_name: pre-registered-inference-plan-dsx-pre
-status: planning
+status: executing
 stopped_at: Phase 07 complete and verified 2026-08-20; Phase 10 is the next unexecuted phase (6 plans on disk)
-last_updated: "2026-08-20T00:12:47.137Z"
+last_updated: "2026-08-20T00:29:06.601Z"
 last_activity: 2026-08-20
-last_activity_desc: Phase 07 verified and marked complete; next actionable phase is 10
+last_activity_desc: Phase 10 execution started
 progress:
   total_phases: 5
   completed_phases: 4
@@ -19,7 +19,7 @@ progress:
 
 # Project state
 
-**Status:** Phase 07 complete and verified — Phase 10 is next (plans already on disk)
+**Status:** Executing Phase 10
 **Progress:** [███████████████████░] 34/35 plans (97%)  
 **Locked decisions:** DQ = profile runner + hermetic gates; Glyph = hermetic svg_sha256 only (no MCP dep); forbidden claims = universal pack + optional phase YAML; repro_lock = ARS-style honest-null (not byte-replay); decision replay = structured thresholds only; suppressions = ADR/SPEC authority required (unknown codes → exit 2)  
 **v2.0.0 locked decisions:** DSX-PAR-010 is a distinct code, DSX-EXP-060 untouched (M-01); no `inference.stopping_rule` — PAR-010/011 read the existing `design.peeking_policy` (M-02); PEEKING_POLICIES gains an uncontrolled-continuous-monitoring value (M-03); automated import test enforces the D-03a boundary from M1 (M-04); SELF-001 stays a convention, REVERSALS.md template seeded in M1 (M-05); `validity_frame` sub-block requiredness gated by `question_type` (M-06); existing `suppressions[]` is the pre-v2.0.0 grandfather path (M-07); D-05 citation enforcement automated via `gen-finding-catalogue.py` (M-08); `dependence.method_family_required` reuses `VARIANCE_ADJUSTMENTS` (M-09)
@@ -78,10 +78,10 @@ progress:
 
 ## Current Position
 
-Phase: 10 — Pre-registered inference plan (`DSX-PRE-*`)
-Plan: 0 of 6 (all plans on disk, none executed)
-Status: Not started. Phase 07 closed 2026-08-20 — verification passed, 543 tests green, security verified (0 open threats).
-Last activity: 2026-08-20 — Phase 07 verified and marked complete
+Phase: 10 (pre-registered-inference-plan-dsx-pre) — EXECUTING
+Plan: 1 of 6
+Status: Executing Phase 10
+Last activity: 2026-08-20 — Phase 10 execution started
 
 ## Project Reference
 
