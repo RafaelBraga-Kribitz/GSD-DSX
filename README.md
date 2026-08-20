@@ -335,6 +335,57 @@ grouping guarantee the trail is supposed to provide for that one invocation.
 Serialising `dsx gate` runs against a given analysis directory is the
 operator's responsibility today.
 
+### What the declared-versus-executed reconciliation cannot see
+
+The pre-registered inference plan check (`DSX-PRE-*`) reconciles a declared
+inference plan against what actually ran. Four things about that
+reconciliation are worth stating plainly, because correct code alone does
+not make them obvious from the outside.
+
+First, `declared_at`. This field records whether the operator says the
+inference plan was declared before the data was observed (`pre_data`) or
+after it (`post_data`). It is an operator self-declaration that the tool
+cannot verify — nothing in the gate can tell a true `pre_data` claim from a
+false one. Declaring `post_data` honestly is legal and produces no finding.
+This is deliberate: if an honest post-hoc declaration were blocked, staying
+silent about the truth would be cheaper than declaring it, and that is
+exactly the incentive this project exists to avoid.
+
+Second, the executed side. The reconciliation reads the procedure it treats
+as "executed" from `analysis.test`. That field is scaffolded into the
+specification at plan time, by the same template that scaffolds everything
+else — so "executed" is a convention imposed by the gate point at which this
+check runs, not a property the field itself carries. It is the same class of
+limit as `declared_at`.
+
+Third, the content lock. Where `dsx gate plan` has run, the reconciliation
+compares a hash computed over the `validity_frame:` and `inference:` blocks
+as they were recorded at that point against the same hash computed now — it
+compares recorded bytes, not a declared string. The limit: nothing in the
+code enforces an ordering between the four gate points (`plan`, `execute`,
+`verify`, `ship`). An operator who re-runs `dsx gate plan` after seeing
+results registers the edited frame and clears the check. The lock is only as
+strong as the operator's discipline in not doing that. The hash also covers
+only those two blocks, so an edit anywhere else in the specification does
+not move it — this is change detection, not a security control.
+
+Fourth, the missing-lock case. A `dsx gate verify` or `dsx gate ship` run
+that finds no plan-time header recorded anywhere in the decision trail stops
+at exit 2 — could not run — rather than passing. A specification that
+legitimately predates the plan gate takes the existing `suppressions[]`
+route, which requires citing the architecture decision record (ADR) or
+specification that authorises it.
+
+The declared fallback rule (`inference.fallback_rule`) may only reference a
+closed set of three facts: `alpha` (read from `design.alpha`),
+`comparisons_looked_at` (read from `results.comparisons_looked_at`), and
+`interim_looks` (read from `results.interim_looks`). A rule naming anything
+outside that set produces a finding rather than being silently ignored. The
+arrow (`->`) is what makes a `fallback_rule` value a rule at all — a value
+with no arrow is read as ordinary prose and left alone. `dsx vocab` emits the
+same three names under `prereg_facts`, so that command is the
+machine-readable source for this set rather than this paragraph.
+
 ### Two tiers of evidentiary rigour
 
 Not every finding code in the catalogue carries the same evidentiary bar.
