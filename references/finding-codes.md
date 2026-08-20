@@ -13,7 +13,7 @@ a suppression or a reference in a review stays valid across versions.
 **Gate thresholds.** `plan` and `execute` block at CRITICAL; `verify` and
 `ship` block at HIGH.
 
-**Total: 240 codes.**
+**Total: 243 codes.**
 
 ## Contract structure — `DSX-SPEC-*`
 
@@ -155,6 +155,9 @@ Leakage, splits, metric choice, baselines, evaluation hygiene.
 | `DSX-ML-071` | CRITICAL | <…> rows appear in both train and test |
 | `DSX-ML-072` | CRITICAL | Decision threshold tuned on the test set |
 | `DSX-ML-080` | MEDIUM | Predicted probabilities are used for decisions without a calibration check |
+| `DSX-ML-090` | HIGH | Declared algorithm has no complete selection ledger |
+| `DSX-ML-091` | CRITICAL | Model was selected on the test set |
+| `DSX-ML-092` | HIGH | The selection and the reported score share their folds |
 
 ## Metric semantics — `DSX-MET-*`
 

@@ -109,11 +109,17 @@ _D05_ALLOWLIST_PREFIXES = ("DSX-PAR-", "DSX-VAL-", "DSX-INT-", "DSX-PRE-")
 # same function — are deliberately NOT added here; this plan only extended
 # the branch they already lived in, it did not rewrite their citation-free
 # bodies.
+#
+# Phase 11.1 (REQ-P11.1-06) adds DSX-ML-090, DSX-ML-091 and DSX-ML-092 here.
+# Unlike the DSX-ML-* entries above, all three live in a brand-new function,
+# `_check_selection_ledger`, that this plan wrote from scratch — there is no
+# legacy sibling code sharing the function to carry forward uncited.
 _D05_ALLOWLIST_CODES = frozenset(
     {
         "DSX-SPEC-080", "DSX-SPEC-081", "DSX-SPEC-082", "DSX-SPEC-085", "DSX-SPEC-086",
         "DSX-CODE-020", "DSX-CODE-021", "DSX-CODE-030", "DSX-CODE-031",
         "DSX-ML-023", "DSX-ML-024", "DSX-ML-043", "DSX-ML-052", "DSX-ML-053",
+        "DSX-ML-090", "DSX-ML-091", "DSX-ML-092",
     }
 )
 
