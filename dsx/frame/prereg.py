@@ -25,7 +25,7 @@ from dataclasses import dataclass
 
 from ..decisions import DecisionRecord, decisions_path, frame_digest, read_all
 from ..findings import CheckError, Report
-from ..spec import PREREG_FACTS, as_number, get, is_blank, normalize
+from ..spec import PREREG_FACTS, as_number, get, is_blank, items, normalize
 
 _ARROW = "->"
 
@@ -414,10 +414,39 @@ def _recorded_plan_digests(root: "str | None") -> "set[str]":
     return digests
 
 
+def _has_grandfather_suppression(spec: dict) -> bool:
+    """True when ``spec`` declares a usable ``DSX-PRE-020`` grandfather suppression.
+
+    "Usable" means exactly what ``dsx.suppressions.apply_suppressions`` already
+    means by it, so this bypass for an exit-2 block is never easier to obtain
+    than an ordinary finding suppression: the row's ``code``, after stripping,
+    must equal ``DSX-PRE-020`` exactly (the code vocabulary is upper-case and is
+    not case-normalised elsewhere, so this is not run through ``normalize()``),
+    and both ``reason`` and ``authority`` must be non-blank (``is_blank`` from
+    ``dsx.spec``). A row missing ``reason`` or ``authority`` does not unlock the
+    path — those are structural defects ``apply_suppressions`` deliberately
+    refuses to apply, and this path must agree with it.
+
+    Reads rows with ``items(spec, "suppressions")`` rather than hand-rolling
+    list handling, so malformed shapes (a non-list ``suppressions``, or a
+    non-dict row) degrade the same way they do everywhere else in the codebase
+    — silently dropped, never a traceback.
+    """
+    for row in items(spec, "suppressions"):
+        code = str(row.get("code") or "").strip()
+        if code != "DSX-PRE-020":
+            continue
+        if is_blank(row.get("reason")) or is_blank(row.get("authority")):
+            continue
+        return True
+    return False
+
+
 def _check_content_lock(spec: dict, root: "str | None", report: Report) -> None:
     """Reconcile the plan-time content lock recorded in the decision trail against
     the verify-time bytes of the ``validity_frame:``/``inference:`` blocks
-    (``DSX-PRE-020``), refusing to run at all when no plan-time header is recorded.
+    (``DSX-PRE-020``), refusing to run at all when no plan-time header is recorded
+    and the spec carries no usable ``DSX-PRE-020`` grandfather suppression.
 
     Before Phase 10 the decision trail (``DECISIONS.jsonl``) was a write-only side
     channel: ``dsx gate`` appended to it, and only ``dsx explain`` ever rendered it
@@ -430,18 +459,30 @@ def _check_content_lock(spec: dict, root: "str | None", report: Report) -> None:
     reading (here) is conditional and can block. Plan 04 makes the matching edit on
     the writing side.
 
-    Raises ``CheckError`` when the recorded-plan-digest set is empty: there is nothing
-    for this gate point to reconcile the declared inference plan against, and a silent
-    pass would be the failure the exit-code contract exists to prevent (CONTEXT D-09
+    Raises ``CheckError`` when the recorded-plan-digest set is empty and
+    ``_has_grandfather_suppression(spec)`` is ``False``: there is nothing for this
+    gate point to reconcile the declared inference plan against, and a silent pass
+    would be the failure the exit-code contract exists to prevent (CONTEXT D-09
     forbids softening the missing header into a pass or a non-blocking finding). The
     message names, in order: what happened (no plan-time frame lock recorded, naming
     the resolved trail path), why that stops the run (nothing to reconcile against),
     the ordinary fix (run ``dsx gate plan`` against this phase directory first), and
-    the grandfather route named explicitly (a specification that legitimately predates
-    the plan gate declares a ``suppressions[]`` entry citing the architecture decision
-    record or specification that authorises it — an unknown code in that block aborts
-    the run at exit 2 in the same way, keeping the M-07 grandfather path walkable and
-    attributable).
+    the grandfather route named explicitly by code (a specification that
+    legitimately predates the plan gate declares a ``suppressions[]`` entry with
+    ``code: DSX-PRE-020`` and a non-blank ``reason``/``authority`` — the same bar
+    ``apply_suppressions`` already holds every other suppression to).
+
+    The grandfather route is a real bypass, not merely advice in a message nobody
+    can act on: when ``_has_grandfather_suppression(spec)`` is ``True``, this
+    function returns before raising, without emitting any finding — reconciliation
+    simply does not run for a spec that predates the plan gate. A row missing
+    ``reason`` or ``authority`` does not unlock the path (CONTEXT D-09 still holds:
+    a missing header with no authority-backed suppression stays exit 2, never a
+    pass and never a non-blocking finding). An unknown code anywhere in
+    ``suppressions[]`` still aborts the run at exit 2 in the same way — that check
+    lives in ``apply_suppressions`` and runs at the end of the whole gate, once
+    this early return lets execution continue that far, keeping the M-07
+    grandfather path walkable and attributable.
 
     Once at least one plan header is on record, returns without emitting unless
     ``inference.declared_at`` normalises to ``pre_data`` — ``post_data`` is legal and
@@ -488,6 +529,8 @@ def _check_content_lock(spec: dict, root: "str | None", report: Report) -> None:
     """
     recorded = _recorded_plan_digests(root)
     if not recorded:
+        if _has_grandfather_suppression(spec):
+            return
         trail_display = str(decisions_path(root)) if root is not None else (
             "<no phase directory>"
         )
@@ -498,10 +541,12 @@ def _check_content_lock(spec: dict, root: "str | None", report: Report) -> None:
             "declared inference plan against, and a silent pass would be the "
             "failure the exit-code contract exists to prevent. Run `dsx gate plan` "
             "against this phase directory first. If this specification legitimately "
-            "predates the plan gate, declare a `suppressions[]` entry citing the "
-            "architecture decision record or specification that is its authority "
-            "(the ADR/SPEC authority requirement); an unknown code in that block "
-            "aborts the run at exit 2 in the same way."
+            "predates the plan gate, declare a `suppressions[]` entry naming "
+            "code: DSX-PRE-020 with a non-blank reason and a non-blank authority "
+            "citing the architecture decision record or specification that "
+            "authorises it (the same reason+authority bar every other suppression "
+            "must clear); an unknown code anywhere in that block still aborts the "
+            "run at exit 2."
         )
 
     inference = spec.get("inference")
