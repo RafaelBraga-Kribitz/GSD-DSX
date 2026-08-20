@@ -744,6 +744,75 @@ class TestMissingPlanHeader(unittest.TestCase):
         self.assertIn("suppressions", message)
         self.assertIn("dsx gate plan", message)
 
+    def test_9_message_names_dsx_pre_020_explicitly(self):
+        with tempfile.TemporaryDirectory() as root:
+            with self.assertRaises(CheckError) as ctx:
+                prereg.check(self._spec(), root, reconcile_trail=True)
+            message = str(ctx.exception)
+            self.assertIn("DSX-PRE-020", message)
+
+    def _spec_with_suppression(self, code="DSX-PRE-020", reason="predates the plan gate", authority="ADR-999"):
+        row = {}
+        if code is not None:
+            row["code"] = code
+        if reason is not None:
+            row["reason"] = reason
+        if authority is not None:
+            row["authority"] = authority
+        spec = self._spec()
+        spec["suppressions"] = [row]
+        return spec
+
+    def test_10_usable_dsx_pre_020_suppression_unlocks_the_missing_header_route(self):
+        """CR-01: a suppressions[] row naming DSX-PRE-020 with a reason and an
+        authority is the real grandfather route — no CheckError, no finding."""
+        with tempfile.TemporaryDirectory() as root:
+            report = prereg.check(
+                self._spec_with_suppression(), root, reconcile_trail=True
+            )
+            self.assertIsInstance(report, Report)
+            self.assertEqual(report.findings, [])
+
+    def test_11_suppression_missing_reason_does_not_unlock(self):
+        with tempfile.TemporaryDirectory() as root:
+            spec = self._spec_with_suppression(reason="")
+            with self.assertRaises(CheckError):
+                prereg.check(spec, root, reconcile_trail=True)
+
+    def test_12_suppression_missing_authority_does_not_unlock(self):
+        with tempfile.TemporaryDirectory() as root:
+            spec = self._spec_with_suppression(authority="")
+            with self.assertRaises(CheckError):
+                prereg.check(spec, root, reconcile_trail=True)
+
+    def test_13_suppression_naming_a_different_code_does_not_unlock(self):
+        with tempfile.TemporaryDirectory() as root:
+            spec = self._spec_with_suppression(code="DSX-PRE-010")
+            with self.assertRaises(CheckError):
+                prereg.check(spec, root, reconcile_trail=True)
+
+    def test_14_unknown_suppression_code_still_aborts_even_with_a_usable_grandfather_row(self):
+        """The property CR-01 requires still hold: an unknown code anywhere in
+        suppressions[] still aborts the run at exit 2 — that happens later, in
+        apply_suppressions, once the early return here lets execution continue
+        that far."""
+        from dsx.cli import run_checks
+
+        spec = self._spec_with_suppression()
+        spec["suppressions"].append(
+            {"code": "DSX-FAKE-999", "reason": "typo", "authority": "ADR-1"}
+        )
+        with tempfile.TemporaryDirectory() as root:
+            with self.assertRaises(CheckError):
+                run_checks(
+                    spec,
+                    ("prereg",),
+                    root,
+                    gate_point="verify",
+                    resolve_root=root,
+                    gate_invocation=True,
+                )
+
 
 class TestContentLockReconciliation(unittest.TestCase):
     """`_check_content_lock`'s DSX-PRE-020 reconciliation (Task 2): a `pre_data`
