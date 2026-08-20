@@ -107,3 +107,87 @@ def _parse_fallback_rule(text: object) -> "_ParsedRule | None":
         threshold=float(match.group("value")),
         branch=branch,
     )
+
+
+# Format templates (not f-strings evaluated at module scope) — the two reasons a
+# DSX-PRE-010 finding will later carry. The accepted-names list in _UNKNOWN_FACT is
+# built from sorted(PREREG_FACTS) at module load time, so it can never drift from the
+# registry.
+_UNKNOWN_FACT = (
+    "fallback_rule references fact {fact!r}, which is outside the closed prereg fact "
+    "registry; accepted names are: " + ", ".join(sorted(PREREG_FACTS))
+)
+
+_UNDECLARED_FACT = (
+    "fallback_rule references registry fact {fact!r} ({path}), which the spec does "
+    "not declare as a number"
+)
+
+
+@dataclass(frozen=True)
+class _Resolution:
+    branch: "str | None"
+    reason: "str | None"
+    source: str
+
+
+def _resolve_branch(spec: dict) -> _Resolution:
+    """Resolve the declared ``inference.fallback_rule`` to exactly one branch.
+
+    A single-condition grammar with an implicit else (the primary procedure) has
+    exactly two outcomes and no way to select more than one — the "more than one
+    branch" failure mode REQ-P10-01 names is structurally impossible here, rather
+    than merely untested. The "zero branches" mode is exactly the two registry
+    failures below: a fact name outside ``PREREG_FACTS``, or a registry fact the
+    spec does not declare as a number.
+
+    Degrades to an unresolved ``_Resolution`` with no reason — never a traceback —
+    when ``spec`` is not a dict or ``inference`` is not a dict, matching
+    ``interference.check``'s habit. A ``CheckError`` raised by
+    ``_parse_fallback_rule`` propagates untouched: that is D-02's exit-2 route, and
+    this function must not swallow it.
+
+    Returns the branch label as authored, without normalising it — normalisation
+    belongs at the comparison site in a later plan, so the finding text can quote
+    the operator's own wording.
+
+    This function never reads the declared inferential paradigm field (D-11, brief
+    D-11): the branch a fallback rule selects does not depend on it.
+    """
+    if not isinstance(spec, dict):
+        return _Resolution(branch=None, reason=None, source="unresolved")
+
+    inference = spec.get("inference")
+    if not isinstance(inference, dict):
+        return _Resolution(branch=None, reason=None, source="unresolved")
+
+    primary_procedure = inference.get("primary_procedure")
+
+    parsed = _parse_fallback_rule(inference.get("fallback_rule"))
+    if parsed is None:
+        return _Resolution(
+            branch=primary_procedure, reason=None, source="primary_procedure"
+        )
+
+    path = PREREG_FACTS.get(parsed.fact)
+    if path is None:
+        return _Resolution(
+            branch=None,
+            reason=_UNKNOWN_FACT.format(fact=parsed.fact),
+            source="unresolved",
+        )
+
+    value = as_number(get(spec, path))
+    if value is None:
+        return _Resolution(
+            branch=None,
+            reason=_UNDECLARED_FACT.format(fact=parsed.fact, path=path),
+            source="unresolved",
+        )
+
+    condition_true = _OPS[parsed.op](value, parsed.threshold)
+    if condition_true:
+        return _Resolution(branch=parsed.branch, reason=None, source="fallback_rule")
+    return _Resolution(
+        branch=primary_procedure, reason=None, source="primary_procedure"
+    )

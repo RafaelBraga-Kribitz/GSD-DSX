@@ -153,3 +153,129 @@ class TestFallbackRuleParsing(unittest.TestCase):
         )
         self.assertEqual(lf, crlf)
         self.assertEqual(lf, trailing_newline)
+
+
+class TestBranchResolution(unittest.TestCase):
+    def test_no_arrow_rule_resolves_to_primary_procedure_with_no_reason(self):
+        spec = {
+            "inference": {
+                "primary_procedure": "two_proportion_z",
+                "fallback_rule": "Use a bootstrap if the variance is unstable.",
+            },
+        }
+        resolution = prereg._resolve_branch(spec)
+        self.assertEqual(resolution.source, "primary_procedure")
+        self.assertEqual(resolution.branch, "two_proportion_z")
+        self.assertIsNone(resolution.reason)
+
+    def test_missing_or_non_dict_inference_resolves_to_unresolved_no_raise(self):
+        for spec in (
+            {},
+            {"inference": "not a dict"},
+            {"inference": None},
+            {"inference": []},
+            {"inference": 3},
+        ):
+            with self.subTest(spec=spec):
+                resolution = prereg._resolve_branch(spec)
+                self.assertEqual(resolution.source, "unresolved")
+                self.assertIsNone(resolution.branch)
+                self.assertIsNone(resolution.reason)
+
+    def test_true_condition_resolves_to_the_rule_branch(self):
+        spec = {
+            "inference": {
+                "primary_procedure": "two_proportion_z",
+                "fallback_rule": "interim_looks >= 1 -> alpha_spending_obf",
+            },
+            "results": {"interim_looks": 1},
+        }
+        resolution = prereg._resolve_branch(spec)
+        self.assertEqual(resolution.source, "fallback_rule")
+        self.assertEqual(resolution.branch, "alpha_spending_obf")
+        self.assertIsNone(resolution.reason)
+
+    def test_false_condition_resolves_to_primary_procedure(self):
+        spec = {
+            "inference": {
+                "primary_procedure": "two_proportion_z",
+                "fallback_rule": "interim_looks >= 1 -> alpha_spending_obf",
+            },
+            "results": {"interim_looks": 0},
+        }
+        resolution = prereg._resolve_branch(spec)
+        self.assertEqual(resolution.source, "primary_procedure")
+        self.assertEqual(resolution.branch, "two_proportion_z")
+        self.assertIsNone(resolution.reason)
+
+    def test_fact_outside_registry_resolves_unresolved_naming_accepted_names(self):
+        spec = {
+            "inference": {
+                "primary_procedure": "two_proportion_z",
+                "fallback_rule": "clusters < 30 -> wild cluster bootstrap",
+            },
+        }
+        resolution = prereg._resolve_branch(spec)
+        self.assertEqual(resolution.source, "unresolved")
+        self.assertIsNone(resolution.branch)
+        self.assertIn("clusters", resolution.reason)
+        for name in ("alpha", "comparisons_looked_at", "interim_looks"):
+            with self.subTest(name=name):
+                self.assertIn(name, resolution.reason)
+
+    def test_registry_fact_absent_from_spec_resolves_unresolved(self):
+        spec = {
+            "inference": {
+                "primary_procedure": "two_proportion_z",
+                "fallback_rule": "alpha < 0.01 -> x",
+            },
+        }
+        resolution = prereg._resolve_branch(spec)
+        self.assertEqual(resolution.source, "unresolved")
+        self.assertIsNone(resolution.branch)
+        self.assertIn("alpha", resolution.reason)
+        self.assertIn("design.alpha", resolution.reason)
+
+    def test_registry_fact_non_numeric_resolves_unresolved(self):
+        spec = {
+            "inference": {
+                "primary_procedure": "two_proportion_z",
+                "fallback_rule": "alpha < 0.01 -> x",
+            },
+            "design": {"alpha": "tbd"},
+        }
+        resolution = prereg._resolve_branch(spec)
+        self.assertEqual(resolution.source, "unresolved")
+        self.assertIsNone(resolution.branch)
+        self.assertIn("alpha", resolution.reason)
+        self.assertIn("design.alpha", resolution.reason)
+
+    def test_resolution_is_identical_across_paradigms_true_and_false(self):
+        def make_spec(paradigm: str, interim_looks: int) -> dict:
+            return {
+                "inference": {
+                    "paradigm": paradigm,
+                    "primary_procedure": "two_proportion_z",
+                    "fallback_rule": "interim_looks >= 1 -> alpha_spending_obf",
+                },
+                "results": {"interim_looks": interim_looks},
+            }
+
+        freq_true = prereg._resolve_branch(make_spec("frequentist", 1))
+        bayes_true = prereg._resolve_branch(make_spec("bayesian", 1))
+        self.assertEqual(freq_true, bayes_true)
+
+        freq_false = prereg._resolve_branch(make_spec("frequentist", 0))
+        bayes_false = prereg._resolve_branch(make_spec("bayesian", 0))
+        self.assertEqual(freq_false, bayes_false)
+
+    def test_branch_label_returned_as_authored_not_normalized(self):
+        spec = {
+            "inference": {
+                "primary_procedure": "two_proportion_z",
+                "fallback_rule": "interim_looks >= 1 -> Wild Cluster Bootstrap",
+            },
+            "results": {"interim_looks": 1},
+        }
+        resolution = prereg._resolve_branch(spec)
+        self.assertEqual(resolution.branch, "Wild Cluster Bootstrap")
