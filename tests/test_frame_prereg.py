@@ -8,8 +8,10 @@ Run:  python3 -m unittest tests.test_frame_prereg -v
 
 from __future__ import annotations
 
+import copy
 import io
 import json
+import re
 import shutil
 import sys
 import tempfile
@@ -523,3 +525,130 @@ class TestNoMeritConsultation(unittest.TestCase):
         findings = [f for f in report.findings if f.code == "DSX-PRE-030"]
         self.assertEqual(len(findings), 1)
         self.assertEqual(findings[0].severity, Severity.CRITICAL)
+
+
+class TestMalformedShapesDegradeGracefully(unittest.TestCase):
+    def test_non_dict_spec_returns_empty_report_no_raise(self):
+        for bad_spec in ("not a dict", [], None, 3):
+            with self.subTest(bad_spec=bad_spec):
+                report = prereg.check(bad_spec)
+                self.assertIsInstance(report, Report)
+                self.assertEqual(report.findings, [])
+
+    def test_malformed_inference_block_degrades_no_findings(self):
+        for bad_inference in ("not a dict", [], None, 3):
+            with self.subTest(bad_inference=bad_inference):
+                spec = {"inference": bad_inference}
+                report = prereg.check(spec)
+                pre_findings = [f for f in report.findings if f.code.startswith("DSX-PRE-")]
+                self.assertEqual(pre_findings, [])
+
+    def test_malformed_analysis_block_produces_no_dsx_pre_030_no_raise(self):
+        for bad_analysis in ("not a dict", [], None, 3):
+            with self.subTest(bad_analysis=bad_analysis):
+                spec = {
+                    "inference": {
+                        "primary_procedure": "two_proportion_z",
+                        "fallback_rule": "interim_looks >= 1 -> wild_cluster_bootstrap",
+                    },
+                    "results": {"interim_looks": 1},
+                    "analysis": bad_analysis,
+                }
+                report = prereg.check(spec)
+                pre030 = [f for f in report.findings if f.code == "DSX-PRE-030"]
+                self.assertEqual(pre030, [])
+
+    def test_non_string_fallback_rule_produces_no_finding_no_exception(self):
+        for bad_rule in ([], {}, 3, None):
+            with self.subTest(bad_rule=bad_rule):
+                spec = {
+                    "inference": {
+                        "primary_procedure": "two_proportion_z",
+                        "fallback_rule": bad_rule,
+                    },
+                }
+                report = prereg.check(spec)
+                pre_findings = [f for f in report.findings if f.code.startswith("DSX-PRE-")]
+                self.assertEqual(pre_findings, [])
+
+
+class TestParadigmIndependence(unittest.TestCase):
+    """Test 5 (behavioural) is the primary proof; test 6 (source-level) is the
+    corroborating one. A source-level grep proves only that a string is absent
+    today; the behavioural comparison proves the property the requirement
+    actually cares about, and survives a refactor that reads the field
+    indirectly. Mirrors REQ-P7-09 and REQ-P8-06, which Phase 10 has no numbered
+    requirement for but which 10-CONTEXT.md's locked-upstream section says
+    should ship anyway.
+    """
+
+    def _scenarios(self):
+        return {
+            "clear": {
+                "inference": {
+                    "primary_procedure": "two_proportion_z",
+                    "fallback_rule": "interim_looks >= 1 -> wild_cluster_bootstrap",
+                },
+                "results": {"interim_looks": 1},
+                "analysis": {"test": "wild_cluster_bootstrap"},
+            },
+            "dsx_pre_010_fired": {
+                "inference": {
+                    "primary_procedure": "two_proportion_z",
+                    "fallback_rule": "clusters < 30 -> wild_cluster_bootstrap",
+                },
+            },
+            "dsx_pre_030_fired": {
+                "inference": {
+                    "primary_procedure": "welch_t",
+                    "fallback_rule": "interim_looks >= 1 -> two_proportion_z",
+                },
+                "results": {"interim_looks": 1},
+                "analysis": {"test": "fishers_exact"},
+            },
+            # No "inference:" block at all — there is nothing to declare a
+            # paradigm into, so both variants below are the same spec by
+            # construction. The property under test holds trivially and
+            # unconditionally for this scenario, and it still exercises the
+            # same comparison harness as the other three.
+            "no_inference_block": {
+                "results": {"interim_looks": 1},
+                "analysis": {"test": "two_proportion_z"},
+            },
+        }
+
+    def test_finding_sequences_identical_across_paradigms(self):
+        for name, base in self._scenarios().items():
+            variants = {}
+            for paradigm in ("frequentist", "bayesian"):
+                spec = copy.deepcopy(base)
+                if "inference" in spec:
+                    spec["inference"]["paradigm"] = paradigm
+                variants[paradigm] = spec
+
+            with self.subTest(scenario=name):
+                freq_report = prereg.check(variants["frequentist"])
+                bayes_report = prereg.check(variants["bayesian"])
+
+                freq_signature = [
+                    (f.code, f.severity, f.detail) for f in freq_report.findings
+                ]
+                bayes_signature = [
+                    (f.code, f.severity, f.detail) for f in bayes_report.findings
+                ]
+                self.assertEqual(freq_signature, bayes_signature)
+
+    def test_source_contains_no_attribute_access_to_paradigm_field(self):
+        source = Path(prereg.__file__).read_text(encoding="utf-8")
+        # Tolerate CRLF: the repository checks out with carriage returns.
+        normalized = source.replace("\r\n", "\n")
+        # The attribute-access form, not the bare word "paradigm" — the module
+        # docstring and _resolve_branch's docstring legitimately mention the
+        # concept in prose ("inferential paradigm field"); the concern is code
+        # reading the field, not English describing why it never does.
+        access_pattern = re.compile(r'''["']paradigm["']''')
+        self.assertEqual(
+            access_pattern.findall(normalized),
+            [],
+            "dsx/frame/prereg.py contains a quoted 'paradigm' key/string access",
+        )
