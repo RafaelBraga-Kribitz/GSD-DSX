@@ -94,11 +94,19 @@ _D05_ALLOWLIST_PREFIXES = ("DSX-PAR-", "DSX-VAL-", "DSX-INT-", "DSX-PRE-")
 # are deliberately NOT added here: they are pre-existing, uncited, and this
 # plan only extended the function they already lived in. Naming them would
 # turn the build red on a function this plan did not rewrite from scratch.
+#
+# Phase 11.1 (REQ-P11.1-03) adds DSX-ML-023 and DSX-ML-024 here for the same
+# reason as DSX-ML-043 above: both live in `dsx/checks/ml.py`'s pre-existing
+# `DSX-ML-*` family. DSX-ML-020, DSX-ML-021 and DSX-ML-022 — the legacy
+# codes sharing `_check_preprocessing`, the function DSX-ML-023/024 borrow
+# their shared accepted-value constant from — are deliberately NOT added
+# here; this plan only extracted that constant out of _check_preprocessing
+# without rewriting its citation-free body.
 _D05_ALLOWLIST_CODES = frozenset(
     {
         "DSX-SPEC-080", "DSX-SPEC-081", "DSX-SPEC-082", "DSX-SPEC-085", "DSX-SPEC-086",
         "DSX-CODE-020", "DSX-CODE-021", "DSX-CODE-030", "DSX-CODE-031",
-        "DSX-ML-043",
+        "DSX-ML-023", "DSX-ML-024", "DSX-ML-043",
     }
 )
 

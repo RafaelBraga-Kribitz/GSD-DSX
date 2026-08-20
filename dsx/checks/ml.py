@@ -18,6 +18,7 @@ from ..spec import (
     as_number,
     get,
     is_blank,
+    items,
     normalize,
     section,
 )
@@ -51,11 +52,24 @@ IMBALANCE_THRESHOLD = 0.20
 OVERFIT_GAP_THRESHOLD = 0.10
 DECISION_TASKS = {"binary_classification", "multiclass_classification"}
 
+# Phase 11.1 (REQ-P11.1-03): the three values `_check_preprocessing` already
+# accepted for the whole-pipeline `preprocessing_fit_on` field, lifted into a
+# shared constant so `_check_cleaning`'s per-step boundary test and
+# `_check_preprocessing`'s whole-pipeline test can never drift apart on what
+# counts as "training rows only".
+TRAIN_ONLY_FIT_VALUES = frozenset({"train_only", "train_fold_only", "none"})
+
 
 def check(spec: dict) -> Report:
     report = Report(check="ml")
     model = section(spec, "model")
     qtype = normalize(spec.get("question_type", ""))
+
+    # Phase 11.1 (REQ-P11.1-03): runs ahead of the no-model early return
+    # below, because a data-only specification that declares a leaky
+    # cleaning step is still leaky — the defect lives in the data
+    # declaration, not in whether a model section happens to exist.
+    _check_cleaning(spec, report)
 
     if not model:
         if qtype == "predictive":
@@ -197,7 +211,7 @@ def _check_preprocessing(model: dict, report: Report) -> None:
             remedy="Declare preprocessing_fit_on: train_only and fit inside a pipeline per fold.",
             where="spec.model.preprocessing_fit_on",
         )
-    elif fit_on not in ("train_only", "train_fold_only", "none"):
+    elif fit_on not in TRAIN_ONLY_FIT_VALUES:
         report.add(
             "DSX-ML-021",
             "CRITICAL",
@@ -224,6 +238,173 @@ def _check_preprocessing(model: dict, report: Report) -> None:
             remedy="Resample inside the training fold only, never before the split.",
             where="spec.model.resampling_applied_to",
         )
+
+
+def _check_cleaning(spec: dict, report: Report) -> None:
+    """`data[].cleaning[]` per-step fit-boundary check (DSX-ML-023, DSX-ML-024).
+
+    Phase 11.1 (REQ-P11.1-03): `_check_preprocessing` above states one fit
+    boundary for the whole pipeline. The reproduction this requirement
+    responds to declared that whole-pipeline boundary honestly — training
+    rows only — and then imputed a column's missing values over the full
+    frame during a cleaning stage that boundary was never understood to
+    cover. Until the contract could carry a per-step boundary, an operator
+    who wanted to declare the truth had no field to declare it in. This
+    check reads that new, optional `data[].cleaning[].fit_on` declaration
+    and applies the same accepted-value test `_check_preprocessing` applies
+    to the whole-pipeline field, via the one constant both consult
+    (`TRAIN_ONLY_FIT_VALUES`).
+
+    Called from `check()`'s dispatch ahead of the no-model early return, so
+    a data-only specification that declares a leaky cleaning step still
+    blocks.
+
+    A cleaning step with a blank or absent `fit_on` is skipped, not
+    flagged: an incomplete declaration is treated exactly as no
+    declaration, because punishing a partial declaration harder than none
+    would push operators back to declaring nothing at all — the opposite of
+    what this field exists to encourage.
+
+    Citation: Kaufman, S., Rosset, S., Perlich, C. and Stitelman, O.
+    (2012), "Leakage in Data Mining: Formulation, Detection, and
+    Avoidance," ACM Transactions on Knowledge Discovery from Data, 6(4),
+    article 15. The paper's formulation of attribute "legitimacy" — a
+    feature value is legitimate only if it would genuinely have been
+    available, for the entity in question, at the moment the target
+    becomes known — is the general statement of the boundary both this
+    check and `_check_preprocessing` enforce for a specific class of
+    statistic-fitting operation (an imputation value or an outlier
+    threshold fitted across rows outside that boundary). The exact
+    section/page locator within the paper for the legitimacy formulation is
+    UNVERIFIED — the ACM Digital Library PDF was not independently
+    paginated in this session; do not invent a locator.
+
+    Structural criterion: DSX-ML-023 is a membership test of a declared,
+    non-blank `fit_on` value against `TRAIN_ONLY_FIT_VALUES` after
+    normalisation — the same constant and the same test
+    `_check_preprocessing` applies to the whole-pipeline field, so the two
+    can never disagree about what counts as training rows only.
+    DSX-ML-024 is a second, additional test on the same data: whether the
+    model section's own `preprocessing_fit_on` normalises to a member of
+    that same constant while at least one cleaning step's boundary does
+    not — two declarations compared for agreement, not a third boundary
+    value being introduced. DSX-ML-024 is emitted at most once per report.
+    """
+    datasets = items(spec, "data")
+    if not datasets:
+        return
+
+    any_cleaning_declared = False
+    leaky_steps: list[dict[str, str]] = []
+
+    for d_index, dataset in enumerate(datasets):
+        cleaning = dataset.get("cleaning")
+        if not isinstance(cleaning, list):
+            continue
+        dataset_name = dataset.get("name", d_index)
+        for c_index, step in enumerate(cleaning):
+            if not isinstance(step, dict):
+                continue
+            any_cleaning_declared = True
+            fit_on = step.get("fit_on")
+            # Phase 11.1: an incomplete declaration (blank or absent fit_on)
+            # is treated exactly as no declaration — see the docstring above
+            # for why. This is not the CRITICAL branch below; it is a skip.
+            if is_blank(fit_on):
+                continue
+            if normalize(fit_on) in TRAIN_ONLY_FIT_VALUES:
+                continue
+
+            column = step.get("column", "<unnamed column>")
+            method = step.get("method")
+            where = f"spec.data[{d_index}].cleaning[{c_index}].fit_on"
+            leaky_steps.append({"dataset": str(dataset_name), "column": str(column)})
+            report.add(
+                "DSX-ML-023",
+                "CRITICAL",
+                f"Cleaning statistic for '{column}' was fitted outside the training rows",
+                detail=(
+                    f"Dataset {dataset_name!r}, column {column!r}"
+                    + (f", method {method!r}" if method else "")
+                    + f", declares fit_on: {fit_on!r}. An imputation value or an outlier "
+                    "threshold computed across the whole frame carries held-out information "
+                    "into training, whether or not the model's own preprocessing was fitted "
+                    "correctly."
+                ),
+                remedy=(
+                    "Compute the statistic on the training rows and apply it to the held-out "
+                    "rows, then declare fit_on accordingly."
+                ),
+                where=where,
+                dataset=str(dataset_name),
+                column=str(column),
+            )
+
+    if not any_cleaning_declared:
+        return
+
+    whole_pipeline_fit_on = normalize(get(spec, "model.preprocessing_fit_on", ""))
+    fired_024 = bool(leaky_steps) and whole_pipeline_fit_on in TRAIN_ONLY_FIT_VALUES
+    if fired_024:
+        steps_listing = "; ".join(f"{s['dataset']}.{s['column']}" for s in leaky_steps)
+        report.add(
+            "DSX-ML-024",
+            "HIGH",
+            "Cleaning declaration contradicts the declared whole-pipeline boundary",
+            detail=(
+                f"model.preprocessing_fit_on declares {whole_pipeline_fit_on!r} (training rows "
+                f"only), but the following cleaning step(s) declare a boundary outside "
+                f"training rows: {steps_listing}."
+            ),
+            remedy=(
+                "Make the two declarations agree. If the cleaning declaration accurately "
+                "describes what the pipeline does, the pipeline is what needs changing, not "
+                "the declaration."
+            ),
+            where="spec.data[].cleaning[].fit_on",
+        )
+
+    # Phase 11.1 (D-04): a decision record covering both codes, appended once
+    # per report whenever any cleaning step is declared at all — a "cleared"
+    # or "no contradiction to compare against" judgment is still a judgment,
+    # mirroring `_check_metric_choice`'s precedent (plan 11.1-04).
+    record_decision(
+        report,
+        DecisionRecord(
+            id="",
+            invocation_id="",
+            layer="deterministic",
+            choice=(
+                "DSX-ML-023 and DSX-ML-024 fired"
+                if fired_024
+                else f"DSX-ML-023 fired ({len(leaky_steps)} step(s)); no whole-pipeline "
+                "boundary of training rows only to contradict"
+                if leaky_steps
+                else "cleared: every declared, non-blank cleaning boundary is within "
+                "TRAIN_ONLY_FIT_VALUES"
+            ),
+            inputs=[
+                f"model.preprocessing_fit_on:{whole_pipeline_fit_on or 'undeclared'}",
+                f"cleaning_steps_outside_boundary:{len(leaky_steps)}",
+            ],
+            rule=(
+                "DSX-ML-023 fires when a declared, non-blank data[].cleaning[].fit_on "
+                "normalises to a value outside TRAIN_ONLY_FIT_VALUES. DSX-ML-024 "
+                "additionally fires, once per report, when model.preprocessing_fit_on "
+                "normalises to a member of TRAIN_ONLY_FIT_VALUES while any cleaning "
+                "step's declared boundary does not."
+            ),
+            citation=(
+                "Kaufman, S., Rosset, S., Perlich, C. and Stitelman, O. (2012), \"Leakage "
+                "in Data Mining: Formulation, Detection, and Avoidance,\" ACM Transactions "
+                "on Knowledge Discovery from Data, 6(4), article 15."
+            ),
+            counterfactual=(
+                "A cleaning boundary declared inside TRAIN_ONLY_FIT_VALUES for every step "
+                "would have cleared both codes."
+            ),
+        ),
+    )
 
 
 # ── Features ─────────────────────────────────────────────────────────────────

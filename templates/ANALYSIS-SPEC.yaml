@@ -86,6 +86,14 @@ data:
       max_gap_days: null
       banned_sentinels: []         # values that must not appear, e.g. [-1, 999, "1900-01-01"]
     known_gaps: "<outages, backfills, filters applied upstream>"
+    # Optional. Declares where each cleaning step's statistics were fitted.
+    # Leaving this block out fires nothing — it is not required, and a
+    # dataset entry with no cleaning key is treated exactly like one that
+    # declares it correctly.
+    # cleaning:
+    #   - column: <column>
+    #     method: <e.g. mean_impute, outlier_clip>
+    #     fit_on: train_only         # train_only | train_fold_only | none
 
 # ── Design ───────────────────────────────────────────────────────────────────
 # Required for causal and prescriptive questions. Delete for pure descriptive work.
