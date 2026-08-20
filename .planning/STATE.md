@@ -5,16 +5,16 @@ milestone_name: DSX Validity Frame
 current_phase: 11
 current_phase_name: "`DSX-ADM-*`"
 status: planning
-stopped_at: Phase 07 complete and verified 2026-08-20
-last_updated: "2026-08-20T11:07:45.599Z"
+stopped_at: Phase 11 context gathered (assumptions mode)
+last_updated: "2026-08-20T12:11:22.118Z"
 last_activity: 2026-08-20
 last_activity_desc: Phase 10 complete, transitioned to Phase 11
 progress:
-  total_phases: 5
+  total_phases: 6
   completed_phases: 5
   total_plans: 44
   completed_plans: 44
-  percent: 100
+  percent: 83
 ---
 
 # Project state
@@ -93,9 +93,9 @@ See: .planning/PROJECT.md (updated 2026-08-13)
 
 ## Session
 
-**Last session:** 2026-08-13T22:18:12.891Z
-**Stopped at:** Phase 07 complete and verified 2026-08-20
-**Resume file:** .planning/phases/10-pre-registered-inference-plan-dsx-pre/10-CONTEXT.md
+**Last session:** 2026-08-20T12:11:22.106Z
+**Stopped at:** Phase 11 context gathered (assumptions mode)
+**Resume file:** .planning/phases/11-frequentist-admissibility-adjudicator-dsx-adm/11-CONTEXT.md
 
 Phase 10 context was re-verified 2026-08-14 (assumptions mode). Six unexecuted plans (`10-01` … `10-06`) already exist; this refresh did not rewrite them. Phase 8's blocking gap is in `08-VERIFICATION.md` (out-of-vocabulary `interference.risk` bypass).
 
