@@ -171,3 +171,12 @@ None — plan executed exactly as written. One process note (not a deviation fro
 ---
 *Phase: 11-frequentist-admissibility-adjudicator-dsx-adm*
 *Completed: 2026-08-20*
+
+## Self-Check: PASSED
+
+- FOUND: `.planning/phases/11-frequentist-admissibility-adjudicator-dsx-adm/11-02-SUMMARY.md`
+- FOUND: `68b39a7` (test: ESTIMAND_TYPES vocabulary tests)
+- FOUND: `dcdc87f` (feat: ESTIMAND_TYPES registration)
+- FOUND: `76e16a7` (test: corpus-wide estimand.type regression test)
+- FOUND: `c7ed977` (feat: populate estimand.type on all nine specs)
+- All commits verified present in `git log --oneline`.
