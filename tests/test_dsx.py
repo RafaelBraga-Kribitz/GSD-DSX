@@ -523,6 +523,25 @@ class TestSpecStructure(unittest.TestCase):
                 bad.append(str(p))
         self.assertEqual(bad, [])
 
+    def test_every_committed_spec_declares_a_valid_estimand_type(self):
+        # 11-02: REQ-P11-01 — a tenth spec added later inherits this assertion via glob.
+        from dsx.loader import load
+        from dsx.spec import ESTIMAND_TYPES
+
+        root = Path(__file__).resolve().parent.parent
+        paths = (
+            sorted((root / "examples").glob("*-ANALYSIS-SPEC.yaml"))
+            + sorted((root / "examples" / "known-bad").glob("*-ANALYSIS-SPEC.yaml"))
+            + sorted((root / "templates").glob("ANALYSIS-SPEC.yaml"))
+        )
+        self.assertEqual(len(paths), 9, [str(p) for p in paths])
+        bad = []
+        for p in paths:
+            estimand_type = load(str(p)).get("validity_frame", {}).get("estimand", {}).get("type")
+            if not estimand_type or estimand_type not in ESTIMAND_TYPES:
+                bad.append((str(p), estimand_type))
+        self.assertEqual(bad, [])
+
     # ── 06-06: validity_frame requiredness, aggregation, membership (REQ-P6-02/03) ──
 
     def test_causal_spec_with_no_validity_frame_key_reports_one_critical_itemising_ten(self):
