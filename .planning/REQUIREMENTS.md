@@ -124,10 +124,10 @@ in either direction — they cannot justify a check and cannot excuse skipping o
 
 ## Phase 10 (M3) — Pre-registered inference plan (`DSX-PRE-*`)
 
-- [ ] REQ-P10-01 A fallback rule expressed in the mini-DSL parses to a decidable branch against observed facts, and an unparseable rule exits `2` rather than passing
-- [ ] REQ-P10-02 `declared_at` provenance is recorded and its limits are documented — an unverifiable self-declaration is named as such rather than presented as a guarantee
-- [ ] REQ-P10-03 A run whose executed procedure differs from the branch the declared rule selects is blocked, with the declared branch and the executed branch both named in the finding
-- [ ] REQ-P10-04 A procedure switched after seeing the data is blocked even when the substituted procedure is individually defensible
+- [x] REQ-P10-01 A fallback rule expressed in the mini-DSL parses to a decidable branch against observed facts, and an unparseable rule exits `2` rather than passing
+- [x] REQ-P10-02 `declared_at` provenance is recorded and its limits are documented — an unverifiable self-declaration is named as such rather than presented as a guarantee
+- [x] REQ-P10-03 A run whose executed procedure differs from the branch the declared rule selects is blocked, with the declared branch and the executed branch both named in the finding
+- [x] REQ-P10-04 A procedure switched after seeing the data is blocked even when the substituted procedure is individually defensible
 
 ## Phase 11 (M4) — Frequentist admissibility adjudicator (`DSX-ADM-*`)
 
@@ -214,8 +214,8 @@ Every v2.0.0 requirement maps to exactly one phase. 53/53 mapped; no orphans, no
 | REQ-P9-05 | Phase 9 | Complete |
 | REQ-P9-06 | Phase 9 | Complete |
 | REQ-P9-07 | Phase 9 | Complete |
-| REQ-P10-01 | Phase 10 | Pending |
-| REQ-P10-02 | Phase 10 | Pending |
+| REQ-P10-01 | Phase 10 | Complete |
+| REQ-P10-02 | Phase 10 | Complete |
 | REQ-P10-03 | Phase 10 | Complete |
 | REQ-P10-04 | Phase 10 | Complete |
 | REQ-P11-01 | Phase 11 | Pending |
