@@ -1060,3 +1060,146 @@ class TestAdHocCommandScope(unittest.TestCase):
             seed_plan_header(tmp, path)
             code, _out, err = self._run(["gate", "verify", "--spec", str(path), "--phase-dir", tmp])
             self.assertNotEqual(code, 2, f"gate verify still errored after seeding: {err}")
+
+
+def _normalize_whitespace(text: str) -> str:
+    """Collapse every run of whitespace, including the carriage returns this
+    repository checks out on Windows, to a single space, so a substring check
+    against a sentence that wraps across lines does not depend on line endings."""
+    return " ".join(text.split())
+
+
+class TestDocumentedLimits(unittest.TestCase):
+    """ROADMAP Success Criterion 4 has a README half that correct code does not
+    satisfy on its own: the finding remedies in ``dsx/frame/prereg.py`` (plans 02
+    and 03) are only half of REQ-P10-02. A substring assertion is the only part
+    of that documentation half a machine can hold — it proves the sentences this
+    plan wrote into ``README.md`` still exist, not that a human reads them as
+    honest limits rather than a boast. That reading is a human judgement, carried
+    on the phase's manual-verification list, not decided here.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls.readme_text = (ROOT / "README.md").read_text(encoding="utf-8")
+        cls.readme_normalized = _normalize_whitespace(cls.readme_text)
+        cls.prereg_source = (ROOT / "dsx" / "frame" / "prereg.py").read_text(
+            encoding="utf-8"
+        )
+        cls.prereg_source_normalized = _normalize_whitespace(cls.prereg_source)
+
+    # D-05: DSX-PRE-010
+    def test_1_known_limits_heading_precedes_declared_at(self):
+        self.assertIn(
+            "## Known limits",
+            self.readme_text,
+            "README.md must carry the `## Known limits` heading",
+        )
+        heading_index = self.readme_text.index("## Known limits")
+        self.assertIn(
+            "declared_at",
+            self.readme_text[heading_index:],
+            "the literal `declared_at` must appear under `## Known limits`",
+        )
+
+    def test_2_declared_at_stated_as_an_unverifiable_self_declaration(self):
+        self.assertIn(
+            "operator self-declaration that the tool cannot verify",
+            self.readme_normalized,
+            "README.md must state that `declared_at` is an operator "
+            "self-declaration the tool cannot verify",
+        )
+
+    def test_3_analysis_test_named_as_plan_time_scaffolding(self):
+        self.assertIn(
+            "analysis.test",
+            self.readme_text,
+            "README.md must name `analysis.test` as the executed-side field",
+        )
+        self.assertIn(
+            "scaffolded into the specification at plan time",
+            self.readme_normalized,
+            "README.md must state that `analysis.test` is scaffolded at plan time",
+        )
+
+    def test_4_states_no_ordering_is_enforced_between_gate_points(self):
+        self.assertIn(
+            "nothing in the code enforces an ordering between the four gate points",
+            self.readme_normalized,
+            "README.md must state that nothing enforces an ordering between gate "
+            "points",
+        )
+
+    def test_5_every_prereg_fact_is_named_in_the_readme(self):
+        # Derived from PREREG_FACTS itself, never hard-coded — a registry member
+        # added without documentation must fail this test.
+        for name in sorted(PREREG_FACTS):
+            with self.subTest(fact=name):
+                self.assertIn(
+                    name,
+                    self.readme_text,
+                    f"README.md must name the prereg fact {name!r}, sourced from "
+                    "PREREG_FACTS",
+                )
+
+    def test_6_dsx_pre_030_remedy_states_a_more_conservative_substitute_still_blocks(
+        self,
+    ):
+        # Drives a real DSX-PRE-030 firing rather than reading the source text —
+        # the remedy is what an operator actually sees.
+        spec = {
+            "inference": {
+                "primary_procedure": "welch_t",
+                "fallback_rule": "interim_looks >= 1 -> two_proportion_z",
+            },
+            "results": {"interim_looks": 1},
+            "analysis": {"test": "fishers_exact"},
+        }
+        report = prereg.check(spec)
+        findings = [f for f in report.findings if f.code == "DSX-PRE-030"]
+        self.assertEqual(len(findings), 1)
+        self.assertIn(
+            "more conservative substituted procedure still blocks",
+            findings[0].remedy,
+            "the DSX-PRE-030 remedy and the README must agree on the "
+            "more-conservative-substitute limit",
+        )
+
+    def test_7_dsx_pre_020_remedy_states_the_re_running_limit(self):
+        # Drives a real DSX-PRE-020 firing, same reasoning as test 6.
+        spec = {"validity_frame": {"a": 1}, "inference": {"declared_at": "pre_data"}}
+        with tempfile.TemporaryDirectory() as root:
+            append_decision(
+                decisions_path(root),
+                InvocationHeader(
+                    invocation_id="INV-0001",
+                    gate_point="plan",
+                    dsx_version=__version__,
+                    frame_digest="not-the-real-digest",
+                ),
+            )
+            report = prereg.check(spec, root, reconcile_trail=True)
+        findings = [f for f in report.findings if f.code == "DSX-PRE-020"]
+        self.assertEqual(len(findings), 1)
+        self.assertIn(
+            "nothing in the code enforces an ordering between the four gate points",
+            findings[0].remedy,
+            "the DSX-PRE-020 remedy and the README must agree on the "
+            "re-running limit",
+        )
+
+    def test_8_the_two_gelman_and_loken_locator_flags_are_still_present(self):
+        # A future editor tidying these into confident locators must fail this
+        # test — both flags exist to stop a fabricated locator, not to be tidied.
+        self.assertIn(
+            "no numbered sections, tables or theorems",
+            self.prereg_source_normalized,
+            "dsx/frame/prereg.py must still flag that the article carries no "
+            "numbered sections, tables or theorems",
+        )
+        self.assertIn(
+            "unpublished 2013 Columbia working paper",
+            self.prereg_source_normalized,
+            "dsx/frame/prereg.py must still flag the unpublished 2013 Columbia "
+            "working paper as a notation source only",
+        )
