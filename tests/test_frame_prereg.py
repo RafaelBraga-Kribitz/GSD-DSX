@@ -20,6 +20,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
+from dsx.findings import CheckError  # noqa: E402
+from dsx.frame import prereg  # noqa: E402
 from dsx.loader import load  # noqa: E402
 from dsx.spec import PREREG_FACTS, as_number, describe_vocabulary, get  # noqa: E402
 
@@ -60,3 +62,94 @@ class TestFactRegistry(unittest.TestCase):
             "results.observed_n is a list of per-arm counts in the fixture, not a "
             "scalar, so it is deliberately excluded from PREREG_FACTS (D-04)",
         )
+
+
+class TestFallbackRuleParsing(unittest.TestCase):
+    def test_prose_with_no_arrow_returns_none(self):
+        self.assertIsNone(
+            prereg._parse_fallback_rule(
+                "If the variance estimate is unstable, use a bootstrap"
+            )
+        )
+
+    def test_non_string_and_blank_inputs_return_none_without_raising(self):
+        for value in ("", None, 3):
+            with self.subTest(value=value):
+                self.assertIsNone(prereg._parse_fallback_rule(value))
+
+    def test_worked_example_parses_with_annotation_discarded(self):
+        rule = prereg._parse_fallback_rule(
+            "if clusters < 30 -> wild cluster bootstrap, 9999 reps, seed 42"
+        )
+        self.assertEqual(rule.fact, "clusters")
+        self.assertEqual(rule.op, "<")
+        self.assertEqual(rule.threshold, 30.0)
+        self.assertEqual(rule.branch, "wild cluster bootstrap")
+
+    def test_leading_if_is_optional(self):
+        rule = prereg._parse_fallback_rule("interim_looks >= 2 -> obrien_fleming")
+        self.assertEqual(rule.fact, "interim_looks")
+        self.assertEqual(rule.op, ">=")
+        self.assertEqual(rule.threshold, 2.0)
+        self.assertEqual(rule.branch, "obrien_fleming")
+
+    def test_all_six_operators_parse_without_mis_splitting_two_char_forms(self):
+        cases = {
+            "<": "clusters < 30 -> a",
+            "<=": "clusters <= 30 -> a",
+            ">": "clusters > 30 -> a",
+            ">=": "clusters >= 30 -> a",
+            "==": "clusters == 30 -> a",
+            "!=": "clusters != 30 -> a",
+        }
+        for op, text in cases.items():
+            with self.subTest(op=op):
+                rule = prereg._parse_fallback_rule(text)
+                self.assertEqual(rule.op, op)
+                self.assertEqual(rule.threshold, 30.0)
+
+    def test_negative_and_decimal_thresholds_parse(self):
+        rule_alpha = prereg._parse_fallback_rule("alpha <= 0.01 -> a")
+        self.assertEqual(rule_alpha.threshold, 0.01)
+        rule_effect = prereg._parse_fallback_rule("effect > -1.5 -> a")
+        self.assertEqual(rule_effect.threshold, -1.5)
+
+    def test_empty_left_hand_side_raises_check_error(self):
+        with self.assertRaises(CheckError) as ctx:
+            prereg._parse_fallback_rule("-> wild cluster bootstrap")
+        message = str(ctx.exception)
+        self.assertIn("<fact> <op> <number> -> <branch>", message)
+
+    def test_prose_condition_raises_check_error(self):
+        with self.assertRaises(CheckError) as ctx:
+            prereg._parse_fallback_rule("if clusters is small -> bootstrap")
+        message = str(ctx.exception)
+        self.assertIn("clusters is small", message)
+        self.assertIn("<fact> <op> <number> -> <branch>", message)
+
+    def test_arrow_with_no_branch_label_raises_check_error(self):
+        for text in ("if clusters < 30 ->", "if clusters < 30 -> , 9999 reps"):
+            with self.subTest(text=text):
+                with self.assertRaises(CheckError) as ctx:
+                    prereg._parse_fallback_rule(text)
+                self.assertIn("<fact> <op> <number> -> <branch>", str(ctx.exception))
+
+    def test_check_error_messages_name_offending_text_and_expected_form(self):
+        with self.assertRaises(CheckError) as ctx:
+            prereg._parse_fallback_rule("if clusters is small -> bootstrap")
+        message = str(ctx.exception)
+        self.assertIn("clusters is small", message)
+        self.assertIn("<fact> <op> <number> -> <branch>", message)
+
+    def test_crlf_and_trailing_newline_parse_identically_to_lf(self):
+        lf = prereg._parse_fallback_rule(
+            "if clusters < 30 -> wild cluster bootstrap, 9999 reps, seed 42"
+        )
+        crlf = prereg._parse_fallback_rule(
+            "if clusters < 30 -> wild cluster bootstrap, 9999 reps, seed 42\r\n"
+        )
+        trailing_newline = prereg._parse_fallback_rule(
+            "if clusters < 30 -> wild cluster bootstrap, 9999 reps, seed 42\n"
+        )
+        self.assertEqual(lf, crlf)
+        self.assertEqual(lf, trailing_newline)
