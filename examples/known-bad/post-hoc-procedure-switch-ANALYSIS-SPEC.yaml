@@ -133,6 +133,7 @@ limitations:
 validity_frame:
   estimand:
     quantity: "difference in completed-order rate"
+    type: difference_in_proportions
     population: "checkout sessions, 2026-07-01 to 2026-07-21"
     contrast: "fifth candidate trust-badge design (treatment) vs current checkout page (control)"
     time_window: "within-session, 2026-07-01 to 2026-07-21"

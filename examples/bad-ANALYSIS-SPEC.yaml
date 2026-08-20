@@ -205,6 +205,7 @@ assumptions:
 validity_frame:
   estimand:
     quantity: "change in churn rate"
+    type: difference_in_proportions
     population: "all customers"
     contrast: "before vs after some change"       # vague — no declared treatment
     time_window: "one quarter"

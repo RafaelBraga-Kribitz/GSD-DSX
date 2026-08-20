@@ -282,6 +282,7 @@ limitations:
 validity_frame:
   estimand:
     quantity: "<the difference, rate or quantity being estimated>"
+    type: difference_in_proportions  # difference_in_proportions | difference_in_means | regression_coefficient | ratio_of_means
     population: "<who this covers>"
     contrast: "<treatment vs control, or before vs after>"
     time_window: "<the window over which the effect is measured>"
@@ -353,7 +354,7 @@ inference:
     # decision_theoretic_loss_specified | small_sample_informative_prior
     # regulatory_requirement | team_convention | vendor_constraint
   declared_at: pre_data            # pre_data | post_data
-  primary_procedure: "<the test or model that will be run, e.g. two_proportion_z>"
+  primary_procedure: two_proportion_z  # the test or model that will be run
   alpha_spending: null
   fallback_rule: "<what happens if an assumption fails, e.g. switch to a bootstrap>"
   # The next three fields clear DSX-PAR-010 (frequentist) / DSX-PAR-011 (bayesian)

@@ -112,6 +112,7 @@ limitations:
 validity_frame:
   estimand:
     quantity: "difference in 24-hour signup rate among ad-exposed users"
+    type: difference_in_proportions
     population: "users exposed to acquisition ads, 2026-04-01 to 2026-04-14"
     contrast: "raised bid caps (treatment) vs current bid caps (control)"
     time_window: "24 hours from first impression"

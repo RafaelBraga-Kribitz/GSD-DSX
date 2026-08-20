@@ -131,6 +131,7 @@ limitations:
 validity_frame:
   estimand:
     quantity: "difference in conversion rate"
+    type: difference_in_proportions
     population: "sessions in the experiment window, 2026-04-15 to 2026-05-10"
     contrast: "treatment variant vs control variant"
     time_window: "26 days, 2026-04-15 to 2026-05-10"
