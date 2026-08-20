@@ -38,6 +38,9 @@ Ran 640 tests in 17.933s
 OK                                          (wall clock 18.3 s)
 
 $ python scripts/gen-finding-catalogue.py --check
+warning: DSX-COH-030 declared twice with different text
+warning: DSX-PAR-002 declared twice with different text
+warning: DSX-SPEC-070 declared twice with different text
 warning: DSX-SPEC-070 declared twice with different text
 warning: DSX-SPEC-070 declared twice with different text
 warning: DSX-VAL-021 declared twice with different text
@@ -45,9 +48,19 @@ warning: DSX-VAL-060 declared twice with different text
 finding catalogue is current                 (exit 0)
 ```
 
-The four duplicate-declaration warnings are **pre-existing** and unrelated to this phase. They are
-recorded here so that a warning appearing during Phase 11 can be told apart from one that was
-already there.
+**Corrected 2026-08-20, after Wave 1.** The baseline first recorded here listed only four
+warnings. That was wrong — it came from a truncated `tail -5` of the command output, not from the
+full run. The real count is **seven**, and the list above is the complete, untruncated output. The
+error was caught by plan 11-01's executor, which noticed the catalogue check printed warnings the
+plan's baseline did not name and logged the discrepancy to `deferred-items.md` rather than
+assuming its own run was wrong.
+
+All seven duplicate-declaration warnings are **pre-existing** and unrelated to this phase —
+confirmed by `git diff abff1f3 HEAD -- scripts/gen-finding-catalogue.py`, which reports the script
+identical (a byte-count difference between `git show` and the working tree is CRLF, not content).
+They are recorded here so that a warning appearing during Phase 11 can be told apart from one that
+was already there. Any task asserting on this command must match on `exit 0` and the literal
+`finding catalogue is current` line, never on a warning count.
 
 ---
 

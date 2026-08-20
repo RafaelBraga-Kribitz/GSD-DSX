@@ -580,22 +580,29 @@ run a verification spike before writing any requirement on it.
      `families.yaml` entry declares a Bayesian inference method — the axis space is capped to
      v1's frequentist scope, with Bayesian admissibility left in the gated backlog.
 
-**Plans**: 8 plans
+**Plans**: 3/8 plans executed
 
 Plans:
-- [ ] 11-01-PLAN.md — amend REQ-P11-01 and Success Criterion 1 to the delivered family count, fix
+
+- [x] 11-01-PLAN.md — amend REQ-P11-01 and Success Criterion 1 to the delivered family count, fix
       the `references/test-selection.md` Fisher defect, fold in the two resolved `brief.md` locators
-- [ ] 11-02-PLAN.md — `ESTIMAND_TYPES` and the optional `validity_frame.estimand.type` field,
+
+- [x] 11-02-PLAN.md — `ESTIMAND_TYPES` and the optional `validity_frame.estimand.type` field,
       populated across all nine committed specs
-- [ ] 11-03-PLAN.md — the reverse-direction import scanner and the frequentist-scoping predicate
+
+- [x] 11-03-PLAN.md — the reverse-direction import scanner and the frequentist-scoping predicate
 - [ ] 11-04-PLAN.md — `references/families.yaml`: 14 cited families, 19 cited assumption tokens,
       4 cited ranking rules, and the schema test that pins both loader paths
+
 - [ ] 11-05-PLAN.md — `dsx/frame/admissibility.py`: ontology loading that refuses rather than
       degrades, and exact-match alias resolution scoped to the candidate set
+
 - [ ] 11-06-PLAN.md — the ranking rule table, `admissible_families()`, and `DSX-ADM-010` /
       `DSX-ADM-020` with the guard set their existence trips
+
 - [ ] 11-07-PLAN.md — gate registration at plan, verify and ship, and the additive
       `dsx recommend-test` composition
+
 - [ ] 11-08-PLAN.md — the build-time citation gate over the ontology data, and `"DSX-ADM-"` added
       to the D-05 inclusion list
 
@@ -791,7 +798,7 @@ cases where absence permitted a false pass" is a debate, not a count.
 | 8. Interference, triggering, stability (`DSX-INT-*`) | 10/10 | Complete | 2026-08-14 |
 | 9. Monitoring discipline, symmetric (`DSX-PAR-*`) | 7/7 | Complete | 2026-08-13 |
 | 10. Pre-registered inference plan (`DSX-PRE-*`) | 6/6 | In Progress|  |
-| 11. Frequentist admissibility adjudicator (`DSX-ADM-*`) | 0/TBD | Not started | - |
+| 11. Frequentist admissibility adjudicator (`DSX-ADM-*`) | 3/8 | In Progress|  |
 | 12. Calibration | 0/TBD | Not started | - |
 
 ## Dependency graph — v2.0.0
