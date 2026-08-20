@@ -23,7 +23,7 @@ import operator
 import re
 from dataclasses import dataclass
 
-from ..decisions import DecisionRecord
+from ..decisions import DecisionRecord, decisions_path, frame_digest, read_all
 from ..findings import CheckError, Report
 from ..spec import PREREG_FACTS, as_number, get, is_blank, normalize
 
@@ -377,6 +377,194 @@ def _check_procedure_reconciliation(spec: dict, resolution: "_Resolution", repor
     )
 
 
+def _recorded_plan_digests(root: "str | None") -> "set[str]":
+    """Return every ``frame_digest`` recorded at a ``plan``-gate-point invocation
+    header in ``root``'s decision trail.
+
+    Guards for ``root is None`` by returning an empty set rather than constructing a
+    path from it — ``decisions_path(None)`` would raise ``TypeError`` from ``Path()``
+    before this function ever got a chance to degrade gracefully. Otherwise builds the
+    trail path with ``decisions_path(root)`` and reads it with ``read_all``, which
+    never raises for any on-disk state (missing, unreadable, or corrupt all degrade to
+    ``[]``) — this function adds no ``try``/``except`` of its own, because doing so
+    would suggest ``read_all`` could raise, which its own contract says it never does.
+
+    Collects ``frame_digest`` from every record whose ``record_type`` is
+    ``"invocation"`` and whose ``gate_point`` is ``"plan"`` — the filter is on gate
+    point, not merely on the file existing, so a trail holding only
+    ``execute``/``verify``/``ship`` headers still yields an empty set. Uses ``.get()``
+    access throughout, because ``read_all`` is a tolerant reader and may hand back a
+    dict missing any key.
+    """
+    if root is None:
+        return set()
+
+    records = read_all(decisions_path(root))
+    digests: "set[str]" = set()
+    for record in records:
+        if not isinstance(record, dict):
+            continue
+        if record.get("record_type") != "invocation":
+            continue
+        if record.get("gate_point") != "plan":
+            continue
+        digest = record.get("frame_digest")
+        if digest:
+            digests.add(digest)
+    return digests
+
+
+def _check_content_lock(spec: dict, root: "str | None", report: Report) -> None:
+    """Reconcile the plan-time content lock recorded in the decision trail against
+    the verify-time bytes of the ``validity_frame:``/``inference:`` blocks
+    (``DSX-PRE-020``), refusing to run at all when no plan-time header is recorded.
+
+    Before Phase 10 the decision trail (``DECISIONS.jsonl``) was a write-only side
+    channel: ``dsx gate`` appended to it, and only ``dsx explain`` ever rendered it
+    back for a human — never gating on its contents. From here, the plan-time header,
+    once written, is a gate input at verify and ship: the first record in this file
+    that can change an exit code. The write path documented at
+    ``dsx/cli.py::_write_decision_trail`` remains a side channel that can never itself
+    change an exit code; the two statements are compatible because they describe
+    different directions of the same file — writing stays unconditional and inert,
+    reading (here) is conditional and can block. Plan 04 makes the matching edit on
+    the writing side.
+
+    Raises ``CheckError`` when the recorded-plan-digest set is empty: there is nothing
+    for this gate point to reconcile the declared inference plan against, and a silent
+    pass would be the failure the exit-code contract exists to prevent (CONTEXT D-09
+    forbids softening the missing header into a pass or a non-blocking finding). The
+    message names, in order: what happened (no plan-time frame lock recorded, naming
+    the resolved trail path), why that stops the run (nothing to reconcile against),
+    the ordinary fix (run ``dsx gate plan`` against this phase directory first), and
+    the grandfather route named explicitly (a specification that legitimately predates
+    the plan gate declares a ``suppressions[]`` entry citing the architecture decision
+    record or specification that authorises it — an unknown code in that block aborts
+    the run at exit 2 in the same way, keeping the M-07 grandfather path walkable and
+    attributable).
+
+    Once at least one plan header is on record, returns without emitting unless
+    ``inference.declared_at`` normalises to ``pre_data`` — ``post_data`` is legal and
+    silent (D-10): blocking an honest post-hoc declaration would make honesty more
+    expensive than dishonesty, the incentive distortion this project keeps closing.
+    Reads ``declared_at`` off the already-validated ``inference`` dict via ``.get()``
+    rather than the module's dotted-path ``get(spec, "inference.declared_at")`` helper
+    — a positional ``"inference."``-prefixed string literal is exactly what
+    ``tests/test_frame_boundary.py``'s D-11 AST scanner flags on any call, regardless
+    of which module the call is in.
+
+    Otherwise computes ``frame_digest(spec)`` and tests it for membership in the
+    recorded set. Emits ``DSX-PRE-020`` when absent, nothing when present.
+
+    Citation: Gelman, A. and Loken, E. (2014), "The Statistical Crisis in Science",
+    American Scientist volume 102 issue 6 pages 460-465, page 460, unnumbered section
+    "How to Test a Hypothesis" — the same passage cited by ``_check_rule_resolves``:
+    a preregistered selection function is only preregistered if it was fixed before
+    the data. The article carries no numbered sections, tables or theorems, so page
+    plus unnumbered heading is the most precise locator that exists. Secondary support
+    for the remedy wording only, never for the blocking behaviour itself: Nosek, B. A.,
+    Ebersole, C. R., DeHaven, A. C. and Mellor, D. T. (2018), "The preregistration
+    revolution", PNAS volume 115 issue 11 pages 2600-2606, DOI 10.1073/pnas.1708274114,
+    section "Preregistration in Practice" — deviations from a preregistered plan are
+    common and do not necessarily rule out effective prediction testing. Section
+    headings were verified, per-sentence page numbers were not, so this citation names
+    the section and never a page for an individual sentence; its own text argues
+    deviations do not necessarily invalidate, which makes it the right anchor for the
+    declared-deviation-stays-legal rule (``post_data``) and the wrong one for
+    reconciliation itself — do not present it as support for the blocking behaviour.
+
+    Structural criterion: the comparison is set membership of the current
+    ``frame_digest(spec)`` in the set of every recorded plan-gate-point digest, gated
+    on a ``pre_data`` claim; no threshold, effect size or statistic is computed
+    anywhere on this path (brief D-02). Falsifier: any specification whose current
+    frame content was registered at plan does not fire (proved by
+    TestContentLockReconciliation test 1). Membership rather than an ordering pick:
+    ``InvocationHeader`` records no spec identity at all (``dsx/decisions.py:91-104``),
+    so a shared trail root mixes headers from every spec ever gated against it, and
+    any most-recent-or-earliest ordering rule produces cross-specification false
+    positives — membership dissolves both problems without adding a spec-identity
+    field to a shipped record shape (proved by test 5, which appends the
+    non-matching digest last, the ordering a most-recent rule would fail on).
+    """
+    recorded = _recorded_plan_digests(root)
+    if not recorded:
+        trail_display = str(decisions_path(root)) if root is not None else (
+            "<no phase directory>"
+        )
+        raise CheckError(
+            "no plan-time frame lock is recorded in the decision trail at "
+            f"{trail_display} — dsx gate plan has never run against this phase "
+            "directory, so there is nothing for this gate point to reconcile the "
+            "declared inference plan against, and a silent pass would be the "
+            "failure the exit-code contract exists to prevent. Run `dsx gate plan` "
+            "against this phase directory first. If this specification legitimately "
+            "predates the plan gate, declare a `suppressions[]` entry citing the "
+            "architecture decision record or specification that is its authority "
+            "(the ADR/SPEC authority requirement); an unknown code in that block "
+            "aborts the run at exit 2 in the same way."
+        )
+
+    inference = spec.get("inference")
+    declared_at = inference.get("declared_at") if isinstance(inference, dict) else None
+    if normalize(declared_at) != "pre_data":
+        return
+
+    current_digest = frame_digest(spec)
+    fired = current_digest not in recorded
+    truncated = current_digest[:12]
+
+    if fired:
+        report.add(
+            "DSX-PRE-020",
+            "CRITICAL",
+            "Declared pre-data plan is not the plan recorded at gate plan",
+            detail=(
+                f"{len(recorded)} plan-gate-point header(s) were found in the "
+                f"decision trail, and none of them carries the current frame digest "
+                f"{truncated}... — the declared_at: pre_data claim is contradicted "
+                "by the recorded bytes."
+            ),
+            remedy=(
+                "The content of validity_frame: or inference: has changed since the "
+                "plan gate ran: either restore the registered plan, or re-run "
+                "`dsx gate plan` and record why the amendment happened. The digest "
+                "covers only those two blocks, so an edit elsewhere in the "
+                "specification is not what triggered this. Known limit: the lock is "
+                "only as strong as the operator's discipline in not re-running "
+                "`dsx gate plan` after seeing results — nothing in the code enforces "
+                "an ordering between the four gate points."
+            ),
+            where="inference.declared_at",
+        )
+
+    report.context.setdefault("decisions", []).append(
+        DecisionRecord(
+            id="",
+            invocation_id="",
+            layer="deterministic",
+            choice=(
+                f"DSX-PRE-020 {'fired' if fired else 'clear'}: "
+                f"{len(recorded)} recorded plan digest(s), current digest "
+                f"{truncated}..."
+            ),
+            inputs=["validity_frame", "inference.declared_at"],
+            rule=(
+                "DSX-PRE-020 fires when inference.declared_at normalizes to "
+                "pre_data and frame_digest(spec) is absent from every recorded "
+                "plan-gate-point digest in the decision trail."
+            ),
+            citation="Gelman & Loken (2014), The Statistical Crisis in Science, page 460",
+            counterfactual=(
+                "Registering this exact frame content at a `dsx gate plan` run "
+                "would have cleared DSX-PRE-020."
+                if fired
+                else "Editing validity_frame: or inference: after the plan gate ran, "
+                "without re-registering, would have fired DSX-PRE-020."
+            ),
+        ).to_dict()
+    )
+
+
 def check(spec: dict, root: "str | None" = None, *, reconcile_trail: bool = False) -> Report:
     """Emit the pre-registered inference plan findings (``DSX-PRE-*``).
 
@@ -384,12 +572,13 @@ def check(spec: dict, root: "str | None" = None, *, reconcile_trail: bool = Fals
     matching ``interference.check``'s habit. Resolves the declared fallback rule once
     per run and dispatches to one private helper per adjudicated concept.
 
-    ``root`` and ``reconcile_trail`` are unused in this plan — both parameters are
-    defaulted so that a future ``CHECKS["prereg"]`` registration without a matching
-    ``elif`` branch in ``run_checks`` degrades to this documented no-trail path via the
-    generic ``CHECKS[name](spec)`` fallback, instead of raising ``TypeError``. Plan 03
-    wires ``root`` to the plan-time content lock; plan 04 wires ``reconcile_trail`` to
-    the missing-plan-header reconciliation.
+    ``reconcile_trail`` gates ``_check_content_lock`` — this function is only invoked
+    when the caller opts into trail reconciliation, so the trail-dependent half stays
+    inert outside a real gate invocation (a bare ``dsx check``/``dsx audit`` call
+    passes no trail root and reconciles nothing). Plan 04 wires *when* a real caller
+    passes ``reconcile_trail=True`` — a ``dsx gate`` invocation only, never
+    ``validate``/``check``/``audit`` — via the ``gate_invocation`` keyword on
+    ``run_checks`` and this family's ``GATE_PROFILES`` registration.
     """
     report = Report(check="prereg")
 
@@ -399,5 +588,8 @@ def check(spec: dict, root: "str | None" = None, *, reconcile_trail: bool = Fals
     resolution = _resolve_branch(spec)
     _check_rule_resolves(spec, resolution, report)
     _check_procedure_reconciliation(spec, resolution, report)
+
+    if reconcile_trail:
+        _check_content_lock(spec, root, report)
 
     return report
