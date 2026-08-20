@@ -13,7 +13,7 @@ a suppression or a reference in a review stays valid across versions.
 **Gate thresholds.** `plan` and `execute` block at CRITICAL; `verify` and
 `ship` block at HIGH.
 
-**Total: 235 codes.**
+**Total: 236 codes.**
 
 ## Contract structure — `DSX-SPEC-*`
 
@@ -142,6 +142,7 @@ Leakage, splits, metric choice, baselines, evaluation hygiene.
 | `DSX-ML-040` | HIGH | model.primary_metric is not declared |
 | `DSX-ML-041` | HIGH | '<…>' is the primary metric on data with a <…> minority class |
 | `DSX-ML-042` | MEDIUM | R² is the only regression metric declared |
+| `DSX-ML-043` | HIGH | '<…>' is imbalance-unsafe and the class balance it depends on is undeclared |
 | `DSX-ML-050` | HIGH | model.baseline is not declared |
 | `DSX-ML-051` | CRITICAL | Model does not beat its baseline (<…> vs <…>) |
 | `DSX-ML-060` | HIGH | Train/test gap of <…> indicates overfitting |

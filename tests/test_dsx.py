@@ -1120,6 +1120,167 @@ class TestML(unittest.TestCase):
         self.assertIn("DSX-ML-070", codes(ml.check(spec)))
 
 
+# ── Phase 11.1 plan 04: prediction-time check extraction + DSX-ML-043 ──────────
+
+
+class TestPhase11_1ML(unittest.TestCase):
+    # Derived from TestML.BASE (REQ-P11.1-04's plan instruction), with
+    # primary_metric overridden per-test since TestML.BASE's 'pr_auc' is not a
+    # member of IMBALANCE_UNSAFE_METRICS.
+    BASE = TestML.BASE
+
+    def _model(self, **overrides):
+        model = {k: v for k, v in self.BASE["model"].items()}
+        model.update(overrides)
+        for key, value in list(model.items()):
+            if value is None:
+                del model[key]
+        return model
+
+    # ── DSX-ML-033: prediction-time check no longer gated on features ───────
+
+    def test_no_features_no_prediction_time_produces_both_030_and_033(self):
+        spec = {
+            "question_type": "predictive",
+            "model": self._model(
+                features=None, prediction_time_definition=None, primary_metric="roc_auc"
+            ),
+        }
+        found = codes(ml.check(spec))
+        self.assertIn("DSX-ML-030", found)
+        self.assertIn("DSX-ML-033", found)
+
+    def test_features_declared_no_prediction_time_produces_033_not_030(self):
+        spec = {**self.BASE, "model": self._model(prediction_time_definition=None)}
+        found = codes(ml.check(spec))
+        self.assertIn("DSX-ML-033", found)
+        self.assertNotIn("DSX-ML-030", found)
+
+    def test_prediction_time_declared_produces_no_033_with_features(self):
+        self.assertNotIn("DSX-ML-033", codes(ml.check(self.BASE)))
+
+    def test_prediction_time_declared_produces_no_033_without_features(self):
+        spec = {**self.BASE, "model": self._model(features=None)}
+        self.assertNotIn("DSX-ML-033", codes(ml.check(spec)))
+
+    def test_dsx_ml_033_appears_at_most_once_in_a_report(self):
+        spec = {**self.BASE, "model": self._model(prediction_time_definition=None)}
+        found = [f for f in ml.check(spec).findings if f.code == "DSX-ML-033"]
+        self.assertEqual(len(found), 1)
+
+    def test_early_return_of_check_features_is_unaffected(self):
+        # A blank features list still produces DSX-ML-030 exactly as before —
+        # this task only relocates the prediction-time check, not the gate.
+        spec = {**self.BASE, "model": self._model(features=None)}
+        found = [f for f in ml.check(spec).findings if f.code == "DSX-ML-030"]
+        self.assertEqual(len(found), 1)
+
+    # ── DSX-ML-043: undeclared positive rate under an imbalance-unsafe metric
+
+    def test_no_positive_rate_imbalance_unsafe_metric_produces_043_at_high(self):
+        # D-05: DSX-ML-043
+        spec = {
+            **self.BASE,
+            "model": self._model(primary_metric="roc_auc", positive_rate=None),
+        }
+        report = ml.check(spec)
+        found = [f for f in report.findings if f.code == "DSX-ML-043"]
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0].severity, Severity.HIGH)
+
+    def test_positive_rate_declared_on_results_section_clears_043(self):
+        spec = {
+            **self.BASE,
+            "model": self._model(primary_metric="roc_auc", positive_rate=None),
+            "results": {"positive_rate": 0.04},
+        }
+        self.assertNotIn("DSX-ML-043", codes(ml.check(spec)))
+
+    def test_positive_rate_at_threshold_boundary_produces_neither_code(self):
+        from dsx.checks.ml import IMBALANCE_THRESHOLD
+
+        spec = {
+            **self.BASE,
+            "model": self._model(primary_metric="roc_auc", positive_rate=IMBALANCE_THRESHOLD),
+        }
+        found = codes(ml.check(spec))
+        self.assertNotIn("DSX-ML-041", found)
+        self.assertNotIn("DSX-ML-043", found)
+
+    def test_positive_rate_one_step_below_threshold_produces_041(self):
+        from dsx.checks.ml import IMBALANCE_THRESHOLD
+
+        spec = {
+            **self.BASE,
+            "model": self._model(
+                primary_metric="roc_auc", positive_rate=IMBALANCE_THRESHOLD - 0.01
+            ),
+        }
+        self.assertIn("DSX-ML-041", codes(ml.check(spec)))
+
+    def test_positive_rate_one_step_above_threshold_produces_neither_code(self):
+        from dsx.checks.ml import IMBALANCE_THRESHOLD
+
+        spec = {
+            **self.BASE,
+            "model": self._model(
+                primary_metric="roc_auc", positive_rate=IMBALANCE_THRESHOLD + 0.01
+            ),
+        }
+        found = codes(ml.check(spec))
+        self.assertNotIn("DSX-ML-041", found)
+        self.assertNotIn("DSX-ML-043", found)
+
+    def test_positive_rate_one_half_produces_neither_code(self):
+        spec = {**self.BASE, "model": self._model(primary_metric="roc_auc", positive_rate=0.5)}
+        found = codes(ml.check(spec))
+        self.assertNotIn("DSX-ML-041", found)
+        self.assertNotIn("DSX-ML-043", found)
+
+    def test_non_numeric_positive_rate_produces_043_not_an_exception(self):
+        spec = {
+            **self.BASE,
+            "model": self._model(primary_metric="roc_auc", positive_rate="not a number"),
+        }
+        found = codes(ml.check(spec))  # must not raise
+        self.assertIn("DSX-ML-043", found)
+
+    def test_numeric_string_positive_rate_takes_same_branch_as_number(self):
+        spec_str = {
+            **self.BASE, "model": self._model(primary_metric="roc_auc", positive_rate="0.04")
+        }
+        spec_num = {
+            **self.BASE, "model": self._model(primary_metric="roc_auc", positive_rate=0.04)
+        }
+        self.assertEqual(codes(ml.check(spec_str)), codes(ml.check(spec_num)))
+
+    def test_regression_task_produces_no_043(self):
+        spec = {
+            "question_type": "predictive",
+            "model": {
+                "task": "regression",
+                "target": "revenue",
+                "split": "random",
+                "primary_metric": "roc_auc",
+                "baseline": "majority_class",
+            },
+        }
+        self.assertNotIn("DSX-ML-043", codes(ml.check(spec)))
+
+    def test_non_imbalance_unsafe_primary_metric_produces_no_043(self):
+        spec = {**self.BASE, "model": self._model(primary_metric="pr_auc", positive_rate=None)}
+        self.assertNotIn("DSX-ML-043", codes(ml.check(spec)))
+
+    def test_two_consecutive_calls_produce_identical_finding_sequences(self):
+        spec = {
+            **self.BASE,
+            "model": self._model(primary_metric="roc_auc", positive_rate=None, features=None),
+        }
+        r1 = [f.code for f in ml.check(spec).findings]
+        r2 = [f.code for f in ml.check(spec).findings]
+        self.assertEqual(r1, r2)
+
+
 # ── stats ────────────────────────────────────────────────────────────────────
 
 

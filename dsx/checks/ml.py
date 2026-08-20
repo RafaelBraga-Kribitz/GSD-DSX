@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import re
 
+from ..decisions import DecisionRecord, record_decision
 from ..findings import Report
 from ..spec import (
     IMBALANCE_UNSAFE_METRICS,
@@ -72,6 +73,7 @@ def check(spec: dict) -> Report:
     _check_split(model, report, task)
     _check_preprocessing(model, report)
     _check_features(model, report)
+    _check_prediction_time_definition(model, report)
     _check_metric_choice(model, spec, report, task)
     _check_baseline(model, spec, report)
     _check_overfit(spec, report)
@@ -283,6 +285,20 @@ def _check_features(model: dict, report: Report) -> None:
     else:
         report.ok(f"{len(names)} features screened, no leakage patterns matched")
 
+
+def _check_prediction_time_definition(model: dict, report: Report) -> None:
+    """`model.prediction_time_definition` presence check (DSX-ML-033).
+
+    Phase 11.1 (REQ-P11.1-04): extracted from `_check_features` into its own
+    call site so it runs whenever a model is declared at all, independent of
+    whether `model.features` is populated. `_check_features` returns early on
+    a blank features list, which used to hide this check entirely for a
+    specification that never got as far as listing features — the check
+    itself needs no feature list to be meaningful, since it evaluates a
+    stated production trigger, not a derived property of `features`. Code
+    number, severity, title, detail, remedy and location string are
+    unchanged from the block this replaces.
+    """
     if is_blank(model.get("prediction_time_definition")):
         report.add(
             "DSX-ML-033",
@@ -301,6 +317,38 @@ def _check_features(model: dict, report: Report) -> None:
 
 
 def _check_metric_choice(model: dict, spec: dict, report: Report, task: str) -> None:
+    """Primary-metric declaration and its fitness for the declared class balance.
+
+    Phase 11.1 (REQ-P11.1-04) adds DSX-ML-043: a decision task (binary or
+    multiclass classification) whose primary metric is a member of
+    IMBALANCE_UNSAFE_METRICS, and whose positive rate is undeclared on both
+    the model section and the results section, produces a HIGH finding
+    instead of silence. A positive rate the numeric accessor (`as_number`)
+    cannot parse — a non-numeric string, or a boolean — arrives at this
+    branch as an absence, which is the correct reading: a rate nobody can
+    evaluate is not a declared rate. Do not "fix" this by adding a separate
+    branch for the unparseable case; it is intentionally folded into the
+    same undeclared branch as the absent case.
+
+    Citation: Saito, T. and Rehmsmeier, M. (2015), "The Precision-Recall
+    Plot Is More Informative than the ROC Plot When Evaluating Binary
+    Classifiers on Imbalanced Datasets," PLOS ONE, 10(3), e0118432, DOI
+    10.1371/journal.pone.0118432. The finding that ROC-AUC overstates
+    apparent classifier quality as the positive class becomes rarer is
+    stated in the paper's own Abstract. The exact figure/table locator for
+    the specific numeric illustration is UNVERIFIED — the paper's figures
+    were not independently re-read pixel-by-pixel in this session (the paper
+    is open access at the DOI above); do not invent a locator.
+
+    Structural criterion: DSX-ML-043 fires on the joint absence of a
+    parseable positive rate (read from model.positive_rate, falling back to
+    results.positive_rate, both via as_number — which returns None for a
+    boolean and for any string it cannot parse as a number) and membership
+    of the primary metric in IMBALANCE_UNSAFE_METRICS, for a decision task
+    only. This is a presence-and-membership test, not a numeric threshold
+    test — the numeric threshold test (against IMBALANCE_THRESHOLD) belongs
+    to the sibling DSX-ML-041 branch, which this task does not retune.
+    """
     primary = normalize(model.get("primary_metric", ""))
     if not primary:
         report.add(
@@ -315,9 +363,14 @@ def _check_metric_choice(model: dict, spec: dict, report: Report, task: str) -> 
     if positive_rate is None:
         positive_rate = as_number(get(spec, "results.positive_rate"))
 
+    imbalance_applicable = task in DECISION_TASKS and primary in IMBALANCE_UNSAFE_METRICS
+    fired_041 = False
+    fired_043 = False
+
     if task in DECISION_TASKS and positive_rate is not None:
         minority = min(positive_rate, 1.0 - positive_rate)
         if minority < IMBALANCE_THRESHOLD and primary in IMBALANCE_UNSAFE_METRICS:
+            fired_041 = True
             report.add(
                 "DSX-ML-041",
                 "HIGH",
@@ -334,6 +387,29 @@ def _check_metric_choice(model: dict, spec: dict, report: Report, task: str) -> 
             )
         else:
             report.ok(f"primary metric '{primary}' suits a {minority:.1%} minority class")
+    elif task in DECISION_TASKS and positive_rate is None and primary in IMBALANCE_UNSAFE_METRICS:
+        # Phase 11.1 (REQ-P11.1-04): the sibling of DSX-ML-041's declared-and-
+        # risky branch — this is the undeclared-or-unparseable branch. See
+        # this function's own docstring for why an unparseable string is
+        # treated identically to an absent field, not as a third case.
+        fired_043 = True
+        report.add(
+            "DSX-ML-043",
+            "HIGH",
+            f"'{primary}' is imbalance-unsafe and the class balance it depends on is undeclared",
+            detail=(
+                f"'{primary}''s reliability as a metric is a function of the positive rate — "
+                "how rare the minority class is. Without a declared rate on either the model "
+                "section or the results section, this check cannot evaluate that reliability, "
+                "and silence here would read as a pass when it is really an absence of the "
+                "information the check needs to judge it at all."
+            ),
+            remedy=(
+                "Declare model.positive_rate or results.positive_rate, or switch the primary "
+                f"metric to {IMBALANCE_UNSAFE_METRICS[primary]}."
+            ),
+            where="spec.model.primary_metric",
+        )
 
     if task == "regression" and primary in ("r2", "r_squared") and is_blank(
         model.get("secondary_metrics")
@@ -349,6 +425,55 @@ def _check_metric_choice(model: dict, spec: dict, report: Report, task: str) -> 
             remedy="Add an error metric in the target's own units — MAE, RMSE or MAPE.",
             where="spec.model.primary_metric",
         )
+
+    # Phase 11.1 (D-04): the first decision record dsx/checks/ml.py has ever
+    # emitted, covering the metric-choice imbalance judgment — appended once
+    # a primary metric is declared (the point above where this function would
+    # otherwise have returned), whether or not the imbalance branches were
+    # even reachable for this task/metric combination. A judgment that the
+    # imbalance question does not apply here is still a judgment.
+    if imbalance_applicable:
+        choice = (
+            "DSX-ML-041 fired: declared positive rate's minority share is below "
+            "IMBALANCE_THRESHOLD" if fired_041
+            else "DSX-ML-043 fired: positive rate is undeclared or unparseable" if fired_043
+            else "cleared: declared positive rate is not imbalance-risky"
+        )
+    else:
+        choice = (
+            "not applicable: task is not a decision task, or primary metric is "
+            "not a member of IMBALANCE_UNSAFE_METRICS"
+        )
+    record_decision(
+        report,
+        DecisionRecord(
+            id="",
+            invocation_id="",
+            layer="deterministic",
+            choice=choice,
+            inputs=[
+                f"primary_metric:{primary}",
+                f"task:{task}",
+                f"positive_rate:{'undeclared' if positive_rate is None else positive_rate}",
+            ],
+            rule=(
+                "DSX-ML-041 fires when a declared, parseable positive rate's minority share "
+                "is strictly less than IMBALANCE_THRESHOLD and the primary metric is a member "
+                "of IMBALANCE_UNSAFE_METRICS, for a decision task. DSX-ML-043 fires when the "
+                "positive rate is undeclared or unparseable and the primary metric is a "
+                "member of IMBALANCE_UNSAFE_METRICS, for the same task set."
+            ),
+            citation=(
+                "Saito, T. and Rehmsmeier, M. (2015), \"The Precision-Recall Plot Is More "
+                "Informative than the ROC Plot When Evaluating Binary Classifiers on "
+                "Imbalanced Datasets,\" PLOS ONE, 10(3), e0118432."
+            ),
+            counterfactual=(
+                "A declared, parseable positive rate would have sent the check to the "
+                "evaluated branch (DSX-ML-041 fired, or cleared) instead of DSX-ML-043."
+            ),
+        ),
+    )
 
 
 # ── Baseline and overfitting ─────────────────────────────────────────────────

@@ -86,10 +86,19 @@ _D05_ALLOWLIST_PREFIXES = ("DSX-PAR-", "DSX-VAL-", "DSX-INT-", "DSX-PRE-")
 # never touched. The exact-code path used here is the one Phase 6 already
 # established for `DSX-SPEC-080`-`086` inside the pre-existing `DSX-SPEC-*`
 # family; this is the same precedent applied to a second family.
+#
+# Phase 11.1 (REQ-P11.1-04) adds DSX-ML-043 here for the same reason:
+# `DSX-ML-*` is a pre-existing family (v1.0.0) whose ~40 legacy codes carry
+# no citation. DSX-ML-040, DSX-ML-041 and DSX-ML-042 — the three legacy
+# codes sharing DSX-ML-043's enclosing function, `_check_metric_choice` —
+# are deliberately NOT added here: they are pre-existing, uncited, and this
+# plan only extended the function they already lived in. Naming them would
+# turn the build red on a function this plan did not rewrite from scratch.
 _D05_ALLOWLIST_CODES = frozenset(
     {
         "DSX-SPEC-080", "DSX-SPEC-081", "DSX-SPEC-082", "DSX-SPEC-085", "DSX-SPEC-086",
         "DSX-CODE-020", "DSX-CODE-021", "DSX-CODE-030", "DSX-CODE-031",
+        "DSX-ML-043",
     }
 )
 
