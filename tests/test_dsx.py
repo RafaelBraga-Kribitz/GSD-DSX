@@ -367,6 +367,80 @@ class TestSpecStructure(unittest.TestCase):
 
         self.assertEqual(set(MISSINGNESS_MECHANISMS), {"MCAR", "MAR", "MNAR", "not_assessed"})
 
+    # ── 11-02: estimand axis vocabulary (REQ-P11-01, REQ-P11-04) ───────────────
+
+    def test_estimand_types_has_exactly_four_members_with_descriptions(self):
+        from dsx.spec import ESTIMAND_TYPES
+
+        self.assertEqual(
+            set(ESTIMAND_TYPES),
+            {
+                "difference_in_proportions", "difference_in_means",
+                "regression_coefficient", "ratio_of_means",
+            },
+        )
+        for value in ESTIMAND_TYPES.values():
+            self.assertTrue(value.strip())
+
+    def test_estimand_types_registered_in_vocabularies_registry(self):
+        from dsx import spec as spec_mod
+
+        registry = dict(spec_mod._VOCABULARIES)
+        self.assertIn("estimand_types", registry)
+        self.assertIs(registry["estimand_types"], spec_mod.ESTIMAND_TYPES)
+
+    def test_estimand_type_row_registered_in_validity_frame_membership(self):
+        from dsx.spec import ESTIMAND_TYPES, _VALIDITY_FRAME_MEMBERSHIP
+
+        self.assertIn(("estimand", "type", ESTIMAND_TYPES), _VALIDITY_FRAME_MEMBERSHIP)
+
+    def test_estimand_types_dump_is_a_key_sorted_description_dict(self):
+        out = describe_vocabulary()["estimand_types"]
+        from dsx.spec import ESTIMAND_TYPES
+
+        self.assertIsInstance(out, dict)
+        self.assertEqual(set(out), set(ESTIMAND_TYPES))
+        self.assertEqual(list(out), sorted(out))
+
+    def test_out_of_vocabulary_estimand_type_reports_high(self):
+        # D-05: DSX-SPEC-082
+        spec = {
+            "spec_version": 1, "title": "t", "question_type": "descriptive", "decision": {"owner": "x"},
+            "validity_frame": {
+                **{k: {"a": 1} for k in
+                   ("units", "measurement", "dependence", "sampling_frame", "missingness")},
+                "estimand": {"type": "not_a_real_estimand"},
+            },
+        }
+        report = validate_structure(spec)
+        found = [f for f in report.findings if f.code == "DSX-SPEC-082"]
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0].severity, Severity.HIGH)
+        self.assertEqual(found[0].where, "spec.validity_frame.estimand.type")
+
+    def test_estimand_type_absent_produces_no_finding(self):
+        spec = {
+            "spec_version": 1, "title": "t", "question_type": "descriptive", "decision": {"owner": "x"},
+            "validity_frame": {
+                k: {"a": 1} for k in
+                ("estimand", "units", "measurement", "dependence", "sampling_frame", "missingness")
+            },
+        }
+        report = validate_structure(spec)
+        self.assertFalse([f for f in report.findings if f.code == "DSX-SPEC-082"])
+
+    def test_estimand_type_empty_string_produces_no_finding(self):
+        spec = {
+            "spec_version": 1, "title": "t", "question_type": "descriptive", "decision": {"owner": "x"},
+            "validity_frame": {
+                **{k: {"a": 1} for k in
+                   ("units", "measurement", "dependence", "sampling_frame", "missingness")},
+                "estimand": {"quantity": "q", "type": ""},
+            },
+        }
+        report = validate_structure(spec)
+        self.assertFalse([f for f in report.findings if f.code == "DSX-SPEC-082"])
+
     def test_paradigms_and_paradigm_justifications(self):
         from dsx.spec import PARADIGM_JUSTIFICATIONS, PARADIGMS, VARIANCE_ADJUSTMENTS
 
