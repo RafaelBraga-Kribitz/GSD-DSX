@@ -146,3 +146,186 @@ ranking_rules:
     citation: "Lin, W. (2013), Agnostic Notes on Regression Adjustments to Experimental Data: Reexamining Freedman's Critique; Freedman, D.A. (2008), On Regression Adjustments to Experimental Data"
     locator_status: "unverified"
     notes: "Neither work's journal, volume or page range were confirmed by this project; citations carry author, year and title only. Lin (2013) supplies the cannot-hurt result and Freedman (2008) is the reason the interaction term is not optional."
+
+families:
+  - id: "two_proportion_z"
+    estimand: "difference_in_proportions"
+    family: "two_proportion_z"
+    inference_method: "frequentist"
+    dependence: "none"
+    aliases: ["two_proportion_z", "z_test_two_proportions", "prop_test"]
+    buys: []
+    charges: ["exchangeability", "no_interference_between_units", "large_sample_normal_approximation", "missing_completely_at_random", "fixed_horizon_analysis"]
+    traceability: "spec:examples/known-bad/frequentist-uncontrolled-continuous-ANALYSIS-SPEC.yaml"
+    citation: "Agresti, A. (2013), Categorical Data Analysis, 3rd edition"
+    locator_status: "unverified"
+    notes: "No chapter locator was confirmed by this project for the two-proportion z-test's normal-approximation source. Declared frequentist-uncontrolled-continuous fixture's whole point is that fixed_horizon_analysis is charged and violated by continuous peeking (DSX-PAR-010's territory, not this check's)."
+
+  - id: "fishers_exact"
+    estimand: "difference_in_proportions"
+    family: "fishers_exact"
+    inference_method: "frequentist"
+    dependence: "none"
+    aliases: ["fishers_exact", "fisher_exact"]
+    buys: ["large_sample_normal_approximation"]
+    charges: ["exchangeability", "no_interference_between_units"]
+    traceability: "ranking_rule:boschloo_over_fishers_exact"
+    citation: "Lydersen, S., Fagerland, M.W. and Laake, P. (2009), Statistics in Medicine 28(7):1159-1175, section 9"
+    locator_status: "verified"
+    notes: "Named as the dominated side of ranking_rule:boschloo_over_fishers_exact; Lydersen et al. 2009 section 9 states directly that the traditional Fisher's exact test should practically never be used (D-27)."
+
+  - id: "boschloo_exact"
+    estimand: "difference_in_proportions"
+    family: "boschloo_unconditional"
+    inference_method: "frequentist"
+    dependence: "none"
+    aliases: ["boschloo_exact", "boschloo", "unconditional_exact"]
+    buys: ["large_sample_normal_approximation"]
+    charges: ["exchangeability", "no_interference_between_units"]
+    traceability: "ranking_rule:boschloo_over_fishers_exact"
+    citation: "Lydersen, S., Fagerland, M.W. and Laake, P. (2009), Statistics in Medicine 28(7):1159-1175, section 9"
+    locator_status: "verified"
+    notes: "Uniformly dominates fishers_exact in power (Lydersen, Fagerland and Laake 2009 section 9) -- the only genuine uniform domination found anywhere in this phase's research (D-13)."
+
+  - id: "two_proportion_z_always_valid"
+    estimand: "difference_in_proportions"
+    family: "two_proportion_z"
+    inference_method: "frequentist"
+    dependence: "none"
+    aliases: ["always_valid_two_proportion_z", "sequential_two_proportion_z", "mixture_sprt"]
+    buys: ["fixed_horizon_analysis"]
+    charges: ["exchangeability", "no_interference_between_units", "large_sample_normal_approximation", "missing_completely_at_random", "mixture_boundary_specified"]
+    traceability: "operating_context:sequential_monitoring"
+    citation: "Agresti, A. (2013), Categorical Data Analysis, 3rd edition"
+    locator_status: "unverified"
+    notes: "Same normal-approximation source and same unconfirmed-chapter caveat as two_proportion_z. The always-valid/sequential-monitoring justification that lets this variant buy fixed_horizon_analysis is carried by that token's own citation (Johari, Koomen, Pekelis and Walsh 2022) in assumption_vocabulary, not restated here."
+
+  - id: "two_proportion_z_cluster_robust"
+    estimand: "difference_in_proportions"
+    family: "two_proportion_z"
+    inference_method: "frequentist"
+    dependence: "clustered"
+    aliases: ["two_proportion_z", "two_proportion_z_cluster_robust", "cluster_robust_two_proportion_z"]
+    buys: []
+    charges: ["exchangeability", "no_interference_between_units", "single_version_of_treatment", "large_sample_normal_approximation", "independence_across_clusters", "correct_clustering_dimension", "many_clusters_asymptotics"]
+    traceability: "spec:examples/good-ANALYSIS-SPEC.yaml"
+    citation: "Agresti, A. (2013), Categorical Data Analysis, 3rd edition"
+    locator_status: "unverified"
+    notes: "Same normal-approximation source and same unconfirmed-chapter caveat as two_proportion_z. The clustered-dependence handling is charged, not bought, via independence_across_clusters, correct_clustering_dimension and many_clusters_asymptotics, each cited to Cameron and Miller (2015) in assumption_vocabulary."
+
+  - id: "students_t"
+    estimand: "difference_in_means"
+    family: "students_t"
+    inference_method: "frequentist"
+    dependence: "none"
+    aliases: ["students_t", "student_t", "pooled_t", "t_test"]
+    buys: []
+    charges: ["exchangeability", "no_interference_between_units", "equal_population_variances", "no_variance_pretesting"]
+    traceability: "ranking_rule:welch_over_students"
+    citation: "Delacre, M., Lakens, D. and Leys, C. (2017), International Review of Social Psychology 30(1):92-101, together with the 2022 Correction, DOI 10.5334/irsp.661; Zimmerman, D.W. (2004), Journal of General Psychology 131(2):142-160"
+    locator_status: "unverified"
+    notes: "The Delacre et al. 2017 tables are superseded by the 2022 Correction; no numeric value from either the paper or the Correction is used here. Published reference value for this cluster: NIST/SEMATECH e-Handbook of Statistical Methods, Handbook 151, section 1.3.5.3, Two-Sample t-Test for Equal Means, the AUTO83B.DAT worked example, https://www.itl.nist.gov/div898/handbook/eda/section3/eda353.htm -- cited by handbook and section number, never by an invented DOI (D-28)."
+
+  - id: "welch_t"
+    estimand: "difference_in_means"
+    family: "welch_t"
+    inference_method: "frequentist"
+    dependence: "none"
+    aliases: ["welch_t", "welchs_t", "unequal_variance_t"]
+    buys: ["equal_population_variances"]
+    charges: ["exchangeability", "no_interference_between_units"]
+    traceability: "ranking_rule:welch_over_students"
+    citation: "Delacre, M., Lakens, D. and Leys, C. (2017), International Review of Social Psychology 30(1):92-101, together with the 2022 Correction, DOI 10.5334/irsp.661; Zimmerman, D.W. (2004), Journal of General Psychology 131(2):142-160"
+    locator_status: "unverified"
+    notes: "The Delacre et al. 2017 tables are superseded by the 2022 Correction; no numeric value from either the paper or the Correction is used here, only the headline recommendation. Published reference value for this cluster: NIST/SEMATECH e-Handbook of Statistical Methods, Handbook 151, section 1.3.5.3, Two-Sample t-Test for Equal Means, the AUTO83B.DAT worked example, https://www.itl.nist.gov/div898/handbook/eda/section3/eda353.htm -- cited by handbook and section number, never by an invented DOI (D-28)."
+
+  - id: "welch_t_cluster_robust"
+    estimand: "difference_in_means"
+    family: "welch_t"
+    inference_method: "frequentist"
+    dependence: "clustered"
+    aliases: ["welch_t", "welch_t_cluster_robust", "cluster_robust_welch_t"]
+    buys: ["equal_population_variances"]
+    charges: ["exchangeability", "no_interference_between_units", "single_version_of_treatment", "independence_across_clusters", "correct_clustering_dimension", "many_clusters_asymptotics"]
+    traceability: "spec:examples/known-bad/triggering-dilution-ANALYSIS-SPEC.yaml"
+    citation: "Delacre, M., Lakens, D. and Leys, C. (2017), International Review of Social Psychology 30(1):92-101, together with the 2022 Correction, DOI 10.5334/irsp.661; Zimmerman, D.W. (2004), Journal of General Psychology 131(2):142-160; Cameron, A.C. and Miller, D.L. (2015), A Practitioner's Guide to Cluster-Robust Inference, Journal of Human Resources 50(2):317-372, Section II"
+    locator_status: "unverified"
+    notes: "The Delacre et al. 2017 tables are superseded by the 2022 Correction and no numeric value from either is used. Cameron and Miller Section II is confirmed subject to the D-29 manuscript-numbering caveat recorded on independence_across_clusters."
+
+  - id: "linear_regression_unadjusted"
+    estimand: "regression_coefficient"
+    family: "linear_regression"
+    inference_method: "frequentist"
+    dependence: "none"
+    aliases: ["linear_regression", "linear_regression_unadjusted", "ols"]
+    buys: ["no_covariate_selection_on_outcome"]
+    charges: ["exchangeability", "no_interference_between_units", "large_sample_normal_approximation"]
+    traceability: "ranking_rule:interacted_adjustment_over_unadjusted"
+    citation: "Freedman, D.A. (2008), On Regression Adjustments to Experimental Data"
+    locator_status: "unverified"
+    notes: "Journal, volume and page range were not confirmed by this project, so the citation carries author, year and title only. Named as the dominated side of ranking_rule:interacted_adjustment_over_unadjusted."
+
+  - id: "linear_regression_interacted_adjustment"
+    estimand: "regression_coefficient"
+    family: "linear_regression"
+    inference_method: "frequentist"
+    dependence: "none"
+    aliases: ["linear_regression_interacted", "interacted_regression_adjustment", "lin_estimator"]
+    buys: []
+    charges: ["exchangeability", "no_interference_between_units", "large_sample_normal_approximation", "treatment_covariate_interaction_included", "no_covariate_selection_on_outcome", "missing_at_random_given_covariates"]
+    traceability: "ranking_rule:interacted_adjustment_over_unadjusted"
+    citation: "Lin, W. (2013), Agnostic Notes on Regression Adjustments to Experimental Data: Reexamining Freedman's Critique"
+    locator_status: "unverified"
+    notes: "Journal, volume and page range were not confirmed by this project, so the citation carries author, year and title only. Named as the preferred side of ranking_rule:interacted_adjustment_over_unadjusted, and only when the interaction term is actually included -- without it the ordering does not hold."
+
+  - id: "linear_regression_cv1"
+    estimand: "regression_coefficient"
+    family: "linear_regression"
+    inference_method: "frequentist"
+    dependence: "clustered"
+    aliases: ["linear_regression_cv1", "cluster_robust_ols", "cv1"]
+    buys: []
+    charges: ["exchangeability", "no_interference_between_units", "independence_across_clusters", "correct_clustering_dimension", "many_clusters_asymptotics"]
+    traceability: "ranking_rule:cv3_wild_bootstrap_over_cv1"
+    citation: "Cameron, A.C. and Miller, D.L. (2015), A Practitioner's Guide to Cluster-Robust Inference, Journal of Human Resources 50(2):317-372, Section II"
+    locator_status: "verified"
+    notes: "The standard cluster-robust variance estimator, subject to the D-29 manuscript-numbering caveat recorded on independence_across_clusters. The NIST Statistical Reference Datasets collection (SRD 140) is a further available published reference-value source for linear-regression arithmetic in this cluster; no specific SRD 140 dataset or numeric value is asserted here. Named as the dominated side of ranking_rule:cv3_wild_bootstrap_over_cv1 under few clusters -- see that rule for the citation supporting the ordering itself."
+
+  - id: "linear_regression_cv3_wild_bootstrap"
+    estimand: "regression_coefficient"
+    family: "linear_regression"
+    inference_method: "frequentist"
+    dependence: "clustered"
+    aliases: ["linear_regression_cv3", "wild_cluster_bootstrap", "cv3"]
+    buys: ["many_clusters_asymptotics"]
+    charges: ["exchangeability", "no_interference_between_units", "independence_across_clusters", "correct_clustering_dimension", "few_treated_clusters_correction"]
+    traceability: "ranking_rule:cv3_wild_bootstrap_over_cv1"
+    citation: "MacKinnon, J.G., Nielsen, M.O. and Webb, M.D. (2023), Journal of Econometrics 232(2):272-299, section 9"
+    locator_status: "unverified"
+    notes: "The section number is the unconfirmed part of this citation; author, year, journal, volume, issue and page range are confirmed. The NIST Statistical Reference Datasets collection (SRD 140) is a further available published reference-value source for linear-regression arithmetic in this cluster; no specific SRD 140 dataset or numeric value is asserted here. Named as the preferred side of ranking_rule:cv3_wild_bootstrap_over_cv1, a reliability ordering that must never be reported as a domination."
+
+  - id: "linear_regression_block_bootstrap"
+    estimand: "regression_coefficient"
+    family: "linear_regression"
+    inference_method: "frequentist"
+    dependence: "temporal"
+    aliases: ["linear_regression", "linear_regression_block_bootstrap", "block_bootstrap"]
+    buys: ["many_clusters_asymptotics"]
+    charges: ["exchangeability", "positivity", "consistency_of_treatment_versions", "no_interference_between_units", "independence_across_clusters", "correct_clustering_dimension", "missing_at_random_given_covariates"]
+    traceability: "spec:examples/known-bad/weak-identification-mmm-ANALYSIS-SPEC.yaml"
+    citation: "Cameron, A.C. and Miller, D.L. (2015), A Practitioner's Guide to Cluster-Robust Inference, Journal of Human Resources 50(2):317-372"
+    locator_status: "unverified"
+    notes: "Cameron and Miller (2015) is cited for temporal dependence on the same terms as dsx/spec.py's existing DEPENDENCE_ADMISSIBLE_METHODS precedent: the paper is confirmed, the exact section locator for the temporal (as opposed to clustered) case is not. The NIST Statistical Reference Datasets collection (SRD 140) is a further available published reference-value source for linear-regression arithmetic in this cluster; no specific SRD 140 dataset or numeric value is asserted here."
+
+  - id: "ratio_of_means_delta_method"
+    estimand: "ratio_of_means"
+    family: "ratio_of_means_delta"
+    inference_method: "frequentist"
+    dependence: "none"
+    aliases: ["delta_method", "ratio_of_means", "ratio_metric_delta_method"]
+    buys: []
+    charges: ["exchangeability", "no_interference_between_units", "ratio_denominator_nonzero_and_finite", "large_sample_normal_approximation"]
+    traceability: "operating_context:ratio_metrics"
+    citation: "Deng, A., Knoblich, U. and Lu, J. (2018), Applying the Delta Method in Metric Analytics, KDD '18, DOI 10.1145/3219819.3219919, also arXiv:1803.06336"
+    locator_status: "verified"
+    notes: "Verified at article level -- every locator written into this citation string is confirmed. No published reference value has been verified for this cluster: this is a recorded gap, not an oversight, matching the same statement carried by ratio_denominator_nonzero_and_finite in assumption_vocabulary."
