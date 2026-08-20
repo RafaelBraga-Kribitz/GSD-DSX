@@ -1219,6 +1219,13 @@ _EXPECTED_VAL_CODES: "dict[str, set[str]]" = {
     # are all populated the same way the good fixture's are, so no DSX-VAL-*
     # code fires.
     "triggering-dilution-ANALYSIS-SPEC.yaml": set(),
+    # Measured 2026-08-20 (plan 10-05) against the fixture as committed in this
+    # plan: loaded via dsx.loader.load(), ran dsx.frame.val.check(spec), recorded
+    # {f.code for f in report.findings}. This fixture's encoded defect lives in
+    # inference/analysis (DSX-PRE-030, Phase 10, dsx/frame/prereg.py) — every
+    # validity_frame sub-block is populated the same way the good fixture's are,
+    # so no DSX-VAL-* code fires.
+    "post-hoc-procedure-switch-ANALYSIS-SPEC.yaml": set(),
 }
 
 
