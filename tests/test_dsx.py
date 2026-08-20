@@ -3661,5 +3661,342 @@ class TestParadigmOutOfVocabularyFallback(unittest.TestCase):
                     self.assertEqual(manifest.data["applied"], expected.data["applied"])
 
 
+# ── Phase 11.1-01: full-frame cleaning + fit-after-split (DSX-CODE-020/021) ────
+
+
+class TestPhase11_1Code(unittest.TestCase):
+    ROOT = Path(__file__).resolve().parent.parent
+
+    def _entrypoint(self, tmp: str, text: str, name: str = "entry.py") -> str:
+        Path(tmp, name).write_text(text, encoding="utf-8")
+        return name
+
+    def _check(self, tmp: str, entry: str):
+        from dsx.checks import code as code_mod
+
+        return code_mod.check(
+            {
+                "model": {"task": "binary_classification"},
+                "reproducibility": {"entrypoint": entry},
+            },
+            tmp,
+        )
+
+    # ── DSX-CODE-020: full-frame cleaning before the split ──────────────────
+
+    def test_fillna_mean_before_split_is_critical(self):
+        # D-05: DSX-CODE-020
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(
+                tmp,
+                "from sklearn.model_selection import train_test_split\n"
+                "df['Age'] = df['Age'].fillna(df['Age'].mean())\n"
+                "train_test_split(df)\n",
+            )
+            report = self._check(tmp, entry)
+            found = [f for f in report.findings if f.code == "DSX-CODE-020"]
+            self.assertEqual(len(found), 1)
+            self.assertEqual(found[0].severity, Severity.CRITICAL)
+
+    def test_spread_filter_before_split_is_critical(self):
+        entry_text = (
+            "from sklearn.model_selection import train_test_split\n"
+            "df = df[(df['Balance'] - df['Balance'].mean()).abs() "
+            "/ df['Balance'].std() < 3]\n"
+            "train_test_split(df)\n"
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(tmp, entry_text)
+            report = self._check(tmp, entry)
+            self.assertIn("DSX-CODE-020", codes(report))
+
+    def test_full_frame_cleaning_at_or_after_split_produces_no_finding(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(
+                tmp,
+                "from sklearn.model_selection import train_test_split\n"
+                "train_test_split(df)\n"
+                "df['Age'] = df['Age'].fillna(df['Age'].mean())\n",
+            )
+            report = self._check(tmp, entry)
+            self.assertNotIn("DSX-CODE-020", codes(report))
+
+    def test_no_split_marker_full_frame_cleaning_still_fires(self):
+        # A missing split is not a licence.
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(
+                tmp, "df['Age'] = df['Age'].fillna(df['Age'].mean())\n"
+            )
+            report = self._check(tmp, entry)
+            self.assertIn("DSX-CODE-020", codes(report))
+
+    def test_idiom_in_comment_or_import_line_produces_no_finding(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(
+                tmp,
+                "# df['Age'] = df['Age'].fillna(df['Age'].mean())\n"
+                "from x import fillna_mean_helper\n",
+            )
+            report = self._check(tmp, entry)
+            self.assertNotIn("DSX-CODE-020", codes(report))
+
+    def test_at_most_one_dsx_code_020_lowest_line(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(
+                tmp,
+                "df['Age'] = df['Age'].fillna(df['Age'].mean())\n"
+                "df['Bal'] = df['Bal'].fillna(df['Bal'].median())\n",
+            )
+            report = self._check(tmp, entry)
+            found = [f for f in report.findings if f.code == "DSX-CODE-020"]
+            self.assertEqual(len(found), 1)
+            self.assertIn("Line 1", found[0].detail)
+
+    def test_empty_and_comment_only_source_no_exception(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            for text in ("", "# only a comment\n"):
+                with self.subTest(text=text):
+                    entry = self._entrypoint(tmp, text)
+                    report = self._check(tmp, entry)
+                    self.assertNotIn("DSX-CODE-020", codes(report))
+
+    def test_good_fixture_entrypoint_produces_no_dsx_code_020(self):
+        from dsx.checks import code as code_mod
+
+        report = code_mod.check(
+            {
+                "model": {"task": "binary_classification"},
+                "reproducibility": {"entrypoint": "analysis/activation_readout.py"},
+            },
+            str(self.ROOT / "examples"),
+        )
+        self.assertNotIn("DSX-CODE-020", codes(report))
+
+    def test_full_frame_impute_re_matches_paper_style_idiom(self):
+        from dsx.checks import code as code_mod
+
+        self.assertTrue(
+            code_mod.FULL_FRAME_IMPUTE_RE.search(
+                "df['Age'] = df['Age'].fillna(df['Age'].mean())"
+            )
+        )
+
+    def test_full_frame_spread_filter_re_matches_paper_style_idiom(self):
+        from dsx.checks import code as code_mod
+
+        self.assertTrue(
+            code_mod.FULL_FRAME_SPREAD_FILTER_RE.search(
+                "df = df[(df['Balance'] - df['Balance'].mean()).abs() "
+                "/ df['Balance'].std() < 3]"
+            )
+        )
+
+    # ── DSX-CODE-021: fit at/after split not on a recognised training frame ─
+
+    def test_fit_call_bare_frame_after_split_is_critical(self):
+        # D-05: DSX-CODE-021
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(
+                tmp,
+                "from sklearn.model_selection import train_test_split\n"
+                "X_train, X_test = train_test_split(df)\n"
+                "model.fit(df)\n",
+            )
+            report = self._check(tmp, entry)
+            found = [f for f in report.findings if f.code == "DSX-CODE-021"]
+            self.assertEqual(len(found), 1)
+            self.assertEqual(found[0].severity, Severity.CRITICAL)
+            self.assertNotIn("DSX-CODE-001", codes(report))
+
+    def test_imputer_constructed_inline_after_split_fires(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(
+                tmp,
+                "from sklearn.model_selection import train_test_split\n"
+                "train_test_split(df)\n"
+                "SimpleImputer().fit(df)\n",
+            )
+            report = self._check(tmp, entry)
+            self.assertIn("DSX-CODE-021", codes(report))
+
+    def test_fit_transform_bracketed_full_frame_after_split_fires(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(
+                tmp,
+                "from sklearn.model_selection import train_test_split\n"
+                "train_test_split(data)\n"
+                "min_max_scaler.fit_transform(data[['Balance']])\n",
+            )
+            report = self._check(tmp, entry)
+            self.assertIn("DSX-CODE-021", codes(report))
+
+    def test_fit_call_x_train_after_split_no_finding(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(
+                tmp,
+                "from sklearn.model_selection import train_test_split\n"
+                "X_train, X_test = train_test_split(df)\n"
+                "imputer.fit(X_train)\n",
+            )
+            report = self._check(tmp, entry)
+            found = codes(report)
+            self.assertNotIn("DSX-CODE-021", found)
+            self.assertNotIn("DSX-CODE-001", found)
+
+    def test_lexicon_prefix_variants_after_split_no_finding(self):
+        variants = ("X_train_scaled", "train_df[cols]", "X_train.values")
+        for variant in variants:
+            with self.subTest(variant=variant):
+                with tempfile.TemporaryDirectory() as tmp:
+                    entry = self._entrypoint(
+                        tmp,
+                        "from sklearn.model_selection import train_test_split\n"
+                        "train_test_split(df)\n"
+                        f"model.fit({variant})\n",
+                    )
+                    report = self._check(tmp, entry)
+                    self.assertNotIn("DSX-CODE-021", codes(report))
+
+    def test_fit_call_before_split_no_dsx_code_021(self):
+        # That case is DSX-CODE-001's.
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(
+                tmp,
+                "from sklearn.model_selection import train_test_split\n"
+                "model.fit(df)\n"
+                "train_test_split(df)\n",
+            )
+            report = self._check(tmp, entry)
+            self.assertNotIn("DSX-CODE-021", codes(report))
+            self.assertIn("DSX-CODE-001", codes(report))
+
+    def test_no_split_marker_no_dsx_code_021(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(tmp, "model.fit(df)\n")
+            report = self._check(tmp, entry)
+            self.assertNotIn("DSX-CODE-021", codes(report))
+
+    def test_malformed_fit_calls_no_finding_no_exception(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(
+                tmp,
+                "from sklearn.model_selection import train_test_split\n"
+                "train_test_split(df)\n"
+                "imputer.fit(df\n"
+                "model.fit(42)\n",
+            )
+            report = self._check(tmp, entry)
+            self.assertNotIn("DSX-CODE-021", codes(report))
+
+    def test_at_most_one_dsx_code_021_lowest_line(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(
+                tmp,
+                "from sklearn.model_selection import train_test_split\n"
+                "train_test_split(df)\n"
+                "imputer.fit(df)\n"
+                "scaler.fit_transform(features)\n",
+            )
+            report = self._check(tmp, entry)
+            found = [f for f in report.findings if f.code == "DSX-CODE-021"]
+            self.assertEqual(len(found), 1)
+            self.assertIn("Line 3", found[0].detail)
+
+    def test_lexicon_locked(self):
+        from dsx.checks import code as code_mod
+
+        self.assertEqual(len(code_mod.TRAINING_FRAME_NAMES), 14)
+        self.assertIn("X_train", code_mod.TRAINING_FRAME_NAMES)
+        self.assertTrue(code_mod._is_training_frame("X_train_scaled"))
+        self.assertTrue(code_mod._is_training_frame("train_df[cols]"))
+        self.assertFalse(code_mod._is_training_frame("df"))
+        self.assertFalse(code_mod._is_training_frame("data[['Balance']]"))
+
+    def test_fit_call_re_extracts_full_frame_token(self):
+        from dsx.checks import code as code_mod
+
+        m = code_mod.FIT_CALL_RE.search(
+            "min_max_scaler.fit_transform(data[['Balance']])"
+        )
+        self.assertIsNotNone(m)
+        self.assertTrue(m.group(1).startswith("data"))
+
+    def test_fit_call_re_timing_no_catastrophic_backtracking(self):
+        import time
+
+        from dsx.checks import code as code_mod
+
+        text = ".fit(" + ("a" * 19990)
+        self.assertEqual(len(text), 19995)
+        start = time.perf_counter()
+        code_mod.FIT_CALL_RE.search(text)
+        self.assertLess(time.perf_counter() - start, 1.0)
+
+    def test_good_fixture_still_passes_all_four_gate_points(self):
+        from dsx import cli
+
+        good = self.ROOT / "examples" / "good-ANALYSIS-SPEC.yaml"
+        for point in ("plan", "execute", "verify", "ship"):
+            out, err = io.StringIO(), io.StringIO()
+            with redirect_stdout(out), redirect_stderr(err):
+                code = cli.main(["gate", point, "--spec", str(good)])
+            self.assertEqual(code, 0, f"gate {point} unexpectedly blocked:\n{err.getvalue()}")
+
+    def test_bad_fixture_still_blocks_at_execute(self):
+        from dsx import cli
+
+        bad = self.ROOT / "examples" / "bad-ANALYSIS-SPEC.yaml"
+        out, err = io.StringIO(), io.StringIO()
+        with redirect_stdout(out), redirect_stderr(err):
+            code = cli.main(["gate", "execute", "--spec", str(bad)])
+        self.assertEqual(code, 1)
+
+    # ── Task 3: decision-record emission (D-04) ──────────────────────────────
+
+    def test_check_over_tripping_entrypoint_leaves_a_decision_record(self):
+        from dsx.checks import code as code_mod
+
+        report = code_mod.check(
+            {
+                "model": {"task": "binary_classification"},
+                "reproducibility": {"entrypoint": "analysis/leaky_model.py"},
+            },
+            str(self.ROOT / "examples"),
+        )
+        decisions = report.context.get("decisions") or []
+        self.assertTrue(decisions)
+        self.assertEqual(decisions[0]["layer"], "deterministic")
+
+    def test_check_over_clean_entrypoint_still_leaves_a_decision_record(self):
+        # A cleared judgment is a judgment.
+        from dsx.checks import code as code_mod
+
+        report = code_mod.check(
+            {
+                "model": {"task": "binary_classification"},
+                "reproducibility": {"entrypoint": "analysis/activation_readout.py"},
+            },
+            str(self.ROOT / "examples"),
+        )
+        decisions = report.context.get("decisions") or []
+        self.assertTrue(decisions)
+        self.assertEqual(decisions[0]["layer"], "deterministic")
+
+    def test_run_twice_over_same_entrypoint_is_deterministic(self):
+        from dsx.checks import code as code_mod
+
+        spec = {
+            "model": {"task": "binary_classification"},
+            "reproducibility": {"entrypoint": "analysis/leaky_model.py"},
+        }
+        r1 = code_mod.check(spec, str(self.ROOT / "examples"))
+        r2 = code_mod.check(spec, str(self.ROOT / "examples"))
+        self.assertEqual([f.code for f in r1.findings], [f.code for f in r2.findings])
+        counts_020 = sum(1 for f in r1.findings if f.code == "DSX-CODE-020")
+        counts_021 = sum(1 for f in r1.findings if f.code == "DSX-CODE-021")
+        self.assertLessEqual(counts_020, 1)
+        self.assertLessEqual(counts_021, 1)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

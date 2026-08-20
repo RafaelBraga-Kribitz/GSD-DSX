@@ -133,6 +133,7 @@ in either direction — they cannot justify a check and cannot excuse skipping o
 
 - [ ] REQ-P11-01 `references/families.yaml` holds 14 estimator families as data, keyed on estimand × family × inference method × dependence handling, parsed by the existing loader
   > **Amended from 25–35 to 14** during Phase 11 planning per `11-CONTEXT.md` D-01/D-02. Reason: ROADMAP Success Criterion 5 requires every family to trace to a case committed in the repository at the time Phase 11 lands; the committed corpus supplies six distinct procedure labels, and Phase 12 is the phase that grows the corpus. Sizing to the evidence keeps "a family is added when a real case needs it" literally true of the file that ships.
+
 - [ ] REQ-P11-02 Named tests resolve as aliases into families rather than being enumerated as a test catalogue
 - [ ] REQ-P11-03 The admissibility function returns a ranked admissible set, naming for each entry the assumptions bought and charged
 - [ ] REQ-P11-04 An underdetermined frame returns `no_admissible_procedure` and escalates rather than guessing
@@ -169,7 +170,6 @@ in either direction — they cannot justify a check and cannot excuse skipping o
 - [ ] REQ-P11.3-05 An unrecognised effect-size kind fires MEDIUM instead of silently skipping
 - [ ] REQ-P11.3-06 Four structural conformance codes validate CHART-REVIEW.md against `references/chart-review-schema.md`; no stochastic agent verdict gates
 - [ ] REQ-P11.3-07 Fixtures/tests/catalogue current; full corpus re-run green
-
 
 ## Phase 12 (M5) — Calibration
 
@@ -263,7 +263,7 @@ Every v2.0.0 requirement maps to exactly one phase. 75/75 mapped (53 original + 
 | REQ-P11-04 | Phase 11 | Pending |
 | REQ-P11-05 | Phase 11 | Pending |
 | REQ-P11-06 | Phase 11 | Pending |
-| REQ-P11.1-01 | Phase 11.1 | Pending |
+| REQ-P11.1-01 | Phase 11.1 | Complete |
 | REQ-P11.1-02 | Phase 11.1 | Pending |
 | REQ-P11.1-03 | Phase 11.1 | Pending |
 | REQ-P11.1-04 | Phase 11.1 | Pending |

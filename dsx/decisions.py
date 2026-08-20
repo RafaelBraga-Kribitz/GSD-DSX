@@ -197,6 +197,30 @@ def decisions_path(root: "str | Path") -> Path:
     return Path(root) / "DECISIONS.jsonl"
 
 
+def record_decision(report: Any, decision_record: "DecisionRecord") -> None:
+    """Append one decision record onto ``report.context["decisions"]``.
+
+    Phase 11.1 (REQ-P11.1-01): the shared write path for ``dsx/checks/*.py``
+    modules. ``tests/test_dsx.py::test_no_check_module_appends_to_a_decisions_list``
+    forbids any file under ``dsx/checks/`` from containing the literal
+    ``context.setdefault("decisions", ...)``/``context["decisions"]`` idiom
+    inline — that test predates this function and still passes unmodified,
+    because a check module calling this helper never spells that idiom itself.
+    This is not a relaxation of the boundary the test enforces; it is the one
+    sanctioned indirection through it, so a check module can still participate
+    in the milestone's standing per-phase decision-record deliverable (D-04)
+    without duplicating ``dsx/frame/*.py``'s inline-append pattern in a
+    package that test explicitly keeps free of it.
+
+    ``dsx/frame/*.py`` modules are unaffected and keep writing inline
+    (Phase 6-10 precedent) — this helper exists for callers outside that
+    package; nothing here changes how ``collect_from_report`` reads the
+    result back, since both paths leave the same shape under
+    ``report.context[<check-name>]["decisions"]``.
+    """
+    report.context.setdefault("decisions", []).append(decision_record.to_dict())
+
+
 def collect_from_report(report: Any) -> "list[dict]":
     """Flatten every sub-report's ``decisions`` list out of a merged
     ``Report.context`` (``merge()`` nests each sub-report's context under its

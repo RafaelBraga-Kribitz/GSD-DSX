@@ -68,13 +68,28 @@ PREFIX_GROUPS = [
 _D05_ALLOWLIST_PREFIXES = ("DSX-PAR-", "DSX-VAL-", "DSX-INT-", "DSX-PRE-")
 
 # The individually-enumerated half of D-20's finite, visible boundary: exact
-# codes this milestone introduced inside a pre-existing family (DSX-SPEC-*),
-# where a family prefix is not usable without pulling in that family's 200+
-# pre-existing legacy codes. Measured against the real tree, not copied from
-# review prose — re-derive by enumerating `collect()`'s codes under the old
-# bare-prefix match if this set is ever suspected stale.
+# codes this milestone introduced inside a pre-existing family (DSX-SPEC-*,
+# and — from Phase 11.1 — DSX-CODE-*), where a family prefix is not usable
+# without pulling in that family's 200+ pre-existing legacy codes. Measured
+# against the real tree, not copied from review prose — re-derive by
+# enumerating `collect()`'s codes under the old bare-prefix match if this set
+# is ever suspected stale.
+#
+# Phase 11.1 (REQ-P11.1-01) adds DSX-CODE-020 and DSX-CODE-021 here, not to
+# `_D05_ALLOWLIST_PREFIXES`: `DSX-CODE-*` is a pre-existing family (v1.3.0)
+# with ~4 legacy codes (001-003, 010) that carry no `Citation:`/`Structural
+# criterion:` docstring line and no `# D-05:` test marker. Adding the
+# `"DSX-CODE-"` prefix to `_D05_ALLOWLIST_PREFIXES` would retroactively
+# obligate every one of those legacy codes to carry a citation none of them
+# have — the visible consequence is `scripts/check.sh --check` failing red on
+# files this phase never touched. The exact-code path used here is the one
+# Phase 6 already established for `DSX-SPEC-080`-`086` inside the pre-existing
+# `DSX-SPEC-*` family; this is the same precedent applied to a second family.
 _D05_ALLOWLIST_CODES = frozenset(
-    {"DSX-SPEC-080", "DSX-SPEC-081", "DSX-SPEC-082", "DSX-SPEC-085", "DSX-SPEC-086"}
+    {
+        "DSX-SPEC-080", "DSX-SPEC-081", "DSX-SPEC-082", "DSX-SPEC-085", "DSX-SPEC-086",
+        "DSX-CODE-020", "DSX-CODE-021",
+    }
 )
 
 _CITATION_RE = re.compile(r"^\s*Citation:\s*\S", re.MULTILINE)
