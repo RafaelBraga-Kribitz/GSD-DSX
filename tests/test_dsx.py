@@ -501,6 +501,19 @@ class TestSpecStructure(unittest.TestCase):
         self.assertIn(inf["paradigm_justification"], PARADIGM_JUSTIFICATIONS)
         self.assertIn(inf["declared_at"], DECLARATION_POINTS)
 
+    # ── 11.1-05: cleaning scaffold is commented, inert scaffold (REQ-P11.1-03) ──
+
+    def test_template_cleaning_scaffold_is_commented_and_inert(self):
+        from dsx.loader import load
+
+        template = Path(__file__).resolve().parent.parent / "templates" / "ANALYSIS-SPEC.yaml"
+        spec = load(str(template))
+        data = spec.get("data") or []
+        self.assertTrue(data, "template data section should not be empty")
+        for entry in data:
+            if isinstance(entry, dict):
+                self.assertNotIn("cleaning", entry)
+
     def test_good_fixture_none_frame_fields_round_trip_as_strings(self):
         from dsx.loader import load
 
