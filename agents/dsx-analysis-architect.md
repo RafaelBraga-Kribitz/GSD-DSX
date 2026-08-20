@@ -44,6 +44,9 @@ Ask, and do not proceed on a vague answer:
 - What would they do differently at each possible outcome?
 - What is the smallest effect that would change their choice?
 - When do they need it, and what happens if the answer is "no effect"?
+- Who bears the cost if the recommendation is wrong for a subgroup? An answer
+  that helps the average and harms a segment is a different decision — name
+  the segments that matter before the design is chosen.
 
 If there is no decision, say so plainly. An analysis with no pending decision is
 either curiosity (fine, but scope it as such) or theatre (worth naming).

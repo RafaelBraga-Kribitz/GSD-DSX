@@ -37,7 +37,8 @@ deduplicating; the reason is often the finding.
 Null rate per column. Then the question that matters: **is nullness random or
 structured?** A column null for every row before a launch date is a schema
 change, not missing data. Cross-tabulate null indicators against the time column
-and the target.
+and — for predictive work, on the training rows only — against the target. A
+null pattern read off the full frame is target-informed cleaning.
 
 ## 3. Time
 Min, max, and the gaps. Count rows per day and plot it — outages, backfills and
@@ -53,6 +54,12 @@ categorical: cardinality, top values, and the share in the tail.
 Only after 1-4. Correlations among features, each feature against the target,
 and — for any target — the base rate and its stability over time. A base rate
 that drifts is a modelling constraint, not a footnote.
+
+**For predictive work, split first.** `dsx-build-model` step 2 fixes the split
+before profiling, imputation or feature engineering — EDA gets no exemption.
+Compute every feature-vs-target statistic on the training rows only. The base
+rate and its drift over time may use the full frame; per-feature target
+relationships may not.
 
 ## 6. Segments
 Recompute the headline number within the two or three most important splits.
