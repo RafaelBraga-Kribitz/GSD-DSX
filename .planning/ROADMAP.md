@@ -652,7 +652,7 @@ citation admissibility (candidates: Kaufman et al. 2012; Varma & Simon 2006; Caw
   6. `prediction_time_definition` is checked even when `model.features` is absent, and an
      undeclared positive rate under an imbalance-unsafe primary metric fires.
 
-**Plans**: 3/8 plans executed
+**Plans**: 4/8 plans executed
 
 Plans:
 
@@ -670,7 +670,7 @@ Plans:
 - [x] 11.1-03-PLAN.md — Statistical-test-sees-target scan: `DSX-CODE-030` before the split,
       `DSX-CODE-031` at or after it
 
-- [ ] 11.1-04-PLAN.md — `prediction_time_definition` checked unconditionally, and an undeclared
+- [x] 11.1-04-PLAN.md — `prediction_time_definition` checked unconditionally, and an undeclared
       positive rate under an imbalance-unsafe metric (`DSX-ML-043`)
 
 - [ ] 11.1-05-PLAN.md — Optional per-dataset cleaning declaration: fitted outside training rows
