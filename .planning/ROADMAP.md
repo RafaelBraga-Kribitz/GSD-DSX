@@ -497,7 +497,7 @@ reconcile against at plan or execute.
      a test against a published reference value or a named structural criterion, and a test
      asserts every `DSX-PRE-*` code is reachable from at least one `GATE_PROFILES` entry.
 
-**Plans**: 2/6 plans executed
+**Plans**: 3/6 plans executed
 
 Plans:
 **Wave 1**
@@ -510,7 +510,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 10-03-PLAN.md — `DSX-PRE-020` content-lock reconciliation and the missing-header exit 2 (wave 3)
+- [x] 10-03-PLAN.md — `DSX-PRE-020` content-lock reconciliation and the missing-header exit 2 (wave 3)
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
@@ -629,7 +629,7 @@ cases where absence permitted a false pass" is a debate, not a count.
 | 7. Validity frame checks (`DSX-VAL-*`) | 8/8 | Complete | 2026-08-20 |
 | 8. Interference, triggering, stability (`DSX-INT-*`) | 10/10 | Complete | 2026-08-14 |
 | 9. Monitoring discipline, symmetric (`DSX-PAR-*`) | 7/7 | Complete | 2026-08-13 |
-| 10. Pre-registered inference plan (`DSX-PRE-*`) | 2/6 | In Progress|  |
+| 10. Pre-registered inference plan (`DSX-PRE-*`) | 3/6 | In Progress|  |
 | 11. Frequentist admissibility adjudicator (`DSX-ADM-*`) | 0/TBD | Not started | - |
 | 12. Calibration | 0/TBD | Not started | - |
 
