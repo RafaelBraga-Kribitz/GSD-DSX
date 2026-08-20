@@ -558,10 +558,11 @@ run a verification spike before writing any requirement on it.
 
 **Success Criteria** (what must be TRUE):
 
-  1. `references/families.yaml` holds 25–35 estimator families as data keyed on
+  1. `references/families.yaml` holds 14 estimator families as data keyed on
      estimand × family × inference method × dependence handling, parsed by the existing
      `dsx.loader.load()` with no new parser, and named tests resolve as aliases into families
-     rather than being enumerated as a test catalogue.
+     rather than being enumerated as a test catalogue. (Amended from 25–35, Phase 11 planning,
+     `11-CONTEXT.md` D-02.)
 
   2. `dsx recommend-test` returns a ranked admissible set naming, per entry, the assumptions
      bought and the assumptions charged — the existing subcommand extended, not replaced, with

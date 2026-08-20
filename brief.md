@@ -440,7 +440,10 @@ These are unresolved, and the planner should not silently pick a side.
 Anchor D-05 citations here rather than sprawling.
 
 Kohavi, Tang and Xu, *Trustworthy Online Controlled Experiments* (triggering, dilution,
-interference, novelty and primacy, SRM). Imbens and Rubin, *Causal Inference for Statistics,
+interference, novelty and primacy, SRM; the shared-budget interference chapter locator is
+Chapter 22, *Leakage and Interference between Variants*, pages 226 to 234, verified — closing
+the unverified-locator flag recorded in `06-08-SUMMARY.md` and `06-VERIFICATION.md`). Imbens
+and Rubin, *Causal Inference for Statistics,
 Social, and Biomedical Sciences* (SUTVA, estimands). Hernan and Robins, *Causal Inference:
 What If* (estimands, identification). International Council for Harmonisation (2019), the
 E9(R1) addendum on estimands and sensitivity analysis, document reference
@@ -453,8 +456,12 @@ as a criterion of demarcation, pages 17 to 18 (the source for `DSX-VAL-011`). Ge
 (2007), *Data Analysis Using Regression and Multilevel/Hierarchical Models*, Cambridge
 University Press (dependence, units; the exact chapter locator within it is unverified).
 Cameron and Miller (2015), "A Practitioner's Guide to Cluster-Robust Inference", *Journal of
-Human Resources* volume 50 issue 2, pages 317 to 372 (the source for `DSX-VAL-030`; its section
-locator is also unverified). Lohr (2021), *Sampling: Design and Analysis*, third edition,
+Human Resources* volume 50 issue 2, pages 317 to 372 (the source for `DSX-VAL-030`; Section VI,
+*Few Clusters*, is now the verified section locator for the few-clusters guidance, with Section
+II for the estimator and Section IV for the clustering dimension — partially closing the
+unverified-locator flag recorded in `07-01-SUMMARY.md`. Caveat: the accepted manuscript jumps
+from Section VIII to Section XI, so the typeset journal numbering may differ; the manuscript
+numbering is the verified object). Lohr (2021), *Sampling: Design and Analysis*, third edition,
 Chapter 1 sections 1.2, 1.3 and 1.3.4, and Chapter 16 section 16.1 (frames, selection, the
 source for `DSX-VAL-050`). Little and Rubin (2019), *Statistical Analysis with Missing Data*,
 third edition, Chapter 3 section 3.2 (mechanisms, the source for `DSX-VAL-060`). White and

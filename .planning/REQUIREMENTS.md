@@ -131,7 +131,8 @@ in either direction — they cannot justify a check and cannot excuse skipping o
 
 ## Phase 11 (M4) — Frequentist admissibility adjudicator (`DSX-ADM-*`)
 
-- [ ] REQ-P11-01 `references/families.yaml` holds 25–35 estimator families as data, keyed on estimand × family × inference method × dependence handling, parsed by the existing loader
+- [ ] REQ-P11-01 `references/families.yaml` holds 14 estimator families as data, keyed on estimand × family × inference method × dependence handling, parsed by the existing loader
+  > **Amended from 25–35 to 14** during Phase 11 planning per `11-CONTEXT.md` D-01/D-02. Reason: ROADMAP Success Criterion 5 requires every family to trace to a case committed in the repository at the time Phase 11 lands; the committed corpus supplies six distinct procedure labels, and Phase 12 is the phase that grows the corpus. Sizing to the evidence keeps "a family is added when a real case needs it" literally true of the file that ships.
 - [ ] REQ-P11-02 Named tests resolve as aliases into families rather than being enumerated as a test catalogue
 - [ ] REQ-P11-03 The admissibility function returns a ranked admissible set, naming for each entry the assumptions bought and charged
 - [ ] REQ-P11-04 An underdetermined frame returns `no_admissible_procedure` and escalates rather than guessing
