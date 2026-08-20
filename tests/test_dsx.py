@@ -538,6 +538,8 @@ class TestSpecStructure(unittest.TestCase):
 
     def test_every_committed_spec_declares_a_valid_estimand_type(self):
         # 11-02: REQ-P11-01 — a tenth spec added later inherits this assertion via glob.
+        # Plan 11.1-08: full-frame-cleaning-ANALYSIS-SPEC.yaml is the tenth spec this
+        # comment anticipated; count updated from 9 to 10 in the same commit that adds it.
         from dsx.loader import load
         from dsx.spec import ESTIMAND_TYPES
 
@@ -547,7 +549,7 @@ class TestSpecStructure(unittest.TestCase):
             + sorted((root / "examples" / "known-bad").glob("*-ANALYSIS-SPEC.yaml"))
             + sorted((root / "templates").glob("ANALYSIS-SPEC.yaml"))
         )
-        self.assertEqual(len(paths), 9, [str(p) for p in paths])
+        self.assertEqual(len(paths), 10, [str(p) for p in paths])
         bad = []
         for p in paths:
             estimand_type = load(str(p)).get("validity_frame", {}).get("estimand", {}).get("type")
