@@ -112,6 +112,7 @@ limitations:
 validity_frame:
   estimand:
     quantity: "difference in checkout abandonment rate"
+    type: difference_in_proportions
     population: "started checkout sessions, 2026-04-01 to 2026-04-20"
     contrast: "new checkout flow (treatment) vs current flow (control)"
     time_window: "within-session, 2026-04-01 to 2026-04-20"

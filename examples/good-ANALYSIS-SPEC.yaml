@@ -296,6 +296,7 @@ limitations:
 validity_frame:
   estimand:
     quantity: "difference in 7-day activation rate"
+    type: difference_in_proportions
     population: "new non-bot signups, 2026-06-01 to 2026-06-14"
     contrast: "onboarding checklist vs current onboarding"
     time_window: "7 days from signup"

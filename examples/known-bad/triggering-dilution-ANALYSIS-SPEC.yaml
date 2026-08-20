@@ -117,6 +117,7 @@ limitations:
 validity_frame:
   estimand:
     quantity: "difference in average revenue per eligible session"
+    type: difference_in_means
     population: "eligible checkout sessions, 2026-04-20 to 2026-05-04"
     contrast: "upsell prompt shown when reached (treatment) vs current checkout flow (control)"
     time_window: "same session as the checkout step"

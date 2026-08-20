@@ -114,6 +114,7 @@ limitations:
 validity_frame:
   estimand:
     quantity: "elasticity of weekly online revenue with respect to weekly TV spend"
+    type: regression_coefficient
     population: "national online sales, 2023-01-02 to 2025-12-28"
     contrast: "marginal effect of one additional dollar of TV spend, other channels held at their observed weekly levels"
     time_window: "same calendar week as the TV spend, with a two-week adstock carryover"

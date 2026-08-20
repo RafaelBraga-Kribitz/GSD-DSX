@@ -204,6 +204,28 @@ DEPENDENCE_STRUCTURES = {
     "hierarchical": "Observations are nested within multiple levels of grouping.",
 }
 
+# Phase 11 (REQ-P11-01, REQ-P11-04): the estimand axis the frequentist admissibility
+# adjudicator (dsx/frame/admissibility.py) keys on. Chosen over reusing
+# analysis.outcome_type + n_groups + paired because that shape is unreachable from
+# examples/known-bad/weak-identification-mmm-ANALYSIS-SPEC.yaml, which has no
+# analysis:/model: block at all. validity_frame.estimand is one of the six
+# always-required sub-blocks, so this field is reachable from every spec that has
+# passed the Phase 6 shape gate. Closed vocabulary compared by exact normalized
+# membership only — no fuzzy string match on free prose (11-CONTEXT.md Claude's
+# Discretion, binding constraint).
+ESTIMAND_TYPES = {
+    "difference_in_proportions": (
+        "The estimand is a difference between two or more group proportions or rates."
+    ),
+    "difference_in_means": "The estimand is a difference between two or more group means.",
+    "regression_coefficient": "The estimand is a coefficient from a fitted regression model.",
+    "ratio_of_means": (
+        "The estimand is a ratio of two quantities each estimated from the same units, "
+        "such as a per-user revenue rate or any metric whose numerator and denominator "
+        "are both random."
+    ),
+}
+
 # Dependence structure -> admissible variance-adjustment method family (D-04, REQ-P7-04).
 # Every method named below is drawn verbatim from VARIANCE_ADJUSTMENTS above — M-09
 # forbids inventing a parallel vocabulary. "none" has no entry: a declared independence
@@ -347,6 +369,7 @@ _VOCABULARIES: "list[tuple[str, Any]]" = [
     ("identification_strengths", IDENTIFICATION_STRENGTHS),
     ("constraint_sources", CONSTRAINT_SOURCES),
     ("dependence_structures", DEPENDENCE_STRUCTURES),
+    ("estimand_types", ESTIMAND_TYPES),
     ("interference_risks", INTERFERENCE_RISKS),
     ("interference_mitigations", INTERFERENCE_MITIGATIONS),
     ("missingness_mechanisms", MISSINGNESS_MECHANISMS),
@@ -841,8 +864,13 @@ _VALIDITY_FRAME_ALWAYS_REQUIRED = (
 _VALIDITY_FRAME_CAUSAL_REQUIRED = ("identification", "interference", "triggering", "stability")
 
 # (sub-block, sub-field, closed vocabulary). `dependence.method_family_required` reuses
-# VARIANCE_ADJUSTMENTS verbatim (M-09) — no parallel set is defined for it.
+# VARIANCE_ADJUSTMENTS verbatim (M-09) — no parallel set is defined for it. The
+# `estimand.type` row (Phase 11, REQ-P11-01/04) is the adjudication axis the
+# frequentist admissibility adjudicator (dsx/frame/admissibility.py) keys on; it is
+# deliberately optional — the membership loop below `continue`s on a blank value
+# before testing membership, so omitting it produces no finding.
 _VALIDITY_FRAME_MEMBERSHIP: "tuple[tuple[str, str, Any], ...]" = (
+    ("estimand", "type", ESTIMAND_TYPES),
     ("identification", "strength", IDENTIFICATION_STRENGTHS),
     ("identification", "constraint_source", CONSTRAINT_SOURCES),
     ("dependence", "structure", DEPENDENCE_STRUCTURES),
