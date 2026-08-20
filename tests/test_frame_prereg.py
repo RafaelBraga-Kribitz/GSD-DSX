@@ -25,7 +25,7 @@ sys.path.insert(0, str(ROOT))
 from dsx import __version__  # noqa: E402
 from dsx.decisions import InvocationHeader  # noqa: E402
 from dsx.decisions import append as append_decision  # noqa: E402
-from dsx.decisions import decisions_path  # noqa: E402
+from dsx.decisions import decisions_path, frame_digest  # noqa: E402
 from dsx.findings import CheckError, Report, Severity  # noqa: E402
 from dsx.frame import prereg  # noqa: E402
 from dsx.loader import load  # noqa: E402
@@ -739,3 +739,126 @@ class TestMissingPlanHeader(unittest.TestCase):
         message = str(ctx.exception)
         self.assertIn("suppressions", message)
         self.assertIn("dsx gate plan", message)
+
+
+class TestContentLockReconciliation(unittest.TestCase):
+    """`_check_content_lock`'s DSX-PRE-020 reconciliation (Task 2): a `pre_data`
+    claim whose current frame content was never registered at plan blocks at
+    CRITICAL; `post_data` and an absent claim stay legal and silent; the comparison
+    is set membership over every recorded plan-gate-point digest."""
+
+    def _append_plan_header(self, root, digest, invocation_id="INV-0001"):
+        append_decision(
+            decisions_path(root),
+            InvocationHeader(
+                invocation_id=invocation_id,
+                gate_point="plan",
+                dsx_version=__version__,
+                frame_digest=digest,
+            ),
+        )
+
+    def test_1_matching_digest_produces_no_finding(self):
+        spec = {"validity_frame": {"a": 1}, "inference": {"declared_at": "pre_data"}}
+        with tempfile.TemporaryDirectory() as root:
+            self._append_plan_header(root, frame_digest(spec))
+            report = prereg.check(spec, root, reconcile_trail=True)
+            findings = [f for f in report.findings if f.code == "DSX-PRE-020"]
+            self.assertEqual(findings, [])
+
+    # D-05: DSX-PRE-020
+    def test_2_mismatching_digest_fires_exactly_one_critical_finding(self):
+        spec = {"validity_frame": {"a": 1}, "inference": {"declared_at": "pre_data"}}
+        with tempfile.TemporaryDirectory() as root:
+            self._append_plan_header(root, "not-the-real-digest")
+            report = prereg.check(spec, root, reconcile_trail=True)
+            findings = [f for f in report.findings if f.code == "DSX-PRE-020"]
+            self.assertEqual(len(findings), 1)
+            self.assertEqual(findings[0].severity, Severity.CRITICAL)
+
+    def test_3_post_data_with_mismatching_trail_produces_no_finding(self):
+        spec = {"validity_frame": {"a": 1}, "inference": {"declared_at": "post_data"}}
+        with tempfile.TemporaryDirectory() as root:
+            self._append_plan_header(root, "not-the-real-digest")
+            report = prereg.check(spec, root, reconcile_trail=True)
+            findings = [f for f in report.findings if f.code == "DSX-PRE-020"]
+            self.assertEqual(findings, [])
+
+    def test_4_declared_at_absent_with_mismatching_trail_produces_no_finding(self):
+        spec = {"validity_frame": {"a": 1}, "inference": {}}
+        with tempfile.TemporaryDirectory() as root:
+            self._append_plan_header(root, "not-the-real-digest")
+            report = prereg.check(spec, root, reconcile_trail=True)
+            findings = [f for f in report.findings if f.code == "DSX-PRE-020"]
+            self.assertEqual(findings, [])
+
+    def test_5_membership_holds_regardless_of_append_order(self):
+        # The matching digest is appended FIRST and the non-matching digest LAST —
+        # the ordering a most-recent rule would fail on (it would compare against
+        # the non-matching digest and fire a false positive on a spec that did
+        # nothing wrong). Set membership is indifferent to append order.
+        spec = {"validity_frame": {"a": 1}, "inference": {"declared_at": "pre_data"}}
+        with tempfile.TemporaryDirectory() as root:
+            self._append_plan_header(root, frame_digest(spec), invocation_id="INV-0001")
+            self._append_plan_header(
+                root, "a-different-digest-appended-last", invocation_id="INV-0002"
+            )
+            report = prereg.check(spec, root, reconcile_trail=True)
+            findings = [f for f in report.findings if f.code == "DSX-PRE-020"]
+            self.assertEqual(
+                findings,
+                [],
+                "membership must hold even when the non-matching digest is "
+                "appended last — the ordering a most-recent rule would fail on",
+            )
+
+    def test_6_edit_outside_frame_blocks_does_not_change_digest(self):
+        base = {"validity_frame": {"a": 1}, "inference": {"declared_at": "pre_data"}}
+        spec_a = dict(base, title="Spec A")
+        spec_b = dict(base, title="Spec B")
+        self.assertEqual(frame_digest(spec_a), frame_digest(spec_b))
+        with tempfile.TemporaryDirectory() as root:
+            self._append_plan_header(root, frame_digest(spec_a))
+            report = prereg.check(spec_b, root, reconcile_trail=True)
+            findings = [f for f in report.findings if f.code == "DSX-PRE-020"]
+            self.assertEqual(findings, [])
+
+    def test_7_detail_and_remedy_name_recorded_count_digest_and_known_limit(self):
+        spec = {"validity_frame": {"a": 1}, "inference": {"declared_at": "pre_data"}}
+        current_digest = frame_digest(spec)
+        with tempfile.TemporaryDirectory() as root:
+            self._append_plan_header(root, "mismatch-one", invocation_id="INV-0001")
+            self._append_plan_header(root, "mismatch-two", invocation_id="INV-0002")
+            report = prereg.check(spec, root, reconcile_trail=True)
+            findings = [f for f in report.findings if f.code == "DSX-PRE-020"]
+            self.assertEqual(len(findings), 1)
+            finding = findings[0]
+            self.assertIn("2", finding.detail)
+            self.assertIn(current_digest[:12], finding.detail)
+            self.assertIn("dsx gate plan", finding.remedy)
+            self.assertIn("re-running", finding.remedy)
+
+    def test_8_decision_record_appended_fired_and_clear(self):
+        fired_spec = {
+            "validity_frame": {"a": 1}, "inference": {"declared_at": "pre_data"}
+        }
+        with tempfile.TemporaryDirectory() as root:
+            self._append_plan_header(root, "mismatch")
+            fired_report = prereg.check(fired_spec, root, reconcile_trail=True)
+            fired_decisions = [
+                d for d in (fired_report.context.get("decisions") or [])
+                if d["choice"].startswith("DSX-PRE-020")
+            ]
+            self.assertEqual(len(fired_decisions), 1)
+
+        clear_spec = {
+            "validity_frame": {"a": 1}, "inference": {"declared_at": "pre_data"}
+        }
+        with tempfile.TemporaryDirectory() as root:
+            self._append_plan_header(root, frame_digest(clear_spec))
+            clear_report = prereg.check(clear_spec, root, reconcile_trail=True)
+            clear_decisions = [
+                d for d in (clear_report.context.get("decisions") or [])
+                if d["choice"].startswith("DSX-PRE-020")
+            ]
+            self.assertEqual(len(clear_decisions), 1)

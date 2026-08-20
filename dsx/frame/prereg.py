@@ -443,10 +443,48 @@ def _check_content_lock(spec: dict, root: "str | None", report: Report) -> None:
     the run at exit 2 in the same way, keeping the M-07 grandfather path walkable and
     attributable).
 
-    Once at least one plan header is on record, this function (Task 1) returns with
-    no further check — Task 2, later in this same plan, extends it to compare the
-    current ``frame_digest`` against the recorded set, honour the ``pre_data``/
-    ``post_data`` distinction (D-10), and emit ``DSX-PRE-020``.
+    Once at least one plan header is on record, returns without emitting unless
+    ``inference.declared_at`` normalises to ``pre_data`` — ``post_data`` is legal and
+    silent (D-10): blocking an honest post-hoc declaration would make honesty more
+    expensive than dishonesty, the incentive distortion this project keeps closing.
+    Reads ``declared_at`` off the already-validated ``inference`` dict via ``.get()``
+    rather than the module's dotted-path ``get(spec, "inference.declared_at")`` helper
+    — a positional ``"inference."``-prefixed string literal is exactly what
+    ``tests/test_frame_boundary.py``'s D-11 AST scanner flags on any call, regardless
+    of which module the call is in.
+
+    Otherwise computes ``frame_digest(spec)`` and tests it for membership in the
+    recorded set. Emits ``DSX-PRE-020`` when absent, nothing when present.
+
+    Citation: Gelman, A. and Loken, E. (2014), "The Statistical Crisis in Science",
+    American Scientist volume 102 issue 6 pages 460-465, page 460, unnumbered section
+    "How to Test a Hypothesis" — the same passage cited by ``_check_rule_resolves``:
+    a preregistered selection function is only preregistered if it was fixed before
+    the data. The article carries no numbered sections, tables or theorems, so page
+    plus unnumbered heading is the most precise locator that exists. Secondary support
+    for the remedy wording only, never for the blocking behaviour itself: Nosek, B. A.,
+    Ebersole, C. R., DeHaven, A. C. and Mellor, D. T. (2018), "The preregistration
+    revolution", PNAS volume 115 issue 11 pages 2600-2606, DOI 10.1073/pnas.1708274114,
+    section "Preregistration in Practice" — deviations from a preregistered plan are
+    common and do not necessarily rule out effective prediction testing. Section
+    headings were verified, per-sentence page numbers were not, so this citation names
+    the section and never a page for an individual sentence; its own text argues
+    deviations do not necessarily invalidate, which makes it the right anchor for the
+    declared-deviation-stays-legal rule (``post_data``) and the wrong one for
+    reconciliation itself — do not present it as support for the blocking behaviour.
+
+    Structural criterion: the comparison is set membership of the current
+    ``frame_digest(spec)`` in the set of every recorded plan-gate-point digest, gated
+    on a ``pre_data`` claim; no threshold, effect size or statistic is computed
+    anywhere on this path (brief D-02). Falsifier: any specification whose current
+    frame content was registered at plan does not fire (proved by
+    TestContentLockReconciliation test 1). Membership rather than an ordering pick:
+    ``InvocationHeader`` records no spec identity at all (``dsx/decisions.py:91-104``),
+    so a shared trail root mixes headers from every spec ever gated against it, and
+    any most-recent-or-earliest ordering rule produces cross-specification false
+    positives — membership dissolves both problems without adding a spec-identity
+    field to a shipped record shape (proved by test 5, which appends the
+    non-matching digest last, the ordering a most-recent rule would fail on).
     """
     recorded = _recorded_plan_digests(root)
     if not recorded:
@@ -465,6 +503,66 @@ def _check_content_lock(spec: dict, root: "str | None", report: Report) -> None:
             "(the ADR/SPEC authority requirement); an unknown code in that block "
             "aborts the run at exit 2 in the same way."
         )
+
+    inference = spec.get("inference")
+    declared_at = inference.get("declared_at") if isinstance(inference, dict) else None
+    if normalize(declared_at) != "pre_data":
+        return
+
+    current_digest = frame_digest(spec)
+    fired = current_digest not in recorded
+    truncated = current_digest[:12]
+
+    if fired:
+        report.add(
+            "DSX-PRE-020",
+            "CRITICAL",
+            "Declared pre-data plan is not the plan recorded at gate plan",
+            detail=(
+                f"{len(recorded)} plan-gate-point header(s) were found in the "
+                f"decision trail, and none of them carries the current frame digest "
+                f"{truncated}... — the declared_at: pre_data claim is contradicted "
+                "by the recorded bytes."
+            ),
+            remedy=(
+                "The content of validity_frame: or inference: has changed since the "
+                "plan gate ran: either restore the registered plan, or re-run "
+                "`dsx gate plan` and record why the amendment happened. The digest "
+                "covers only those two blocks, so an edit elsewhere in the "
+                "specification is not what triggered this. Known limit: the lock is "
+                "only as strong as the operator's discipline in not re-running "
+                "`dsx gate plan` after seeing results — nothing in the code enforces "
+                "an ordering between the four gate points."
+            ),
+            where="inference.declared_at",
+        )
+
+    report.context.setdefault("decisions", []).append(
+        DecisionRecord(
+            id="",
+            invocation_id="",
+            layer="deterministic",
+            choice=(
+                f"DSX-PRE-020 {'fired' if fired else 'clear'}: "
+                f"{len(recorded)} recorded plan digest(s), current digest "
+                f"{truncated}..."
+            ),
+            inputs=["validity_frame", "inference.declared_at"],
+            rule=(
+                "DSX-PRE-020 fires when inference.declared_at normalizes to "
+                "pre_data and frame_digest(spec) is absent from every recorded "
+                "plan-gate-point digest in the decision trail."
+            ),
+            citation="Gelman & Loken (2014), The Statistical Crisis in Science, page 460",
+            counterfactual=(
+                "Registering this exact frame content at a `dsx gate plan` run "
+                "would have cleared DSX-PRE-020."
+                if fired
+                else "Editing validity_frame: or inference: after the plan gate ran, "
+                "without re-registering, would have fired DSX-PRE-020."
+            ),
+        ).to_dict()
+    )
 
 
 def check(spec: dict, root: "str | None" = None, *, reconcile_trail: bool = False) -> Report:
