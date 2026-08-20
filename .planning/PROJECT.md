@@ -50,7 +50,11 @@ written profile.
   discipline) complete 2026-08-13. Phase 8 (M2b, interference/triggering/stability)
   complete 2026-08-14. Phase 7 (M2a, validity frame checks `DSX-VAL-*`) complete
   2026-08-20 — re-verification passed 5/5 success criteria, UAT 38/38, 0 open threats;
-  the M2 group (7, 8, 9) is closed. Package version is 2.0.0. Phases 10–12 remain.
+  the M2 group (7, 8, 9) is closed. Phase 10 (M3, pre-registered inference plan
+  `DSX-PRE-*`) complete 2026-08-20 — 6 plans, re-verification passed 5/5, 640 tests
+  green; the declared fallback branch is now reconciled against the executed procedure
+  at verify and ship, blocking on branch identity alone. Package version is 2.0.0.
+  Phases 11–12 remain.
 
 ## Current Milestone: v2.0.0 DSX Validity Frame
 
@@ -190,4 +194,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-08-20 after Phase 7*
+*Last updated: 2026-08-20 after Phase 10*
