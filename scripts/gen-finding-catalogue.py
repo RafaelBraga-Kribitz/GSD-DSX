@@ -102,11 +102,18 @@ _D05_ALLOWLIST_PREFIXES = ("DSX-PAR-", "DSX-VAL-", "DSX-INT-", "DSX-PRE-")
 # their shared accepted-value constant from — are deliberately NOT added
 # here; this plan only extracted that constant out of _check_preprocessing
 # without rewriting its citation-free body.
+#
+# Phase 11.1 (REQ-P11.1-05) adds DSX-ML-052 and DSX-ML-053 here for the same
+# reason: both live inside `_check_baseline`, a pre-existing `DSX-ML-*`
+# function. DSX-ML-050 and DSX-ML-051 — the two legacy codes sharing that
+# same function — are deliberately NOT added here; this plan only extended
+# the branch they already lived in, it did not rewrite their citation-free
+# bodies.
 _D05_ALLOWLIST_CODES = frozenset(
     {
         "DSX-SPEC-080", "DSX-SPEC-081", "DSX-SPEC-082", "DSX-SPEC-085", "DSX-SPEC-086",
         "DSX-CODE-020", "DSX-CODE-021", "DSX-CODE-030", "DSX-CODE-031",
-        "DSX-ML-023", "DSX-ML-024", "DSX-ML-043",
+        "DSX-ML-023", "DSX-ML-024", "DSX-ML-043", "DSX-ML-052", "DSX-ML-053",
     }
 )
 

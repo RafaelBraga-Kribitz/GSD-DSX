@@ -758,14 +758,21 @@ def _check_baseline(model: dict, spec: dict, report: Report) -> None:
     score_source = normalize(score_source_raw) if not is_blank(score_source_raw) else ""
     fired_052 = score_source not in SCORE_SOURCES or score_source in ("best_fold", "unknown")
     if fired_052:
+        # The title is one unconditional f-string, not a ternary, on purpose:
+        # `scripts/gen-finding-catalogue.py::extract()` reads the catalogue
+        # title straight off the AST and only understands a literal string or
+        # a plain f-string (`ast.Constant`/`ast.JoinedStr`) in this argument
+        # position — a Python conditional expression here is invisible to it,
+        # which would silently drop DSX-ML-052 from the generated catalogue
+        # entirely. `score_source_display` folds the blank case into one
+        # readable word instead, so the title still names the declared value
+        # when there is one.
+        score_source_display = score_source_raw if score_source_raw else "not stated"
         report.add(
             "DSX-ML-052",
             "HIGH",
-            (
-                f"Reported score's provenance is disqualifying ('{score_source_raw}')"
-                if score_source_raw
-                else "Reported score's provenance is not stated"
-            ),
+            f"Reported score's provenance is missing or disqualifying "
+            f"(declared: {score_source_display!r})",
             detail=(
                 "A cross-validation mean, a held-out score and a best-fold score are three "
                 "different claims about the same model. The best fold is a selection artefact "
