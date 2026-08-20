@@ -15,7 +15,7 @@
 - [x] **Phase 7: Validity frame checks (`DSX-VAL-*`)** - estimand, unit triad, dependence, identification strength, sampling frame, missingness, measurement (M2a) — completed 2026-08-20
 - [x] **Phase 8: Interference, triggering, stability (`DSX-INT-*`)** - SUTVA risk, shared-budget/marketplace patterns, triggered-vs-eligible dilution, novelty/primacy (M2b) — completed 2026-08-14
 - [x] **Phase 9: Monitoring discipline, symmetric (`DSX-PAR-*`)** - the atomic `DSX-PAR-010`/`-011` pair plus `DSX-PAR-002` (M2c) — completed 2026-08-13
-- [ ] **Phase 10: Pre-registered inference plan (`DSX-PRE-*`)** - fallback-rule DSL, `declared_at` provenance, declared-vs-executed branch reconciliation (M3)
+- [x] **Phase 10: Pre-registered inference plan (`DSX-PRE-*`)** - fallback-rule DSL, `declared_at` provenance, declared-vs-executed branch reconciliation (M3) — completed 2026-08-20
 - [ ] **Phase 11: Frequentist admissibility adjudicator (`DSX-ADM-*`)** - `references/families.yaml`, ranked admissible set, `no_admissible_procedure` escalation (M4)
 - [ ] **Phase 12: Calibration** - full known-bad corpus, measured catch rate and FPR, `dsx stats --paradigm`, backlog re-evaluation (M5)
 
