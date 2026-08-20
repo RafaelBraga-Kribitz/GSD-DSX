@@ -580,7 +580,7 @@ run a verification spike before writing any requirement on it.
      `families.yaml` entry declares a Bayesian inference method — the axis space is capped to
      v1's frequentist scope, with Bayesian admissibility left in the gated backlog.
 
-**Plans**: 3/8 plans executed
+**Plans**: 4/8 plans executed
 
 Plans:
 
@@ -591,7 +591,7 @@ Plans:
       populated across all nine committed specs
 
 - [x] 11-03-PLAN.md — the reverse-direction import scanner and the frequentist-scoping predicate
-- [ ] 11-04-PLAN.md — `references/families.yaml`: 14 cited families, 19 cited assumption tokens,
+- [x] 11-04-PLAN.md — `references/families.yaml`: 14 cited families, 19 cited assumption tokens,
       4 cited ranking rules, and the schema test that pins both loader paths
 
 - [ ] 11-05-PLAN.md — `dsx/frame/admissibility.py`: ontology loading that refuses rather than
@@ -798,7 +798,7 @@ cases where absence permitted a false pass" is a debate, not a count.
 | 8. Interference, triggering, stability (`DSX-INT-*`) | 10/10 | Complete | 2026-08-14 |
 | 9. Monitoring discipline, symmetric (`DSX-PAR-*`) | 7/7 | Complete | 2026-08-13 |
 | 10. Pre-registered inference plan (`DSX-PRE-*`) | 6/6 | In Progress|  |
-| 11. Frequentist admissibility adjudicator (`DSX-ADM-*`) | 3/8 | In Progress|  |
+| 11. Frequentist admissibility adjudicator (`DSX-ADM-*`) | 4/8 | In Progress|  |
 | 12. Calibration | 0/TBD | Not started | - |
 
 ## Dependency graph — v2.0.0
