@@ -166,6 +166,34 @@ _TARGET_DEFECT_CODES: "dict[str, dict[str, str | frozenset[str]]]" = {
     "interference-shared-budget": {"plan": "DSX-INT-010"},
     "triggering-dilution": {"plan": "DSX-INT-030"},
     "post-hoc-procedure-switch": {"verify": "DSX-PRE-030"},
+    # Plan 11.1-08 (REQ-P11.1-07/08): full-frame-cleaning's three CRITICAL
+    # entrypoint-scan codes, all shipped in this same plan's task 1 groundwork
+    # (DSX-CODE-020/DSX-CODE-021 in plan 11.1-01; DSX-CODE-030 in plan 11.1-03),
+    # scoped to "execute" — the `code` check family is registered at the
+    # `execute` gate point but not at `plan` (dsx/cli.py::GATE_PROFILES), so
+    # there is nothing for this fixture to catch at plan. Measured 2026-08-20
+    # against the fixture as committed by this plan's task 2: `dsx gate execute`
+    # with the entrypoint seeded into the temporary phase directory exits 1 with
+    # exactly these three codes among its CRITICAL findings (see the paired
+    # POSTMORTEM.md's measured table).
+    #
+    # The fixture's fourth own code, DSX-ML-090 (HIGH, shipped in plan 11.1-06),
+    # also fires at execute (the `ml` check family is registered there too) but
+    # cannot be recorded in this "execute" entry: `_classify_target_defect` only
+    # ever checks CRITICAL-severity findings, and a HIGH code placed alongside
+    # the three CRITICAL ones above would be reported "missing" from that
+    # CRITICAL-only comparison every time. It is recorded under a second,
+    # distinguishing key ("ship", where it also fires) purely so
+    # `_own_target_codes` — which flattens every key's value for a slug
+    # regardless of the key's name — recognises it as this fixture's own code
+    # for the ship-completeness test below. This mirrors
+    # weak-identification-mmm's own second key above: the key name is a
+    # dict-collision-avoidance device, not a claim the code fires only at that
+    # one point.
+    "full-frame-cleaning": {
+        "execute": frozenset({"DSX-CODE-020", "DSX-CODE-021", "DSX-CODE-030"}),
+        "ship": "DSX-ML-090",
+    },
 }
 
 
@@ -318,6 +346,15 @@ _EXPECTED_CAUGHT_DEFECTS: "dict[str, frozenset[str]]" = {
     # and ["ship"] only. The fixture's real catch (DSX-PRE-030 at "verify") lives
     # in _TARGET_DEFECT_CODES above instead, the point-scoped shape.
     "post-hoc-procedure-switch": frozenset(),
+    # Plan 11.1-08: also empty by design, for the same reason as
+    # post-hoc-procedure-switch immediately above but the other way round —
+    # this fixture's own codes fire at "execute" (both the `code` and `ml`
+    # families are registered there) but not at "plan" (neither family is
+    # registered there at all), so there is nothing this both-points map could
+    # correctly claim. The fixture's real catch (three CRITICAL codes at
+    # "execute", plus DSX-ML-090 recorded under the "ship" key) lives entirely
+    # in _TARGET_DEFECT_CODES above, the point-scoped shape.
+    "full-frame-cleaning": frozenset(),
 }
 
 
@@ -325,7 +362,13 @@ def _effective_target_map() -> "dict[str, dict[str, frozenset[str]]]":
     """Combine the corpus's two per-fixture expectation maps into the single
     (slug -> point -> expected CRITICAL codes) form `_classify_target_defect` decides.
 
-    `_TARGET_DEFECT_CODES` contributes one code at the exact gate point it names.
+    `_TARGET_DEFECT_CODES` contributes one code, or (plan 11.1-08) several codes as a
+    frozenset, at the exact gate point it names — flattened into individual code
+    strings here rather than added as one container, the same flattening
+    `_own_target_codes` performs for the identical reason: adding an un-flattened
+    frozenset would put a whole frozenset in as one hashable-but-wrong element of the
+    point's set, so `_classify_target_defect` would compare a real gate's individual
+    finding codes against a set containing one frozenset and never match.
     `_EXPECTED_CAUGHT_DEFECTS` contributes its whole set at every point in
     `_CRITICAL_THRESHOLD_POINTS`, because a check family registered at every gate
     point is expected to catch at every CRITICAL-threshold one. Contributions union
@@ -335,7 +378,11 @@ def _effective_target_map() -> "dict[str, dict[str, frozenset[str]]]":
     merged: "dict[str, dict[str, set[str]]]" = {}
     for slug, points in _TARGET_DEFECT_CODES.items():
         for point, code in points.items():
-            merged.setdefault(slug, {}).setdefault(point, set()).add(code)
+            bucket = merged.setdefault(slug, {}).setdefault(point, set())
+            if isinstance(code, str):
+                bucket.add(code)
+            else:
+                bucket.update(code)
     for slug, codes in _EXPECTED_CAUGHT_DEFECTS.items():
         if not codes:
             continue
@@ -668,6 +715,41 @@ class TestKnownBadCorpus(unittest.TestCase):
                     pre_codes, set(),
                     f"prereg is not registered at {point!r} but fired {sorted(pre_codes)!r}",
                 )
+
+    def test_full_frame_cleaning_fixture_blocks_execute_naming_its_three_codes(self):
+        """The execute-point positive direction for full-frame-cleaning (plan
+        11.1-08, REQ-P11.1-07/08), copying the shape of the two dedicated
+        point-scoped tests above. Not redundant with
+        `test_every_spec_blocks_only_on_its_target_defect_at_critical_threshold_points`:
+        that generic test already covers `execute` for this fixture (it is one of
+        `_CRITICAL_THRESHOLD_POINTS`), but it does not separately prove that the
+        entrypoint check produces no finding at `plan` — it only proves `plan`
+        exits 0, which a `code`-family finding below the CRITICAL threshold could
+        not distinguish from `code` never having run at all. This method proves
+        both: (1) `dsx gate execute` exits 1 with every one of this fixture's
+        recorded `_TARGET_DEFECT_CODES["full-frame-cleaning"]["execute"]` codes
+        among its CRITICAL findings; (2) `dsx gate plan` produces no `DSX-CODE-`
+        finding of any number, because the `code` check family is not registered
+        at `plan` (`dsx/cli.py::GATE_PROFILES`).
+        """
+        fixture = CORPUS_DIR / "full-frame-cleaning-ANALYSIS-SPEC.yaml"
+        recorded = _TARGET_DEFECT_CODES["full-frame-cleaning"]["execute"]
+
+        code, findings = self._gate_findings(fixture, "execute")
+        self.assertEqual(code, 1)
+        critical = {f["code"] for f in findings if f["severity"] == "CRITICAL"}
+        for expected_code in recorded:
+            with self.subTest(code=expected_code):
+                self.assertIn(expected_code, critical)
+
+        _plan_code, plan_findings = self._gate_findings(fixture, "plan")
+        code_family_codes = {
+            f["code"] for f in plan_findings if f["code"].startswith("DSX-CODE-")
+        }
+        self.assertEqual(
+            code_family_codes, set(),
+            f"the code check is not registered at 'plan' but fired {sorted(code_family_codes)!r}",
+        )
 
     def test_ship_gate_findings_are_all_documented_incidental_corpus_gaps(self):
         """Every CRITICAL/HIGH finding `dsx gate ship` produces against a fixture
