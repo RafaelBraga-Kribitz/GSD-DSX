@@ -2,24 +2,24 @@
 gsd_state_version: 1.0
 milestone: v2.0.0
 milestone_name: DSX Validity Frame
-current_phase: 10
-current_phase_name: pre-registered-inference-plan-dsx-pre
-status: executing
-stopped_at: Phase 07 complete and verified 2026-08-20; Phase 10 is the next unexecuted phase (6 plans on disk)
-last_updated: "2026-08-20T00:29:06.601Z"
+current_phase: 11
+current_phase_name: "`DSX-ADM-*`"
+status: planning
+stopped_at: Phase 07 complete and verified 2026-08-20
+last_updated: "2026-08-20T11:07:45.599Z"
 last_activity: 2026-08-20
-last_activity_desc: Phase 10 execution started
+last_activity_desc: Phase 10 complete, transitioned to Phase 11
 progress:
   total_phases: 5
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 44
-  completed_plans: 38
-  percent: 80
+  completed_plans: 44
+  percent: 100
 ---
 
 # Project state
 
-**Status:** Executing Phase 10
+**Status:** Ready to plan
 **Progress:** [███████████████████░] 34/35 plans (97%)  
 **Locked decisions:** DQ = profile runner + hermetic gates; Glyph = hermetic svg_sha256 only (no MCP dep); forbidden claims = universal pack + optional phase YAML; repro_lock = ARS-style honest-null (not byte-replay); decision replay = structured thresholds only; suppressions = ADR/SPEC authority required (unknown codes → exit 2)  
 **v2.0.0 locked decisions:** DSX-PAR-010 is a distinct code, DSX-EXP-060 untouched (M-01); no `inference.stopping_rule` — PAR-010/011 read the existing `design.peeking_policy` (M-02); PEEKING_POLICIES gains an uncontrolled-continuous-monitoring value (M-03); automated import test enforces the D-03a boundary from M1 (M-04); SELF-001 stays a convention, REVERSALS.md template seeded in M1 (M-05); `validity_frame` sub-block requiredness gated by `question_type` (M-06); existing `suppressions[]` is the pre-v2.0.0 grandfather path (M-07); D-05 citation enforcement automated via `gen-finding-catalogue.py` (M-08); `dependence.method_family_required` reuses `VARIANCE_ADJUSTMENTS` (M-09)
@@ -79,10 +79,10 @@ progress:
 
 ## Current Position
 
-Phase: 10 (pre-registered-inference-plan-dsx-pre) — EXECUTING
-Plan: 1 of 6
+Phase: 11 — Frequentist admissibility adjudicator (`DSX-ADM-*`)
+Plan: Not started
 Status: Executing Phase 10
-Last activity: 2026-08-20 — Phase 10 execution started
+Last activity: 2026-08-20 — Phase 10 complete, transitioned to Phase 11
 
 ## Project Reference
 
