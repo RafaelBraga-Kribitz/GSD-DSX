@@ -63,7 +63,6 @@ _PARADIGM_CONDITIONAL: "dict[str, tuple[str, ...]]" = {
 # every 'applied' prefix resolves to a known code and every prefix here
 # resolves to none.
 _NOT_SHIPPED: "dict[str, str]" = {
-    "DSX-PRE-": "Phase 10 ships DSX-PRE-* (pre-registered inference plan).",
     "DSX-ADM-": "Phase 11 ships DSX-ADM-* (frequentist procedure admissibility).",
 }
 

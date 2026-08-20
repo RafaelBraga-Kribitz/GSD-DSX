@@ -13,7 +13,7 @@ a suppression or a reference in a review stays valid across versions.
 **Gate thresholds.** `plan` and `execute` block at CRITICAL; `verify` and
 `ship` block at HIGH.
 
-**Total: 228 codes.**
+**Total: 229 codes.**
 
 ## Contract structure — `DSX-SPEC-*`
 
@@ -382,3 +382,11 @@ Interference and SUTVA risk, triggered-versus-eligible dilution, and novelty or 
 | `DSX-INT-011` | CRITICAL | mitigation <…> is not admissible for interference risk <…> |
 | `DSX-INT-030` | CRITICAL | additive metric analysed on the eligible population with no dilution adjustment declared |
 | `DSX-INT-040` | HIGH | novelty/primacy assessment <…> for the declared stability window |
+
+## Pre-registered inference plan — `DSX-PRE-*`
+
+The declared fallback rule resolved against the declared observed facts, the plan-time content lock, and reconciliation of the declared branch against the executed procedure.
+
+| Code | Severity | Finding |
+|---|---|---|
+| `DSX-PRE-010` | CRITICAL | Declared fallback rule does not resolve to a branch |

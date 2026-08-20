@@ -20,7 +20,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from dsx.findings import CheckError  # noqa: E402
+from dsx.findings import CheckError, Report, Severity  # noqa: E402
 from dsx.frame import prereg  # noqa: E402
 from dsx.loader import load  # noqa: E402
 from dsx.spec import PREREG_FACTS, as_number, describe_vocabulary, get  # noqa: E402
@@ -279,3 +279,92 @@ class TestBranchResolution(unittest.TestCase):
         }
         resolution = prereg._resolve_branch(spec)
         self.assertEqual(resolution.branch, "Wild Cluster Bootstrap")
+
+
+class TestRuleResolutionFindings(unittest.TestCase):
+    # D-05: DSX-PRE-010
+    def test_rule_naming_a_fact_outside_the_registry_fires_naming_it_and_the_accepted_names(self):
+        spec = {
+            "inference": {
+                "primary_procedure": "two_proportion_z",
+                "fallback_rule": "clusters < 30 -> wild cluster bootstrap",
+            },
+        }
+        report = prereg.check(spec)
+        findings = [f for f in report.findings if f.code == "DSX-PRE-010"]
+        self.assertEqual(len(findings), 1)
+        self.assertEqual(findings[0].severity, Severity.CRITICAL)
+        self.assertIn("clusters", findings[0].detail)
+        for name in ("alpha", "comparisons_looked_at", "interim_looks"):
+            with self.subTest(name=name):
+                self.assertIn(name, findings[0].detail)
+
+    def test_rule_naming_an_undeclared_registry_fact_fires_naming_the_dotted_path(self):
+        spec = {
+            "inference": {
+                "primary_procedure": "two_proportion_z",
+                "fallback_rule": "alpha < 0.01 -> alpha_spending_obf",
+            },
+        }
+        report = prereg.check(spec)
+        findings = [f for f in report.findings if f.code == "DSX-PRE-010"]
+        self.assertEqual(len(findings), 1)
+        self.assertIn("design.alpha", findings[0].detail)
+
+    def test_good_fixture_produces_zero_dsx_pre_010_findings(self):
+        spec = load(str(ROOT / "examples" / "good-ANALYSIS-SPEC.yaml"))
+        report = prereg.check(spec)
+        findings = [f for f in report.findings if f.code == "DSX-PRE-010"]
+        self.assertEqual(findings, [])
+
+    def test_cleanly_resolving_rule_produces_zero_dsx_pre_010_findings(self):
+        spec = {
+            "inference": {
+                "primary_procedure": "two_proportion_z",
+                "fallback_rule": "interim_looks >= 1 -> alpha_spending_obf",
+            },
+            "results": {"interim_looks": 1},
+        }
+        report = prereg.check(spec)
+        findings = [f for f in report.findings if f.code == "DSX-PRE-010"]
+        self.assertEqual(findings, [])
+
+    def test_unparseable_arrow_bearing_rule_raises_check_error_not_a_finding(self):
+        spec = {
+            "inference": {
+                "primary_procedure": "two_proportion_z",
+                "fallback_rule": "if clusters is small -> bootstrap",
+            },
+        }
+        with self.assertRaises(CheckError):
+            prereg.check(spec)
+
+    def test_check_appends_one_decision_record_for_dsx_pre_010_fired_and_clear(self):
+        fired_spec = {
+            "inference": {
+                "primary_procedure": "two_proportion_z",
+                "fallback_rule": "clusters < 30 -> wild cluster bootstrap",
+            },
+        }
+        fired_report = prereg.check(fired_spec)
+        fired_decisions = fired_report.context.get("decisions") or []
+        self.assertEqual(len(fired_decisions), 1)
+        self.assertEqual(fired_decisions[0]["layer"], "deterministic")
+        self.assertTrue(fired_decisions[0]["counterfactual"].strip())
+
+        clear_spec = {
+            "inference": {
+                "primary_procedure": "two_proportion_z",
+                "fallback_rule": "interim_looks >= 1 -> alpha_spending_obf",
+            },
+            "results": {"interim_looks": 1},
+        }
+        clear_report = prereg.check(clear_spec)
+        clear_decisions = clear_report.context.get("decisions") or []
+        self.assertEqual(len(clear_decisions), 1)
+        self.assertTrue(clear_decisions[0]["counterfactual"].strip())
+
+    def test_check_returns_empty_report_for_non_dict_spec(self):
+        report = prereg.check("not a dict")
+        self.assertIsInstance(report, Report)
+        self.assertEqual(report.findings, [])
