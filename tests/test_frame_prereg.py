@@ -30,6 +30,7 @@ from dsx.findings import CheckError, Report, Severity  # noqa: E402
 from dsx.frame import prereg  # noqa: E402
 from dsx.loader import load  # noqa: E402
 from dsx.spec import PREREG_FACTS, as_number, describe_vocabulary, get  # noqa: E402
+from dsx.suppressions import known_codes  # noqa: E402
 
 
 class TestFactRegistry(unittest.TestCase):
@@ -862,3 +863,102 @@ class TestContentLockReconciliation(unittest.TestCase):
                 if d["choice"].startswith("DSX-PRE-020")
             ]
             self.assertEqual(len(clear_decisions), 1)
+
+
+class TestGateRegistration(unittest.TestCase):
+    """ROADMAP Success Criterion 5's pair for `prereg` (plan 04, Task 2):
+    `prereg` is registered at verify and ship only, and every `DSX-PRE-` code
+    is reachable from a gate profile — mirroring
+    `tests/test_frame_interference.py`'s `TestGateRegistration` with the
+    present/absent point sets inverted."""
+
+    def test_prereg_registered_in_verify_ship_absent_from_plan_and_execute(self):
+        from dsx.cli import CHECKS, GATE_PROFILES
+
+        self.assertIs(CHECKS["prereg"], prereg.check)
+        for point in ("verify", "ship"):
+            with self.subTest(point=point):
+                self.assertIn("prereg", GATE_PROFILES[point])
+        for point in ("plan", "execute"):
+            with self.subTest(point=point):
+                self.assertNotIn("prereg", GATE_PROFILES[point])
+
+    def test_every_dsx_pre_code_reachable_from_a_gate_profile(self):
+        from dsx.cli import GATE_PROFILES
+
+        pre_codes = [c for c in known_codes() if c.startswith("DSX-PRE-")]
+        self.assertTrue(
+            pre_codes,
+            "expected at least DSX-PRE-010, DSX-PRE-020 and DSX-PRE-030 to be known",
+        )
+        reachable_checks: "set[str]" = set().union(*GATE_PROFILES.values())
+        self.assertIn("prereg", reachable_checks)
+
+    def test_known_dsx_pre_codes_are_exactly_010_020_030(self):
+        pre_codes = {c for c in known_codes() if c.startswith("DSX-PRE-")}
+        self.assertEqual(
+            pre_codes,
+            {"DSX-PRE-010", "DSX-PRE-020", "DSX-PRE-030"},
+            "brief D-06 makes finding-code numbering irreversible; DSX-PRE-011 was "
+            "deliberately left unspent for a case where the remedy for an unknown "
+            "fact genuinely diverges from the remedy for an unresolvable rule "
+            "(10-CONTEXT D-12) — getting the count of known DSX-PRE- codes wrong "
+            "here is worse than getting the digits wrong, because a silent drift "
+            "in the count would mean a future code shipped without a reader ever "
+            "confronting the numbering decision this test exists to pin.",
+        )
+
+    def test_every_dsx_pre_finding_this_module_can_emit_is_critical(self):
+        # A HIGH DSX-PRE code would still exit 1 at verify and ship, and would
+        # still fail the known-bad corpus classifier (tests/test_known_bad_corpus.py
+        # line 176's severity == "CRITICAL" filter) — severity is not redundant
+        # with registration here, it is what makes the corpus classification
+        # meaningful once the code fires.
+        scenarios = {
+            "DSX-PRE-010": {
+                "inference": {
+                    "primary_procedure": "two_proportion_z",
+                    "fallback_rule": "clusters < 30 -> wild cluster bootstrap",
+                },
+            },
+            "DSX-PRE-030": {
+                "inference": {
+                    "primary_procedure": "two_proportion_z",
+                    "fallback_rule": "interim_looks >= 1 -> wild_cluster_bootstrap",
+                },
+                "results": {"interim_looks": 1},
+                "analysis": {"test": "two_proportion_z"},
+            },
+        }
+        for code, spec in scenarios.items():
+            with self.subTest(code=code):
+                report = prereg.check(spec)
+                findings = [f for f in report.findings if f.code == code]
+                self.assertEqual(len(findings), 1, f"{code} did not fire as expected")
+                self.assertEqual(
+                    findings[0].severity, Severity.CRITICAL,
+                    f"{code} must be CRITICAL — a HIGH finding would still exit 1 at "
+                    "verify/ship and still fail the known-bad corpus classifier, so "
+                    "severity is not redundant with registration",
+                )
+
+        pre_020_spec = {"validity_frame": {"a": 1}, "inference": {"declared_at": "pre_data"}}
+        with tempfile.TemporaryDirectory() as root:
+            append_decision(
+                decisions_path(root),
+                InvocationHeader(
+                    invocation_id="INV-0001",
+                    gate_point="plan",
+                    dsx_version=__version__,
+                    frame_digest="not-the-real-digest",
+                ),
+            )
+            report = prereg.check(pre_020_spec, root, reconcile_trail=True)
+            findings = [f for f in report.findings if f.code == "DSX-PRE-020"]
+            self.assertEqual(len(findings), 1, "DSX-PRE-020 did not fire as expected")
+            self.assertEqual(
+                findings[0].severity, Severity.CRITICAL,
+                "DSX-PRE-020 must be CRITICAL — a HIGH finding would still exit 1 at "
+                "verify/ship and still fail the known-bad corpus classifier, so "
+                "severity is not redundant with registration",
+            )
