@@ -132,3 +132,15 @@ None - no external service configuration required.
 ---
 *Phase: 11-frequentist-admissibility-adjudicator-dsx-adm*
 *Completed: 2026-08-20*
+
+## Self-Check: PASSED
+
+- FOUND: `.planning/phases/11-frequentist-admissibility-adjudicator-dsx-adm/11-01-SUMMARY.md`
+- FOUND: `.planning/REQUIREMENTS.md`
+- FOUND: `.planning/ROADMAP.md`
+- FOUND: `references/test-selection.md`
+- FOUND: `brief.md`
+- FOUND commit `c4846a3` (Task 1)
+- FOUND commit `50b8cf9` (Task 2)
+- FOUND commit `a458de0` (Task 3)
+- FOUND commit `e0bf021` (SUMMARY.md + deferred-items.md)
