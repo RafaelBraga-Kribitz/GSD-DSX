@@ -2,24 +2,24 @@
 gsd_state_version: 1.0
 milestone: v2.0.0
 milestone_name: DSX Validity Frame
-current_phase: 07
-current_phase_name: validity-frame-checks-dsx-val
-status: executing
-stopped_at: Phase 07 gap closure 07-08 executed and merged; phase verification not yet re-run
-last_updated: "2026-08-14T11:58:00.000Z"
-last_activity: 2026-08-14
-last_activity_desc: Phase 07 plan 07-08 complete — gap G-07-4 closed
+current_phase: 08
+current_phase_name: "`DSX-INT-*`"
+status: planning
+stopped_at: Phase 10 context gathered (assumptions mode)
+last_updated: "2026-08-20T00:12:47.137Z"
+last_activity: 2026-08-20
+last_activity_desc: Phase 07 complete, transitioned to Phase 08
 progress:
   total_phases: 5
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 44
-  completed_plans: 37
-  percent: 60
+  completed_plans: 38
+  percent: 80
 ---
 
 # Project state
 
-**Status:** Phase 07 — all 8 plans executed; verification pending re-run
+**Status:** Ready to plan
 **Progress:** [███████████████████░] 34/35 plans (97%)  
 **Locked decisions:** DQ = profile runner + hermetic gates; Glyph = hermetic svg_sha256 only (no MCP dep); forbidden claims = universal pack + optional phase YAML; repro_lock = ARS-style honest-null (not byte-replay); decision replay = structured thresholds only; suppressions = ADR/SPEC authority required (unknown codes → exit 2)  
 **v2.0.0 locked decisions:** DSX-PAR-010 is a distinct code, DSX-EXP-060 untouched (M-01); no `inference.stopping_rule` — PAR-010/011 read the existing `design.peeking_policy` (M-02); PEEKING_POLICIES gains an uncontrolled-continuous-monitoring value (M-03); automated import test enforces the D-03a boundary from M1 (M-04); SELF-001 stays a convention, REVERSALS.md template seeded in M1 (M-05); `validity_frame` sub-block requiredness gated by `question_type` (M-06); existing `suppressions[]` is the pre-v2.0.0 grandfather path (M-07); D-05 citation enforcement automated via `gen-finding-catalogue.py` (M-08); `dependence.method_family_required` reuses `VARIANCE_ADJUSTMENTS` (M-09)
@@ -77,10 +77,10 @@ progress:
 
 ## Current Position
 
-Phase: 07 (validity-frame-checks-dsx-val) — ALL PLANS EXECUTED, VERIFICATION PENDING
-Plan: 8 of 8
-Status: Gap G-07-4 closed by 07-08; post-merge suite green (543 tests / 929 subtests), catalogue --check exit 0
-Last activity: 2026-08-14 — Phase 07 plan 07-08 complete, gap G-07-4 closed
+Phase: 08 — Interference, triggering, stability (`DSX-INT-*`)
+Plan: Not started
+Status: Executing Phase 07
+Last activity: 2026-08-20 — Phase 07 complete, transitioned to Phase 08
 
 ## Project Reference
 
