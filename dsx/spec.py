@@ -284,6 +284,23 @@ DECLARATION_POINTS = {
     ),
 }
 
+# The closed namespace the fallback_rule mini-language (dsx/frame/prereg.py, Phase 10,
+# REQ-P10-01) may reference. (a) This is deliberately closed: a rule naming a fact
+# outside this dict is a decidable error (DSX-PRE-010), never a silent no-op (D-04).
+# (b) It coins no new contract field — every value is a dotted path to a field that
+# already exists and is already read by a shipped check: design.alpha at
+# dsx/checks/design.py:452, results.interim_looks at :446, results.comparisons_looked_at
+# at :407. (c) results.observed_n is deliberately excluded — it is a list of per-arm
+# counts, not a scalar, and no Phase 10 requirement needs list-to-scalar semantics.
+# (d) brief.md's own worked example names a fact, `clusters`, that has never existed in
+# any spec in this repository — the brief binds structurally (fact -> number -> compare),
+# not at the token level.
+PREREG_FACTS: "dict[str, str]" = {
+    "alpha": "design.alpha",
+    "comparisons_looked_at": "results.comparisons_looked_at",
+    "interim_looks": "results.interim_looks",
+}
+
 PARADIGMS = {
     "frequentist": "Inference based on the sampling distribution of a statistic under repeated sampling.",
     "bayesian": "Inference based on a posterior distribution combining a prior with the observed data.",
@@ -1084,7 +1101,12 @@ def describe_vocabulary() -> "dict[str, Any]":
     every `inference:` field name this contract recognises, not a vocabulary of values. It
     exists because there is no unknown-key check under `inference:` — `dsx vocab` and the
     template scaffold are the only two mechanisms by which an operator can discover or
-    correct a misspelled field name.
+    correct a misspelled field name. `prereg_facts` is a third special case (Phase 10,
+    REQ-P10-01): the closed namespace of short fact names the `fallback_rule`
+    mini-language may reference, mapped to the dotted spec path each one reads — a
+    namespace of field *names*, not a vocabulary of values, and one of the two ways an
+    operator can discover a fact name the mini-language will accept (the other is
+    reading `PREREG_FACTS` itself, imported by `dsx/frame/prereg.py`).
     """
     out: "dict[str, Any]" = {}
     for name, obj in _VOCABULARIES:
@@ -1093,4 +1115,5 @@ def describe_vocabulary() -> "dict[str, Any]":
         key: sorted(values) for key, values in sorted(CHART_CAPABILITIES.items())
     }
     out["inference_fields"] = sorted(_INFERENCE_FIELDS)
+    out["prereg_facts"] = {k: PREREG_FACTS[k] for k in sorted(PREREG_FACTS)}
     return out
