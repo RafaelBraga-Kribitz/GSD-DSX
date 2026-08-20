@@ -1178,6 +1178,7 @@ class TestPhase11_1ML(unittest.TestCase):
     # ── DSX-ML-043: undeclared positive rate under an imbalance-unsafe metric
 
     def test_no_positive_rate_imbalance_unsafe_metric_produces_043_at_high(self):
+        # D-05: DSX-ML-043
         spec = {
             **self.BASE,
             "model": self._model(primary_metric="roc_auc", positive_rate=None),
