@@ -226,6 +226,8 @@ results:
   test_score: null
   model_score: null
   baseline_score: null
+  model_score_source: null       # cv_mean | holdout | nested_cv (best_fold and unknown are declared but disqualifying)
+  fold_scores: []                 # per-fold scores; the spread is derived from these at check time, never declared directly
   test_set_evaluations: null
   train_test_overlap_rows: null
   period_comparisons: []

@@ -13,7 +13,7 @@ a suppression or a reference in a review stays valid across versions.
 **Gate thresholds.** `plan` and `execute` block at CRITICAL; `verify` and
 `ship` block at HIGH.
 
-**Total: 238 codes.**
+**Total: 240 codes.**
 
 ## Contract structure — `DSX-SPEC-*`
 
@@ -147,6 +147,8 @@ Leakage, splits, metric choice, baselines, evaluation hygiene.
 | `DSX-ML-043` | HIGH | '<…>' is imbalance-unsafe and the class balance it depends on is undeclared |
 | `DSX-ML-050` | HIGH | model.baseline is not declared |
 | `DSX-ML-051` | CRITICAL | Model does not beat its baseline (<…> vs <…>) |
+| `DSX-ML-052` | HIGH | Reported score's provenance is missing or disqualifying (declared: <…>) |
+| `DSX-ML-053` | MEDIUM | Margin over baseline (<…>) is inside the model's own fold-to-fold variation (<…>) |
 | `DSX-ML-060` | HIGH | Train/test gap of <…> indicates overfitting |
 | `DSX-ML-061` | HIGH | Test score exceeds train score by <…> |
 | `DSX-ML-070` | HIGH | Test set evaluated <…> times during development |
