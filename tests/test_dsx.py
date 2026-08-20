@@ -3415,5 +3415,132 @@ class TestPhase9ParadigmJustification(unittest.TestCase):
                 self.assertNotIn("DSX-PAR-002", found)
 
 
+class TestParadigmOutOfVocabularyFallback(unittest.TestCase):
+    """An ``inference.paradigm`` that is non-blank but outside ``PARADIGMS``.
+
+    ``inference.paradigm`` has no enum enforcement that blocks ``dsx gate
+    plan`` — membership is ``DSX-SPEC-085``'s job at HIGH, which is below
+    plan's CRITICAL threshold — so a typo like ``bayesain`` reaches every
+    check in this module as a live third state, alongside "a valid member"
+    and "blank or absent".
+
+    ``_check_monitoring_discipline`` has always handled that third state by
+    treating it exactly like an undeclared paradigm. These tests pin the
+    other two readers of the field to the same reading, so the manifest can
+    never assert that a family was "not selected" in the very report where
+    that family fired.
+    """
+
+    # Every entry must still be outside PARADIGMS *after* normalize() — a
+    # case or whitespace variant of a real member is a valid declaration,
+    # not an out-of-vocabulary one, and is pinned separately below.
+    OUT_OF_VOCAB = ("bayesain", "bayes", "not-a-paradigm", "freq")
+
+    def test_manifest_never_calls_a_family_not_applied_when_it_fired(self):
+        # T-6-14's honesty invariant, extended to the out-of-vocabulary case:
+        # every prefix DSX-PAR-001 reports as 'not applied' must match no code
+        # that actually fired in the same report. A manifest that contradicts
+        # its own run is the one defect this code exists to make impossible.
+        from dsx.frame import paradigm
+        from dsx.spec import PARADIGMS
+
+        declarations = list(PARADIGMS) + list(self.OUT_OF_VOCAB) + ["", None]
+        for declared in declarations:
+            for policy in ("uncontrolled_continuous", "fixed_horizon"):
+                spec = {
+                    "inference": {"paradigm": declared},
+                    "design": {"peeking_policy": policy},
+                }
+                with self.subTest(paradigm=declared, policy=policy):
+                    report = paradigm.check(spec)
+                    fired = {f.code for f in report.findings}
+                    manifest = [f for f in report.findings if f.code == "DSX-PAR-001"][0]
+                    for prefix in manifest.data.get("not_applied") or {}:
+                        contradicted = sorted(c for c in fired if c.startswith(prefix))
+                        self.assertEqual(
+                            contradicted,
+                            [],
+                            f"DSX-PAR-001 reports {prefix} as not applied, but "
+                            f"{contradicted} fired in the same report",
+                        )
+
+    def test_out_of_vocabulary_paradigm_selects_every_conditional_family(self):
+        # Same fallback as an undeclared paradigm: narrowing the applied set
+        # is what declaring a *recognised* paradigm buys (D-10). An
+        # unrecognised string must never buy that narrowing.
+        from dsx.frame import paradigm
+
+        undeclared = paradigm.check({"inference": {}})
+        baseline = set(
+            [f for f in undeclared.findings if f.code == "DSX-PAR-001"][0].data["applied"]
+        )
+        for declared in self.OUT_OF_VOCAB:
+            with self.subTest(paradigm=declared):
+                report = paradigm.check({"inference": {"paradigm": declared}})
+                manifest = [f for f in report.findings if f.code == "DSX-PAR-001"][0]
+                self.assertEqual(set(manifest.data["applied"]), baseline)
+
+    def test_out_of_vocabulary_paradigm_under_uncontrolled_design_fires_par_002(self):
+        # DSX-PAR-002's requiredness half asks whether a usable paradigm was
+        # declared under a design that needs one. An unrecognised string is
+        # not a usable declaration, so the gap is still open and the code
+        # must still fire — exactly once, pointing at the paradigm field.
+        from dsx.frame import paradigm
+
+        for declared in self.OUT_OF_VOCAB:
+            with self.subTest(paradigm=declared):
+                spec = {
+                    "inference": {"paradigm": declared},
+                    "design": {"peeking_policy": "uncontrolled_continuous"},
+                }
+                report = paradigm.check(spec)
+                found = [f for f in report.findings if f.code == "DSX-PAR-002"]
+                self.assertEqual(len(found), 1)
+                self.assertEqual(found[0].severity, Severity.HIGH)
+                # D-05: DSX-PAR-002
+                self.assertEqual(found[0].where, "spec.inference.paradigm")
+
+    def test_out_of_vocabulary_paradigm_under_controlled_design_stays_silent(self):
+        # The requiredness half is gated on the uncontrolled policy, not on
+        # membership. Without that policy there is no DSX-PAR-002 gap to
+        # report, and membership stays DSX-SPEC-085's to own (D-08).
+        from dsx.frame import paradigm
+
+        for declared in self.OUT_OF_VOCAB:
+            with self.subTest(paradigm=declared):
+                spec = {
+                    "inference": {"paradigm": declared},
+                    "design": {"peeking_policy": "fixed_horizon"},
+                }
+                report = paradigm.check(spec)
+                self.assertNotIn("DSX-PAR-002", codes(report))
+
+    def test_every_out_of_vocab_fixture_is_still_out_of_vocab_after_normalize(self):
+        # Guards the tuple above against rot: normalize() lowercases and
+        # folds separators, so an entry like "Frequentist " would silently
+        # become a valid member and stop testing anything.
+        from dsx.spec import PARADIGMS, normalize
+
+        for declared in self.OUT_OF_VOCAB:
+            with self.subTest(paradigm=declared):
+                self.assertNotIn(normalize(declared), PARADIGMS)
+
+    def test_case_and_whitespace_variants_of_a_member_stay_declared(self):
+        # The fallback must key on membership *after* normalization, never on
+        # a raw string compare — otherwise "  BAYESIAN " would be demoted to
+        # undeclared and wrongly widen the applied set.
+        from dsx.frame import paradigm
+        from dsx.spec import PARADIGMS
+
+        for member in PARADIGMS:
+            for variant in (member.upper(), f"  {member} ", member.capitalize()):
+                with self.subTest(variant=variant):
+                    report = paradigm.check({"inference": {"paradigm": variant}})
+                    manifest = [f for f in report.findings if f.code == "DSX-PAR-001"][0]
+                    canonical = paradigm.check({"inference": {"paradigm": member}})
+                    expected = [f for f in canonical.findings if f.code == "DSX-PAR-001"][0]
+                    self.assertEqual(manifest.data["applied"], expected.data["applied"])
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
