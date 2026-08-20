@@ -13,7 +13,7 @@ a suppression or a reference in a review stays valid across versions.
 **Gate thresholds.** `plan` and `execute` block at CRITICAL; `verify` and
 `ship` block at HIGH.
 
-**Total: 236 codes.**
+**Total: 238 codes.**
 
 ## Contract structure — `DSX-SPEC-*`
 
@@ -135,6 +135,8 @@ Leakage, splits, metric choice, baselines, evaluation hygiene.
 | `DSX-ML-020` | HIGH | model.preprocessing_fit_on is not declared |
 | `DSX-ML-021` | CRITICAL | Preprocessing fitted on '<…>' rather than training data only |
 | `DSX-ML-022` | CRITICAL | Class resampling applied before the train/test split |
+| `DSX-ML-023` | CRITICAL | Cleaning statistic for '<…>' was fitted outside the training rows |
+| `DSX-ML-024` | HIGH | Cleaning declaration contradicts the declared whole-pipeline boundary |
 | `DSX-ML-030` | MEDIUM | model.features is not declared |
 | `DSX-ML-031` | CRITICAL | Target '<…>' appears in the feature list |
 | `DSX-ML-032` | HIGH | <…> feature(s) match known leakage patterns |
