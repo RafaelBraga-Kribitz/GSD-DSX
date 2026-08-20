@@ -7,7 +7,7 @@ same table programmatically and is what the gate checks against.
 
 | Outcome | Groups | Paired | Distribution | Test | Effect size |
 |---|---|---|---|---|---|
-| proportion | 2 | no | — | two-proportion z (Fisher exact if any expected cell < 5) | risk difference, Cohen's h |
+| proportion | 2 | no | — | two-proportion z (Boschloo's exact test if any expected cell < 5)[^1] | risk difference, Cohen's h |
 | proportion | 2 | yes | — | McNemar | odds ratio |
 | proportion | 3+ | no | — | chi-square | Cramér's V |
 | continuous | 2 | no | normal or n ≥ 200 | **Welch t** | Cohen's d |
@@ -22,6 +22,14 @@ same table programmatically and is what the gate checks against.
 | ordinal | 2 | no | — | Mann-Whitney | rank-biserial r |
 | ordinal | 3+ | no | — | Kruskal-Wallis or ordinal logistic | epsilon² |
 | time-to-event | any | — | censored | log-rank, Cox | hazard ratio |
+
+[^1]: The small-expected-cell fallback here is Boschloo's unconditional exact test, not the
+    traditional Fisher's exact test. Lydersen, Fagerland and Laake (2009), *Statistics in
+    Medicine* 28(7):1159-1175, section 9, states directly that the traditional Fisher's exact
+    test should practically never be used, and this is the only uniform power domination found
+    anywhere in this project's test-selection research — Boschloo's test never has less power
+    than the traditional test it replaces, at every parameter value checked. Locator: section 9,
+    verified.
 
 ## Notes that change the answer
 
