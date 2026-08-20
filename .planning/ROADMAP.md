@@ -497,7 +497,7 @@ reconcile against at plan or execute.
      a test against a published reference value or a named structural criterion, and a test
      asserts every `DSX-PRE-*` code is reachable from at least one `GATE_PROFILES` entry.
 
-**Plans**: 4/6 plans executed
+**Plans**: 6/6 plans executed
 
 Plans:
 **Wave 1**
@@ -518,8 +518,8 @@ Plans:
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
-- [ ] 10-05-PLAN.md — The `post-hoc-procedure-switch` known-bad fixture pair and its corpus test (wave 5)
-- [ ] 10-06-PLAN.md — README known limits, the `brief.md` §7 citation anchor, STATE.md (wave 5)
+- [x] 10-05-PLAN.md — The `post-hoc-procedure-switch` known-bad fixture pair and its corpus test (wave 5)
+- [x] 10-06-PLAN.md — README known limits, the `brief.md` §7 citation anchor, STATE.md (wave 5)
 
 **Wave note (guard atomicity, D-13):** the five forcing guards trip on the first
 `report.add("DSX-PRE-…")` call site, not on the `GATE_PROFILES` edit — `known_codes()` scans source
@@ -629,7 +629,7 @@ cases where absence permitted a false pass" is a debate, not a count.
 | 7. Validity frame checks (`DSX-VAL-*`) | 8/8 | Complete | 2026-08-20 |
 | 8. Interference, triggering, stability (`DSX-INT-*`) | 10/10 | Complete | 2026-08-14 |
 | 9. Monitoring discipline, symmetric (`DSX-PAR-*`) | 7/7 | Complete | 2026-08-13 |
-| 10. Pre-registered inference plan (`DSX-PRE-*`) | 4/6 | In Progress|  |
+| 10. Pre-registered inference plan (`DSX-PRE-*`) | 6/6 | In Progress|  |
 | 11. Frequentist admissibility adjudicator (`DSX-ADM-*`) | 0/TBD | Not started | - |
 | 12. Calibration | 0/TBD | Not started | - |
 
