@@ -1,0 +1,54 @@
+{
+  "version": "1.0",
+  "timestamp": "2026-08-20T15:21:24.870Z",
+  "phase": "11",
+  "phase_name": "Frequentist admissibility adjudicator (DSX-ADM-*)",
+  "phase_dir": ".planning/phases/11-frequentist-admissibility-adjudicator-dsx-adm",
+  "plan": 3,
+  "task": null,
+  "total_tasks": null,
+  "status": "paused",
+  "paused_during": "planning",
+  "context_summary": "Phase 11 is being PLANNED, not executed. No source code has been touched. /gsd-discuss-phase 11 completed and committed. It auto-advanced into /gsd-plan-phase 11 --auto, which completed research, validation strategy and pattern mapping, then spawned the gsd-planner. The planner hit the session limit mid-run after writing three of an unknown-larger set of plans. The plan set is INCOMPLETE and the gsd-plan-checker never ran.",
+  "completed_tasks": [
+    {"id": 1, "name": "discuss-phase 11 (assumptions mode) — 29 decisions captured, 3 put to the user", "status": "done", "commit": "0b21ae1"},
+    {"id": 2, "name": "STATE.md session record", "status": "done", "commit": "c954158"},
+    {"id": 3, "name": "gsd-phase-researcher → 11-RESEARCH.md (1033 lines)", "status": "done", "commit": "2ce095b"},
+    {"id": 4, "name": "11-VALIDATION.md seeded with measured test baseline", "status": "done", "commit": "2ce095b"},
+    {"id": 5, "name": "gsd-pattern-mapper → 11-PATTERNS.md (13 files classified, 12 analogs)", "status": "done", "commit": null},
+    {"id": 6, "name": "spec-less edge probe → 11 applicable edges, 3 unclassified", "status": "done", "commit": null},
+    {"id": 7, "name": "gsd-planner → 11-01/02/03-PLAN.md", "status": "in_progress", "progress": "Three plans written and structurally complete (frontmatter, must_haves, threat_model, prohibitions, artifacts sections all present). Agent terminated by session limit before writing the rest. Requirement coverage is only REQ-P11-01, -04, -05, -06."}
+  ],
+  "remaining_tasks": [
+    {"id": 8, "name": "Write the missing plans: REQ-P11-02 (alias resolution) and REQ-P11-03 (ranked admissible set) have NO plan", "status": "not_started"},
+    {"id": 9, "name": "Write the plan that creates references/families.yaml as a data file with its ~14 entries and citations", "status": "not_started"},
+    {"id": 10, "name": "Write the plan that creates dsx/frame/admissibility.py (adjudicator, ranking rule table, refusal branch)", "status": "not_started"},
+    {"id": 11, "name": "Write the plan for cmd_recommend composition, run_checks registration, GATE_PROFILES, finding-codes.md rows", "status": "not_started"},
+    {"id": 12, "name": "Write the plan for gen-finding-catalogue.py citation enforcement over YAML data (D-23/D-24/D-25)", "status": "not_started"},
+    {"id": 13, "name": "Assign waves — all three existing plans declare wave 1; the new plans need waves 2+ behind them", "status": "not_started"},
+    {"id": 14, "name": "Run gsd-plan-checker over the completed set (plan_checker_enabled is true; it never ran)", "status": "not_started"},
+    {"id": 15, "name": "Then /gsd-execute-phase 11", "status": "not_started"}
+  ],
+  "blockers": [
+    {
+      "description": "Anthropic session limit reached mid-planner-run at ~15:20 Europe/Vienna. Not a technical fault in the work.",
+      "type": "external",
+      "workaround": "Resume after the limit resets. No state was corrupted; the three written plans are on disk and committed."
+    }
+  ],
+  "async_jobs": [],
+  "human_actions_pending": [],
+  "decisions": [
+    {"decision": "families.yaml ships with roughly 10-14 entries, not the roadmap's 25-35", "rationale": "The corpus supplies six distinct procedure labels and Phase 12 (which grows the corpus) comes after Phase 11, so the 25-35 count and the every-family-traces-to-a-case criterion cannot both hold. Sizing to committed evidence keeps the stated principle literally true. The plan must amend REQUIREMENTS.md and ROADMAP.md accordingly.", "phase": "11", "source": "user decision, CONTEXT.md D-01/D-02"},
+    {"decision": "Frequentist-only routing is decided outside dsx/frame/admissibility.py, via a helper in dsx/frame/paradigm.py called from run_checks", "rationale": "Making DSX-ADM-* paradigm-independent would draw a CRITICAL block on an honest 'paradigm: bayesian' declaration, making misdeclaration cheaper than telling the truth — the inversion brief D-10 exists to block.", "phase": "11", "source": "user decision, CONTEXT.md D-22"},
+    {"decision": "The new test-name alias table is read by the new adjudicator only; dsx/checks/stats.py and dsx/frame/prereg.py are not rewired", "rationale": "ROADMAP SC 2 requires existing specs to behave unchanged. Rewiring either check changes a shipped firing set and can silently invalidate suppressions operators already wrote.", "phase": "11", "source": "user decision, CONTEXT.md D-03"},
+    {"decision": "Estimand axis keyed on a new optional validity_frame.estimand.type field with an ESTIMAND_TYPES vocabulary", "rationale": "RESEARCH.md verified that the alternative (analysis.outcome_type + n_groups + paired) fails, because examples/known-bad/weak-identification-mmm-ANALYSIS-SPEC.yaml has no analysis: block at all. estimand: is always required, so it reaches every fixture.", "phase": "11", "source": "planner discretion within CONTEXT.md constraint, backed by RESEARCH.md"}
+  ],
+  "uncommitted_files": [
+    ".claude/CLAUDE.md (untracked, pre-existing, not mine)",
+    ".vscode/ (untracked, pre-existing, not mine)",
+    "references/The AI Data Scientist.md (untracked, appeared during this session, not referenced by any Phase 11 artifact)"
+  ],
+  "next_action": "Run `/gsd-plan-phase 11` and choose 'Add more plans' at the existing-plans prompt. Do NOT choose 'Replan from scratch' — that discards three good plans. The new plans must cover REQ-P11-02 and REQ-P11-03 and must create references/families.yaml and dsx/frame/admissibility.py. Then run the gsd-plan-checker over the whole set before executing.",
+  "context_notes": "The intellectual work for this phase is done and is unusually well grounded — CONTEXT.md carries 29 decisions with file-and-line citations, RESEARCH.md verified the YAML schema by actually round-tripping it through both loader paths, and the citation spine was researched against primary sources with unverified locators honestly marked. What remains is mechanical: turn the rest of that into plans. The three written plans are all foundation work (requirement amendments and doc corrections; the estimand vocabulary; the boundary scanner and paradigm helper) and correctly declare wave 1 with no dependencies. The plans that actually build the adjudicator are the ones missing, and they belong in later waves because they depend on the estimand vocabulary from 11-02 and the paradigm helper from 11-03. One trap RESEARCH.md found and the resuming agent must not lose: the new estimand-type field has to be populated on all nine committed example specs, not just the good fixture, or DSX-ADM-020 fires spuriously at the plan gate and breaks tests/test_known_bad_corpus.py."
+}
