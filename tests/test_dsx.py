@@ -3997,6 +3997,223 @@ class TestPhase11_1Code(unittest.TestCase):
         self.assertLessEqual(counts_020, 1)
         self.assertLessEqual(counts_021, 1)
 
+    # ── DSX-CODE-030/031: statistical test sees the declared target ─────────
+
+    def _check_with_target(self, tmp: str, entry: str, target: "str | None"):
+        from dsx.checks import code as code_mod
+
+        model: dict = {"task": "binary_classification"}
+        if target is not None:
+            model["target"] = target
+        return code_mod.check(
+            {
+                "model": model,
+                "reproducibility": {"entrypoint": entry},
+            },
+            tmp,
+        )
+
+    def test_stat_test_call_re_matches_every_recognised_test_name(self):
+        from dsx.checks import code as code_mod
+
+        calls = (
+            "chi2_contingency(t)",
+            "ttest_ind(a, b)",
+            "ttest_rel(a, b)",
+            "pearsonr(a, b)",
+            "mannwhitneyu(a, b)",
+            "f_oneway(a, b, c)",
+            "kruskal(a, b, c)",
+        )
+        for call in calls:
+            with self.subTest(call=call):
+                self.assertTrue(code_mod.STAT_TEST_CALL_RE.search(call))
+
+    def test_chi_square_before_split_referencing_target_is_critical(self):
+        # D-05: DSX-CODE-030
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(
+                tmp,
+                "import pandas as pd\n"
+                "from scipy.stats import chi2_contingency\n"
+                "less_products = dataset['NumOfProducts'] < 2\n"
+                "contingency_table = pd.crosstab(less_products, dataset['Exited'])\n"
+                "chi2, p, _, _ = chi2_contingency(contingency_table)\n"
+                "from sklearn.model_selection import train_test_split\n"
+                "train_test_split(dataset)\n",
+            )
+            report = self._check_with_target(tmp, entry, "Exited")
+            found = [f for f in report.findings if f.code == "DSX-CODE-030"]
+            self.assertEqual(len(found), 1)
+            self.assertEqual(found[0].severity, Severity.CRITICAL)
+            self.assertNotIn("DSX-CODE-031", codes(report))
+
+    def test_chi_square_after_split_referencing_target_is_high(self):
+        # D-05: DSX-CODE-031
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(
+                tmp,
+                "import pandas as pd\n"
+                "from scipy.stats import chi2_contingency\n"
+                "from sklearn.model_selection import train_test_split\n"
+                "train_test_split(dataset)\n"
+                "less_products = dataset['NumOfProducts'] < 2\n"
+                "contingency_table = pd.crosstab(less_products, dataset['Exited'])\n"
+                "chi2, p, _, _ = chi2_contingency(contingency_table)\n",
+            )
+            report = self._check_with_target(tmp, entry, "Exited")
+            found = [f for f in report.findings if f.code == "DSX-CODE-031"]
+            self.assertEqual(len(found), 1)
+            self.assertEqual(found[0].severity, Severity.HIGH)
+            self.assertNotIn("DSX-CODE-030", codes(report))
+
+    def test_call_on_same_line_as_split_marker_is_at_or_after(self):
+        # The comparison is strictly-less-than for "before", never <=.
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(
+                tmp,
+                "from sklearn.model_selection import train_test_split\n"
+                "contingency_table = pd.crosstab(x, dataset['Exited']); "
+                "chi2, p, _, _ = chi2_contingency(contingency_table); "
+                "train_test_split(dataset)\n",
+            )
+            report = self._check_with_target(tmp, entry, "Exited")
+            self.assertIn("DSX-CODE-031", codes(report))
+            self.assertNotIn("DSX-CODE-030", codes(report))
+
+    def test_various_stat_tests_each_trigger_the_scan(self):
+        calls = (
+            "ttest_ind(group_a, dataset['Exited'])",
+            "pearsonr(feature, dataset['Exited'])",
+            "mannwhitneyu(group_a, dataset['Exited'])",
+            "f_oneway(g1, g2, dataset['Exited'])",
+            "kruskal(g1, g2, dataset['Exited'])",
+        )
+        for call in calls:
+            with self.subTest(call=call):
+                with tempfile.TemporaryDirectory() as tmp:
+                    entry = self._entrypoint(tmp, f"result = {call}\n")
+                    report = self._check_with_target(tmp, entry, "Exited")
+                    self.assertIn("DSX-CODE-030", codes(report))
+
+    def test_blank_target_produces_neither_code(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(
+                tmp,
+                "from scipy.stats import chi2_contingency\n"
+                "contingency_table = pd.crosstab(x, dataset['Exited'])\n"
+                "chi2, p, _, _ = chi2_contingency(contingency_table)\n",
+            )
+            for blank_target in ("", "   "):
+                with self.subTest(target=repr(blank_target)):
+                    report = self._check_with_target(tmp, entry, blank_target)
+                    found = codes(report)
+                    self.assertNotIn("DSX-CODE-030", found)
+                    self.assertNotIn("DSX-CODE-031", found)
+
+    def test_absent_target_produces_neither_code(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(
+                tmp,
+                "from scipy.stats import chi2_contingency\n"
+                "contingency_table = pd.crosstab(x, dataset['Exited'])\n"
+                "chi2, p, _, _ = chi2_contingency(contingency_table)\n",
+            )
+            report = self._check_with_target(tmp, entry, None)
+            found = codes(report)
+            self.assertNotIn("DSX-CODE-030", found)
+            self.assertNotIn("DSX-CODE-031", found)
+
+    def test_no_stat_test_call_produces_neither_code(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(tmp, "x = dataset['Exited'].sum()\n")
+            report = self._check_with_target(tmp, entry, "Exited")
+            found = codes(report)
+            self.assertNotIn("DSX-CODE-030", found)
+            self.assertNotIn("DSX-CODE-031", found)
+
+    def test_empty_source_produces_neither_code_and_no_exception(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(tmp, "")
+            report = self._check_with_target(tmp, entry, "Exited")
+            found = codes(report)
+            self.assertNotIn("DSX-CODE-030", found)
+            self.assertNotIn("DSX-CODE-031", found)
+
+    def test_three_before_split_calls_produce_exactly_one_030_lowest_line(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(
+                tmp,
+                "from scipy.stats import chi2_contingency\n"
+                "c1 = pd.crosstab(a, dataset['Exited']); chi2_contingency(c1)\n"
+                "c2 = pd.crosstab(b, dataset['Exited']); chi2_contingency(c2)\n"
+                "c3 = pd.crosstab(c, dataset['Exited']); chi2_contingency(c3)\n",
+            )
+            report = self._check_with_target(tmp, entry, "Exited")
+            found = [f for f in report.findings if f.code == "DSX-CODE-030"]
+            self.assertEqual(len(found), 1)
+            self.assertIn("Line 2", found[0].detail)
+
+    def test_target_substring_of_longer_identifier_not_a_reference(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(
+                tmp,
+                "contingency_table = pd.crosstab(x, dataset.ExitedFlag)\n"
+                "chi2, p, _, _ = chi2_contingency(contingency_table)\n",
+            )
+            report = self._check_with_target(tmp, entry, "Exited")
+            found = codes(report)
+            self.assertNotIn("DSX-CODE-030", found)
+            self.assertNotIn("DSX-CODE-031", found)
+
+    def test_target_reference_recognised_bracket_both_quotes_and_attribute(self):
+        forms = (
+            "dataset['Exited']",
+            'dataset["Exited"]',
+            "dataset.Exited",
+        )
+        for form in forms:
+            with self.subTest(form=form):
+                with tempfile.TemporaryDirectory() as tmp:
+                    entry = self._entrypoint(
+                        tmp,
+                        f"contingency_table = pd.crosstab(x, {form})\n"
+                        "chi2, p, _, _ = chi2_contingency(contingency_table)\n",
+                    )
+                    report = self._check_with_target(tmp, entry, "Exited")
+                    self.assertIn("DSX-CODE-030", codes(report))
+
+    def test_stat_test_scan_leaves_a_second_decision_record(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(
+                tmp,
+                "contingency_table = pd.crosstab(x, dataset['Exited'])\n"
+                "chi2, p, _, _ = chi2_contingency(contingency_table)\n",
+            )
+            report = self._check_with_target(tmp, entry, "Exited")
+            decisions = report.context.get("decisions") or []
+            self.assertEqual(len(decisions), 2)
+            self.assertEqual(decisions[1]["layer"], "deterministic")
+
+    def test_good_and_bad_fixtures_gate_contract_unchanged(self):
+        from dsx import cli
+
+        cases = [
+            ("good-ANALYSIS-SPEC.yaml", "plan", 0),
+            ("good-ANALYSIS-SPEC.yaml", "execute", 0),
+            ("good-ANALYSIS-SPEC.yaml", "verify", 0),
+            ("good-ANALYSIS-SPEC.yaml", "ship", 0),
+            ("bad-ANALYSIS-SPEC.yaml", "execute", 1),
+            ("bad-ANALYSIS-SPEC.yaml", "ship", 1),
+        ]
+        for spec_name, point, expected in cases:
+            with self.subTest(spec=spec_name, point=point):
+                spec_path = self.ROOT / "examples" / spec_name
+                out, err = io.StringIO(), io.StringIO()
+                with redirect_stdout(out), redirect_stderr(err):
+                    code = cli.main(["gate", point, "--spec", str(spec_path)])
+                self.assertEqual(code, expected)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
