@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v2.0.0
 milestone_name: DSX Validity Frame
-current_phase: 08
-current_phase_name: "`DSX-INT-*`"
+current_phase: 10
+current_phase_name: pre-registered-inference-plan-dsx-pre
 status: planning
-stopped_at: Phase 10 context gathered (assumptions mode)
+stopped_at: Phase 07 complete and verified 2026-08-20; Phase 10 is the next unexecuted phase (6 plans on disk)
 last_updated: "2026-08-20T00:12:47.137Z"
 last_activity: 2026-08-20
-last_activity_desc: Phase 07 complete, transitioned to Phase 08
+last_activity_desc: Phase 07 verified and marked complete; next actionable phase is 10
 progress:
   total_phases: 5
   completed_phases: 4
@@ -19,7 +19,7 @@ progress:
 
 # Project state
 
-**Status:** Ready to plan
+**Status:** Phase 07 complete and verified — Phase 10 is next (plans already on disk)
 **Progress:** [███████████████████░] 34/35 plans (97%)  
 **Locked decisions:** DQ = profile runner + hermetic gates; Glyph = hermetic svg_sha256 only (no MCP dep); forbidden claims = universal pack + optional phase YAML; repro_lock = ARS-style honest-null (not byte-replay); decision replay = structured thresholds only; suppressions = ADR/SPEC authority required (unknown codes → exit 2)  
 **v2.0.0 locked decisions:** DSX-PAR-010 is a distinct code, DSX-EXP-060 untouched (M-01); no `inference.stopping_rule` — PAR-010/011 read the existing `design.peeking_policy` (M-02); PEEKING_POLICIES gains an uncontrolled-continuous-monitoring value (M-03); automated import test enforces the D-03a boundary from M1 (M-04); SELF-001 stays a convention, REVERSALS.md template seeded in M1 (M-05); `validity_frame` sub-block requiredness gated by `question_type` (M-06); existing `suppressions[]` is the pre-v2.0.0 grandfather path (M-07); D-05 citation enforcement automated via `gen-finding-catalogue.py` (M-08); `dependence.method_family_required` reuses `VARIANCE_ADJUSTMENTS` (M-09)
@@ -36,11 +36,12 @@ progress:
 - v2.0.0 roadmap written — Phases 6–12, 53/53 requirements mapped, traceability populated
 - Phase 6 (M1, v2.0.0) — Contract extension, decision record, paradigm manifest. 13/13 plans, UAT 4/4, verification passed, security verified (35 threats, 0 open). Completed 2026-08-10.
 - Phase 9 (M2c, v2.0.0) — Monitoring discipline, symmetric (`DSX-PAR-010`/`-011` plus membership-free `DSX-PAR-002`). 7/7 plans, UAT 1/1 (split accepted), verification passed, security verified (24 threats, 0 open). Completed 2026-08-13.
+- Phase 7 (M2a, v2.0.0) — Validity frame checks (`DSX-VAL-*`), ten codes: estimand completeness/falsifiability, unit triad, dependence method family, identification strength, sampling frame, missingness, measurement. 8/8 plans, UAT 38/38, re-verification passed 5/5 success criteria, security verified (0 open threats). Completed 2026-08-20.
 - Phase 8 (M2b, v2.0.0) — Interference, triggering, stability (`DSX-INT-010`/`-011`/`-030`/`-040`). 10/10 plans, verification passed 6/6 must-haves. The out-of-vocabulary `interference.risk` bypass is closed (08-10): the risk-vocabulary clause is gone from `_check_interference_mitigation_admissibility`'s guard, so a misspelled risk with a channel-inadmissible mitigation now fires `DSX-INT-011` at CRITICAL instead of clearing the gate. Security not yet run. Completed 2026-08-14.
 
 ## Next
 
-- Phase 7 (M2a) — all 8/8 plans executed. Gap G-07-4 (UAT test 4) closed 2026-08-14 by plan 07-08: the four Kish (1965) citation sites in `dsx/frame/val.py`, `dsx/mathx.py` and `brief.md` now name one locator set (section 8.2, page 258, pages 161-162), and the honesty disclosure is narrowed to the design-effect formula's section number, which no source reading confirmed. `07-VERIFICATION.md` still carries the pre-closure `human_needed` verdict on citation admissibility — **re-run verification**; it was deliberately not re-run at gap closure because a concurrent `/gsd-secure-phase 08` session was writing STATE.md at the same time. Lowest outstanding phase.
+- Phase 7 (M2a) — **complete 2026-08-20**. Re-verification passed: 5/5 roadmap success criteria, 8/9 requirements MET, REQ-P7-08 PARTIAL by the deliberate D-06 scope decision (not a gap). Both prior `human_needed` items (Chan & Perry 2017 citation admissibility; the two D-05 honesty disclosures) were closed by recorded human verdicts in `07-UAT.md` (38/38 pass, 0 gaps). Security verified, 0 open threats. Outstanding, non-blocking: 07-REVIEW.md carries CR-01 (an out-of-vocabulary `inference.paradigm` makes the `DSX-PAR-001` manifest contradict `DSX-PAR-010`/`-011` and silences `DSX-PAR-002`) — that code is Phase 6/9 territory, carried forward, not a Phase 7 blocker — plus WR-01 (`val.py::check()` hand-duplicates each `_check_*` blocking predicate with no drift test).
 - Phase 8 (M2b) — **complete 2026-08-14**, verification passed 6/6. Outstanding, non-blocking: `/gsd-secure-phase 08` has not been run (security enforcement is active), and 08-REVIEW.md carries two WARNING findings (WR-01 self-contradictory DSX-INT-011 remedy text for an out-of-vocabulary risk; WR-02 `design.alpha: 0` silently defaulted in `dsx/frame/paradigm.py`).
 - Then Phase 10 (M3, context re-verified 2026-08-14, 6 unexecuted plans already on disk, soft-depends on 7), Phase 11 (M4, hard-depends on 7), Phase 12 (M5, terminal).
 - Deferred, unchanged: Parquet profiler, live Glyph MCP, NLP decision_rule — out of scope for core gates.
@@ -77,22 +78,22 @@ progress:
 
 ## Current Position
 
-Phase: 08 — Interference, triggering, stability (`DSX-INT-*`)
-Plan: Not started
-Status: Executing Phase 07
-Last activity: 2026-08-20 — Phase 07 complete, transitioned to Phase 08
+Phase: 10 — Pre-registered inference plan (`DSX-PRE-*`)
+Plan: 0 of 6 (all plans on disk, none executed)
+Status: Not started. Phase 07 closed 2026-08-20 — verification passed, 543 tests green, security verified (0 open threats).
+Last activity: 2026-08-20 — Phase 07 verified and marked complete
 
 ## Project Reference
 
 See: .planning/PROJECT.md (updated 2026-08-13)
 
 **Core value:** Gate analytical work on validity before the data is touched.
-**Current focus:** Phase 07 — validity-frame-checks-dsx-val
+**Current focus:** Phase 10 — pre-registered-inference-plan-dsx-pre
 
 ## Session
 
 **Last session:** 2026-08-13T22:18:12.891Z
-**Stopped at:** Phase 10 context gathered (assumptions mode)
+**Stopped at:** Phase 07 complete and verified 2026-08-20
 **Resume file:** .planning/phases/10-pre-registered-inference-plan-dsx-pre/10-CONTEXT.md
 
 Phase 10 context was re-verified 2026-08-14 (assumptions mode). Six unexecuted plans (`10-01` … `10-06`) already exist; this refresh did not rewrite them. Phase 8's blocking gap is in `08-VERIFICATION.md` (out-of-vocabulary `interference.risk` bypass).
