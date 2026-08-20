@@ -124,6 +124,16 @@ _UNDECLARED_FACT = (
     "not declare as a number"
 )
 
+# Registry lookup keyed on the same normalize() every other closed-vocabulary
+# comparison in this codebase goes through before testing membership — built once
+# at module scope, mirroring how _UNKNOWN_FACT's accepted-names list is built from
+# sorted(PREREG_FACTS) above. PREREG_FACTS's own keys are already all-lowercase, so
+# this map's keys are identical to PREREG_FACTS's; the point is normalizing the
+# *lookup key* (parsed.fact), not the registry.
+_PREREG_FACTS_NORMALIZED: "dict[str, str]" = {
+    normalize(k): v for k, v in PREREG_FACTS.items()
+}
+
 
 @dataclass(frozen=True)
 class _Resolution:
@@ -170,7 +180,7 @@ def _resolve_branch(spec: dict) -> _Resolution:
             branch=primary_procedure, reason=None, source="primary_procedure"
         )
 
-    path = PREREG_FACTS.get(parsed.fact)
+    path = _PREREG_FACTS_NORMALIZED.get(normalize(parsed.fact))
     if path is None:
         return _Resolution(
             branch=None,
@@ -230,7 +240,7 @@ def _check_rule_resolves(spec: dict, resolution: "_Resolution", report: Report) 
         if isinstance(inference, dict):
             parsed = _parse_fallback_rule(inference.get("fallback_rule"))
             if parsed is not None:
-                path = PREREG_FACTS.get(parsed.fact)
+                path = _PREREG_FACTS_NORMALIZED.get(normalize(parsed.fact))
                 if path:
                     inputs.append(path)
 
