@@ -380,6 +380,72 @@ class TestRuleResolutionFindings(unittest.TestCase):
         self.assertEqual(report.findings, [])
 
 
+class TestFactNameCaseNormalization(unittest.TestCase):
+    """WR-01: registry fact-name lookup normalizes case at both call sites
+    (`_resolve_branch` and `_check_rule_resolves`'s `inputs` re-derivation),
+    matching how every other closed-vocabulary comparison in this module goes
+    through `dsx.spec.normalize()` before membership is tested."""
+
+    def test_capitalized_fact_name_resolves_the_same_as_lowercase(self):
+        spec = {
+            "inference": {
+                "primary_procedure": "two_proportion_z",
+                "fallback_rule": "Alpha <= 0.05 -> alpha_spending_obf",
+            },
+            "design": {"alpha": 0.03},
+        }
+        resolution = prereg._resolve_branch(spec)
+        self.assertEqual(resolution.source, "fallback_rule")
+        self.assertEqual(resolution.branch, "alpha_spending_obf")
+        self.assertIsNone(resolution.reason)
+
+    def test_capitalized_registered_fact_produces_zero_dsx_pre_010_findings(self):
+        spec = {
+            "inference": {
+                "primary_procedure": "two_proportion_z",
+                "fallback_rule": "Alpha <= 0.05 -> alpha_spending_obf",
+            },
+            "design": {"alpha": 0.03},
+        }
+        report = prereg.check(spec)
+        findings = [f for f in report.findings if f.code == "DSX-PRE-010"]
+        self.assertEqual(
+            findings,
+            [],
+            "a capitalized but registered fact name must not be reported as "
+            "outside the closed prereg fact registry",
+        )
+
+    def test_review_repro_comparisons_looked_at_mixed_case_resolves(self):
+        # Orchestrator-confirmed repro from 10-REVIEW.md WR-01: Comparisons_Looked_At
+        # must resolve exactly like comparisons_looked_at.
+        spec = {
+            "inference": {
+                "primary_procedure": "two_proportion_z",
+                "fallback_rule": "Comparisons_Looked_At >= 1 -> alpha_spending_obf",
+            },
+            "results": {"comparisons_looked_at": 1},
+        }
+        resolution = prereg._resolve_branch(spec)
+        self.assertEqual(resolution.source, "fallback_rule")
+        self.assertIsNone(resolution.reason)
+
+    def test_capitalized_undeclared_registry_fact_names_dotted_path_in_finding_and_decision_inputs(self):
+        spec = {
+            "inference": {
+                "primary_procedure": "two_proportion_z",
+                "fallback_rule": "Alpha < 0.01 -> alpha_spending_obf",
+            },
+        }
+        report = prereg.check(spec)
+        findings = [f for f in report.findings if f.code == "DSX-PRE-010"]
+        self.assertEqual(len(findings), 1)
+        self.assertIn("design.alpha", findings[0].detail)
+        decisions = report.context.get("decisions") or []
+        self.assertEqual(len(decisions), 1)
+        self.assertIn("design.alpha", decisions[0]["inputs"])
+
+
 class TestProcedureReconciliation(unittest.TestCase):
     # D-05: DSX-PRE-030
     def test_branch_mismatch_fires_naming_both_labels(self):
