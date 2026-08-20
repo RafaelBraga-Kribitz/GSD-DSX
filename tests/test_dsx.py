@@ -1281,6 +1281,169 @@ class TestPhase11_1ML(unittest.TestCase):
         self.assertEqual(r1, r2)
 
 
+# ── Phase 11.1 plan 05: per-step cleaning boundary (DSX-ML-023/024) ────────────
+
+
+class TestPhase11_1MLCleaning(unittest.TestCase):
+    # Derived from TestML.BASE (REQ-P11.1-03's plan instruction).
+    BASE = TestML.BASE
+
+    def _model(self, **overrides):
+        model = {k: v for k, v in self.BASE["model"].items()}
+        model.update(overrides)
+        for key, value in list(model.items()):
+            if value is None:
+                del model[key]
+        return model
+
+    def _leaky_dataset(self, fit_on="all_data", column="Age", method="mean_impute", name="churn"):
+        return {
+            "name": name,
+            "cleaning": [{"column": column, "method": method, "fit_on": fit_on}],
+        }
+
+    # ── DSX-ML-023: leaky per-step cleaning boundary ─────────────────────────
+
+    def test_leaky_cleaning_step_produces_023_at_critical(self):
+        # D-05: DSX-ML-023
+        spec = {
+            "question_type": "predictive",
+            "data": [self._leaky_dataset()],
+            "model": self._model(preprocessing_fit_on=None),
+        }
+        report = ml.check(spec)
+        found = [f for f in report.findings if f.code == "DSX-ML-023"]
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0].severity, Severity.CRITICAL)
+
+    def test_leaky_cleaning_with_train_only_whole_pipeline_also_produces_024_at_high(self):
+        # D-05: DSX-ML-024
+        spec = {
+            "question_type": "predictive",
+            "data": [self._leaky_dataset()],
+            "model": self._model(preprocessing_fit_on="train_only"),
+        }
+        report = ml.check(spec)
+        found = codes(report)
+        self.assertIn("DSX-ML-023", found)
+        self.assertIn("DSX-ML-024", found)
+        fired_024 = next(f for f in report.findings if f.code == "DSX-ML-024")
+        self.assertEqual(fired_024.severity, Severity.HIGH)
+
+    def test_leaky_cleaning_with_no_whole_pipeline_boundary_produces_023_not_024(self):
+        spec = {
+            "question_type": "predictive",
+            "data": [self._leaky_dataset()],
+            "model": self._model(preprocessing_fit_on=None),
+        }
+        found = codes(ml.check(spec))
+        self.assertIn("DSX-ML-023", found)
+        self.assertNotIn("DSX-ML-024", found)
+
+    def test_accepted_fit_boundary_produces_neither_code(self):
+        spec = {
+            "question_type": "predictive",
+            "data": [self._leaky_dataset(fit_on="train_only")],
+            "model": self._model(preprocessing_fit_on="train_only"),
+        }
+        found = codes(ml.check(spec))
+        self.assertNotIn("DSX-ML-023", found)
+        self.assertNotIn("DSX-ML-024", found)
+
+    def test_misspelled_fit_boundary_produces_023(self):
+        spec = {
+            "question_type": "predictive",
+            "data": [self._leaky_dataset(fit_on="train_onlyy")],
+            "model": self._model(preprocessing_fit_on="train_only"),
+        }
+        self.assertIn("DSX-ML-023", codes(ml.check(spec)))
+
+    def test_missing_fit_on_key_produces_neither_code(self):
+        dataset = {"name": "churn", "cleaning": [{"column": "Age", "method": "mean_impute"}]}
+        spec = {"question_type": "predictive", "data": [dataset], "model": self._model()}
+        found = codes(ml.check(spec))
+        self.assertNotIn("DSX-ML-023", found)
+        self.assertNotIn("DSX-ML-024", found)
+
+    def test_blank_fit_on_produces_neither_code(self):
+        spec = {
+            "question_type": "predictive",
+            "data": [self._leaky_dataset(fit_on="   ")],
+            "model": self._model(preprocessing_fit_on="train_only"),
+        }
+        found = codes(ml.check(spec))
+        self.assertNotIn("DSX-ML-023", found)
+        self.assertNotIn("DSX-ML-024", found)
+
+    def test_no_data_section_produces_neither_code_and_no_ok_line(self):
+        spec = {"question_type": "predictive", "model": self._model()}
+        report = ml.check(spec)
+        found = codes(report)
+        self.assertNotIn("DSX-ML-023", found)
+        self.assertNotIn("DSX-ML-024", found)
+        self.assertFalse(any("cleaning" in ok.lower() for ok in report.passed_checks))
+
+    def test_empty_data_list_produces_neither_code(self):
+        spec = {"question_type": "predictive", "data": [], "model": self._model()}
+        found = codes(ml.check(spec))
+        self.assertNotIn("DSX-ML-023", found)
+        self.assertNotIn("DSX-ML-024", found)
+
+    def test_dataset_with_no_cleaning_key_produces_neither_code(self):
+        spec = {
+            "question_type": "predictive",
+            "data": [{"name": "churn", "source": "warehouse.churn"}],
+            "model": self._model(),
+        }
+        found = codes(ml.check(spec))
+        self.assertNotIn("DSX-ML-023", found)
+        self.assertNotIn("DSX-ML-024", found)
+
+    def test_leaky_cleaning_with_no_model_section_still_produces_023(self):
+        spec = {"question_type": "predictive", "data": [self._leaky_dataset()]}
+        self.assertIn("DSX-ML-023", codes(ml.check(spec)))
+
+    def test_non_mapping_cleaning_element_does_not_raise(self):
+        dataset = {"name": "churn", "cleaning": ["not_a_mapping", 42, None]}
+        spec = {"question_type": "predictive", "data": [dataset], "model": self._model()}
+        found = codes(ml.check(spec))  # must not raise
+        self.assertNotIn("DSX-ML-023", found)
+        self.assertNotIn("DSX-ML-024", found)
+
+    def test_two_leaky_steps_in_two_datasets_produce_two_023_and_one_024(self):
+        spec = {
+            "question_type": "predictive",
+            "data": [
+                self._leaky_dataset(column="Age", name="churn"),
+                self._leaky_dataset(column="Income", name="orders"),
+            ],
+            "model": self._model(preprocessing_fit_on="train_only"),
+        }
+        report = ml.check(spec)
+        findings_023 = [f for f in report.findings if f.code == "DSX-ML-023"]
+        findings_024 = [f for f in report.findings if f.code == "DSX-ML-024"]
+        self.assertEqual(len(findings_023), 2)
+        self.assertEqual(len(findings_024), 1)
+        datasets_named = {f.data.get("dataset") for f in findings_023}
+        columns_named = {f.data.get("column") for f in findings_023}
+        self.assertEqual(datasets_named, {"churn", "orders"})
+        self.assertEqual(columns_named, {"Age", "Income"})
+
+    def test_train_only_fit_values_is_shared_by_both_checks(self):
+        import inspect
+
+        self.assertEqual(
+            ml.TRAIN_ONLY_FIT_VALUES, frozenset({"train_only", "train_fold_only", "none"})
+        )
+        self.assertIn("TRAIN_ONLY_FIT_VALUES", inspect.getsource(ml._check_preprocessing))
+        self.assertIn("TRAIN_ONLY_FIT_VALUES", inspect.getsource(ml._check_cleaning))
+
+    def test_check_cleaning_wired_into_dispatch(self):
+        import inspect
+
+        self.assertIn("_check_cleaning", inspect.getsource(ml.check))
+
+
 # ── stats ────────────────────────────────────────────────────────────────────
 
 
