@@ -652,7 +652,32 @@ citation admissibility (candidates: Kaufman et al. 2012; Varma & Simon 2006; Caw
   6. `prediction_time_definition` is checked even when `model.features` is absent, and an
      undeclared positive rate under an imbalance-unsafe primary metric fires.
 
-**Plans**: TBD
+**Plans**: 8 plans
+
+Plans:
+- [ ] 11.1-01-PLAN.md — Widened entrypoint fit-scan: full-frame cleaning above the split
+      (`DSX-CODE-020`) and a non-training-frame fit below it (`DSX-CODE-021`), with the
+      training-frame name lexicon locked
+- [ ] 11.1-02-PLAN.md — Leakage-taxonomy ensemble sub-case and discretisation note, plus the
+      motivating-statistic question and large-roster heuristic in the ml-integrity-auditor prompt
+- [ ] 11.1-03-PLAN.md — Statistical-test-sees-target scan: `DSX-CODE-030` before the split,
+      `DSX-CODE-031` at or after it
+- [ ] 11.1-04-PLAN.md — `prediction_time_definition` checked unconditionally, and an undeclared
+      positive rate under an imbalance-unsafe metric (`DSX-ML-043`)
+- [ ] 11.1-05-PLAN.md — Optional per-dataset cleaning declaration: fitted outside training rows
+      (`DSX-ML-023`) and contradiction with the whole-pipeline boundary (`DSX-ML-024`)
+- [ ] 11.1-06-PLAN.md — Result score provenance (`DSX-ML-052`) and margin below the declared fold
+      spread (`DSX-ML-053`)
+- [ ] 11.1-07-PLAN.md — Selection ledger: absent (`DSX-ML-090`), test-set selection
+      (`DSX-ML-091`), same-fold selection with no nested protocol (`DSX-ML-092`)
+- [ ] 11.1-08-PLAN.md — Known-bad corpus case `full-frame-cleaning` with catch attribution, the
+      corpus-harness entrypoint seeding it needs, and end-of-phase catalogue currency
+
+**Code assignments (D-06, locked at plan 2026-08-20)**: `DSX-CODE-020` CRITICAL, `DSX-CODE-021`
+CRITICAL, `DSX-CODE-030` CRITICAL, `DSX-CODE-031` HIGH, `DSX-ML-023` CRITICAL, `DSX-ML-024` HIGH,
+`DSX-ML-043` HIGH, `DSX-ML-052` HIGH, `DSX-ML-053` MEDIUM, `DSX-ML-090` HIGH, `DSX-ML-091`
+CRITICAL, `DSX-ML-092` HIGH. `DSX-ML-033` keeps its number and gains a new call site. Every new
+code is enumerated individually in `_D05_ALLOWLIST_CODES`, never by family prefix.
 
 ### Phase 11.2: Prescriptive claim layer (INSERTED)
 
