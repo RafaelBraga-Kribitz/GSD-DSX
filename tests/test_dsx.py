@@ -1293,6 +1293,182 @@ class TestPhase11_1ML(unittest.TestCase):
         r2 = [f.code for f in ml.check(spec).findings]
         self.assertEqual(r1, r2)
 
+    # ── DSX-ML-052: baseline comparison's reported score provenance ─────────
+
+    def test_score_sources_vocabulary_is_locked(self):
+        self.assertEqual(
+            ml.SCORE_SOURCES,
+            frozenset({"cv_mean", "holdout", "nested_cv", "best_fold", "unknown"}),
+        )
+
+    def test_blank_score_source_produces_052_at_high(self):
+        # D-05: DSX-ML-052
+        spec = {**self.BASE, "results": {"model_score": 0.72, "baseline_score": 0.70}}
+        report = ml.check(spec)
+        found = [f for f in report.findings if f.code == "DSX-ML-052"]
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0].severity, Severity.HIGH)
+
+    def test_best_fold_score_source_produces_052_at_high(self):
+        spec = {
+            **self.BASE,
+            "results": {
+                "model_score": 0.72, "baseline_score": 0.70,
+                "model_score_source": "best_fold",
+            },
+        }
+        self.assertIn("DSX-ML-052", codes(ml.check(spec)))
+
+    def test_unknown_score_source_produces_052_at_high(self):
+        spec = {
+            **self.BASE,
+            "results": {
+                "model_score": 0.72, "baseline_score": 0.70,
+                "model_score_source": "unknown",
+            },
+        }
+        self.assertIn("DSX-ML-052", codes(ml.check(spec)))
+
+    def test_misspelled_score_source_produces_052(self):
+        # An unrecognised value is not a recognised one — a typo of an
+        # accepted value must not buy silence.
+        spec = {
+            **self.BASE,
+            "results": {
+                "model_score": 0.72, "baseline_score": 0.70,
+                "model_score_source": "cv_meen",
+            },
+        }
+        self.assertIn("DSX-ML-052", codes(ml.check(spec)))
+
+    def test_accepted_score_sources_produce_no_052(self):
+        for source in ("cv_mean", "holdout", "nested_cv"):
+            with self.subTest(source=source):
+                spec = {
+                    **self.BASE,
+                    "results": {
+                        "model_score": 0.72, "baseline_score": 0.70,
+                        "model_score_source": source,
+                    },
+                }
+                self.assertNotIn("DSX-ML-052", codes(ml.check(spec)))
+
+    # ── DSX-ML-053: margin inside the model's own fold-to-fold variation ────
+
+    def test_margin_smaller_than_fold_spread_produces_053_at_medium(self):
+        # D-05: DSX-ML-053
+        spec = {
+            **self.BASE,
+            "results": {
+                "model_score": 0.72, "baseline_score": 0.70,
+                "model_score_source": "cv_mean",
+                "fold_scores": [0.66, 0.78],
+            },
+        }
+        report = ml.check(spec)
+        found = [f for f in report.findings if f.code == "DSX-ML-053"]
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0].severity, Severity.MEDIUM)
+        detail = found[0].detail
+        self.assertIn("0.02", detail)
+        self.assertIn("0.12", detail)
+
+    def test_margin_equal_to_fold_spread_produces_no_053(self):
+        spec = {
+            **self.BASE,
+            "results": {
+                "model_score": 0.72, "baseline_score": 0.70,
+                "model_score_source": "cv_mean",
+                "fold_scores": [0.70, 0.72],
+            },
+        }
+        self.assertNotIn("DSX-ML-053", codes(ml.check(spec)))
+
+    def test_margin_larger_than_fold_spread_produces_no_053(self):
+        spec = {
+            **self.BASE,
+            "results": {
+                "model_score": 0.72, "baseline_score": 0.70,
+                "model_score_source": "cv_mean",
+                "fold_scores": [0.715, 0.725],
+            },
+        }
+        self.assertNotIn("DSX-ML-053", codes(ml.check(spec)))
+
+    def test_single_fold_score_produces_no_053(self):
+        spec = {
+            **self.BASE,
+            "results": {
+                "model_score": 0.72, "baseline_score": 0.70,
+                "model_score_source": "cv_mean",
+                "fold_scores": [0.66],
+            },
+        }
+        self.assertNotIn("DSX-ML-053", codes(ml.check(spec)))
+
+    def test_empty_fold_scores_list_produces_no_053(self):
+        spec = {
+            **self.BASE,
+            "results": {
+                "model_score": 0.72, "baseline_score": 0.70,
+                "model_score_source": "cv_mean",
+                "fold_scores": [],
+            },
+        }
+        self.assertNotIn("DSX-ML-053", codes(ml.check(spec)))
+
+    def test_no_fold_scores_field_produces_no_053(self):
+        spec = {
+            **self.BASE,
+            "results": {
+                "model_score": 0.72, "baseline_score": 0.70,
+                "model_score_source": "cv_mean",
+            },
+        }
+        self.assertNotIn("DSX-ML-053", codes(ml.check(spec)))
+
+    def test_non_numeric_fold_score_entry_is_skipped_not_raised(self):
+        spec = {
+            **self.BASE,
+            "results": {
+                "model_score": 0.72, "baseline_score": 0.70,
+                "model_score_source": "cv_mean",
+                "fold_scores": [0.66, "n/a", 0.78],
+            },
+        }
+        found = codes(ml.check(spec))  # must not raise
+        self.assertIn("DSX-ML-053", found)
+
+    # ── Existing early returns and beat/not-beat branches are unchanged ─────
+
+    def test_no_baseline_declared_produces_050_and_neither_new_code(self):
+        spec = {**self.BASE, "model": self._model(baseline=None)}
+        found = codes(ml.check(spec))
+        self.assertIn("DSX-ML-050", found)
+        self.assertNotIn("DSX-ML-052", found)
+        self.assertNotIn("DSX-ML-053", found)
+
+    def test_baseline_declared_scores_not_reported_produces_neither_new_code(self):
+        spec = {**self.BASE, "results": {}}
+        found = codes(ml.check(spec))
+        self.assertNotIn("DSX-ML-050", found)
+        self.assertNotIn("DSX-ML-052", found)
+        self.assertNotIn("DSX-ML-053", found)
+
+    def test_model_not_beating_baseline_produces_051_and_no_053(self):
+        spec = {
+            **self.BASE,
+            "results": {
+                "model_score": 0.61, "baseline_score": 0.63,
+                "model_score_source": "cv_mean",
+                "fold_scores": [0.60, 0.62],
+            },
+        }
+        found = codes(ml.check(spec))
+        self.assertIn("DSX-ML-051", found)
+        self.assertNotIn("DSX-ML-052", found)
+        self.assertNotIn("DSX-ML-053", found)
+
 
 # ── Phase 11.1 plan 05: per-step cleaning boundary (DSX-ML-023/024) ────────────
 
