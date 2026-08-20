@@ -447,6 +447,52 @@ def _check_paradigm_justification(spec: dict, report: Report) -> None:
     )
 
 
+def applies_to_frequentist_admissibility(spec: dict) -> bool:
+    """D-22 (REQ-P11-05): answer whether the frequentist admissibility
+    adjudicator (``DSX-ADM-*``, ``dsx/frame/admissibility.py``) applies to
+    this spec.
+
+    This is the one place the frequentist-only scoping decision is allowed to
+    live: ``dsx/frame/admissibility.py`` is forbidden by the D-11 scanner
+    (``tests/test_frame_boundary.py``) from reading ``inference.paradigm`` at
+    all, and ``paradigm.py`` is the sole file that scanner exempts. Callers —
+    ``run_checks`` in ``dsx/cli.py`` — compute this boolean and pass it in as
+    a parameter; the adjudicator itself never mentions the declared paradigm.
+
+    Reads the declared paradigm with the same ``get(...)`` dotted-path call
+    and the same normalize-when-not-blank idiom this module's own ``check()``
+    already uses, then returns ``True`` when the normalized value is not a
+    member of ``PARADIGMS`` (undeclared, blank, or unrecognised), or is
+    exactly ``"frequentist"``; ``False`` only for a recognised, declared,
+    non-frequentist paradigm (today, exactly ``"bayesian"``).
+
+    Widening is deliberate, not an oversight: an undeclared or unrecognised
+    paradigm selects the frequentist family, exactly as
+    ``_check_monitoring_discipline`` and ``check()`` already widen their own
+    selections for the same two cases. An honest declaration must never cost
+    more than silence (brief D-10) — making this predicate paradigm-
+    independent instead would make an honest ``bayesian`` declaration draw a
+    ``DSX-ADM-020`` CRITICAL refusal because no frequentist family matches,
+    which inverts that principle. It would also break this module's own
+    invariant (``check()`` above) that a family is never reported "not
+    applied" in a report where it fired.
+
+    Guards a non-dict ``spec`` explicitly, matching the defensive convention
+    ``dsx/frame/interference.py`` and ``dsx/frame/prereg.py`` already use for
+    a spec that is a string, list, or other non-mapping value — even though
+    ``dsx.spec.get()`` already tolerates it, a malformed spec here still
+    widens to ``True`` rather than raising, by construction and not by
+    accident.
+    """
+    if not isinstance(spec, dict):
+        return True
+
+    declared = get(spec, "inference.paradigm")
+    paradigm = normalize(declared) if not is_blank(declared) else ""
+
+    return paradigm not in PARADIGMS or paradigm == "frequentist"
+
+
 def check(spec: dict) -> Report:
     """Emit DSX-PAR-001 — the informational paradigm manifest.
 

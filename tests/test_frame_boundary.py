@@ -1,4 +1,4 @@
-"""D-03a import-boundary enforcement for ``dsx/frame/``.
+"""D-03a import-boundary enforcement for ``dsx/frame/`` — now in both directions.
 
 Modules under ``dsx/frame/`` may import from ``dsx.findings``, ``dsx.spec``,
 ``dsx.loader`` and ``dsx.decisions`` — never from ``dsx.checks`` (T-6-01). This
@@ -14,6 +14,14 @@ strings (plus two permitted-import controls) it never has to commit as a real
 module. A boundary test that only ever walks real files can never fail, which
 means it is not actually enforcing anything (06-RESEARCH.md Pattern 6).
 
+D-04a: the boundary is enforced in both directions. Phase 11 composes the
+checks layer and the frame layer inside ``dsx/cli.py`` — the only place the
+two packages are allowed to meet — and the natural instinct once an alias
+table exists under ``dsx/frame/`` is to import it straight from
+``dsx/checks/stats.py``. ``TestChecksImportBoundary`` below is the mirror-image
+scanner for that direction, reusing the same AST machinery with the forbidden
+package name generalised into a parameter.
+
 Run:  python3 -m unittest tests.test_frame_boundary -v
 """
 
@@ -28,9 +36,11 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
+import dsx.checks  # noqa: E402
 import dsx.frame  # noqa: E402 — RED proof: fails to import until dsx/frame/ exists
 
 FRAME_DIR = Path(dsx.frame.__file__).resolve().parent
+CHECKS_DIR = Path(dsx.checks.__file__).resolve().parent
 
 _FORBIDDEN_PACKAGE = "dsx.checks"
 
@@ -55,11 +65,19 @@ def _package_for(path: "str | Path") -> str:
     return ".".join(parts)
 
 
-def _scan_source_for_checks_imports(text: str, package: str) -> list[str]:
-    """Return one violation string per import of ``dsx.checks`` (or a submodule
-    of it) found in ``text``, which is parsed as if it were a module belonging
-    to ``package`` (used to resolve relative imports to their absolute dotted
-    form). Returns ``[]`` when no violation is found.
+def _scan_source_for_checks_imports(
+    text: str, package: str, forbidden_package: str = _FORBIDDEN_PACKAGE
+) -> list[str]:
+    """Return one violation string per import of ``forbidden_package`` (or a
+    submodule of it) found in ``text``, which is parsed as if it were a module
+    belonging to ``package`` (used to resolve relative imports to their
+    absolute dotted form). Returns ``[]`` when no violation is found.
+
+    ``forbidden_package`` defaults to ``dsx.checks`` — the ``dsx/frame/`` →
+    ``dsx/checks`` direction this scanner was originally written for. Passing
+    ``forbidden_package="dsx.frame"`` (with ``package="dsx.checks"``) scans the
+    mirror-image direction (D-04a) with the same AST machinery: one scanner
+    function serves both directions rather than a second hand-rolled walker.
 
     Each violation names the line number and the offending resolved module
     name; the caller (a real-file scan) prepends the file path.
@@ -68,9 +86,10 @@ def _scan_source_for_checks_imports(text: str, package: str) -> list[str]:
     tree = ast.parse(text)
 
     def _maybe_flag(name: str, lineno: int) -> None:
-        if name == _FORBIDDEN_PACKAGE or name.startswith(_FORBIDDEN_PACKAGE + "."):
+        if name == forbidden_package or name.startswith(forbidden_package + "."):
             violations.append(
-                f"line {lineno}: forbidden import of {name!r} (dsx.frame must not import dsx.checks)"
+                f"line {lineno}: forbidden import of {name!r} "
+                f"(must not import {forbidden_package!r})"
             )
 
     for node in ast.walk(tree):
@@ -119,6 +138,54 @@ class TestFrameImportBoundary(unittest.TestCase):
         for source in permitted_sources:
             with self.subTest(source=source):
                 self.assertEqual(_scan_source_for_checks_imports(source, "dsx.frame"), [])
+
+
+class TestChecksImportBoundary(unittest.TestCase):
+    """D-04a: the reverse-direction proof. Nothing under ``dsx/checks/`` may
+    import ``dsx.frame`` or any submodule of it — the mirror image of
+    ``TestFrameImportBoundary`` above, reusing the same AST scanner with the
+    forbidden package name flipped. ``dsx/cli.py`` is the only place the two
+    packages are allowed to meet (D-04); this is what makes crossing that
+    boundary directly from ``dsx/checks/stats.py`` ship red instead of green."""
+
+    def test_real_checks_modules_import_nothing_from_frame(self):
+        violations: list[str] = []
+        files = sorted(CHECKS_DIR.rglob("*.py"))
+        self.assertTrue(files, "dsx/checks/ has no *.py files to scan")
+        for path in files:
+            text = path.read_text(encoding="utf-8")
+            package = _package_for(path)
+            for problem in _scan_source_for_checks_imports(
+                text, package, forbidden_package="dsx.frame"
+            ):
+                violations.append(f"{path.relative_to(ROOT)}: {problem}")
+        self.assertEqual(violations, [], "\n".join(violations))
+
+    def test_scanner_fires_on_violating_sources_and_permits_allowed_ones(self):
+        violating_sources = [
+            "from dsx.frame import admissibility\n",
+            "from ..frame import admissibility\n",
+            "import dsx.frame.admissibility\n",
+        ]
+        for source in violating_sources:
+            with self.subTest(source=source):
+                result = _scan_source_for_checks_imports(
+                    source, "dsx.checks", forbidden_package="dsx.frame"
+                )
+                self.assertTrue(result, f"expected a violation for: {source!r}")
+
+        permitted_sources = [
+            "from ..findings import Report\n",
+            "from dsx.framework import x\n",
+        ]
+        for source in permitted_sources:
+            with self.subTest(source=source):
+                self.assertEqual(
+                    _scan_source_for_checks_imports(
+                        source, "dsx.checks", forbidden_package="dsx.frame"
+                    ),
+                    [],
+                )
 
 
 # ── D-11 / REQ-P7-09: no dsx/frame check reads the declared inference paradigm ──
