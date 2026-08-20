@@ -1,0 +1,148 @@
+# references/families.yaml -- the frequentist estimator ontology.
+#
+# This file is data. It is read by dsx/frame/admissibility.py and by nothing
+# else in this repository. Its only parser is dsx.loader.load() -- no new
+# parser may be added to read it (REQ-P11-01).
+#
+# Schema rules (D-06, D-07, D-08), one line each:
+# - Two-space indentation; every sequence below is a block sequence of flat mappings.
+# - Every string value is a double-quoted single-line scalar -- no "|", no ">", no unquoted free text.
+# - No document-marker line, no anchor, no alias reference and no merge-key line anywhere in this file.
+# - The inference-method axis key is the flat "inference_method:" -- no key here is a dotted path beginning "inference." and no key is named "paradigm" (D-07).
+# - No value contains an unescaped space-then-hash sequence -- dsx.loader's bundled fallback parser and PyYAML diverge on that construct inside block scalars, and this file avoids the whole hazard by never using a block scalar (D-08).
+#
+# "assumption_vocabulary"'s closure is this project's editorial judgement, not
+# a published finding: research established, negatively, that the Statistical
+# Methods Ontology (STATO) advertises coverage of "conditions of application"
+# and delivers zero classes labelled "assumption" across 109 properties, and
+# that no ontology in the Open Biological and Biomedical Ontologies (OBO)
+# Foundry has one either. No published taxonomy of estimator assumptions
+# exists. The vocabulary below is assembled instead from six named source
+# clusters, each token carrying its own citation (D-10, D-11).
+vocabulary_is_not_exhaustive: true
+
+# Per-family "buys" and "charges" (used starting at the families: block below):
+# "charges" names the assumption tokens a family requires the analyst to
+# maintain; "buys" names the tokens a family removes the need to maintain,
+# relative to a plainer alternative in the same (estimand, dependence) group.
+# Both are plain sequences of tokens defined once here, in assumption_vocabulary,
+# and never re-cited per family.
+#
+# locator_status rule for every citation in this file: "verified" means every
+# locator that actually appears in the citation string has been confirmed
+# against the source. "unverified" means at least one has not, and "notes"
+# names which. A citation carrying no in-paper locator at all is "verified"
+# when its article-level identifiers (author, year, venue, DOI/arXiv) are
+# confirmed (D-09).
+
+assumption_vocabulary:
+  - token: "exchangeability"
+    citation: "Hernan, M.A. and Robins, J.M. (2020), Causal Inference: What If, Chapter 3, section 3.2"
+    locator_status: "verified"
+    notes: "The no-unmeasured-confounding assumption every comparison in this file relies on."
+  - token: "positivity"
+    citation: "Hernan, M.A. and Robins, J.M. (2020), Causal Inference: What If, Chapter 3, section 3.3"
+    locator_status: "verified"
+    notes: "Every unit has nonzero probability of receiving either treatment level actually compared."
+  - token: "consistency_of_treatment_versions"
+    citation: "Hernan, M.A. and Robins, J.M. (2020), Causal Inference: What If, Chapter 3, section 3.4"
+    locator_status: "verified"
+    notes: "The treatment as declared and the treatment as delivered are the same well-defined intervention."
+  - token: "no_interference_between_units"
+    citation: "Rubin, D.B. (1980), Journal of the American Statistical Association 75(371):591-593"
+    locator_status: "verified"
+    notes: "SUTVA's no-interference half -- one unit's outcome does not depend on another unit's assigned treatment."
+  - token: "single_version_of_treatment"
+    citation: "Imbens, G.W. and Rubin, D.B., Causal Inference for Statistics, Social, and Biomedical Sciences, Chapter 1, section 1.6"
+    locator_status: "verified"
+    notes: "SUTVA's single-version half. This locator is already anchored elsewhere in the project."
+  - token: "missing_completely_at_random"
+    citation: "Rubin, D.B. (1976), Biometrika 63(3):581-592"
+    locator_status: "verified"
+    notes: "Missingness in the outcome or treatment does not depend on observed or unobserved data."
+  - token: "missing_at_random_given_covariates"
+    citation: "Little, R.J.A. and Rubin, D.B., Statistical Analysis with Missing Data, Chapter 3, section 3.2"
+    locator_status: "verified"
+    notes: "Missingness may depend on observed covariates but not on the unobserved outcome itself. Already anchored elsewhere in the project."
+  - token: "independence_across_clusters"
+    citation: "Cameron, A.C. and Miller, D.L. (2015), A Practitioner's Guide to Cluster-Robust Inference, Journal of Human Resources 50(2):317-372, Section II"
+    locator_status: "verified"
+    notes: "D-29 caveat: the accepted manuscript's section numbering jumps from Section VIII to Section XI, so the typeset journal numbering may differ. The manuscript numbering is the verified object."
+  - token: "correct_clustering_dimension"
+    citation: "Cameron, A.C. and Miller, D.L. (2015), A Practitioner's Guide to Cluster-Robust Inference, Journal of Human Resources 50(2):317-372, Section IV"
+    locator_status: "verified"
+    notes: "Same D-29 manuscript-numbering caveat as independence_across_clusters."
+  - token: "many_clusters_asymptotics"
+    citation: "Cameron, A.C. and Miller, D.L. (2015), A Practitioner's Guide to Cluster-Robust Inference, Journal of Human Resources 50(2):317-372, Section VI, Few Clusters"
+    locator_status: "verified"
+    notes: "Same D-29 manuscript-numbering caveat as independence_across_clusters."
+  - token: "few_treated_clusters_correction"
+    citation: "MacKinnon, J.G., Nielsen, M.O. and Webb, M.D. (2023), Journal of Econometrics 232(2):272-299, section 4"
+    locator_status: "unverified"
+    notes: "Author, year, journal, volume, issue and page range are confirmed; the section number is not."
+  - token: "treatment_covariate_interaction_included"
+    citation: "Lin, W. (2013), Agnostic Notes on Regression Adjustments to Experimental Data: Reexamining Freedman's Critique"
+    locator_status: "unverified"
+    notes: "Journal, volume and page range were not confirmed by this project, so the citation carries author, year and title only."
+  - token: "no_covariate_selection_on_outcome"
+    citation: "Freedman, D.A. (2008), On Regression Adjustments to Experimental Data"
+    locator_status: "unverified"
+    notes: "Journal, volume and page range were not confirmed by this project, so the citation carries author, year and title only."
+  - token: "large_sample_normal_approximation"
+    citation: "Agresti, A. (2013), Categorical Data Analysis, 3rd edition"
+    locator_status: "unverified"
+    notes: "No chapter locator was confirmed by this project."
+  - token: "equal_population_variances"
+    citation: "Delacre, M., Lakens, D. and Leys, C. (2017), International Review of Social Psychology 30(1):92-101, together with the 2022 Correction, DOI 10.5334/irsp.661"
+    locator_status: "unverified"
+    notes: "The 2022 Correction lists six errors including two simulation-script errors; the headline recommendation survives it but the tables do not. This file takes no numeric value from either the paper or the Correction."
+  - token: "no_variance_pretesting"
+    citation: "Zimmerman, D.W. (2004), Journal of General Psychology 131(2):142-160"
+    locator_status: "verified"
+    notes: "Testing for equal variances before choosing Welch or Student's t inflates the false-positive rate of the subsequent test."
+  - token: "ratio_denominator_nonzero_and_finite"
+    citation: "Deng, A., Knoblich, U. and Lu, J. (2018), Applying the Delta Method in Metric Analytics, KDD '18, DOI 10.1145/3219819.3219919, also arXiv:1803.06336"
+    locator_status: "verified"
+    notes: "Verified at article level -- every locator written into the citation string is confirmed. No published reference value has been verified for this cluster; the token is cited for the assumption it names and not for any number."
+  - token: "fixed_horizon_analysis"
+    citation: "Johari, R., Koomen, P., Pekelis, L. and Walsh, D. (2022), Always Valid Inference: Continuous Monitoring of A/B Tests, Operations Research 70(3):1806-1821, also arXiv:1512.04922"
+    locator_status: "verified"
+    notes: "Verified at article level; no in-paper locator is claimed."
+  - token: "mixture_boundary_specified"
+    citation: "Johari, R., Koomen, P., Pekelis, L. and Walsh, D. (2022), Always Valid Inference: Continuous Monitoring of A/B Tests, Operations Research 70(3):1806-1821, also arXiv:1512.04922"
+    locator_status: "verified"
+    notes: "Verified at article level; no in-paper locator is claimed."
+
+ranking_rules:
+  - id: "welch_over_students"
+    prefers: "welch_t"
+    over: "students_t"
+    condition: "Two independent groups compared on a continuous outcome, with the choice made in advance and never by first testing the data for equal variances."
+    strength: "default_preference"
+    citation: "Delacre, M., Lakens, D. and Leys, C. (2017), International Review of Social Psychology 30(1):92-101, together with the 2022 Correction, DOI 10.5334/irsp.661; Ruxton, G.D. (2006); Zimmerman, D.W. (2004), Journal of General Psychology 131(2):142-160"
+    locator_status: "unverified"
+    notes: "Ruxton's journal, volume and page range were not confirmed by this project. The Delacre et al. 2017 tables are superseded by the 2022 Correction; no numeric value from either the paper or the Correction is used here, only the headline recommendation, which the Correction leaves standing."
+  - id: "boschloo_over_fishers_exact"
+    prefers: "boschloo_exact"
+    over: "fishers_exact"
+    condition: "A two-by-two comparison of independent proportions, including the small-expected-cell case where the traditional recommendation reaches for Fisher's exact test."
+    strength: "uniform_domination"
+    citation: "Lydersen, S., Fagerland, M.W. and Laake, P. (2009), Statistics in Medicine 28(7):1159-1175, section 9"
+    locator_status: "verified"
+    notes: "The only genuine uniform power domination found anywhere in this phase's research. This is the same correction plan 11-01 applied to references/test-selection.md (D-27)."
+  - id: "cv3_wild_bootstrap_over_cv1"
+    prefers: "linear_regression_cv3_wild_bootstrap"
+    over: "linear_regression_cv1"
+    condition: "Clustered dependence with a moderate or small number of clusters. A reliability ordering hedged by its own authors, which fails when very few clusters are treated."
+    strength: "reliability_hedged"
+    citation: "MacKinnon, J.G., Nielsen, M.O. and Webb, M.D. (2023), Journal of Econometrics 232(2):272-299, section 9"
+    locator_status: "unverified"
+    notes: "The section number is the unconfirmed part of this citation; author, year, journal, volume, issue and page range are confirmed. This ordering must never be reported as a domination."
+  - id: "interacted_adjustment_over_unadjusted"
+    prefers: "linear_regression_interacted_adjustment"
+    over: "linear_regression_unadjusted"
+    condition: "The adjustment includes treatment-by-covariate interaction terms; without them the ordering does not hold."
+    strength: "default_preference"
+    citation: "Lin, W. (2013), Agnostic Notes on Regression Adjustments to Experimental Data: Reexamining Freedman's Critique; Freedman, D.A. (2008), On Regression Adjustments to Experimental Data"
+    locator_status: "unverified"
+    notes: "Neither work's journal, volume or page range were confirmed by this project; citations carry author, year and title only. Lin (2013) supplies the cannot-hurt result and Freedman (2008) is the reason the interaction term is not optional."
