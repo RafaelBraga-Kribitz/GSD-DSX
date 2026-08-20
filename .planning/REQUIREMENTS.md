@@ -138,10 +138,42 @@ in either direction — they cannot justify a check and cannot excuse skipping o
 - [ ] REQ-P11-05 The adjudicator extends the existing `dsx recommend-test` rather than replacing it
 - [ ] REQ-P11-06 D-05 applies to `families.yaml` entries as it does to checks: each family carries a primary-source citation, enforced by the M1 catalogue check
 
+## Phase 11.1 (INSERTED) — Generated-pipeline reality
+
+- [ ] REQ-P11.1-01 Entrypoint scan fires on full-frame pandas cleaning idioms before the split (`.fillna(` with `.mean()`/`.median()`/`.mode()`, row filters with `.std()`/`.quantile(`) and on `.fit`/`.fit_transform` at/after the split whose first argument is not a training frame
+- [ ] REQ-P11.1-02 A statistical-test call whose argument list contains the declared model target fires — the marker no fit-scan can see
+- [ ] REQ-P11.1-03 Optional per-dataset cleaning declaration (column, method, fit_on); fitted outside training rows CRITICAL; contradiction with `model.preprocessing_fit_on: train_only` HIGH; absence of the block alone fires nothing
+- [ ] REQ-P11.1-04 `prediction_time_definition` checked unconditionally (no longer gated on the features list); undeclared positive rate under an imbalance-unsafe primary metric fires
+- [ ] REQ-P11.1-05 Result scores carry source + fold-to-fold spread; blank/unknown/best-fold source in a baseline comparison HIGH; margin below the fold spread advisory
+- [ ] REQ-P11.1-06 Selection ledger (candidates evaluated, configurations tried, selected_on) demanded when an algorithm is declared; test-set selection CRITICAL; same-fold selection without a nested protocol HIGH
+- [ ] REQ-P11.1-07 Known-bad corpus case “full-frame cleaning” (spec + post-mortem + entrypoint, modelled on the 2026-08-20 reproduction) with catch-attribution tags, blocked by the new checks
+- [ ] REQ-P11.1-08 Leakage-taxonomy ensemble sub-case (type 3, cross-ref from 7) + discretisation-is-information-loss note; ml-integrity-auditor gains the motivating-statistic question and the large-roster heuristic; fixtures/tests/catalogue current
+
+## Phase 11.2 (INSERTED) — Prescriptive claim layer
+
+- [ ] REQ-P11.2-01 `prescriptive` in CLAIM_TYPES at rank 4 of the coherence ladder; a prescriptive claim under a weaker `question_type` is CRITICAL
+- [ ] REQ-P11.2-02 A prescriptive claim with identification blank/none/weak fires HIGH — an intervention recommended on the strength of an association
+- [ ] REQ-P11.2-03 Causal-verb lexicon extended in two tiers (unambiguous forms at full strength; gerunds via the hedging path) with per-member provenance; known-bad corpus re-run green
+- [ ] REQ-P11.2-04 `decision.revisit_when` required for prescriptive questions/experiments, validated by the estimand falsifier predicate
+- [ ] REQ-P11.2-05 Decision-trail headers carry a spec-identity hash; more than one distinct frame digest under one identity at verify/ship fires HIGH, clearable by an amendments entry recording when and why
+- [ ] REQ-P11.2-06 `dsx explain` renders the self-reported-fields view (what the gate took on trust) without touching `escalate` semantics
+- [ ] REQ-P11.2-07 Storyteller prompt repointed at gate-read fields; unread scaffold fields quarantined in a documentation-only template block; fixtures/tests/catalogue current
+
+## Phase 11.3 (INSERTED) — Reporting completeness and missing-data discipline
+
+- [ ] REQ-P11.3-01 Multiplicity family counts max(declared family, reported tests); a non-empty family smaller than the reported set fires HIGH naming the absent metrics; the stale cross-reference comment is corrected
+- [ ] REQ-P11.3-02 `comparisons_looked_at` exceeding reported results fires HIGH with the ratio quoted, independent of family presence
+- [ ] REQ-P11.3-03 `missingness.method_implied` closed vocabulary registered in frame membership; the single-imputation-as-if-observed family under missing-at-random blocks at plan
+- [ ] REQ-P11.3-04 `validity_frame.exclusions` sub-block (rule, action, applied_before_split, justification); a rule without justification HIGH; row counts live in results/profile, never in the frame
+- [ ] REQ-P11.3-05 An unrecognised effect-size kind fires MEDIUM instead of silently skipping
+- [ ] REQ-P11.3-06 Four structural conformance codes validate CHART-REVIEW.md against `references/chart-review-schema.md`; no stochastic agent verdict gates
+- [ ] REQ-P11.3-07 Fixtures/tests/catalogue current; full corpus re-run green
+
+
 ## Phase 12 (M5) — Calibration
 
 - [ ] REQ-P12-01 The known-bad corpus is extended to full size with retracted papers carrying published post-mortems, documented p-hacking cases, and prior work whose answer is now known
-- [ ] REQ-P12-02 Corpus cases carry structured catch-attribution tags so backlog entry conditions are machine-countable rather than narrative judgements (D-13)
+- [ ] REQ-P12-02 Corpus cases carry structured catch-attribution tags so backlog entry conditions are machine-countable rather than narrative judgements (D-13); the harness also reports a per-family friction column (non-target blocking findings per fixture), computed from the live corpus — the hand-maintained attribution ledger is stale and must not be lifted
 - [ ] REQ-P12-03 A harness reports catch rate and false-positive rate across the corpus, producing a number
 - [ ] REQ-P12-04 `dsx stats --paradigm` reports the frequentist/Bayesian split across the operator's own frame history
 - [ ] REQ-P12-05 Each gated-backlog item in brief §6.5 is re-evaluated against its stated entry condition using the measured corpus, and items whose condition cannot be evaluated are removed rather than carried
@@ -161,6 +193,9 @@ in either direction — they cannot justify a check and cannot excuse skipping o
 | Reading a data warehouse from a gate | Breaks the determinism doctrine |
 | A catalogue of every named statistical test | Families, not tests |
 | `dsx quiz` fading mode | Entry condition: M5 ships |
+| Feature-provenance per-feature list | Gated backlog (brief §6.5); the leakage principle is already covered — this buys attribution, not a catch |
+| Magnitude-without-computed-effect residual claim check | Gated backlog (brief §6.5); the paper-shaped instances already fire `DSX-CLM-070` and the per-test effect-size finding |
+| Subgroup-harm declaration check | Gated backlog (brief §6.5); no admissible citation yet — lives as an agent-prompt guardrail until promoted |
 
 ## Open items — resolve at phase discuss, do not decide silently
 
@@ -169,10 +204,13 @@ in either direction — they cannot justify a check and cannot excuse skipping o
 | `method_family_required` cannot express a disjunction under M-09's single-member reuse of `VARIANCE_ADJUSTMENTS`; the brief's example value is `cluster_robust_or_mixed` | 7 (M2a) | Reuse was chosen over a parallel vocabulary; whether the field becomes set-valued is a modelling call best made against real dependence declarations |
 | Final numeric code assignments within `DSX-VAL-*`, `DSX-INT-*`, `DSX-ADM-*` beyond those the brief fixes | 7, 8, 11 | D-06 makes numbering irreversible |
 | ~~Whether the existing `inflation_from_peeking()` docstring is upgraded to a full D-05 citation~~ | 9 (M2c) | **Resolved 2026-08-12 at discuss** — yes, with an explicit unverified-locator flag (09-CONTEXT D-13). |
+| Whether the adjudicator adjudicates per spec or per hypothesis — the one-row-per-hypothesis container from the 2026-08-20 paper evaluation is UNVERIFIED; run a verification spike before writing any requirement | 11 (M4) | The only candidate the adversarial verification pass never reached; adopting it unspiked would violate the verification-before-claiming agreement |
+| Missingness-rate reconciliation against the profile — redesign with tolerance + re-baseline the good fixture, or defer with an entry condition | 11.3 | Naive version fires on the canonical good fixture (declares 0, profile shows 1.2%) and would be the first check to cross the frame→profile layer boundary |
+| Final numeric code assignments within the Phase 11.1–11.3 families | 11.1–11.3 | D-06 makes numbering irreversible |
 
 ## Traceability
 
-Every v2.0.0 requirement maps to exactly one phase. 53/53 mapped; no orphans, no duplicates.
+Every v2.0.0 requirement maps to exactly one phase. 75/75 mapped (53 original + 22 from inserted Phases 11.1–11.3); no orphans, no duplicates.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
@@ -224,6 +262,28 @@ Every v2.0.0 requirement maps to exactly one phase. 53/53 mapped; no orphans, no
 | REQ-P11-04 | Phase 11 | Pending |
 | REQ-P11-05 | Phase 11 | Pending |
 | REQ-P11-06 | Phase 11 | Pending |
+| REQ-P11.1-01 | Phase 11.1 | Pending |
+| REQ-P11.1-02 | Phase 11.1 | Pending |
+| REQ-P11.1-03 | Phase 11.1 | Pending |
+| REQ-P11.1-04 | Phase 11.1 | Pending |
+| REQ-P11.1-05 | Phase 11.1 | Pending |
+| REQ-P11.1-06 | Phase 11.1 | Pending |
+| REQ-P11.1-07 | Phase 11.1 | Pending |
+| REQ-P11.1-08 | Phase 11.1 | Pending |
+| REQ-P11.2-01 | Phase 11.2 | Pending |
+| REQ-P11.2-02 | Phase 11.2 | Pending |
+| REQ-P11.2-03 | Phase 11.2 | Pending |
+| REQ-P11.2-04 | Phase 11.2 | Pending |
+| REQ-P11.2-05 | Phase 11.2 | Pending |
+| REQ-P11.2-06 | Phase 11.2 | Pending |
+| REQ-P11.2-07 | Phase 11.2 | Pending |
+| REQ-P11.3-01 | Phase 11.3 | Pending |
+| REQ-P11.3-02 | Phase 11.3 | Pending |
+| REQ-P11.3-03 | Phase 11.3 | Pending |
+| REQ-P11.3-04 | Phase 11.3 | Pending |
+| REQ-P11.3-05 | Phase 11.3 | Pending |
+| REQ-P11.3-06 | Phase 11.3 | Pending |
+| REQ-P11.3-07 | Phase 11.3 | Pending |
 | REQ-P12-01 | Phase 12 | Pending |
 | REQ-P12-02 | Phase 12 | Pending |
 | REQ-P12-03 | Phase 12 | Pending |
@@ -240,8 +300,11 @@ Every v2.0.0 requirement maps to exactly one phase. 53/53 mapped; no orphans, no
 | 9 | M2c — Monitoring discipline, symmetric (`DSX-PAR-*`) | REQ-P9-01 … REQ-P9-07 | 7 |
 | 10 | M3 — Pre-registered inference plan (`DSX-PRE-*`) | REQ-P10-01 … REQ-P10-04 | 4 |
 | 11 | M4 — Frequentist admissibility adjudicator (`DSX-ADM-*`) | REQ-P11-01 … REQ-P11-06 | 6 |
+| 11.1 | (INSERTED) Generated-pipeline reality | REQ-P11.1-01 … REQ-P11.1-08 | 8 |
+| 11.2 | (INSERTED) Prescriptive claim layer | REQ-P11.2-01 … REQ-P11.2-07 | 7 |
+| 11.3 | (INSERTED) Reporting completeness and missing-data discipline | REQ-P11.3-01 … REQ-P11.3-07 | 7 |
 | 12 | M5 — Calibration | REQ-P12-01 … REQ-P12-05 | 5 |
-| **Total** | — | — | **53** |
+| **Total** | — | — | **75** |
 
 See `.planning/ROADMAP.md` for each phase's goal, success criteria, dependencies and
 ordering constraints.

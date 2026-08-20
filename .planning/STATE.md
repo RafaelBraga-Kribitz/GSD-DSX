@@ -10,11 +10,11 @@ last_updated: "2026-08-20T15:23:39.572Z"
 last_activity: 2026-08-20
 last_activity_desc: Phase 10 complete, transitioned to Phase 11
 progress:
-  total_phases: 6
+  total_phases: 9
   completed_phases: 5
   total_plans: 47
   completed_plans: 44
-  percent: 83
+  percent: 56
 ---
 
 # Project state
@@ -44,6 +44,7 @@ progress:
 - Phase 7 (M2a) — **complete 2026-08-20**. Re-verification passed: 5/5 roadmap success criteria, 8/9 requirements MET, REQ-P7-08 PARTIAL by the deliberate D-06 scope decision (not a gap). Both prior `human_needed` items (Chan & Perry 2017 citation admissibility; the two D-05 honesty disclosures) were closed by recorded human verdicts in `07-UAT.md` (38/38 pass, 0 gaps). Security verified, 0 open threats. Outstanding, non-blocking: 07-REVIEW.md CR-01 (an out-of-vocabulary `inference.paradigm` made the `DSX-PAR-001` manifest contradict `DSX-PAR-010`/`-011` and silenced `DSX-PAR-002`) is **fixed 2026-08-20** in `dsx/frame/paradigm.py` — both readers now fold an unrecognised value into the undeclared case, matching `_check_monitoring_discipline`; suite 549 OK. Still open: WR-01 (`val.py::check()` hand-duplicates each `_check_*` blocking predicate with no drift test).
 - Phase 8 (M2b) — **complete 2026-08-14**, verification passed 6/6. Outstanding, non-blocking: `/gsd-secure-phase 08` has not been run (security enforcement is active), and 08-REVIEW.md carries two WARNING findings (WR-01 self-contradictory DSX-INT-011 remedy text for an out-of-vocabulary risk; WR-02 `design.alpha: 0` silently defaulted in `dsx/frame/paradigm.py`).
 - Then Phase 10 (M3, context re-verified 2026-08-14, 6 unexecuted plans already on disk, soft-depends on 7), Phase 11 (M4, hard-depends on 7), Phase 12 (M5, terminal).
+- Inserted 2026-08-20 (paper-evaluation integration, Option A): Phases 11.1 (generated-pipeline reality), 11.2 (prescriptive claim layer), 11.3 (reporting completeness / missing-data discipline) run after Phase 11 and before Phase 12 — the catch rate Phase 12 measures must cover their checks and the full-frame-cleaning corpus case (REQ-P11.1-07).
 - Deferred, unchanged: Parquet profiler, live Glyph MCP, NLP decision_rule — out of scope for core gates.
 
 ## Accumulated Context
@@ -54,11 +55,15 @@ progress:
 - Phase 9's `DSX-PAR-010` and `DSX-PAR-011` are atomic (D-12): both ship or neither. **Resolved** — both shipped in 09-03 at CRITICAL; phase closed 2026-08-13.
 - Phase 7 precedes Phase 11 — admissibility is keyed on the dependence taxonomy.
 - Phase 12 is necessarily last.
+- Phases 11.1–11.3 (inserted 2026-08-20) precede Phase 12 — the corpus case REQ-P11.1-07 and the checks that catch it must exist before the catch rate is measured.
 
 **Open items to resolve at phase discuss (do not decide silently):**
 
 - Phase 7: `method_family_required` cannot express a disjunction under M-09's single-member reuse of `VARIANCE_ADJUSTMENTS`.
 - Phases 7, 8, 11: final numeric code assignments beyond those the brief fixes (D-06 makes numbering irreversible).
+- Phases 11.1–11.3: final numeric code assignments (D-06).
+- Phase 11 (discuss): per-spec vs per-hypothesis adjudication — the one-row-per-hypothesis container from the 2026-08-20 paper evaluation is UNVERIFIED; run a verification spike before writing any requirement on it.
+- Phase 11.3 (discuss): missingness-rate reconciliation against the profile — the naive version fires on the good fixture; redesign with tolerance + re-baseline, or defer with an entry condition.
 - ~~Phase 9: whether the pre-existing `inflation_from_peeking()` docstring is upgraded to a full D-05 citation.~~ **Resolved 2026-08-12 at discuss** — yes, with an explicit unverified-locator flag (09-CONTEXT D-13). D-05 does not mechanically reach the function (no `report.add` call site), so this is elective; it is done because leaving it uncited puts a seam where a v2.0.0 check depends on a v1.5.0 computation. Anchor values verified by independent quadrature + Monte Carlo; the 1969 paper itself remains inaccessible, so **no table or page may be cited**.
 - Phase 9: the "prior-averaged Ville bound" name is retired. **Corrected further 2026-08-12** — Deng Theorem 1 does **not** state `1/(K+1)`; it states an optional-stopping equality. The bound is unnumbered prose, §3.2 in its operational form. Verified against the arXiv LaTeX source (09-CONTEXT D-10). Ville's `1/k` remains a separate result, and Ville is never cited in Deng et al. at all (D-12). **REQ-P9-02/03 and ROADMAP Phase 9 SC 2/SC 3 still carry the old attribution and must be amended during planning.** The three regression guards in `tests/test_known_bad_corpus.py` hold the Deng-vs-Ville line and should be re-read, not assumed stale (UAT gap G-01).
 - ~~Phase 9: omitting `inference.paradigm` produces no finding.~~ **Resolved in 09-03** — undeclared paradigm selects every `_MONITORING_DISCIPLINE` row, so both CRITICAL codes fire at `plan`.
@@ -69,6 +74,12 @@ progress:
 - Phase 10: `_D05_ALLOWLIST_PREFIXES` (`scripts/gen-finding-catalogue.py:65`) is an **inclusion** list, not an exemption list, and does not cover `DSX-PRE-`. Without that edit the brief-D-05 citation gate is silently disabled for this family and `--check` still passes (10-CONTEXT D-13 item 4).
 - Phase 10: `brief.md` §7 names no pre-registration source and gains the Gelman & Loken (2014) anchor — a citation addition where none existed, not a brief-D-14 reversal (10-CONTEXT D-14). **Resolved 2026-08-20** — `brief.md` §7 now carries the Gelman & Loken (2014) anchor, both locator warnings intact, plus the Simmons, Nelson & Simonsohn (2011) and Nosek, Ebersole, DeHaven & Mellor (2018) secondary sources, each with its own scope note (10-06).
 - Phase 10: two decisions left to the planner's discretion, settled at execute 2026-08-20 (10-06) — the content-lock comparison is set membership over every recorded plan-time digest rather than a most-recent or earliest pick, because `InvocationHeader` records no specification identity and any ordering rule produces cross-specification false positives in a shared trail directory; and trail reconciliation is scoped to a real `dsx gate` invocation only, because the read-only inspection commands (`dsx check`/`dsx audit`) never write a trail and could therefore never satisfy the precondition.
+
+### Roadmap Evolution
+
+- Phase 11.1 inserted after Phase 11 (2026-08-20): Generated-pipeline reality — closes the live gate bypass reproduced in the paper evaluation (URGENT)
+- Phase 11.2 inserted after Phase 11.1 (2026-08-20): Prescriptive claim layer — recommendations become checkable
+- Phase 11.3 inserted after Phase 11.2 (2026-08-20): Reporting completeness and missing-data discipline
 
 **Standing per-phase deliverables:**
 

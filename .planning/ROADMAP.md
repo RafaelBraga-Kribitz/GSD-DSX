@@ -2,7 +2,7 @@
 
 **Current milestone:** v2.0.0 DSX Validity Frame — Phases 6–12
 **Shipped:** v1.1.0–v1.5.0 — Phases 1–5
-**Granularity:** standard (phase structure fixed by `brief.md` §6; the seven milestones map 1:1 onto phases)
+**Granularity:** standard (phase structure fixed by `brief.md` §6; the seven milestones map 1:1 onto phases; Phases 11.1–11.3 inserted 2026-08-20 outside the §6 milestone map — paper-evaluation integration, Option A)
 
 ## Phases
 
@@ -17,6 +17,9 @@
 - [x] **Phase 9: Monitoring discipline, symmetric (`DSX-PAR-*`)** - the atomic `DSX-PAR-010`/`-011` pair plus `DSX-PAR-002` (M2c) — completed 2026-08-13
 - [x] **Phase 10: Pre-registered inference plan (`DSX-PRE-*`)** - fallback-rule DSL, `declared_at` provenance, declared-vs-executed branch reconciliation (M3) — completed 2026-08-20
 - [ ] **Phase 11: Frequentist admissibility adjudicator (`DSX-ADM-*`)** - `references/families.yaml`, ranked admissible set, `no_admissible_procedure` escalation (M4)
+- [ ] **Phase 11.1: Generated-pipeline reality (INSERTED)** - widened entrypoint fit-scan (pandas cleaning idioms, non-training-frame fits, target-in-test-call), cleaning-stage fit boundary, score/selection provenance, imbalance disclosure, paper-shaped corpus case
+- [ ] **Phase 11.2: Prescriptive claim layer (INSERTED)** - `prescriptive` claim type + coherence ladder, causal-verb lexicon tiers, `decision.revisit_when`, amendment counting on the locked plan, self-reported-fields view
+- [ ] **Phase 11.3: Reporting completeness and missing-data discipline (INSERTED)** - multiplicity family covers reported tests, examined-vs-reported gap, missingness method vocabulary + single-imputation denial, exclusion rules under the plan-time lock, chart-review conformance
 - [ ] **Phase 12: Calibration** - full known-bad corpus, measured catch rate and FPR, `dsx stats --paradigm`, backlog re-evaluation (M5)
 
 ---
@@ -549,6 +552,9 @@ fixtures, not from taxonomic completeness — a family is added when a real case
 completeness pressure on the alias list.
 
 **Open items**: final numeric code assignments within `DSX-ADM-*` beyond those the brief fixes.
+At discuss: whether the adjudicator adjudicates per spec or per hypothesis — the
+one-row-per-hypothesis container surfaced by the 2026-08-20 paper evaluation is UNVERIFIED;
+run a verification spike before writing any requirement on it.
 
 **Success Criteria** (what must be TRUE):
 
@@ -575,13 +581,150 @@ completeness pressure on the alias list.
 
 **Plans**: TBD
 
+### Phase 11.1: Generated-pipeline reality (INSERTED)
+
+**Goal**: A multi-stage pipeline whose cleaning statistics saw the test rows cannot pass the
+gate by declaring honestly — the entrypoint scan reads the pandas idioms cleaning is actually
+written in, and the contract can carry a per-stage fit boundary.
+
+**Depends on**: Phase 3 (the `DSX-CODE-*` scan it widens) and Phase 6 (contract extension
+mechanics). Independent of Phase 11. Must precede Phase 12: the corpus case this phase ships
+is measured there.
+
+**Requirements**: REQ-P11.1-01 … REQ-P11.1-08
+
+**Ordering constraints**: The corpus case (REQ-P11.1-07) is committed with catch-attribution
+tags in the same phase as the checks that catch it, so Phase 12's number covers the failure
+mode reproduced live in the 2026-08-20 paper evaluation (full-frame cleaning above an honest
+split passing every gate).
+
+**Open items**: final numeric code assignments (D-06); the training-frame name lexicon for
+the widened fit-scan (which identifier names count as training frames) is fixed at discuss;
+citation admissibility (candidates: Kaufman et al. 2012; Varma & Simon 2006; Cawley & Talbot
+2010; Saito & Rehmsmeier 2015) settled at discuss under D-05.
+
+**Success Criteria** (what must be TRUE):
+
+  1. The 2026-08-20 reproduction — full-frame mean/mode imputation and a z-score row filter
+     above a legitimate split, with `preprocessing_fit_on: train_only` honestly declared — is
+     BLOCKED at execute, where today it passes with zero findings at every severity.
+
+  2. A `.fit(`/`.fit_transform(` call at or after the split whose first argument is not a
+     recognised training-frame name fires; `SimpleImputer().fit(df)` one line after the split
+     no longer passes clean.
+
+  3. A statistical-test call whose argument list contains the declared model target fires —
+     the marker no fit-scan can ever see.
+
+  4. The optional per-dataset cleaning declaration exists; a step fitted outside training rows
+     is CRITICAL; a cleaning step contradicting `model.preprocessing_fit_on: train_only` is
+     HIGH; absence of the block alone fires nothing (no boilerplate manufacture).
+
+  5. A model-vs-baseline comparison whose score source is blank, `unknown` or `best_fold`
+     fires; a declared algorithm with no selection ledger fires; selection made on the test
+     set is CRITICAL; a margin smaller than the model's own fold-to-fold spread advises.
+
+  6. `prediction_time_definition` is checked even when `model.features` is absent, and an
+     undeclared positive rate under an imbalance-unsafe primary metric fires.
+
+**Plans**: TBD
+
+### Phase 11.2: Prescriptive claim layer (INSERTED)
+
+**Goal**: The claim register can express an action recommendation, and the gate then holds it
+to the standard of the causal claim it is — including what would retire it, and how many
+times the locked plan was amended after results existed.
+
+**Depends on**: Phase 6 (decision trail, frame digest) and Phase 10 (the plan-time content
+lock the amendment counter extends). Independent of Phase 11. Must precede Phase 12.
+
+**Requirements**: REQ-P11.2-01 … REQ-P11.2-07
+
+**Ordering constraints**: The `prescriptive` claim type (REQ-P11.2-01) lands before the
+identification-strength check (REQ-P11.2-02) that reads it; the causal-verb tier extension
+(REQ-P11.2-03) re-runs the known-bad corpus in the same phase so no existing fixture verdict
+silently changes.
+
+**Open items**: final numeric code assignments (D-06); citation admissibility for the
+prescriptive-claims check (candidate: Hernán 2018, “The C-word”) and for amendment
+discipline (candidate: Nosek et al. 2018) settled at discuss under D-05.
+
+**Success Criteria** (what must be TRUE):
+
+  1. A claim typed `prescriptive` is recognised at rank 4 of the coherence ladder; under any
+     weaker `question_type` it is CRITICAL; with identification blank, `none` or weak it fires
+     the new check. “Offer bundled incentives to reduce churn” typed `descriptive` no longer
+     passes silently — the bare-infinitive causal verbs catch it.
+
+  2. `decision.revisit_when` is required for prescriptive questions and experiments and must
+     pass the estimand falsifier predicate — “when the market changes” rejected, a named
+     metric with a threshold and a window accepted.
+
+  3. Re-running the plan gate on an amended frame under one spec identity yields a HIGH
+     finding at verify/ship unless a matching amendments entry records when and why — today
+     the content lock clears with no finding at all.
+
+  4. `dsx explain` renders the self-reported-fields view (what the gate took on trust) from
+     existing trail records; `escalate` field semantics are untouched.
+
+  5. Unread scaffold fields are quarantined in a clearly marked documentation-only template
+     block, and the storyteller prompt points only at fields a gate actually reads.
+
+**Plans**: TBD
+
+### Phase 11.3: Reporting completeness and missing-data discipline (INSERTED)
+
+**Goal**: The examined-but-unreported comparisons and the imputation method are first-class
+declarations — an under-declared multiplicity family or a single imputation under
+missing-at-random blocks before the data is touched.
+
+**Depends on**: Phase 4 (multiplicity / `comparisons_looked_at` machinery) and Phase 7 (the
+`validity_frame.missingness` sub-block). Independent of Phase 11. Must precede Phase 12.
+
+**Requirements**: REQ-P11.3-01 … REQ-P11.3-07
+
+**Ordering constraints**: The missingness method vocabulary (REQ-P11.3-03) registers in the
+existing frame-membership table so the membership check types it with no new code — the
+Phase 7 pattern, reused not duplicated.
+
+**Open items**: final numeric code assignments (D-06); missingness-rate reconciliation
+against the profile — the naive version fires on the canonical good fixture (declares 0,
+profile shows 1.2% on one column) and would cross the frame→profile layer boundary; decide
+at discuss: redesign with tolerance + re-baseline the fixture, or defer with an entry
+condition. Citations (Rubin 1987; Little & Rubin; van Buuren; Simmons, Nelson & Simonsohn
+2011 — already anchoring the post-hoc procedure check; Franco, Malhotra & Simonovits 2014)
+settled at discuss under D-05.
+
+**Success Criteria** (what must be TRUE):
+
+  1. Declaring one hypothesis while reporting five is HIGH, naming the absent metrics — the
+     family count used is max(declared family, reported tests), and an under-declared family
+     no longer buys silence.
+
+  2. `comparisons_looked_at` exceeding the reported results fires with the ratio quoted
+     (“36 examined, 3 reported”), with or without a declared family.
+
+  3. `missingness.method_implied` is a closed vocabulary; mean, median, mode or
+     last-observation-carried-forward under a declared missing-at-random mechanism blocks at
+     plan — before the data is touched.
+
+  4. A declared row-exclusion rule with no justification is HIGH, and changing a declared
+     cutoff after results exist is caught by the existing plan-time content lock with no new
+     machinery — the frame digest already hashes the sub-block.
+
+  5. An unrecognised effect-size kind is a MEDIUM finding rather than a silent skip, and
+     CHART-REVIEW.md structure is validated against `references/chart-review-schema.md` by
+     four structural codes — no stochastic agent verdict gates.
+
+**Plans**: TBD
+
 ### Phase 12: Calibration
 
 **Goal**: There is a number. Measured catch rate and false-positive rate across a full-size
 known-bad corpus, a paradigm split across the operator's own frame history, and every
 gated-backlog entry condition either evaluated against measured evidence or removed.
 
-**Depends on**: Phases 6–11. Necessarily last — this phase measures everything before it, and
+**Depends on**: Phases 6–11 plus inserted Phases 11.1–11.3. Necessarily last — this phase measures everything before it, and
 the backlog entry conditions it evaluates (including "`dsx stats --paradigm` shows Bayesian
 frames above 15%") cannot be evaluated until it ships.
 
