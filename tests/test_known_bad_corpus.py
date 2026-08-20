@@ -133,10 +133,19 @@ _INCIDENTAL_GAP_CODES = {
 # below 100% coverage), not a defect, and DSX-INT-030 correctly names an additive metric
 # is analysed on that eligible population with no adjustment declared — a second,
 # genuine defect this fixture happens to also encode, not a false positive.
+# Plan 10-05 adds post-hoc-procedure-switch -> {"verify": "DSX-PRE-030"}: `prereg`
+# (dsx/frame/prereg.py) is registered in the verify and ship gate profiles only
+# (dsx/cli.py::GATE_PROFILES), never plan or execute, so this is the second
+# verify-only-key entry in this map after weak-identification-mmm's DSX-INT-030 —
+# the shape this map exists for. See test_post_hoc_procedure_switch_fixture_blocks_
+# verify_and_ship_naming_pre_030 for the positive-direction proof the generic
+# test below cannot supply, exactly as test_weak_identification_mmm_fixture_
+# blocks_verify_and_ship_naming_int_030 supplies it for the other verify-only entry.
 _TARGET_DEFECT_CODES: "dict[str, dict[str, str]]" = {
     "weak-identification-mmm": {"plan": "DSX-VAL-040", "verify": "DSX-INT-030"},
     "interference-shared-budget": {"plan": "DSX-INT-010"},
     "triggering-dilution": {"plan": "DSX-INT-030"},
+    "post-hoc-procedure-switch": {"verify": "DSX-PRE-030"},
 }
 
 
@@ -283,6 +292,12 @@ _EXPECTED_CAUGHT_DEFECTS: "dict[str, frozenset[str]]" = {
     "interference-shared-budget": frozenset(),
     "triggering-dilution": frozenset(),
     "weak-identification-mmm": frozenset(),
+    # Empty by design, not by omission: this map's frozenset applies at every
+    # point in _CRITICAL_THRESHOLD_POINTS ("plan", "execute"), and `prereg`
+    # structurally cannot fire there — it is registered in GATE_PROFILES["verify"]
+    # and ["ship"] only. The fixture's real catch (DSX-PRE-030 at "verify") lives
+    # in _TARGET_DEFECT_CODES above instead, the point-scoped shape.
+    "post-hoc-procedure-switch": frozenset(),
 }
 
 
@@ -491,6 +506,57 @@ class TestKnownBadCorpus(unittest.TestCase):
                 self.assertIn(
                     "DSX-INT-030",
                     {f["code"] for f in findings if f["severity"] == "CRITICAL"},
+                )
+
+    def test_post_hoc_procedure_switch_fixture_blocks_verify_and_ship_naming_pre_030(self):
+        """The verify/ship positive direction for a second verify-only family
+        (REQ-P10-04, ROADMAP Success Criterion 2 and 3), copying the shape of
+        `test_weak_identification_mmm_fixture_blocks_verify_and_ship_naming_int_030`
+        above. This dedicated test is not optional and is not redundant with
+        `test_every_spec_blocks_only_on_its_target_defect_at_critical_threshold_points`:
+        that generic test calls `_gate_findings` only for the points in
+        `_CRITICAL_THRESHOLD_POINTS` (`"plan"`, `"execute"`), so the `"verify"`
+        key this fixture's `_TARGET_DEFECT_CODES` entry carries is never
+        consulted by it, and a verify-and-ship-only family would otherwise ship
+        with no corpus coverage at all — exactly the gap 08-REVIEW.md WR-01
+        named for `weak-identification-mmm` before the test above closed it.
+        The next person adding a point-scoped family should not assume the
+        generic test covers them; it does not.
+
+        Carries all four of this task's behaviours in one method, `subTest`-ed
+        over the gate point so a failure names which point regressed: (1)/(2)
+        `dsx gate verify`/`ship` both exit 1 naming `DSX-PRE-030` among their
+        CRITICAL findings; (3) that finding's `detail` names both the declared
+        branch label and the executed procedure label (ROADMAP Success
+        Criterion 2's literal requirement, asserted against a real gate run
+        rather than a synthetic report); (4) `dsx gate plan`/`execute` produce
+        no `DSX-PRE-` finding of any number, because `prereg` is not
+        registered at those points.
+        """
+        fixture = CORPUS_DIR / "post-hoc-procedure-switch-ANALYSIS-SPEC.yaml"
+        declared_branch = "two_proportion_z"
+        executed_procedure = "fishers_exact"
+        for point in ("verify", "ship"):
+            with self.subTest(point=point):
+                code, findings = self._gate_findings(fixture, point)
+                self.assertEqual(code, 1)
+                critical = {
+                    f["code"]: f for f in findings if f["severity"] == "CRITICAL"
+                }
+                self.assertIn("DSX-PRE-030", critical)
+                # Whitespace-normalized (this checkout is CRLF) rather than a
+                # line-anchored comparison, matching the module's existing idiom.
+                detail = " ".join(str(critical["DSX-PRE-030"]["detail"]).split())
+                self.assertIn(declared_branch, detail)
+                self.assertIn(executed_procedure, detail)
+
+        for point in ("plan", "execute"):
+            with self.subTest(point=point):
+                _code, findings = self._gate_findings(fixture, point)
+                pre_codes = {f["code"] for f in findings if f["code"].startswith("DSX-PRE-")}
+                self.assertEqual(
+                    pre_codes, set(),
+                    f"prereg is not registered at {point!r} but fired {sorted(pre_codes)!r}",
                 )
 
     def test_ship_gate_findings_are_all_documented_incidental_corpus_gaps(self):
