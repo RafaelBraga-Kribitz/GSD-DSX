@@ -652,7 +652,7 @@ citation admissibility (candidates: Kaufman et al. 2012; Varma & Simon 2006; Caw
   6. `prediction_time_definition` is checked even when `model.features` is absent, and an
      undeclared positive rate under an imbalance-unsafe primary metric fires.
 
-**Plans**: 5/8 plans executed
+**Plans**: 6/8 plans executed
 
 Plans:
 
@@ -676,7 +676,7 @@ Plans:
 - [x] 11.1-05-PLAN.md — Optional per-dataset cleaning declaration: fitted outside training rows
       (`DSX-ML-023`) and contradiction with the whole-pipeline boundary (`DSX-ML-024`)
 
-- [ ] 11.1-06-PLAN.md — Result score provenance (`DSX-ML-052`) and margin below the declared fold
+- [x] 11.1-06-PLAN.md — Result score provenance (`DSX-ML-052`) and margin below the declared fold
       spread (`DSX-ML-053`)
 
 - [ ] 11.1-07-PLAN.md — Selection ledger: absent (`DSX-ML-090`), test-set selection
