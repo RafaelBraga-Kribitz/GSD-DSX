@@ -1469,6 +1469,210 @@ class TestPhase11_1ML(unittest.TestCase):
         self.assertNotIn("DSX-ML-052", found)
         self.assertNotIn("DSX-ML-053", found)
 
+    # ── DSX-ML-090/091/092: selection ledger (REQ-P11.1-06) ──────────────────
+
+    def test_selection_bases_vocabulary_is_locked_and_disjoint_from_score_sources(self):
+        self.assertEqual(
+            ml.SELECTION_BASES,
+            frozenset({"train", "validation", "test", "cv_same_fold", "nested_cv"}),
+        )
+        self.assertFalse(ml.SELECTION_BASES & ml.SCORE_SOURCES)
+
+    def test_algorithm_declared_no_ledger_key_produces_090_at_high(self):
+        # D-05: DSX-ML-090
+        spec = {**self.BASE, "model": self._model(algorithm="gradient_boosting")}
+        report = ml.check(spec)
+        found = [f for f in report.findings if f.code == "DSX-ML-090"]
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0].severity, Severity.HIGH)
+
+    def test_algorithm_declared_empty_ledger_mapping_produces_090(self):
+        spec = {
+            **self.BASE,
+            "model": self._model(algorithm="gradient_boosting", selection_ledger={}),
+        }
+        self.assertIn("DSX-ML-090", codes(ml.check(spec)))
+
+    def test_empty_candidate_list_produces_090(self):
+        spec = {
+            **self.BASE,
+            "model": self._model(
+                algorithm="gradient_boosting",
+                selection_ledger={
+                    "candidates_evaluated": [],
+                    "configurations_tried": 18,
+                    "selected_on": "validation",
+                },
+            ),
+        }
+        self.assertIn("DSX-ML-090", codes(ml.check(spec)))
+
+    def test_missing_configuration_count_key_produces_090(self):
+        spec = {
+            **self.BASE,
+            "model": self._model(
+                algorithm="gradient_boosting",
+                selection_ledger={
+                    "candidates_evaluated": ["a", "b"],
+                    "selected_on": "validation",
+                },
+            ),
+        }
+        self.assertIn("DSX-ML-090", codes(ml.check(spec)))
+
+    def test_configuration_count_zero_with_others_declared_produces_no_090(self):
+        spec = {
+            **self.BASE,
+            "model": self._model(
+                algorithm="gradient_boosting",
+                selection_ledger={
+                    "candidates_evaluated": ["a"],
+                    "configurations_tried": 0,
+                    "selected_on": "validation",
+                },
+            ),
+        }
+        self.assertNotIn("DSX-ML-090", codes(ml.check(spec)))
+
+    def test_blank_selection_basis_produces_090(self):
+        spec = {
+            **self.BASE,
+            "model": self._model(
+                algorithm="gradient_boosting",
+                selection_ledger={
+                    "candidates_evaluated": ["a", "b"],
+                    "configurations_tried": 18,
+                    "selected_on": "",
+                },
+            ),
+        }
+        self.assertIn("DSX-ML-090", codes(ml.check(spec)))
+
+    def test_misspelled_selection_basis_produces_090_not_a_bypass(self):
+        # An unrecognised value is not a recognised one — a typo of an
+        # accepted value must not clear DSX-ML-091's CRITICAL.
+        spec = {
+            **self.BASE,
+            "model": self._model(
+                algorithm="gradient_boosting",
+                selection_ledger={
+                    "candidates_evaluated": ["a", "b"],
+                    "configurations_tried": 18,
+                    "selected_on": "tset",
+                },
+            ),
+        }
+        self.assertIn("DSX-ML-090", codes(ml.check(spec)))
+
+    def test_090_detail_names_each_missing_field_individually(self):
+        spec = {
+            **self.BASE,
+            "model": self._model(
+                algorithm="gradient_boosting",
+                selection_ledger={"candidates_evaluated": ["a", "b"]},
+            ),
+        }
+        report = ml.check(spec)
+        found = next(f for f in report.findings if f.code == "DSX-ML-090")
+        self.assertIn("configurations tried", found.detail)
+        self.assertIn("selection basis", found.detail)
+        self.assertNotIn("candidates evaluated", found.detail)
+
+    def test_complete_ledger_selected_on_test_produces_091_at_critical_not_090(self):
+        # D-05: DSX-ML-091
+        spec = {
+            **self.BASE,
+            "model": self._model(
+                algorithm="gradient_boosting",
+                selection_ledger={
+                    "candidates_evaluated": ["a", "b"],
+                    "configurations_tried": 18,
+                    "selected_on": "test",
+                },
+            ),
+        }
+        report = ml.check(spec)
+        found = [f for f in report.findings if f.code == "DSX-ML-091"]
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0].severity, Severity.CRITICAL)
+        self.assertNotIn("DSX-ML-090", codes(report))
+
+    def test_complete_ledger_selected_on_same_folds_produces_092_at_high_not_090_or_091(self):
+        # D-05: DSX-ML-092
+        spec = {
+            **self.BASE,
+            "model": self._model(
+                algorithm="gradient_boosting",
+                selection_ledger={
+                    "candidates_evaluated": ["a", "b"],
+                    "configurations_tried": 18,
+                    "selected_on": "cv_same_fold",
+                },
+            ),
+        }
+        report = ml.check(spec)
+        found = [f for f in report.findings if f.code == "DSX-ML-092"]
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0].severity, Severity.HIGH)
+        found_codes = codes(report)
+        self.assertNotIn("DSX-ML-090", found_codes)
+        self.assertNotIn("DSX-ML-091", found_codes)
+
+    def test_complete_ledger_selected_on_nested_validation_or_train_produces_none_of_three(self):
+        for basis in ("nested_cv", "validation", "train"):
+            with self.subTest(basis=basis):
+                spec = {
+                    **self.BASE,
+                    "model": self._model(
+                        algorithm="gradient_boosting",
+                        selection_ledger={
+                            "candidates_evaluated": ["a", "b"],
+                            "configurations_tried": 18,
+                            "selected_on": basis,
+                        },
+                    ),
+                }
+                report = ml.check(spec)
+                found_codes = codes(report)
+                self.assertNotIn("DSX-ML-090", found_codes)
+                self.assertNotIn("DSX-ML-091", found_codes)
+                self.assertNotIn("DSX-ML-092", found_codes)
+                self.assertTrue(any(basis in ok for ok in report.passed_checks))
+
+    def test_blank_algorithm_produces_none_of_three_codes_regardless_of_ledger(self):
+        spec = {
+            **self.BASE,
+            "model": self._model(algorithm=None, selection_ledger={}),
+        }
+        found_codes = codes(ml.check(spec))
+        self.assertNotIn("DSX-ML-090", found_codes)
+        self.assertNotIn("DSX-ML-091", found_codes)
+        self.assertNotIn("DSX-ML-092", found_codes)
+
+    def test_ledger_declared_as_a_list_is_treated_as_no_ledger(self):
+        spec = {
+            **self.BASE,
+            "model": self._model(algorithm="gradient_boosting", selection_ledger=["a"]),
+        }
+        found = codes(ml.check(spec))  # must not raise
+        self.assertIn("DSX-ML-090", found)
+
+    def test_two_consecutive_calls_over_ledger_spec_produce_identical_finding_sequences(self):
+        spec = {
+            **self.BASE,
+            "model": self._model(
+                algorithm="gradient_boosting",
+                selection_ledger={
+                    "candidates_evaluated": ["a", "b"],
+                    "configurations_tried": 18,
+                    "selected_on": "test",
+                },
+            ),
+        }
+        r1 = [f.code for f in ml.check(spec).findings]
+        r2 = [f.code for f in ml.check(spec).findings]
+        self.assertEqual(r1, r2)
+
 
 # ── Phase 11.1 plan 05: per-step cleaning boundary (DSX-ML-023/024) ────────────
 
