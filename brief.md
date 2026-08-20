@@ -478,7 +478,32 @@ unverified). Deng, Lu and Chen (2016), "Continuous Monitoring of A/B Tests witho
 Pain" (error rates under optional stopping, the source for `DSX-PAR-011`). Cronbach and Meehl
 (1955), "Construct Validity in Psychological Tests", *Psychological Bulletin* volume 52 issue
 4, pages 281 to 302, the nomological net discussion at page 290 (the source for
-`DSX-VAL-070`).
+`DSX-VAL-070`). Gelman, A. and Loken, E. (2014), "The Statistical Crisis in Science",
+*American Scientist*, volume 102, issue 6, pages 460-465 (the source for the `DSX-PRE-*`
+family — anchors the distinction between a test prechosen from a set of possible tests and a
+test computed from the data in an environment where a different test would have been
+performed given different data, which is the exact claim `DSX-PRE-010`/`-020`/`-030` enforce;
+page 460, unnumbered section "How to Test a Hypothesis", for rule resolution and the content
+lock, and page 463, the unnumbered section opening "Menstrual Cycles and Voting", for procedure
+reconciliation. The article carries no numbered sections, tables or theorems, so page plus
+unnumbered heading is the most precise locator available, and naming a section number would be
+the fabricated locator this citation rule exists to prevent. The Greek symbol the paper uses
+for the selection function is rendered unreliably by optical character recognition in both
+freely available scans — the prose was cross-verified word for word between two independent
+copies, but the symbol was not — so it is taken from the authors' unpublished 2013 Columbia
+working paper, which carries no digital object identifier, venue or pagination and is a
+notation source only, never the published record). Two secondary sources sit beside it, each
+scoped so neither is promoted into the primary anchor: Simmons, J. P., Nelson, L. D. and
+Simonsohn, U. (2011), "False-Positive Psychology", *Psychological Science*, volume 22, issue
+11, pages 1359-1366, digital object identifier 10.1177/0956797611417632, page 1365 (supports
+only the claim that a substituted procedure is itself a new researcher degree of freedom, the
+`DSX-PRE-030` remedy's no-merit-consultation rule — never the primary anchor). Nosek, B. A.,
+Ebersole, C. R., DeHaven, A. C. and Mellor, D. T. (2018), "The preregistration revolution",
+*PNAS*, volume 115, issue 11, pages 2600-2606, digital object identifier
+10.1073/pnas.1708274114, section "Preregistration in Practice" (supports only the rule that a
+declared deviation stays legal, the `post_data` branch of the content lock; section headings
+were verified and per-sentence page numbers were not, so no page may be cited for an individual
+sentence from it).
 
 ---
 
