@@ -18,7 +18,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(ROOT / "tests"))
 
+from _trail_seed import seed_plan_header  # noqa: E402
 from dsx import cli  # noqa: E402
 from dsx.findings import Report, Severity  # noqa: E402
 from dsx.frame import interference  # noqa: E402
@@ -626,6 +628,11 @@ class TestTriggeringDilution(unittest.TestCase):
                 ignore=shutil.ignore_patterns("DECISIONS.jsonl"),
             )
             good = target / "good-ANALYSIS-SPEC.yaml"
+            # No --phase-dir, so root resolves to `target` (path.parent); no
+            # `dsx gate plan` has run there. Seed a plan-time header first —
+            # otherwise prereg's missing-header CheckError aborts at exit 2
+            # before this test's own exit-0 assertion is even reachable.
+            seed_plan_header(str(target), good)
             out, err = io.StringIO(), io.StringIO()
             with redirect_stdout(out), redirect_stderr(err):
                 code = cli.main(["gate", "ship", "--spec", str(good)])

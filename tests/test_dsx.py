@@ -15,7 +15,9 @@ from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+from _trail_seed import seed_plan_header  # noqa: E402
 from dsx import cli, mathx  # noqa: E402
 from dsx.checks import claims, design, metrics, ml, repro, stats, viz  # noqa: E402
 from dsx.findings import Report, Severity  # noqa: E402
@@ -1399,6 +1401,12 @@ class TestCLI(unittest.TestCase):
 
     def test_bad_fixture_blocks_at_ship(self):
         fixture = self.ROOT / "examples" / "bad-ANALYSIS-SPEC.yaml"
+        # Seeded explicitly, rather than relying on an alphabetically earlier
+        # test (test_bad_fixture_blocks_at_plan) to have already run `gate
+        # plan` and written a header into examples/DECISIONS.jsonl — Phase
+        # 10's prereg check makes a missing plan-time header a hard exit-2
+        # precondition at ship, and this test should not depend on ordering.
+        seed_plan_header(str(self.ROOT / "examples"), fixture)
         code, _, _ = self._run(["gate", "ship", "--spec", str(fixture)])
         self.assertEqual(code, 1)
 
@@ -1436,6 +1444,13 @@ class TestCLI(unittest.TestCase):
         # The template ships with placeholders, so it must NOT pass — proving the
         # gate cannot be satisfied by shipping the unedited scaffold.
         template = self.ROOT / "templates" / "ANALYSIS-SPEC.yaml"
+        # No `dsx gate plan` has ever run against templates/, so a plan-time
+        # header must be seeded before ship — otherwise prereg's missing-
+        # header CheckError would abort at exit 2 and silently satisfy this
+        # assertEqual(code, 1) for the wrong reason. Seeding keeps the point
+        # of the test — the unedited scaffold blocks on its own merits —
+        # exactly what is proved.
+        seed_plan_header(str(self.ROOT / "templates"), template)
         code, _, _ = self._run(["gate", "ship", "--spec", str(template)])
         self.assertEqual(code, 1)
 
@@ -1566,6 +1581,11 @@ class TestCLI(unittest.TestCase):
             charts = phase / "analysis" / "charts.py"
             charts.parent.mkdir(parents=True)
             charts.write_text("# charts\n", encoding="utf-8")
+            # This phase directory has never had `dsx gate plan` run against
+            # it in this test; seed a plan-time header for the spec this test
+            # itself wrote, so ship reaches DSX-REP-031 instead of stopping
+            # earlier at prereg's missing-header exit 2.
+            seed_plan_header(str(phase), phase / "ANALYSIS-SPEC.yaml")
             code, _, err = self._run(["gate", "ship", "--phase-dir", str(phase)])
             self.assertEqual(code, 1)
             self.assertIn("DSX-REP-031", err)
@@ -3404,6 +3424,12 @@ class TestPhase9ParadigmJustification(unittest.TestCase):
         for point in ("plan", "execute", "verify", "ship"):
             with self.subTest(point=point):
                 with tempfile.TemporaryDirectory() as tmp:
+                    if point in ("verify", "ship"):
+                        # A fresh temporary directory has no recorded plan-time
+                        # header; prereg's missing-header CheckError would
+                        # otherwise abort verify/ship before this test's own
+                        # DSX-PAR-002 assertion is even reachable.
+                        seed_plan_header(tmp, fixture)
                     out, err = io.StringIO(), io.StringIO()
                     with redirect_stdout(out), redirect_stderr(err):
                         cli.main(

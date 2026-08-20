@@ -21,8 +21,11 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(ROOT / "tests"))
 
+from _trail_seed import seed_plan_header  # noqa: E402
 from dsx import __version__  # noqa: E402
+from dsx import cli  # noqa: E402
 from dsx.decisions import InvocationHeader  # noqa: E402
 from dsx.decisions import append as append_decision  # noqa: E402
 from dsx.decisions import decisions_path, frame_digest  # noqa: E402
@@ -30,6 +33,7 @@ from dsx.findings import CheckError, Report, Severity  # noqa: E402
 from dsx.frame import prereg  # noqa: E402
 from dsx.loader import load  # noqa: E402
 from dsx.spec import PREREG_FACTS, as_number, describe_vocabulary, get  # noqa: E402
+from dsx.suppressions import known_codes  # noqa: E402
 
 
 class TestFactRegistry(unittest.TestCase):
@@ -862,3 +866,197 @@ class TestContentLockReconciliation(unittest.TestCase):
                 if d["choice"].startswith("DSX-PRE-020")
             ]
             self.assertEqual(len(clear_decisions), 1)
+
+
+class TestGateRegistration(unittest.TestCase):
+    """ROADMAP Success Criterion 5's pair for `prereg` (plan 04, Task 2):
+    `prereg` is registered at verify and ship only, and every `DSX-PRE-` code
+    is reachable from a gate profile — mirroring
+    `tests/test_frame_interference.py`'s `TestGateRegistration` with the
+    present/absent point sets inverted."""
+
+    def test_prereg_registered_in_verify_ship_absent_from_plan_and_execute(self):
+        from dsx.cli import CHECKS, GATE_PROFILES
+
+        self.assertIs(CHECKS["prereg"], prereg.check)
+        for point in ("verify", "ship"):
+            with self.subTest(point=point):
+                self.assertIn("prereg", GATE_PROFILES[point])
+        for point in ("plan", "execute"):
+            with self.subTest(point=point):
+                self.assertNotIn("prereg", GATE_PROFILES[point])
+
+    def test_every_dsx_pre_code_reachable_from_a_gate_profile(self):
+        from dsx.cli import GATE_PROFILES
+
+        pre_codes = [c for c in known_codes() if c.startswith("DSX-PRE-")]
+        self.assertTrue(
+            pre_codes,
+            "expected at least DSX-PRE-010, DSX-PRE-020 and DSX-PRE-030 to be known",
+        )
+        reachable_checks: "set[str]" = set().union(*GATE_PROFILES.values())
+        self.assertIn("prereg", reachable_checks)
+
+    def test_known_dsx_pre_codes_are_exactly_010_020_030(self):
+        pre_codes = {c for c in known_codes() if c.startswith("DSX-PRE-")}
+        self.assertEqual(
+            pre_codes,
+            {"DSX-PRE-010", "DSX-PRE-020", "DSX-PRE-030"},
+            "brief D-06 makes finding-code numbering irreversible; DSX-PRE-011 was "
+            "deliberately left unspent for a case where the remedy for an unknown "
+            "fact genuinely diverges from the remedy for an unresolvable rule "
+            "(10-CONTEXT D-12) — getting the count of known DSX-PRE- codes wrong "
+            "here is worse than getting the digits wrong, because a silent drift "
+            "in the count would mean a future code shipped without a reader ever "
+            "confronting the numbering decision this test exists to pin.",
+        )
+
+    def test_every_dsx_pre_finding_this_module_can_emit_is_critical(self):
+        # A HIGH DSX-PRE code would still exit 1 at verify and ship, and would
+        # still fail the known-bad corpus classifier (tests/test_known_bad_corpus.py
+        # line 176's severity == "CRITICAL" filter) — severity is not redundant
+        # with registration here, it is what makes the corpus classification
+        # meaningful once the code fires.
+        scenarios = {
+            "DSX-PRE-010": {
+                "inference": {
+                    "primary_procedure": "two_proportion_z",
+                    "fallback_rule": "clusters < 30 -> wild cluster bootstrap",
+                },
+            },
+            "DSX-PRE-030": {
+                "inference": {
+                    "primary_procedure": "two_proportion_z",
+                    "fallback_rule": "interim_looks >= 1 -> wild_cluster_bootstrap",
+                },
+                "results": {"interim_looks": 1},
+                "analysis": {"test": "two_proportion_z"},
+            },
+        }
+        for code, spec in scenarios.items():
+            with self.subTest(code=code):
+                report = prereg.check(spec)
+                findings = [f for f in report.findings if f.code == code]
+                self.assertEqual(len(findings), 1, f"{code} did not fire as expected")
+                self.assertEqual(
+                    findings[0].severity, Severity.CRITICAL,
+                    f"{code} must be CRITICAL — a HIGH finding would still exit 1 at "
+                    "verify/ship and still fail the known-bad corpus classifier, so "
+                    "severity is not redundant with registration",
+                )
+
+        pre_020_spec = {"validity_frame": {"a": 1}, "inference": {"declared_at": "pre_data"}}
+        with tempfile.TemporaryDirectory() as root:
+            append_decision(
+                decisions_path(root),
+                InvocationHeader(
+                    invocation_id="INV-0001",
+                    gate_point="plan",
+                    dsx_version=__version__,
+                    frame_digest="not-the-real-digest",
+                ),
+            )
+            report = prereg.check(pre_020_spec, root, reconcile_trail=True)
+            findings = [f for f in report.findings if f.code == "DSX-PRE-020"]
+            self.assertEqual(len(findings), 1, "DSX-PRE-020 did not fire as expected")
+            self.assertEqual(
+                findings[0].severity, Severity.CRITICAL,
+                "DSX-PRE-020 must be CRITICAL — a HIGH finding would still exit 1 at "
+                "verify/ship and still fail the known-bad corpus classifier, so "
+                "severity is not redundant with registration",
+            )
+
+
+class TestAdHocCommandScope(unittest.TestCase):
+    """Pins the boundary between a real gate invocation and a read-only
+    inspection command (plan 04, Task 3; see the plan's "Settled decision:
+    which invocations reconcile the trail" section).
+
+    The trail-dependent half of `prereg` runs only for a real `dsx gate
+    verify` or `dsx gate ship` invocation; `dsx audit` and `dsx check` are
+    read-only inspection commands that never call `_write_decision_trail`
+    (`dsx/cli.py::cmd_audit`, `cmd_check`), so requiring a trail from them
+    would create a precondition no sequence of commands could satisfy — an
+    availability failure disguised as a control. This does not soften the
+    rule at the gate: tests 3 and 4 assert the exit-2 block directly, in the
+    same trail-free directory that tests 1 and 2 pass in.
+    """
+
+    def _run(self, argv: "list[str]") -> "tuple[int, str, str]":
+        out, err = io.StringIO(), io.StringIO()
+        with redirect_stdout(out), redirect_stderr(err):
+            code = cli.main(argv)
+        return code, out.getvalue(), err.getvalue()
+
+    def _write_spec(self, tmp: str, **field_overrides: dict) -> Path:
+        """Clone the good fixture into `tmp`, applying the given top-level
+        block overrides (dict-merged onto the existing block), so the spec
+        is otherwise complete and no unrelated defect crashes the ad-hoc
+        commands under test. Written as JSON regardless of the .yaml suffix,
+        matching the precedent at tests/test_frame_val.py's
+        `_write_identification_variant`."""
+        spec = load(str(ROOT / "examples" / "good-ANALYSIS-SPEC.yaml"))
+        for key, value in field_overrides.items():
+            block = spec.setdefault(key, {})
+            if isinstance(value, dict) and isinstance(block, dict):
+                block.update(value)
+            else:
+                spec[key] = value
+        path = Path(tmp) / "ANALYSIS-SPEC.yaml"
+        path.write_text(json.dumps(spec), encoding="utf-8")
+        return path
+
+    def test_1_dsx_audit_in_a_trail_free_directory_exits_without_check_error(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self._write_spec(tmp)
+            code, out, err = self._run(
+                ["audit", "--spec", str(path), "--phase-dir", tmp, "--json"]
+            )
+            self.assertIn(code, (0, 1), f"unexpected exit code {code}: {err}")
+            payload = json.loads(out or err)
+            self.assertIn("findings", payload)
+
+    def test_2_dsx_check_in_a_trail_free_directory_exits_without_check_error(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self._write_spec(tmp)
+            code, out, err = self._run(
+                ["check", "--spec", str(path), "--phase-dir", tmp, "--json"]
+            )
+            self.assertIn(code, (0, 1), f"unexpected exit code {code}: {err}")
+            payload = json.loads(out or err)
+            self.assertIn("findings", payload)
+
+    def test_3_dsx_gate_verify_in_the_same_trail_free_directory_exits_2_naming_suppressions(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self._write_spec(tmp)
+            code, _out, err = self._run(["gate", "verify", "--spec", str(path), "--phase-dir", tmp])
+            self.assertEqual(code, 2)
+            self.assertIn("suppressions", err)
+
+    def test_4_dsx_gate_ship_in_the_same_trail_free_directory_also_exits_2(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self._write_spec(tmp)
+            code, _out, err = self._run(["gate", "ship", "--spec", str(path), "--phase-dir", tmp])
+            self.assertEqual(code, 2)
+            self.assertIn("suppressions", err)
+
+    def test_5_dsx_audit_still_reports_dsx_pre_030_for_a_switched_procedure(self):
+        # The trail-independent half (rule resolution, procedure reconciliation)
+        # runs everywhere, including a read-only inspection command — scoping the
+        # trail half narrows nothing except the trail half.
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self._write_spec(tmp, analysis={"test": "one_proportion_z"})
+            code, out, err = self._run(
+                ["audit", "--spec", str(path), "--phase-dir", tmp, "--json"]
+            )
+            self.assertNotEqual(code, 2, f"dsx audit unexpectedly errored: {err}")
+            payload = json.loads(out or err)
+            codes_seen = {f["code"] for f in payload["findings"]}
+            self.assertIn("DSX-PRE-030", codes_seen)
+
+    def test_6_after_seeding_a_plan_header_dsx_gate_verify_no_longer_exits_2(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self._write_spec(tmp)
+            seed_plan_header(tmp, path)
+            code, _out, err = self._run(["gate", "verify", "--spec", str(path), "--phase-dir", tmp])
+            self.assertNotEqual(code, 2, f"gate verify still errored after seeding: {err}")

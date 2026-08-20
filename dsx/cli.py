@@ -47,7 +47,7 @@ from .decisions import (
     read_all,
 )
 from .findings import EXIT_ERROR, CheckError, Report, Severity, emit, merge
-from .frame import interference, paradigm, val
+from .frame import interference, paradigm, prereg, val
 from .loader import SpecParseError, load
 from .spec import describe_vocabulary, validate_structure
 from .suppressions import apply_suppressions
@@ -78,6 +78,7 @@ CHECKS: dict[str, Callable] = {
     "paradigm": paradigm.check,
     "val": val.check,
     "interference": interference.check,
+    "prereg": prereg.check,
 }
 
 # Which checks each GSD loop point cares about. Keeping this here rather than in
@@ -87,18 +88,27 @@ CHECKS: dict[str, Callable] = {
 # "paradigm" (DSX-PAR-001, informational, REQ-P6-09) is registered at all four
 # points, not just verify/ship: it must be visible wherever a gate runs, and
 # INFO severity means it structurally cannot flip any gate's exit code.
+#
+# "prereg" is the first family whose gate points differ from the rest of the
+# table: it is registered at verify and ship only, and absent from plan and
+# execute. There is no executed procedure to reconcile the declared branch
+# against until the run has happened, so plan and execute have nothing for
+# this family to check — registration is the knob that keeps it off those two
+# points. Severity (CRITICAL, dsx/frame/prereg.py) is a separate knob from
+# registration: registration decides *where* the family runs at all, severity
+# decides whether a fired finding blocks once it does.
 GATE_PROFILES: dict[str, tuple[str, ...]] = {
     "plan": ("spec", "design", "metrics", "coherence", "paradigm", "val", "interference"),
     "execute": ("spec", "ml", "repro", "dq", "code", "paradigm"),
     "verify": (
         "spec", "design", "stats", "ml", "metrics", "claims", "viz", "repro",
         "dq", "coherence", "smells", "figures", "narrative", "code", "decision",
-        "paradigm", "val", "interference",
+        "paradigm", "val", "interference", "prereg",
     ),
     "ship": (
         "spec", "design", "stats", "ml", "metrics", "claims", "viz", "repro",
         "dq", "coherence", "smells", "figures", "narrative", "code", "decision",
-        "paradigm", "val", "interference",
+        "paradigm", "val", "interference", "prereg",
     ),
 }
 
@@ -141,16 +151,22 @@ def run_checks(
     *,
     gate_point: "str | None" = None,
     resolve_root: "str | None" = None,
+    gate_invocation: bool = False,
 ) -> Report:
     """Run named checks.
 
     ``phase_dir`` is the GSD phase directory (entrypoint existence checks).
     ``resolve_root`` is where relative evidence/profile paths resolve — defaults
     to ``phase_dir``, then cwd. Callers typically pass the spec's parent so
-    ``--spec examples/good-….yaml`` finds sibling artifacts.
+    ``--spec examples/good-….yaml`` finds sibling artifacts. ``gate_invocation``
+    is ``True`` only for a real ``dsx gate`` run — it is what tells a check the
+    decision trail is a live gate input, rather than a file the read-only
+    inspection commands (``validate``/``check``/``audit``) happen to have
+    access to.
     """
     reports: list[Report] = []
     strict = gate_point in {"verify", "ship"}
+    reconcile_trail = gate_invocation and gate_point in {"verify", "ship"}
     root = resolve_root or phase_dir
     for name in names:
         if name == "repro":
@@ -173,6 +189,8 @@ def run_checks(
             reports.append(design.check(spec, strict=strict))
         elif name == "decision":
             reports.append(decision.check(spec, gate_point=gate_point))
+        elif name == "prereg":
+            reports.append(prereg.check(spec, root, reconcile_trail=reconcile_trail))
         elif name in CHECKS:
             reports.append(CHECKS[name](spec))
         else:
@@ -263,6 +281,7 @@ def cmd_gate(args: argparse.Namespace) -> int:
         args.phase_dir,
         gate_point=point,
         resolve_root=root,
+        gate_invocation=True,
     )
     report.check = f"gate:{point}"
     report.context["spec_path"] = str(path)
@@ -284,9 +303,23 @@ def _write_decision_trail(
 
     Wrapped in ``try/except Exception`` and swallowed on failure: this is the
     mirror of D-04, ``dsx explain``'s side of the same rule. A trail that
-    cannot be written is a missing trail, not a failed gate — the write is a
-    side channel, never part of the block contract, so it can never change
-    ``point``'s exit code. Surfaced only under ``--verbose``.
+    cannot be written is a missing trail, not a failed gate — the *write*
+    path this function implements is a side channel, never part of the block
+    contract, so it can never itself change ``point``'s exit code. Surfaced
+    only under ``--verbose``.
+
+    From Phase 10 this invariant is scoped to the write path only, not to the
+    file as a whole: once a plan-time header has been written here, it
+    becomes a *read* input for ``prereg`` (``dsx/frame/prereg.py::
+    _check_content_lock``) at verify and ship, where a missing header stops
+    the run at exit 2 rather than passing it. The two statements are
+    compatible because they describe opposite directions of the same file —
+    writing here stays unconditional and inert; reading it, at the gate
+    points that opt in via ``gate_invocation``, is conditional and can block.
+    Leaving this docstring saying only the old, unqualified half after the
+    read side went live would produce a comment that contradicts the code's
+    own behaviour, which is exactly the class of drift this project's
+    honesty controls exist to catch.
 
     The guard is deliberately ``Exception``, not ``OSError``: the invariant
     this function documents is unconditional, so naming one exception class

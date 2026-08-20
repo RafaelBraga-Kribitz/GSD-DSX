@@ -19,7 +19,9 @@ from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+from _trail_seed import seed_plan_header  # noqa: E402
 from dsx import cli  # noqa: E402
 from dsx.checks import design  # noqa: E402
 from dsx.findings import Report, Severity  # noqa: E402
@@ -1117,6 +1119,10 @@ class TestValGateSeverity(unittest.TestCase):
                     "constraint_justification": "A weakly informative prior on the effect size.",
                 },
             )
+            # No `dsx gate plan` has run in `tmp`; seed a plan-time header
+            # first so prereg's missing-header exit 2 does not mask the
+            # DSX-VAL-041 block this test exists to prove.
+            seed_plan_header(tmp, path)
             for point in ("verify", "ship"):
                 with self.subTest(point=point):
                     code, _, err = self._run(["gate", point, "--spec", path])
