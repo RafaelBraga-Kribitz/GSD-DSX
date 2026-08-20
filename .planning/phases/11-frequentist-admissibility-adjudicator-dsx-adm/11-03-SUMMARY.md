@@ -134,3 +134,9 @@ None - no external service configuration required.
 ---
 *Phase: 11-frequentist-admissibility-adjudicator-dsx-adm*
 *Completed: 2026-08-20*
+
+## Self-Check: PASSED
+
+All created/modified files verified present on disk (`tests/test_frame_boundary.py`,
+`tests/test_frame_paradigm.py`, `dsx/frame/paradigm.py`, this SUMMARY.md). All three
+commit hashes (`5ff083f`, `e34cd84`, `9b9e60b`) verified present in `git log`.
