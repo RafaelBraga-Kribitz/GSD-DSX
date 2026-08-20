@@ -81,7 +81,7 @@ progress:
 
 Phase: 11 — Frequentist admissibility adjudicator (`DSX-ADM-*`)
 Plan: Not started
-Status: Executing Phase 10
+Status: Not started. Phase 10 closed 2026-08-20 — verification passed 5/5, 640 tests green, code review found CR-01 (the DSX-PRE-020 grandfather suppression route was inert) and WR-01 (case-sensitive fact lookup); both fixed test-first and re-verified.
 Last activity: 2026-08-20 — Phase 10 complete, transitioned to Phase 11
 
 ## Project Reference
@@ -89,7 +89,7 @@ Last activity: 2026-08-20 — Phase 10 complete, transitioned to Phase 11
 See: .planning/PROJECT.md (updated 2026-08-13)
 
 **Core value:** Gate analytical work on validity before the data is touched.
-**Current focus:** Phase 10 — pre-registered-inference-plan-dsx-pre
+**Current focus:** Phase 11 — Frequentist admissibility adjudicator (`DSX-ADM-*`)
 
 ## Session
 
