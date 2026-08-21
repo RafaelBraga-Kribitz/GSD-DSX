@@ -4466,6 +4466,85 @@ class TestParadigmOutOfVocabularyFallback(unittest.TestCase):
 # ── Phase 11.1-01: full-frame cleaning + fit-after-split (DSX-CODE-020/021) ────
 
 
+# Phase 11.1.1 plan 03 task 5: the phase's headline number. A committed,
+# executable end-to-end variant table -- fixture in, finding codes out,
+# measured through check() (the whole gate mechanism), NOT through
+# FIT_CALL_RE/_fit_call_arguments in isolation. This is a DIFFERENT
+# instrument from the function-level thirteen-variant table in
+# 11.1.1-RESEARCH.md's Pitfall 3 (six caught / seven missed, measured
+# 2026-08-21 against the extraction functions alone) and is never printed
+# in one series with it -- see README.md "### What the entrypoint scan
+# does not catch" and this plan's SUMMARY for why.
+#
+# Each row's source places a real split marker before the fit call under
+# test, except the two "false positive closed" rows (which need none) and
+# the fallback row (which needs an independent syntax error to force the
+# text scan). Every row's expected code set was measured against the
+# shipped code before being written into this table, not assumed from the
+# row's label.
+_SPLIT_THEN = (
+    "from sklearn.model_selection import train_test_split\n"
+    "train_test_split(df)\n"
+)
+# Each row: (name, source, expected codes, entrypoint filename). The
+# filename defaults to "entry.py"; the one notebook row overrides it.
+_END_TO_END_VARIANT_TABLE = (
+    # The six variants the committed thirteen-variant table (11.1.1-
+    # RESEARCH.md Pitfall 3) already listed as caught by FIT_CALL_RE
+    # before this phase -- still caught, now via the AST path.
+    ("caught_bare_positional", _SPLIT_THEN + "model.fit(data)\n", frozenset({"DSX-CODE-021"}), "entry.py"),
+    ("caught_bracket_subscript_positional", _SPLIT_THEN + "model.fit(data[['Age']])\n", frozenset({"DSX-CODE-021"}), "entry.py"),
+    ("caught_fit_transform_bare", _SPLIT_THEN + "scaler.fit_transform(data)\n", frozenset({"DSX-CODE-021"}), "entry.py"),
+    ("caught_chained_constructor_plain_arg", _SPLIT_THEN + "build_pipeline().fit(data)\n", frozenset({"DSX-CODE-021"}), "entry.py"),
+    ("caught_whitespace_before_paren", _SPLIT_THEN + "model.fit (data)\n", frozenset({"DSX-CODE-021"}), "entry.py"),
+    ("caught_tab_before_paren", _SPLIT_THEN + "model.fit" + chr(9) + "(data)\n", frozenset({"DSX-CODE-021"}), "entry.py"),
+    # The seven variants the same table listed as missed -- ALL now caught,
+    # which is the phase's headline claim, made executable here rather
+    # than asserted in prose.
+    ("nowcaught_keyword_X", _SPLIT_THEN + "model.fit(X=data, y=target)\n", frozenset({"DSX-CODE-021"}), "entry.py"),
+    ("nowcaught_keyword_data", _SPLIT_THEN + "model.fit(data=data)\n", frozenset({"DSX-CODE-021"}), "entry.py"),
+    ("nowcaught_fit_transform_keyword", _SPLIT_THEN + "scaler.fit_transform(X=data)\n", frozenset({"DSX-CODE-021"}), "entry.py"),
+    ("nowcaught_partial_fit_bare", _SPLIT_THEN + "model.partial_fit(data)\n", frozenset({"DSX-CODE-021"}), "entry.py"),
+    ("nowcaught_partial_fit_keyword", _SPLIT_THEN + "model.partial_fit(X=data)\n", frozenset({"DSX-CODE-021"}), "entry.py"),
+    ("nowcaught_chained_call_argument", _SPLIT_THEN + "model.fit(loader.get_full_frame())\n", frozenset({"DSX-CODE-021"}), "entry.py"),
+    ("nowcaught_multiline_call", _SPLIT_THEN + "model.fit(\n    data\n)\n", frozenset({"DSX-CODE-021"}), "entry.py"),
+    # ROADMAP SC1 and SC3, made executable rather than "satisfied a
+    # fortiori" (this plan's <mechanism_change_ledger>, "Restated, not
+    # dropped").
+    ("sc1_backslash_continuation_before_split", "model.fit " + chr(92) + "\n(df)\n" + _SPLIT_THEN, frozenset({"DSX-CODE-001"}), "entry.py"),
+    ("sc3_semicolon_joined_two_fit_calls", _SPLIT_THEN + "imputer.fit(X_train); scaler.fit_transform(data)\n", frozenset({"DSX-CODE-021"}), "entry.py"),
+    # The false positives this phase closes: a docstring, a comment and a
+    # notebook markdown cell, each merely mentioning a fit call.
+    ("fp_closed_docstring_mentioning_fit", '"""We never call scaler.fit(X) on the full frame."""\n' + _SPLIT_THEN, frozenset(), "entry.py"),
+    ("fp_closed_comment_mentioning_fit", "x = 1  # scaler.fit(X) on the full frame\n" + _SPLIT_THEN, frozenset(), "entry.py"),
+    (
+        "fp_closed_notebook_markdown_mentioning_fit",
+        json.dumps({
+            "cells": [
+                {
+                    "cell_type": "markdown",
+                    "source": [
+                        "We must never call `scaler.fit(X)` on the full "
+                        "frame before the split.\n"
+                    ],
+                },
+                {
+                    "cell_type": "code",
+                    "source": [
+                        "from sklearn.model_selection import train_test_split\n",
+                        "train_test_split(df)\n",
+                    ],
+                },
+            ]
+        }),
+        frozenset(),
+        "entry.ipynb",
+    ),
+    # A file that reaches the fallback (text-only) scan.
+    ("fallback_path_fit_before_split", "model.fit(df\n" + _SPLIT_THEN, frozenset({"DSX-CODE-001"}), "entry.py"),
+)
+
+
 class TestPhase11_1Code(unittest.TestCase):
     ROOT = Path(__file__).resolve().parent.parent
 
@@ -5115,7 +5194,7 @@ class TestPhase11_1Code(unittest.TestCase):
         code_001 above -- the join happens inside ast.parse itself). This
         pin is the fallback's own limitation: forced onto the fallback by
         an unrelated unclosed parenthesis elsewhere in the file, the same
-        backslash-continued `model.fit \` / `(df)` pair draws NOTHING,
+        backslash-continued "model.fit \\" / "(df)" pair draws NOTHING,
         because the fallback's FIT_LEAK_MARKERS regex matches one physical
         line at a time and the joining helper was deliberately never
         written (11.1.1-AST-DESIGN.md §2.2, "Not carried over"). This is a
@@ -6767,6 +6846,24 @@ class TestPhase11_1Code(unittest.TestCase):
                     entry = self._entrypoint(tmp, source)
                     report = self._check(tmp, entry)
                     self.assertIn("DSX-CODE-021", codes(report))
+
+    # ── Phase 11.1.1 plan 03 task 5: the phase's headline number, made ────────
+    # ── executable. _END_TO_END_VARIANT_TABLE is defined at module level, ─────
+    # ── beside this class, per this plan's key_link. ───────────────────────────
+
+    def test_end_to_end_variant_table_matches_committed_expectations(self):
+        """Drives _END_TO_END_VARIANT_TABLE end to end through check() --
+        NOT through FIT_CALL_RE/_fit_call_arguments in isolation, which is
+        what 11.1.1-RESEARCH.md's thirteen-variant table measured. The two
+        tables are different instruments (function-level extraction versus
+        the whole gate mechanism) and are never printed as one series --
+        see README.md and this plan's SUMMARY."""
+        for name, source, expected_codes, filename in _END_TO_END_VARIANT_TABLE:
+            with self.subTest(variant=name):
+                with tempfile.TemporaryDirectory() as tmp:
+                    entry = self._entrypoint(tmp, source, name=filename)
+                    report = self._check(tmp, entry)
+                    self.assertEqual(codes(report), expected_codes)
 
 
 if __name__ == "__main__":
