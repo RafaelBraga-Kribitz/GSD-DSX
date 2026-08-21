@@ -6353,7 +6353,15 @@ class TestPhase11_1Code(unittest.TestCase):
         start = time.perf_counter()
         code_mod.PIPELINE_FIT_TRAIN_RE.search(text)
         elapsed = time.perf_counter() - start
-        self.assertLess(elapsed, 1.0)
+        # Phase 11.1.1 plan 03 task 3, Pin 2. Tightened from 1.0s to 0.05s:
+        # a 1.0s budget would NOT catch a regression back to the unbounded-
+        # but-still-quadratic `[^)\n]*` swap this same comment block already
+        # measured at 0.4360s at n=4,000 -- comfortably under 1.0s, so that
+        # budget could not have caught the exact regression this pin exists
+        # to catch. Measured this session on the shipped bounded pattern:
+        # 0.0048s (`python` 3.12.10), 0.0053s (`python3` 3.14.6) -- both
+        # comfortably under 0.05s.
+        self.assertLess(elapsed, 0.05)
 
     def test_pipeline_fit_train_re_match_set_unchanged_across_probe_shapes(self):
         # 14 probe shapes (matching and non-matching), recorded in the
@@ -6390,6 +6398,113 @@ class TestPhase11_1Code(unittest.TestCase):
         for text in non_matching:
             with self.subTest(text=text):
                 self.assertIsNone(code_mod.PIPELINE_FIT_TRAIN_RE.search(text))
+
+    # ── Phase 11.1.1 plan 03 task 3: every retained pattern measured on its ──
+    # ── own worst-case shape, no sibling's linearity inherited (11.1.1- ──────
+    # ── RESEARCH.md Pitfall 6). Pin 1 (the AST pipeline,
+    # ── ((5_000, 0.5), (20_000, 1.0)), no subTest) is already satisfied by ───
+    # ── test_ast_scan_timing_is_linear_on_a_large_entrypoint above. Pin 2's ──
+    # ── FIT_CALL_RE re-measurement is already satisfied by test_fit_call_ ────
+    # ── re_timing_no_catastrophic_backtracking_with_keyword_form above, and ──
+    # ── PIPELINE_FIT_TRAIN_RE's own pin (above this comment) was tightened ───
+    # ── from 1.0s to 0.05s so it can actually catch the regression it ────────
+    # ── exists to catch. Pin 3 (the DSX-CODE-002 loop) is already satisfied ──
+    # ── by test_scaler_full_loop_timing_is_linear above, and the break was ───
+    # ── already hoisted (verified: dsx/checks/code.py's DSX-CODE-002 loop ────
+    # ── has the break outside the inner if) -- no source edit made here. ─────
+    # ── What follows: the three retained patterns with no timing pin at ──────
+    # ── all (FIT_LEAK_MARKERS, SCALER_FULL_RE, RESAMPLE_BEFORE_RE), and ───────
+    # ── Pin 4, the mechanical D-05 structural guard. ──────────────────────────
+
+    def test_fit_leak_markers_timing_no_catastrophic_backtracking(self):
+        # FIT_LEAK_MARKERS -- three bounded `\.method\s*\(` patterns, no
+        # nested quantifier -- measured on a 20,000-character non-matching
+        # line and on a near-miss (".fit" followed by whitespace with no
+        # opening parenthesis, which makes the trailing `\(` fail after the
+        # bounded `\s*` repetition has already been walked once).
+        import re
+        import time
+
+        from dsx.checks import code as code_mod
+
+        non_matching = "a" * 20000
+        near_miss = ".fit" + (" " * 19990)
+        for pattern in code_mod.FIT_LEAK_MARKERS:
+            compiled = re.compile(pattern)
+            for text in (non_matching, near_miss):
+                with self.subTest(pattern=pattern, text=text[:10]):
+                    start = time.perf_counter()
+                    compiled.search(text)
+                    self.assertLess(time.perf_counter() - start, 1.0)
+
+    def test_scaler_full_re_timing_no_catastrophic_backtracking(self):
+        # SCALER_FULL_RE. Near-miss: a real "StandardScaler()" prefix and a
+        # real "fit_transform(" suffix with 20,000 characters of dots
+        # between them, so the `\s*\.\s*` between the two halves is walked
+        # to the end before the whole match fails.
+        import time
+
+        from dsx.checks import code as code_mod
+
+        non_matching = "a" * 20000
+        near_miss = "StandardScaler()" + ("." * 19980) + "fit_transform(X"
+        for text in (non_matching, near_miss):
+            with self.subTest(text=text[:20]):
+                start = time.perf_counter()
+                code_mod.SCALER_FULL_RE.search(text)
+                self.assertLess(time.perf_counter() - start, 1.0)
+
+    def test_resample_before_re_timing_no_catastrophic_backtracking(self):
+        # RESAMPLE_BEFORE_RE -- a `\b`-anchored alternation of four literal
+        # names with no quantifier inside the alternation at all.
+        import time
+
+        from dsx.checks import code as code_mod
+
+        non_matching = "a" * 20000
+        near_miss = "SMOT" + ("x" * 19996)  # "SMOT" without the final "E"
+        for text in (non_matching, near_miss):
+            with self.subTest(text=text[:20]):
+                start = time.perf_counter()
+                code_mod.RESAMPLE_BEFORE_RE.search(text)
+                self.assertLess(time.perf_counter() - start, 1.0)
+
+    def test_every_dsx_code_report_add_call_resolves_to_check(self):
+        # Pin 4: the D-05 structural guard made mechanical. The finding-
+        # catalogue generator's own --check cannot be relied on for this
+        # (11.1.1-RESEARCH.md / this plan's <planning_verification>:
+        # _resolve_docstrings is last-write-wins over a breadth-first walk,
+        # so an uncited helper can pass at one nesting depth and fail at
+        # another). This test AST-parses dsx/checks/code.py directly and
+        # asserts every report.add(...) call whose first argument is a
+        # "DSX-CODE-..." string literal sits lexically inside the
+        # FunctionDef named "check" -- not inside any nested helper.
+        import ast
+
+        source_path = self.ROOT / "dsx" / "checks" / "code.py"
+        tree = ast.parse(source_path.read_text(encoding="utf-8"))
+        check_func = next(
+            node
+            for node in ast.walk(tree)
+            if isinstance(node, ast.FunctionDef) and node.name == "check"
+        )
+        check_call_ids = {id(node) for node in ast.walk(check_func)}
+
+        violations = []
+        for node in ast.walk(tree):
+            if (
+                isinstance(node, ast.Call)
+                and isinstance(node.func, ast.Attribute)
+                and node.func.attr == "add"
+                and node.args
+                and isinstance(node.args[0], ast.Constant)
+                and isinstance(node.args[0].value, str)
+                and node.args[0].value.startswith("DSX-CODE-")
+            ):
+                if id(node) not in check_call_ids:
+                    violations.append(node.args[0].value)
+
+        self.assertEqual(violations, [])
 
     # ── Phase 11.1.1 plan 03 task 2: non-regression pins for the mechanism ───
     # ── change -- line-index stability, the line axis, notebook geometry, ────
