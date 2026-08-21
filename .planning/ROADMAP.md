@@ -744,7 +744,18 @@ announced rather than slipped in.
   4. The full suite and the known-bad corpus stay green, and no existing fixture's gate exit
      code moves except where criterion 1 or 2 deliberately moves it.
 
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+
+- [ ] 11.1.1-01-PLAN.md — SC1: restore DSX-CODE-001's whitespace tolerance (CR-03) and add an index-preserving backslash-continuation join, scoped to the before-split check only
+- [ ] 11.1.1-02-PLAN.md — SC2 + SC3: widen `FIT_CALL_RE` for keyword arguments (CR-04) and promote `_fit_call_arguments` to all-matches extraction (WR-01), shipped as one behaviour change
+- [ ] 11.1.1-03-PLAN.md — SC2 honesty + SC4: pin `partial_fit`, chained-call and multi-line forms as knowingly uncaught, announce the behaviour change in `README.md`, and run the phase gate
+
+Note: line citations above (`dsx/checks/code.py:505`, `:541`) are stale as of commit
+`06ff2d7`. Verified at HEAD during planning: the redundant literal re-check is at line 532
+and the first-match-only extraction is at line 568. The plans instruct executors to locate
+by symbol name rather than by line number.
 
 ### Phase 11.2: Prescriptive claim layer (INSERTED)
 
