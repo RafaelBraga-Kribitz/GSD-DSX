@@ -203,6 +203,34 @@ STAT_TEST_CALL_RE = re.compile(
     r"\s*\("
 )
 
+# Phase 11.1.1 plan 03 (this comment is the key_link's other end --
+# README.md's "### What the entrypoint scan does not catch" must name the
+# SAME forms; if the two drift, one of them is lying to a reader who has
+# no way to tell which). Nothing below makes DSX-CODE-001, DSX-CODE-021
+# or any other DSX-CODE-* sound, complete or exhaustive. FIT_METHOD_NAMES
+# and FIT_FIRST_PARAM_NAMES together decide what counts as a fit call and
+# what counts as its argument -- and therefore decide the shape of every
+# real leak this module cannot see:
+#   - a call the scan cannot resolve to a name: dynamic dispatch
+#     (getattr(model, "fit")(data), or handlers["fit"](data)); a bound
+#     method held in a variable (f = model.fit, then f(data)); a fit
+#     performed inside an imported helper; a split reached only through
+#     an alias or a helper function rather than a call to a name in
+#     SPLIT_CALL_NAMES;
+#   - an argument shape the scan does not read: a keyword outside
+#     FIT_FIRST_PARAM_NAMES, such as model.fit(training_frame=data); a
+#     starred first argument (model.fit(*args)); a full frame laundered
+#     through a training_frame-shaped variable name that _is_training_
+#     frame matches by prefix without following the assignment;
+#   - a file the scan never opens: source assembled in a string and run
+#     with exec or eval (a REGRESSION from the old text scan, not a
+#     standing limit -- see README.md);
+#   - on the FALLBACK path only (an entrypoint that failed to parse): a
+#     backslash-continued fit call, which the joining helper was
+#     deliberately never written to handle; and a trailing comment fit
+#     call (z = 1  # scaler.fit(data)), which every text guard in this
+#     module tests only for a LEADING "#" and therefore still matches.
+#
 # Phase 11.1.1 plan 01 (§3.3 of 11.1.1-AST-DESIGN.md). Identical to
 # FIT_LEAK_MARKERS' method set, so the AST path and the fallback agree.
 # `partial_fit` is included for parity with FIT_LEAK_MARKERS (which
