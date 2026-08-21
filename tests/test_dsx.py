@@ -5546,6 +5546,173 @@ class TestPhase11_1Code(unittest.TestCase):
                     code = cli.main(["gate", point, "--spec", str(spec_path)])
                 self.assertEqual(code, expected)
 
+    # -- Task 5: performance -- the new mechanism measured, the one -------
+    # -- already-over-budget quadratic fixed, the one retained pattern ----
+    # -- made linear by construction -----------------------------------
+
+    def test_ast_scan_timing_is_linear_on_a_large_entrypoint(self):
+        # The subject here is OUR code, not CPython's parser: the
+        # regression guard against re-walking the tree per code, rendering
+        # tokens for non-fit calls, or any accidental quadratic in
+        # call-site assembly. House shape: local imports, inline input,
+        # perf_counter around one check() call, hard assertLess, NO
+        # subTest (a super-linear regression must abort at the small size
+        # rather than hang the suite at the large one). Measured this
+        # session, full check() pipeline (not just ast.parse + walk):
+        # 0.107 s / 0.431 s on `python` 3.12.10, 0.104 s / 0.479 s on
+        # `python3` 3.14.6, at 5,000 / 20,000 lines of `model.fit(df)`.
+        import time
+
+        from dsx.checks import code as code_mod
+
+        for size, budget in ((5000, 0.5), (20000, 1.0)):
+            with tempfile.TemporaryDirectory() as tmp:
+                entry = self._entrypoint(tmp, "model.fit(df)\n" * size)
+                start = time.perf_counter()
+                code_mod.check(
+                    {
+                        "model": {"task": "binary_classification"},
+                        "reproducibility": {"entrypoint": entry},
+                    },
+                    tmp,
+                )
+                elapsed = time.perf_counter() - start
+                self.assertLess(
+                    elapsed,
+                    budget,
+                    f"AST scan took {elapsed:.4f}s over {size} lines "
+                    f"(budget {budget}s) -- possible quadratic regression",
+                )
+
+    def test_scaler_full_loop_timing_is_linear(self):
+        # Phase 11.1.1 plan 01 (threat T-11.1.1-13). Input IS the matching
+        # shape a non-matching-input pin would be structurally blind to:
+        # one X_train = 1 line followed by N StandardScaler().fit_transform
+        # lines, each SUPPRESSED (X_train already in prior), which is
+        # exactly the shape that made the old (break-inside-the-inner-if)
+        # loop rebuild `"\n".join(lines[:index])` for every one of the N
+        # matching lines. Measured this session, the OLD loop alone (not
+        # the full check() pipeline): 0.0223 / 0.0852 / 0.4545 / 1.4211 s
+        # at 2,000 / 4,000 / 8,000 / 16,000 matching lines -- roughly 4x
+        # per doubling. No subTest: a regression must abort at the small
+        # size.
+        import time
+
+        from dsx.checks import code as code_mod
+
+        for size, budget in ((8000, 0.6), (16000, 1.0)):
+            with tempfile.TemporaryDirectory() as tmp:
+                entry = self._entrypoint(
+                    tmp,
+                    "X_train = 1\n"
+                    + "StandardScaler().fit_transform(X)\n" * size,
+                )
+                start = time.perf_counter()
+                report = code_mod.check(
+                    {
+                        "model": {"task": "binary_classification"},
+                        "reproducibility": {"entrypoint": entry},
+                    },
+                    tmp,
+                )
+                elapsed = time.perf_counter() - start
+                self.assertNotIn("DSX-CODE-002", codes(report))
+                self.assertLess(
+                    elapsed,
+                    budget,
+                    f"DSX-CODE-002 scan took {elapsed:.4f}s over {size} "
+                    f"suppressed matching lines (budget {budget}s) -- "
+                    "possible quadratic regression",
+                )
+
+    def test_scaler_full_loop_finding_set_unchanged_by_the_break_hoist(self):
+        # The equivalence proof (see the comment above the loop in
+        # dsx/checks/code.py): lines[:j] is a prefix superset of lines[:i]
+        # for j > i, so once "X_train" is in `prior` it is in every later
+        # `prior` too -- a suppressed first match can never be followed by
+        # an accepted later one. Both shapes below are pinned so the hoist
+        # is proven behaviour-preserving, not merely fast.
+        with tempfile.TemporaryDirectory() as tmp:
+            # Suppressed: X_train appears before the only matching line.
+            entry = self._entrypoint(
+                tmp,
+                "X_train = 1\n"
+                "StandardScaler().fit_transform(X)\n"
+                "StandardScaler().fit_transform(df)\n",
+            )
+            report = self._check(tmp, entry)
+            self.assertNotIn("DSX-CODE-002", codes(report))
+
+        with tempfile.TemporaryDirectory() as tmp:
+            # Accepted: no X_train anywhere above the first matching line.
+            entry = self._entrypoint(
+                tmp,
+                "StandardScaler().fit_transform(X)\n"
+                "StandardScaler().fit_transform(df)\n",
+            )
+            report = self._check(tmp, entry)
+            found = [f for f in report.findings if f.code == "DSX-CODE-002"]
+            self.assertEqual(len(found), 1)
+            self.assertIn("Line 1", found[0].detail)
+
+    def test_pipeline_fit_train_re_timing_on_its_worst_shape(self):
+        # Phase 11.1.1 plan 01 (Decision 9, threat T-11.1-01). The
+        # adversarial shape is literal: "Pipeline(" * n + ").fit(X_trai" --
+        # deliberately malformed (missing the closing paren and the final
+        # "n" of X_train) so the overall match fails everywhere and
+        # re.search must retry from every one of the n "Pipeline(" start
+        # positions. Measured this session at n = 4,000: the OLD `.*`
+        # pattern and an UNBOUNDED `[^)\n]*` swap are both still quadratic
+        # (0.1357s / 0.4360s); only bounding the repetition
+        # (`[^)\n]{0,200}`) makes each retry O(1) instead of
+        # O(remaining-length), measured 0.0048s at n = 4,000 and 0.33s
+        # even at n = 256,000. A budget a quadratic construction breaks.
+        import time
+
+        from dsx.checks import code as code_mod
+
+        text = "Pipeline(" * 4000 + ").fit(X_trai"
+        start = time.perf_counter()
+        code_mod.PIPELINE_FIT_TRAIN_RE.search(text)
+        elapsed = time.perf_counter() - start
+        self.assertLess(elapsed, 1.0)
+
+    def test_pipeline_fit_train_re_match_set_unchanged_across_probe_shapes(self):
+        # 14 probe shapes (matching and non-matching), recorded in the
+        # plan's SUMMARY. The bounded pattern's match set is identical to
+        # the pre-fix pattern's on every probe except a nested-parenthesis
+        # shape, which dropping `.` in favour of any `)`-excluding
+        # character class already excludes on its own -- not something the
+        # length bound itself introduces.
+        from dsx.checks import code as code_mod
+
+        matching = (
+            "Pipeline(steps).fit(X_train)",
+            "Pipeline(steps).fit(X_train, y_train)",
+            "pipeline(steps).fit(X_train)",
+            "Pipeline( steps ) . fit ( X_train )",
+            "Pipeline().fit(X_train)",
+            "Pipeline(a, b, c).fit(X_train)",
+            "not_a_pipeline(steps).fit(X_train)",
+            "Pipeline(steps.something).fit(X_train)",
+        )
+        non_matching = (
+            "Pipeline(steps).fit(X_test)",
+            "Pipeline(steps).fit(y_train)",
+            "Pipeline(steps).transform(X_train)",
+            "PipelineX(steps).fit(X_train)",
+            "Pipeline(\n    steps\n).fit(X_train)",
+            "Pipeline((a, b)).fit(X_train)",  # nested paren: pre-existing miss
+        )
+        probes = matching + non_matching
+        self.assertEqual(len(probes), 14)
+        for text in matching:
+            with self.subTest(text=text):
+                self.assertIsNotNone(code_mod.PIPELINE_FIT_TRAIN_RE.search(text))
+        for text in non_matching:
+            with self.subTest(text=text):
+                self.assertIsNone(code_mod.PIPELINE_FIT_TRAIN_RE.search(text))
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

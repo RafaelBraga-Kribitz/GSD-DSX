@@ -66,8 +66,32 @@ RESAMPLE_BEFORE_RE = re.compile(
     r"(?i)\b(SMOTE|RandomOverSampler|RandomUnderSampler|ADASYN)\b"
 )
 
+# Phase 11.1.1 plan 01 (threat T-11.1-01, Decision 9). This pattern becomes
+# DEAD on the AST primary path -- any `.fit(...)` call is already a Call
+# node, of which `Pipeline(...).fit(X_train` is a strict subset -- but
+# stays reachable on the fallback and is kept for it (that redundancy is
+# stated here rather than left to be rediscovered).
+#
+# `.*` was replaced with a bounded `[^)\n]{0,200}` -- NOT the unbounded
+# `[^)\n]*` the plan's own design section proposed. Measured this session:
+# swapping only the character class (still unbounded) does NOT make the
+# adversarial shape `"Pipeline(" * n + ").fit(X_trai"` linear -- it stays
+# quadratic, 0.0018 / 0.0070 / 0.0278 / 0.1123 / 0.4360 s at n = 250 / 500
+# / 1,000 / 2,000 / 4,000, because `re.search` still retries the O(n)
+# scan-to-the-only-")" from each of the n literal "Pipeline(" starting
+# positions when the overall match fails everywhere. Only bounding the
+# repetition (so each retry costs O(1), not O(remaining-length)) makes it
+# linear by construction: 0.0003 / 0.0006 / 0.0012 / 0.0026 / 0.0048 s at
+# the same sizes, and 0.33 s even at n = 256,000. The bound trades one
+# real miss for that guarantee -- a `Pipeline(...)` argument list longer
+# than 200 characters, or one containing a nested `)` (e.g. a nested
+# tuple), no longer matches; `examples/` has no `Pipeline(` occurrence at
+# all, so no fixture is affected. Match set unchanged across 14 probe
+# shapes except that one nested-paren case, which the mere `.*` ->
+# `[^)\n]*` swap already excludes on its own (a `)` inside the argument
+# list was never going to survive dropping `.`).
 PIPELINE_FIT_TRAIN_RE = re.compile(
-    r"(?i)Pipeline\s*\(.*\)\s*\.\s*fit\s*\(\s*X_train\b"
+    r"(?i)Pipeline\s*\([^)\n]{0,200}\)\s*\.\s*fit\s*\(\s*X_train\b"
 )
 
 # Phase 11.1 (REQ-P11.1-01): full-frame cleaning idioms computed before any split
@@ -645,6 +669,22 @@ def check(spec: dict, phase_dir: "str | None" = None) -> Report:
         ),
     )
 
+    # Phase 11.1.1 plan 01 (threat T-11.1.1-13, Decision 8): the `break`
+    # used to sit inside the inner `if`, so a SUPPRESSED match (prior
+    # already names X_train) did not stop the outer loop -- it kept
+    # rebuilding `prior = "\n".join(lines[:index])`, an O(index)
+    # operation, for every one of the remaining matching lines, making the
+    # whole loop O(n^2) on the PRIMARY path. Measured this session with an
+    # `X_train = 1` line above N matching `StandardScaler().fit_transform`
+    # lines: 0.0223 / 0.0852 / 0.4545 / 1.4211 s at 2,000 / 4,000 / 8,000 /
+    # 16,000 -- roughly 4x per doubling, 1.4 s at 16,000, already over the
+    # house budget. Hoisting the `break` out of the inner `if` is provably
+    # behaviour-preserving: `lines[:j]` is a prefix superset of `lines[:i]`
+    # for `j > i`, so once "X_train" is in `prior` it is in every later
+    # `prior` too, and the loop is dead after the first suppressed match
+    # exactly as much as after the first accepted one. Pinned by
+    # test_scaler_full_loop_timing_is_linear, whose input is this exact
+    # shape.
     for index, line in enumerate(lines):
         if SCALER_FULL_RE.search(line):
             prior = "\n".join(lines[:index])
@@ -657,7 +697,7 @@ def check(spec: dict, phase_dir: "str | None" = None) -> Report:
                     remedy="Fit the scaler on X_train only, then transform X_train and X_test.",
                     where=f"entrypoint:{entry}",
                 )
-                break
+            break
 
     for index, line in enumerate(lines):
         if RESAMPLE_BEFORE_RE.search(line):
