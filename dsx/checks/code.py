@@ -27,7 +27,7 @@ import ast
 import json
 import re
 import sys
-from dataclasses import replace
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 from ..decisions import DecisionRecord, record_decision
@@ -151,6 +151,143 @@ STAT_TEST_CALL_RE = re.compile(
     r"\s*\("
 )
 
+# Phase 11.1.1 plan 01 (§3.3 of 11.1.1-AST-DESIGN.md). Identical to
+# FIT_LEAK_MARKERS' method set, so the AST path and the fallback agree.
+# `partial_fit` is included for parity with FIT_LEAK_MARKERS (which
+# already has it) even though FIT_CALL_RE lacks it -- widening the AST
+# method set to match rather than deliberately narrowing it to preserve
+# that pre-existing asymmetry. `grep -rn "partial_fit" examples/ tests/`
+# returns nothing before this plan, so no fixture can move.
+FIT_METHOD_NAMES = frozenset({"fit", "fit_transform", "partial_fit"})
+
+# Phase 11.1.1 plan 01 (§3.6). The call-name equivalent of SPLIT_MARKERS,
+# deduplicated (SPLIT_MARKERS lists TimeSeriesSplit twice, once bare and
+# once with a trailing "(" -- a name set does not need that). SPLIT_MARKERS
+# itself is left untouched; it is still the fallback's detector and the
+# text half of first_split's union (Decision 5).
+SPLIT_CALL_NAMES = frozenset({
+    "train_test_split", "TimeSeriesSplit", "GroupKFold", "StratifiedKFold",
+    "StratifiedGroupKFold", "KFold", "ShuffleSplit", "GroupShuffleSplit",
+})
+
+
+@dataclass(frozen=True)
+class _CallSite:
+    """One `ast.Call` site, in ZERO-BASED physical line coordinates.
+
+    Phase 11.1.1 plan 01 (Decision 6). `(line, col_offset)` is NOT a total
+    order over the call sites in one file -- nested and chained calls
+    collide on both: `ast.parse("m.fit(x).fit(y)")` gives two calls at
+    `(0, 0)`, and `examples/analysis/leaky_model.py` has `fit_transform`
+    and `StandardScaler` both at line 6 column 4. Determinism would then
+    rest on `sorted` being stable and `ast.walk` being breadth-first -- an
+    accident no test could catch. Ascending `end_col_offset` breaks the
+    tie towards the innermost/leftmost-ending call, which is what today's
+    left-to-right `finditer` scan already reports. Measured this session:
+    `m.fit(full_frame_a).fit(full_frame_b)` reports `full_frame_a` first,
+    both before and after this change.
+    """
+
+    line: int
+    col: int
+    end_col: int
+    name: str
+    node: "ast.Call"
+
+
+def _resolve_callee_name(node: "ast.Call") -> str:
+    """Only the FINAL segment of the callee is used for matching (Phase
+    11.1.1 plan 01, §3.2) -- `sklearn.model_selection.train_test_split(...)`
+    and a bare `train_test_split(...)` must be treated identically. A
+    chained receiver is resolved for free: `StandardScaler().fit_transform(X)`
+    is an outer Call whose `func` is an Attribute whose `.value` is the
+    inner Call -- the outer call's name is `fit_transform`, and the inner
+    `StandardScaler()` is its own separate `_CallSite` named
+    `StandardScaler`, matching nothing. A callee this cannot resolve
+    (`getattr(m, "fit")(df)`, `handlers["fit"](df)`) returns `""`, which
+    matches nothing in `FIT_METHOD_NAMES` or `SPLIT_CALL_NAMES` by
+    construction -- named in the phase's uncaught-by-design record."""
+    func = node.func
+    if isinstance(func, ast.Name):
+        return func.id
+    if isinstance(func, ast.Attribute):
+        return func.attr
+    return ""
+
+
+def _call_sites(tree: "ast.AST") -> "tuple[_CallSite, ...]":
+    """Walk `tree` ONCE, collect every `ast.Call`, resolve its callee name,
+    and return the tuple sorted by `(line, col, end_col)` (Decision 6).
+
+    Phase 11.1.1 plan 01 (§3.1). Every consumer below reads this ONE
+    tuple; nothing re-walks. That is a correctness requirement -- walk
+    order would otherwise decide which token is reported, since
+    `ast.walk` is breadth-first and NOT source-ordered -- as much as a
+    performance one (one walk per `check()` call, not one per code)."""
+    sites: "list[_CallSite]" = []
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Call):
+            end_col = node.end_col_offset
+            sites.append(
+                _CallSite(
+                    line=node.lineno - 1,
+                    col=node.col_offset,
+                    end_col=end_col if end_col is not None else node.col_offset,
+                    name=_resolve_callee_name(node),
+                    node=node,
+                )
+            )
+    return tuple(sorted(sites, key=lambda s: (s.line, s.col, s.end_col)))
+
+
+def _prose_line_indices(tree: "ast.AST") -> "frozenset[int]":
+    """ZERO-BASED physical line indices that are pure prose -- a docstring,
+    a bare string statement, or the strictly interior lines of a
+    multi-line string constant -- and therefore skip-worthy for a
+    primary-path TEXT scan that must not let prose decide a verdict.
+
+    Phase 11.1.1 plan 01 (Decision 4). Rule A masks every line of an
+    `ast.Expr` whose `.value` is a string `ast.Constant` -- every
+    docstring (module, class, function) and every bare string statement.
+    Rule B masks only the STRICTLY INTERIOR lines of a multi-line string
+    constant -- NOT the opening line and NOT the closing line. The
+    opening line is spared because it can carry real code (an assignment
+    of a triple-quoted string on its opening line); the closing line
+    carries real code exactly as often (a second statement chained after
+    the closing triple-quote), and masking it would delete true-positive
+    CRITICAL findings on that exact statement shape -- review reproduced
+    two. Masking WHOLE LINES ONLY, never "any line a string touches", is
+    also load-bearing:
+    `df['Age'] = df['Age'].fillna(df['Age'].mean())` sits on three
+    single-line string constants and must not be masked.
+
+    In this wave the mask has exactly one consumer: the split-marker text
+    scan, via `_first_line_matching`'s `masked` parameter (Decision 5).
+    """
+    masked: "set[int]" = set()
+    for node in ast.walk(tree):
+        if (
+            isinstance(node, ast.Expr)
+            and isinstance(node.value, ast.Constant)
+            and isinstance(node.value.value, str)
+        ):
+            # Rule A: the whole bare-string statement (docstring or
+            # otherwise) is prose, opening and closing line included.
+            for lineno in range(node.lineno, node.end_lineno + 1):
+                masked.add(lineno - 1)
+        if (
+            isinstance(node, ast.Constant)
+            and isinstance(node.value, str)
+            and node.end_lineno is not None
+            and node.end_lineno > node.lineno
+        ):
+            # Rule B: only the interior lines of a multi-line string
+            # constant, wherever it appears (not only in a bare
+            # statement) -- the opening and closing lines are spared.
+            for lineno in range(node.lineno + 1, node.end_lineno):
+                masked.add(lineno - 1)
+    return frozenset(masked)
+
 
 def check(spec: dict, phase_dir: "str | None" = None) -> Report:
     """Entrypoint fit-before-split, full-frame-cleaning and fit-after-split scans
@@ -251,8 +388,42 @@ def check(spec: dict, phase_dir: "str | None" = None) -> Report:
     )
     python_input = f"python:{sys.version_info.major}.{sys.version_info.minor}"
 
-    first_split = _first_line_matching(lines, SPLIT_MARKERS)
-    first_fit = _first_fit_leak_line(lines)
+    # Phase 11.1.1 plan 01 (§3, Decisions 4-6): one walk, one call-site
+    # tuple, one prose mask -- computed once per check() call and read by
+    # every consumer below, never re-walked. Empty on the fallback path
+    # (tree is None), which is exactly what makes the fallback's
+    # first_split union degrade to text-only and its DSX-CODE-001
+    # detection degrade to `_first_fit_leak_line`.
+    call_sites = _call_sites(tree) if tree is not None else ()
+    prose_mask = _prose_line_indices(tree) if tree is not None else frozenset()
+
+    # Phase 11.1.1 plan 01 (Decision 5): first_split is the UNION of the
+    # AST split-call index and the masked text-marker scan, not a
+    # replacement of one by the other. An AST-only split detector reads an
+    # aliased or helper-wrapped split as no split at all, which silences
+    # DSX-CODE-021 entirely and makes DSX-CODE-010 assert something the
+    # file contradicts. A split marker that appears only inside a
+    # docstring stops counting (the mask removes that line) -- stricter,
+    # and announced.
+    text_split = _first_line_matching(lines, SPLIT_MARKERS, masked=prose_mask)
+    ast_split_lines = [s.line for s in call_sites if s.name in SPLIT_CALL_NAMES]
+    ast_split = min(ast_split_lines) if ast_split_lines else None
+    split_candidates = [v for v in (text_split, ast_split) if v is not None]
+    first_split = min(split_candidates) if split_candidates else None
+
+    # Phase 11.1.1 plan 01 (§3.3-3.4, CR-01/CR-02): DSX-CODE-001 is driven
+    # from call sites on the parsed path -- closing whitespace, tab,
+    # backslash-continuation and multi-line forms, and structurally
+    # retiring the docstring/prose false positive, since a string constant
+    # holds no Call node. The fallback keeps the shipped text
+    # implementation, with CR-03's redundant literal re-check removed
+    # (see `_first_fit_leak_line`).
+    if tree is not None:
+        ast_fit_lines = [s.line for s in call_sites if s.name in FIT_METHOD_NAMES]
+        first_fit = min(ast_fit_lines) if ast_fit_lines else None
+    else:
+        first_fit = _first_fit_leak_line(lines)
+
     model_section = section(spec, "model")
     has_model = bool(model_section)
 
@@ -732,8 +903,19 @@ def _read_source(path: Path) -> str | None:
     return None
 
 
-def _first_line_matching(lines: list[str], markers: tuple[str, ...]) -> int | None:
+def _first_line_matching(
+    lines: list[str],
+    markers: tuple[str, ...],
+    masked: "frozenset[int]" = frozenset(),
+) -> int | None:
+    """Phase 11.1.1 plan 01 (Decision 5): `masked` -- zero-based line
+    indices from `_prose_line_indices` -- are skipped in addition to the
+    existing comment/import skip guard, so a split marker that appears
+    only inside a docstring stops counting as a split. Empty by default,
+    so every caller other than `first_split`'s union is unaffected."""
     for index, line in enumerate(lines):
+        if index in masked:
+            continue
         stripped = line.strip()
         if stripped.startswith("#"):
             continue
@@ -746,6 +928,10 @@ def _first_line_matching(lines: list[str], markers: tuple[str, ...]) -> int | No
 
 
 def _first_fit_leak_line(lines: list[str]) -> int | None:
+    """The FALLBACK path's fit-before-split detector -- used only when the
+    entrypoint could not be parsed (`_parse_source` returned no tree). The
+    parsed path drives DSX-CODE-001 from `_call_sites` instead (Phase
+    11.1.1 plan 01, §3.3-3.4 of 11.1.1-AST-DESIGN.md)."""
     for index, line in enumerate(lines):
         stripped = line.strip()
         if stripped.startswith("#"):
@@ -758,8 +944,15 @@ def _first_fit_leak_line(lines: list[str]) -> int | None:
             return index
         for pattern in FIT_LEAK_MARKERS:
             if re.search(pattern, line):
-                if "fit(" in line or "fit_transform" in line or "partial_fit" in line:
-                    return index
+                # Phase 11.1.1 plan 01 (finding CR-03): a redundant literal
+                # re-check used to live here --
+                # `if "fit(" in line or "fit_transform" in line or
+                # "partial_fit" in line` -- which undid FIT_LEAK_MARKERS'
+                # own `\s*` tolerance: `model.fit (df)` (a space before the
+                # parenthesis) matched the regex but failed this literal
+                # check, so the finding never fired. Deleted; the regex
+                # match above is authoritative on its own.
+                return index
     return None
 
 
