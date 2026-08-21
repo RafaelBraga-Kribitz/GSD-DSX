@@ -2,9 +2,17 @@
 
 Stdlib-only. Source is parsed with `ast` (Python 3.9+ -- `ast.unparse` is
 used to render argument tokens); `.py` is read as UTF-8 with an optional
-BOM, `.ipynb` contributes CODE cells verbatim and blanks markdown cells
-CHARACTER-WISE (every newline survives, every other character does not)
-so that reported line indices are unchanged by the cell filter. `lines`
+BOM, `.ipynb` is read the same way (also `utf-8-sig`) and contributes
+CODE cells verbatim, blanking markdown cells CHARACTER-WISE (every
+newline survives, every other character does not) so that reported line
+indices are unchanged by the cell filter -- a Jupyter magic or shell
+escape (`%matplotlib inline`, `!pip install pandas`) is repaired
+in-place, blank-per-blanked-line, only after a first parse attempt fails
+and only for `.ipynb`, then re-parsed once. For a `.ipynb`, `Line N`
+indexes the RECONSTRUCTED CELL CONCATENATION described above -- not the
+Nth line of the `.ipynb` JSON file, which a user cannot usefully open at
+that offset either way; this module does not change that coordinate
+space, only preserves it exactly across the markdown filter. `lines`
 is built from the CPython tokenizer's own line partition
 (`_source_lines`), not `str.splitlines()` -- the latter also breaks on
 form feed, several C1 control-code separators, and the Unicode
@@ -155,8 +163,28 @@ TRAINING_FRAME_NAMES = (
 # at all rather than capturing a truncated token (T-11.1-02), and a bare numeric
 # first argument fails to match at all because the token must open on
 # `[A-Za-z_]`.
+#
+# Phase 11.1.1 plan 02 (§2.2/§3.4 of 11.1.1-AST-DESIGN.md, Edit F). Widened so
+# the FALLBACK agrees with the AST path instead of contradicting it:
+# `partial_fit` joins the alternation (longest-first, so it is tried before the
+# `fit` prefix it would otherwise partially match) to match FIT_METHOD_NAMES,
+# and an OPTIONAL keyword prefix is added, gated on the SAME
+# FIT_FIRST_PARAM_NAMES allowlist `_first_argument` uses. An any-identifier
+# prefix would make `model.fit(y=y_test)` a CRITICAL finding on the fallback
+# while the AST path stays silent -- two mechanisms disagreeing about one
+# source line, in the false-positive direction, on a path one stray character
+# reaches (T-11.1.1-07). The capture group and the trailing `\s*[),]` stay
+# byte-identical to the pre-widened pattern: the capture is still the VALUE,
+# never the keyword name, and the trailing requirement still makes a call with
+# no closing parenthesis fail to match rather than capture a truncated token.
+# Re-measured, not inherited (11.1.1-RESEARCH.md Pitfall 6): 0.0000 s on
+# 19,995 non-matching characters, 0.0003 s on a 1,000,000-character `x=`
+# near-miss -- see test_fit_call_re_timing_no_catastrophic_backtracking_with_
+# keyword_form.
 FIT_CALL_RE = re.compile(
-    r"\.fit(?:_transform)?\s*\(\s*([A-Za-z_][\w.\[\]'\"]*)\s*[),]"
+    r"\.(?:fit_transform|partial_fit|fit)\s*\(\s*"
+    r"(?:(?:X|x|data|df|frame|features)\s*=\s*)?"
+    r"([A-Za-z_][\w.\[\]'\"]*)\s*[),]"
 )
 
 # Phase 11.1 (REQ-P11.1-03): the statistical-test call idiom the reproduction's
@@ -183,6 +211,19 @@ STAT_TEST_CALL_RE = re.compile(
 # that pre-existing asymmetry. `grep -rn "partial_fit" examples/ tests/`
 # returns nothing before this plan, so no fixture can move.
 FIT_METHOD_NAMES = frozenset({"fit", "fit_transform", "partial_fit"})
+
+# Phase 11.1.1 plan 02 (§3.4 of 11.1.1-AST-DESIGN.md, T-11.1.1-07). The
+# keyword-argument ALLOWLIST both `_first_argument` (AST path) and the
+# widened `FIT_CALL_RE` (fallback) resolve a fit call's first argument
+# through -- a decision, not an omission. A BLOCKLIST ("any keyword
+# except y, sample_weight, groups") would report an unrelated keyword's
+# value as "the frame this was fitted on", which is precisely the
+# false-positive flood T-11.1.1-07 names: a false-positive flood is as
+# damaging to a blocking gate as a blind spot, and faster to erode
+# trust. The cost this allowlist accepts: `model.fit(training_frame=data)`
+# draws nothing (named in the phase's uncaught-by-design record) --
+# pinnable, and preferred over the flood.
+FIT_FIRST_PARAM_NAMES = ("X", "x", "data", "df", "frame", "features")
 
 # Phase 11.1.1 plan 01 (§3.6). The call-name equivalent of SPLIT_MARKERS,
 # deduplicated (SPLIT_MARKERS lists TimeSeriesSplit twice, once bare and
@@ -313,6 +354,55 @@ def _prose_line_indices(tree: "ast.AST") -> "frozenset[int]":
     return frozenset(masked)
 
 
+def _first_argument(node: "ast.Call") -> "ast.AST | None":
+    """Resolve `node`'s first argument, positional-then-allowlisted-keyword
+    (Phase 11.1.1 plan 02, §3.4). Returns `None` -- no token, no finding --
+    when nothing qualifies.
+
+    1. A non-empty, non-starred `node.args[0]` wins (`model.fit(data)`).
+       `ast.Starred` (`model.fit(*args)`) is skipped, not resolved --
+       named in the phase's uncaught-by-design record.
+    2. Otherwise the value of the first KEYWORD, in source order, whose
+       `arg` is in `FIT_FIRST_PARAM_NAMES` (`model.fit(X=data, y=target)`
+       -> `data`; `**kwargs` has `arg is None` and is skipped).
+    3. Otherwise `None`.
+    4. **If the resolved node is an `ast.Constant`, return `None`.** No
+       token, no finding. This preserves today's documented exclusion of
+       `model.fit(42)` and extends it to strings and `None`/`True`/`False`
+       -- all four are `ast.Constant`, so one rule covers the class.
+       Without this rule the primary path would newly emit a CRITICAL
+       finding reading "fits on '42'", naming a token that is not a frame
+       at all.
+    """
+    resolved: "ast.AST | None" = None
+    if node.args and not isinstance(node.args[0], ast.Starred):
+        resolved = node.args[0]
+    else:
+        for kw in node.keywords:
+            if kw.arg is not None and kw.arg in FIT_FIRST_PARAM_NAMES:
+                resolved = kw.value
+                break
+    if isinstance(resolved, ast.Constant):
+        return None
+    return resolved
+
+
+def _render_token(node: "ast.AST") -> str:
+    """`ast.unparse`, ONE rendering path (Phase 11.1.1 plan 02, §3.5) --
+    not `ast.get_source_segment`, which needs the original source threaded
+    through every helper, returns `None` when position info is
+    incomplete, and reproduces a multi-line argument as multi-line text
+    that would then be pasted into a single-line `detail` string.
+    `_is_training_frame` PREFIX-matches the rendered token against
+    `TRAINING_FRAME_NAMES`; the leading identifier is never quoted, so
+    unparse's normalisations cannot change a membership verdict. The one
+    user-visible normalisation: a source token written `data[["Age"]]` is
+    reported as `data[['Age']]` -- the verdict is unaffected, only the
+    quoted `detail` text differs from the source (announced in plan 03's
+    behaviour-change list)."""
+    return ast.unparse(node)
+
+
 def check(spec: dict, phase_dir: "str | None" = None) -> Report:
     """Entrypoint fit-before-split, full-frame-cleaning and fit-after-split scans
     (DSX-CODE-*).
@@ -339,10 +429,11 @@ def check(spec: dict, phase_dir: "str | None" = None) -> Report:
     line indices in one file — the first full-frame-cleaning-idiom line index
     against the first split-marker line index (or the idiom's presence alone,
     when no split marker exists) — not a numeric threshold test.
-    Structural criterion: DSX-CODE-021 is a membership test of an extracted
-    first-argument token against TRAINING_FRAME_NAMES (matched as a prefix, not
-    equality), combined with a >= index comparison between the triggering
-    fit-call line and the first split-marker line.
+    Structural criterion: DSX-CODE-021 is a membership test of the
+    first-argument expression, rendered from the call node, against
+    TRAINING_FRAME_NAMES (matched as a prefix, not equality), combined with a
+    >= comparison between the fit call's physical line index and the first
+    split call's physical line index.
 
     Phase 11.1 (REQ-P11.1-03) adds DSX-CODE-030 (a statistical-test call whose
     argument text references the declared `model.target` column, occurring
@@ -490,14 +581,37 @@ def check(spec: dict, phase_dir: "str | None" = None) -> Report:
             where=f"entrypoint:{entry}",
         )
 
+    # Phase 11.1.1 plan 02 (§3.4-3.5 of 11.1.1-AST-DESIGN.md, Edit D):
+    # DSX-CODE-021 is resolved from call sites on the parsed path -- the
+    # SAME `call_sites` tuple plan 01 built for DSX-CODE-001 above, never
+    # re-walked. Filters to FIT_METHOD_NAMES, resolves the first argument
+    # (§3.4), renders it (§3.5), and applies exactly the pre-existing
+    # predicate: first site with `site.line >= first_split` and
+    # `not _is_training_frame(token)`, then break. The fallback keeps the
+    # widened FIT_CALL_RE / _fit_call_arguments (Edit F below), which now
+    # AGREES with the AST path's keyword allowlist instead of
+    # contradicting it.
     fit_after_split_index: "int | None" = None
     fit_after_split_token: "str | None" = None
     if first_split is not None:
-        for index, token in _fit_call_arguments(lines):
-            if index >= first_split and not _is_training_frame(token):
-                fit_after_split_index = index
-                fit_after_split_token = token
-                break
+        if tree is not None:
+            for site in call_sites:
+                if site.name not in FIT_METHOD_NAMES or site.line < first_split:
+                    continue
+                argument = _first_argument(site.node)
+                if argument is None:
+                    continue
+                token = _render_token(argument)
+                if not _is_training_frame(token):
+                    fit_after_split_index = site.line
+                    fit_after_split_token = token
+                    break
+        else:
+            for index, token in _fit_call_arguments(lines):
+                if index >= first_split and not _is_training_frame(token):
+                    fit_after_split_index = index
+                    fit_after_split_token = token
+                    break
     fit_after_split_blocked = fit_after_split_index is not None
     if fit_after_split_blocked:
         report.add(
@@ -904,7 +1018,16 @@ def _read_source(path: Path) -> str | None:
             return raw.decode("utf-8", errors="replace")
     if suffix == ".ipynb":
         try:
-            nb = json.loads(path.read_text(encoding="utf-8"))
+            # Phase 11.1.1 plan 02 (§1.1(a) of 11.1.1-AST-DESIGN.md,
+            # extended to .ipynb for consistency with the .py read above).
+            # A BOM breaks json.loads exactly as it breaks ast.parse --
+            # read as plain "utf-8" it reaches json.loads as a leading
+            # U+FEFF character and raises json.JSONDecodeError, which
+            # this except clause already returns None for -- silently
+            # marking a real, readable notebook as unscannable rather
+            # than scanning it. utf-8-sig decodes BOM-less UTF-8
+            # identically and strips a leading BOM when one is present.
+            nb = json.loads(path.read_text(encoding="utf-8-sig"))
         except (OSError, json.JSONDecodeError):
             return None
         chunks: list[str] = []
@@ -1014,12 +1137,25 @@ def _first_full_frame_cleaning_line(lines: list[str]) -> int | None:
 
 
 def _fit_call_arguments(lines: list[str]) -> "list[tuple[int, str]]":
-    """Index-and-token pairs for every non-comment, non-import line where
-    `FIT_CALL_RE` matches (REQ-P11.1-01). The group-extraction guard is the
-    `if match is None: continue` below — `FIT_CALL_RE`'s trailing `\\s*[),]`
-    already makes a malformed call (no closing parenthesis, or a bare numeric
-    first argument) fail to match at all, so no line yielding a token is ever
-    dereferenced without a match object to back it."""
+    """Index-and-token pairs for EVERY `FIT_CALL_RE` match on every
+    non-comment, non-import line (REQ-P11.1-01; widened to `finditer` in
+    Phase 11.1.1 plan 02, §2.2/Edit F -- SC3).
+
+    `search` promoted to `finditer`, and the `if match is None: continue`
+    guard removed with it: the loop body below now only ever sees real
+    match objects, one per match, in left-to-right source order, so a
+    semicolon-joined line carrying two fit calls yields BOTH tokens
+    instead of letting a safe first call mask a leaky second. `FIT_CALL_RE`'s
+    trailing `\\s*[),]` is what still keeps a malformed call (no closing
+    parenthesis, or a bare numeric first argument) out -- a call that fails
+    to match yields no match object for `finditer` to iterate over, exactly
+    as it yielded none for `search` to return. The keyword prefix is
+    allowlisted to the same `FIT_FIRST_PARAM_NAMES` the AST path accepts
+    (Edit F), so the two mechanisms agree about which keyword names a
+    training frame instead of disagreeing on it.
+
+    Exactly ONE extraction path exists per mechanism: no `search`-based
+    single-match variant survives beside this one (plan 02 prohibition 3)."""
     results: "list[tuple[int, str]]" = []
     for index, line in enumerate(lines):
         stripped = line.strip()
@@ -1027,13 +1163,11 @@ def _fit_call_arguments(lines: list[str]) -> "list[tuple[int, str]]":
             continue
         if re.match(r"^(from|import)\b", stripped):
             continue
-        match = FIT_CALL_RE.search(line)
-        if match is None:
-            continue
-        token = match.group(1)
-        if not token:
-            continue
-        results.append((index, token))
+        for match in FIT_CALL_RE.finditer(line):
+            token = match.group(1)
+            if not token:
+                continue
+            results.append((index, token))
     return results
 
 

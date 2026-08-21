@@ -4703,6 +4703,251 @@ class TestPhase11_1Code(unittest.TestCase):
             report = self._check(tmp, entry)
             self.assertNotIn("DSX-CODE-021", codes(report))
 
+    # ── Phase 11.1.1 plan 02: DSX-CODE-021 argument extraction moves to ──────
+    # ── AST call-node resolution (SC2/SC3), fallback hardened to agree ───────
+
+    # -- SC2 firing: keyword arguments, partial_fit, chained and multi-line --
+
+    def test_fit_keyword_argument_after_split_fires_code_021(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(
+                tmp,
+                "from sklearn.model_selection import train_test_split\n"
+                "train_test_split(df)\n"
+                "model.fit(X=data, y=target)\n",
+            )
+            report = self._check(tmp, entry)
+            found = [f for f in report.findings if f.code == "DSX-CODE-021"]
+            self.assertEqual(len(found), 1)
+            self.assertIn("'data'", found[0].detail)
+            self.assertNotIn("'X'", found[0].detail)
+            self.assertNotIn("'target'", found[0].detail)
+
+    def test_fit_transform_keyword_argument_after_split_fires_code_021(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(
+                tmp,
+                "from sklearn.model_selection import train_test_split\n"
+                "train_test_split(df)\n"
+                "scaler.fit_transform(X=data[['Age']])\n",
+            )
+            report = self._check(tmp, entry)
+            found = [f for f in report.findings if f.code == "DSX-CODE-021"]
+            self.assertEqual(len(found), 1)
+            self.assertIn("data[['Age']]", found[0].detail)
+
+    def test_partial_fit_after_split_fires_code_021(self):
+        """Deliberate widening: `partial_fit` is already in FIT_LEAK_MARKERS,
+        so the same call BEFORE the split already fires DSX-CODE-001 today;
+        holding the AST method set at {fit, fit_transform} would mean
+        deliberately writing a known blind spot into new code."""
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(
+                tmp,
+                "from sklearn.model_selection import train_test_split\n"
+                "train_test_split(df)\n"
+                "model.partial_fit(data)\n",
+            )
+            report = self._check(tmp, entry)
+            found = [f for f in report.findings if f.code == "DSX-CODE-021"]
+            self.assertEqual(len(found), 1)
+            self.assertIn("'data'", found[0].detail)
+
+    def test_chained_call_argument_after_split_fires_code_021(self):
+        """One of the three forms superseded plan 03 was written to pin as
+        knowingly-uncaught, promoted to a FIRING test under that plan's own
+        promotion protocol now that the AST path resolves a chained-call
+        argument."""
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(
+                tmp,
+                "from sklearn.model_selection import train_test_split\n"
+                "train_test_split(df)\n"
+                "model.fit(loader.get_full_frame())\n",
+            )
+            report = self._check(tmp, entry)
+            found = [f for f in report.findings if f.code == "DSX-CODE-021"]
+            self.assertEqual(len(found), 1)
+            self.assertIn("loader.get_full_frame()", found[0].detail)
+
+    def test_multi_line_fit_call_after_split_fires_code_021(self):
+        # The call opens on one line and the argument sits on the next; the
+        # reported line is the line the CALL opens on.
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(
+                tmp,
+                "from sklearn.model_selection import train_test_split\n"
+                "train_test_split(df)\n"
+                "model.fit(\n"
+                "    data\n"
+                ")\n",
+            )
+            report = self._check(tmp, entry)
+            found = [f for f in report.findings if f.code == "DSX-CODE-021"]
+            self.assertEqual(len(found), 1)
+            self.assertIn("Line 3", found[0].detail)
+            self.assertIn("'data'", found[0].detail)
+
+    # -- SC2 silence: keyword training frame, out-of-allowlist, constants ----
+
+    def test_keyword_training_frame_after_split_no_finding(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(
+                tmp,
+                "from sklearn.model_selection import train_test_split\n"
+                "train_test_split(df)\n"
+                "model.fit(X=X_train)\n",
+            )
+            report = self._check(tmp, entry)
+            self.assertNotIn("DSX-CODE-021", codes(report))
+
+    def test_out_of_allowlist_keyword_draws_nothing_on_both_paths(self):
+        # The false-positive parity case: an any-identifier keyword prefix
+        # on the fallback would make model.fit(y=y_test) a CRITICAL finding
+        # there while the AST path stays silent -- the two mechanisms
+        # disagreeing about one source line. Both must stay silent.
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(
+                tmp,
+                "from sklearn.model_selection import train_test_split\n"
+                "train_test_split(df)\n"
+                "model.fit(y=y_test)\n",
+            )
+            report = self._check(tmp, entry)
+            self.assertNotIn("DSX-CODE-021", codes(report))
+
+        # Forced onto the fallback by a trailing unclosed parenthesis.
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(
+                tmp,
+                "from sklearn.model_selection import train_test_split\n"
+                "train_test_split(df)\n"
+                "model.fit(y=y_test)\n"
+                "unclosed(\n",
+            )
+            report = self._check(tmp, entry)
+            reached_fallback = any(
+                f.data.get("scan") == "text-fallback" for f in report.findings
+            ) or any("fallback scan" in line for line in report.passed_checks)
+            self.assertTrue(reached_fallback)
+            self.assertNotIn("DSX-CODE-021", codes(report))
+
+    def test_constant_first_argument_draws_nothing_on_both_paths(self):
+        # Today's documented behaviour (dsx/checks/code.py: FIT_CALL_RE's
+        # [A-Za-z_] anchor) already excludes a bare NUMERIC or STRING first
+        # argument on both paths -- verified against unmodified source
+        # before writing this test -- and must not change direction.
+        # `model.fit(None)` is deliberately NOT pinned here: measured
+        # against unmodified source, it currently FIRES on both paths
+        # (FIT_CALL_RE has no bareword-constant exclusion -- "None" reads
+        # as an ordinary identifier to a regex), contradicting the naive
+        # expectation that dsx/checks/code.py:112-114's numeric-anchor
+        # comment already covers it. See
+        # test_bareword_constant_first_argument_draws_nothing_on_the_ast_path
+        # below for that case, deviation documented in the plan-02 SUMMARY.
+        for literal in ("42", "'x'"):
+            with self.subTest(literal=literal):
+                with tempfile.TemporaryDirectory() as tmp:
+                    entry = self._entrypoint(
+                        tmp,
+                        "from sklearn.model_selection import train_test_split\n"
+                        "train_test_split(df)\n"
+                        f"model.fit({literal})\n",
+                    )
+                    report = self._check(tmp, entry)
+                    self.assertNotIn("DSX-CODE-021", codes(report))
+
+                with tempfile.TemporaryDirectory() as tmp:
+                    entry = self._entrypoint(
+                        tmp,
+                        "from sklearn.model_selection import train_test_split\n"
+                        "train_test_split(df)\n"
+                        f"model.fit({literal})\n"
+                        "unclosed(\n",
+                    )
+                    report = self._check(tmp, entry)
+                    self.assertNotIn("DSX-CODE-021", codes(report))
+
+    def test_bareword_constant_first_argument_draws_nothing_on_the_ast_path(self):
+        # [Rule 1 deviation, see plan-02 SUMMARY] `model.fit(None)` fires
+        # DSX-CODE-021 on unmodified source (measured), because
+        # DSX-CODE-021 is not yet wired to the AST path and FIT_CALL_RE has
+        # no bareword-constant exclusion. `_first_argument`'s
+        # ast.Constant -> None rule (task 2) closes this on the PRIMARY
+        # path only; the fallback keeps the pre-existing miss, which is
+        # out of this plan's scope and not asserted here.
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(
+                tmp,
+                "from sklearn.model_selection import train_test_split\n"
+                "train_test_split(df)\n"
+                "model.fit(None)\n",
+            )
+            report = self._check(tmp, entry)
+            self.assertNotIn("DSX-CODE-021", codes(report))
+
+    # -- SC3: multiple calls, source order, nested tie-break -----------------
+
+    def test_semicolon_joined_two_fit_calls_fire_code_021(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(
+                tmp,
+                "from sklearn.model_selection import train_test_split\n"
+                "train_test_split(df)\n"
+                "imputer.fit(X_train); scaler.fit_transform(data)\n",
+            )
+            report = self._check(tmp, entry)
+            found = [f for f in report.findings if f.code == "DSX-CODE-021"]
+            self.assertEqual(len(found), 1)
+            self.assertIn("'data'", found[0].detail)
+
+    def test_every_fit_call_on_a_line_is_extracted_in_source_order(self):
+        # White-box on the extraction mechanism task 2 builds
+        # (_call_sites + _first_argument + _render_token). Three fit calls
+        # on one line yield three tokens left to right; called twice and
+        # compared for equality pins stability.
+        import ast
+
+        from dsx.checks import code as code_mod
+
+        source = "imputer.fit(a); scaler.fit_transform(b); model.partial_fit(c)\n"
+        tree = ast.parse(source)
+
+        def _tokens():
+            sites = code_mod._call_sites(tree)
+            return [
+                code_mod._render_token(code_mod._first_argument(s.node))
+                for s in sites
+                if s.name in code_mod.FIT_METHOD_NAMES
+            ]
+
+        tokens1 = _tokens()
+        self.assertEqual(tokens1, ["a", "b", "c"])
+        tokens2 = _tokens()
+        self.assertEqual(tokens1, tokens2)
+
+    def test_nested_fit_calls_report_the_textually_first_token(self):
+        # [Deviation, see plan-02 SUMMARY] this already passes against
+        # unmodified source (single-line `.search()` finds the leftmost
+        # `.fit(` occurrence, which happens to be the textually-first
+        # call), so it is not part of this task's RED failure set -- the
+        # same pattern plan 01's SUMMARY documented for the multi-line
+        # open-paren case. Retained as the committed pin for the
+        # (line, col, end_col) tie-break `_call_sites` implements: the two
+        # Call nodes collide on (line, col), and ascending end_col picks
+        # the inner/textually-first-closing call, matching today's answer.
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(
+                tmp,
+                "from sklearn.model_selection import train_test_split\n"
+                "train_test_split(df)\n"
+                "m.fit(full_frame_a).fit(full_frame_b)\n",
+            )
+            report = self._check(tmp, entry)
+            found = [f for f in report.findings if f.code == "DSX-CODE-021"]
+            self.assertEqual(len(found), 1)
+            self.assertIn("'full_frame_a'", found[0].detail)
+
     def test_at_most_one_dsx_code_021_lowest_line(self):
         with tempfile.TemporaryDirectory() as tmp:
             entry = self._entrypoint(
@@ -4957,6 +5202,110 @@ class TestPhase11_1Code(unittest.TestCase):
                     found = [f for f in report.findings if f.code == "DSX-CODE-021"]
                     self.assertEqual(len(found), 1)
                     self.assertIn(f"Line {expected_line}", found[0].detail)
+
+    # -- Phase 11.1.1 plan 02 task 3: the notebook reader ---------------------
+    # -- Notebook markdown prose and both trailing-newline geometry shapes ---
+    # -- are already pinned by test_notebook_markdown_cell_mentioning_fit_ ---
+    # -- draws_no_code_001 and test_notebook_code_cell_line_numbers_are_ -----
+    # -- unchanged_by_the_markdown_filter above -- plan 01 closed the ------
+    # -- notebook markdown false positive one task early (character-wise ----
+    # -- blanking), so those two are not duplicated here (see the plan-02 ---
+    # -- SUMMARY). What remains for this task: BOM handling, magic repair, --
+    # -- the uncaught cell-magic-body pin, and degenerate notebook shapes. --
+
+    def test_notebook_magics_are_repaired_and_take_the_ast_path(self):
+        nb = {
+            "cells": [
+                {
+                    "cell_type": "code",
+                    "source": [
+                        "%matplotlib inline\n",
+                        "!pip install pandas\n",
+                        "t = %timeit -o f()\n",
+                        "from sklearn.model_selection import train_test_split\n",
+                        "train_test_split(df)\n",
+                        "model.fit(df)\n",
+                    ],
+                }
+            ]
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(tmp, json.dumps(nb), name="entry.ipynb")
+            report = self._check(tmp, entry)
+            # model.fit(df) sits AFTER train_test_split(df) here, so a
+            # successful repair-then-parse fires DSX-CODE-021 (fit at/after
+            # the split on a non-training-frame token), not DSX-CODE-001.
+            found = [f for f in report.findings if f.code == "DSX-CODE-021"]
+            self.assertEqual(len(found), 1)
+            self.assertEqual(found[0].data.get("scan"), "ast")
+
+    def test_notebook_cell_magic_body_stays_on_the_fallback(self):
+        """Uncaught-by-design: a `%%bash` cell body is not Python and is not
+        repaired (blanking only the `%%bash` line would leave a non-Python
+        body behind), so the notebook scans on the fallback. This is a REAL
+        limitation, not a true negative. If this test ever fails because
+        the notebook took the AST path, that is good news and the test
+        should be promoted rather than deleted."""
+        nb = {
+            "cells": [
+                {"cell_type": "code", "source": ["%%bash\n", "echo hi\n"]},
+            ]
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(tmp, json.dumps(nb), name="entry.ipynb")
+            report = self._check(tmp, entry)
+            reached_fallback = any(
+                f.data.get("scan") == "text-fallback" for f in report.findings
+            ) or any("fallback scan" in line for line in report.passed_checks)
+            self.assertTrue(reached_fallback)
+
+    def test_notebook_degenerate_shapes_produce_no_finding_no_exception(self):
+        shapes = {
+            "no_cells": {"cells": []},
+            "empty_source": {"cells": [{"cell_type": "code", "source": ""}]},
+            "raw_cell": {
+                "cells": [{"cell_type": "raw", "source": ["model.fit(df)\n"]}]
+            },
+        }
+        for name, nb in shapes.items():
+            with self.subTest(shape=name):
+                with tempfile.TemporaryDirectory() as tmp:
+                    entry = self._entrypoint(tmp, json.dumps(nb), name="entry.ipynb")
+                    report = self._check(tmp, entry)
+                    self.assertNotIn("DSX-CODE-001", codes(report))
+                    self.assertNotIn("DSX-CODE-021", codes(report))
+
+        # Malformed JSON: the whole document, not a per-cell shape.
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(tmp, "{not valid json", name="entry.ipynb")
+            report = self._check(tmp, entry)
+            self.assertEqual(codes(report), set())
+            self.assertTrue(any("NOT scanned" in line for line in report.passed_checks))
+
+    def test_bom_notebook_entrypoint_takes_the_ast_path(self):
+        # A BOM breaks json.loads exactly as it breaks ast.parse -- the
+        # .ipynb read needs the same utf-8-sig fix the .py read already
+        # has (plan 01), or a BOM'd notebook silently reads as "could not
+        # be read" (NOT scanned) rather than being scanned.
+        nb = {
+            "cells": [
+                {
+                    "cell_type": "code",
+                    "source": [
+                        "model.fit(df)\n",
+                        "from sklearn.model_selection import train_test_split\n",
+                        "train_test_split(df)\n",
+                    ],
+                }
+            ]
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp, "entry.ipynb")
+            path.write_bytes(b"\xef\xbb\xbf" + json.dumps(nb).encode("utf-8"))
+            report = self._check(tmp, "entry.ipynb")
+            found = [f for f in report.findings if f.code == "DSX-CODE-001"]
+            self.assertEqual(len(found), 1)
+            self.assertEqual(found[0].data.get("scan"), "ast")
 
     # -- Line axis --------------------------------------------------------
 
@@ -5226,6 +5575,66 @@ class TestPhase11_1Code(unittest.TestCase):
         self.assertEqual(len(text), 19995)
         start = time.perf_counter()
         code_mod.FIT_CALL_RE.search(text)
+        self.assertLess(time.perf_counter() - start, 1.0)
+
+    # ── Phase 11.1.1 plan 02: this mechanism's own timing pins, not ──────────
+    # ── inherited from a sibling's linearity proof (T-11.1-01, Rule from ────
+    # ── 11.1.1-RESEARCH.md Pitfall 6) ─────────────────────────────────────
+
+    def test_ast_fit_argument_extraction_timing_is_linear(self):
+        # House shape: local imports, inline input, one perf_counter bracket
+        # per size, hard assertLess, no subTest. Measures parse + walk +
+        # sort + ast.unparse of every fit argument -- the mechanism task 2
+        # wires into DSX-CODE-021's consumer loop --
+        # NOT the full check() pipeline (test_ast_scan_timing_is_linear_
+        # on_a_large_entrypoint above already covers that). Passes before
+        # task 2: ast.parse, _call_sites (plan 01) and ast.unparse are
+        # already fast at these sizes -- measured this session, well under
+        # budget on both rows.
+        import ast
+        import time
+
+        from dsx.checks import code as code_mod
+
+        for size, budget in ((5_000, 0.5), (20_000, 1.0)):
+            source = "model.fit(df)\n" * size
+            start = time.perf_counter()
+            tree = ast.parse(source)
+            for site in code_mod._call_sites(tree):
+                if site.name in code_mod.FIT_METHOD_NAMES and site.node.args:
+                    ast.unparse(site.node.args[0])
+            elapsed = time.perf_counter() - start
+            self.assertLess(
+                elapsed,
+                budget,
+                f"AST fit-argument extraction took {elapsed:.4f}s over "
+                f"{size} lines (budget {budget}s) -- possible quadratic "
+                "regression",
+            )
+
+    def test_fit_call_re_timing_no_catastrophic_backtracking_with_keyword_form(self):
+        # The widened FALLBACK pattern gets its own measurement, not an
+        # inherited figure. A 19,995-character non-matching input and a
+        # 1,000,000-character adversarial near-miss built from ".fit("
+        # followed by 500,000 repetitions of "x=", each under a
+        # 1.0-second budget. Uses code_mod.FIT_CALL_RE directly, so this
+        # re-measures whatever pattern is currently installed -- passes
+        # before task 2 (the unwidened pattern is already linear) and
+        # continues to pass after task 2 widens it.
+        import time
+
+        from dsx.checks import code as code_mod
+
+        non_matching = ".fit(" + ("a" * 19990)
+        self.assertEqual(len(non_matching), 19995)
+        start = time.perf_counter()
+        code_mod.FIT_CALL_RE.search(non_matching)
+        self.assertLess(time.perf_counter() - start, 1.0)
+
+        near_miss = ".fit(" + ("x=" * 500_000)
+        self.assertEqual(len(near_miss), 1_000_005)
+        start = time.perf_counter()
+        code_mod.FIT_CALL_RE.search(near_miss)
         self.assertLess(time.perf_counter() - start, 1.0)
 
     def test_full_frame_cleaning_predicates_timing_no_catastrophic_backtracking(self):
