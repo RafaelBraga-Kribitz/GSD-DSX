@@ -7,6 +7,14 @@ Analytical phase. The spec is the contract; the code must match it.
   `dsx profile <extract.csv> --out DATA-PROFILE.yaml --pk … --time …`. Record
   `profile_path` and `assertions` on the matching `data[]` entry. Never invent
   profile numbers — use the runner or a measured export.
+- **Read `EDA.md` front-matter first when it exists** in the phase directory: it
+  carries the measured grain, missingness mechanisms, leakage suspects, base-rate
+  verdict and segment candidates this phase already established, and its
+  `comparisons_looked_at` seeds `results.comparisons_looked_at` (add confirmatory
+  looks to that count; never reset it). `stop_triggered: true` means the data
+  contradicted the spec — resolve the listed `contradictions` before computing.
+  No `EDA.md` → record `eda_artifact: none` and source those facts from
+  `DATA-PROFILE.yaml` or declare them with `computed_by` honesty.
 - **Assert, don't assume.** After every join, assert the row count matches the
   expected grain. After every filter, record how many rows it removed. Cheap
   assertions in the pipeline replace expensive debugging in the review.
