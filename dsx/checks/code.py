@@ -1,7 +1,24 @@
 """Entrypoint fit-before-split scans. Codes DSX-CODE-*.
 
-Stdlib-only: `.py` as text; `.ipynb` via json cell source concat in line order.
-Missing / non-text entrypoints are skipped (repro covers missing paths).
+Stdlib-only. Source is parsed with `ast` (Python 3.9+ -- `ast.unparse` is
+used to render argument tokens); `.py` is read as UTF-8 with an optional
+BOM, `.ipynb` contributes CODE cells verbatim and blanks markdown cells
+CHARACTER-WISE (every newline survives, every other character does not)
+so that reported line indices are unchanged by the cell filter. `lines`
+is built from the CPython tokenizer's own line partition
+(`_source_lines`), not `str.splitlines()` -- the latter also breaks on
+form feed, several C1 control-code separators, and the Unicode
+line/paragraph separator characters, which would desynchronise
+AST-derived line numbers from text-derived ones. When the source cannot
+be parsed, the legacy per-line text scan runs instead and every finding
+says so on four channels (a pass line, per-finding `scan` data, a
+detail-string sentence, and a decision-record input). `ast.parse`
+accepts the RUNNING interpreter's grammar, so which path an entrypoint
+takes can depend on the interpreter's Python version; both are disclosed
+in the decision records. Missing / non-text / unscannable entrypoints
+are named as NOT scanned rather than silently skipped (repro covers
+missing paths). Nothing here makes any DSX-CODE-* sound, complete or
+exhaustive -- real leaks remain uncaught by construction and by design.
 """
 
 from __future__ import annotations
@@ -202,7 +219,7 @@ def check(spec: dict, phase_dir: "str | None" = None) -> Report:
     if source is None:
         return report
 
-    lines = source.splitlines()
+    lines = _source_lines(source)
     first_split = _first_line_matching(lines, SPLIT_MARKERS)
     first_fit = _first_fit_leak_line(lines)
     model_section = section(spec, "model")
@@ -478,13 +495,65 @@ def _resolve_entrypoint(entry: str, phase_dir: "str | None") -> Path | None:
     return None
 
 
+def _source_lines(source: str) -> list[str]:
+    """The CPython tokenizer's own line partition -- NOT `str.splitlines()`.
+
+    Phase 11.1.1 plan 01 (Decision 1). `ast` node positions index the
+    tokenizer's line partition, which splits only on `\\r\\n`, a lone `\\r`
+    or `\\n`. `str.splitlines()` additionally splits on `\\x0b \\x0c \\x1c
+    \\x1d \\x1e \\x85` and the Unicode line/paragraph separators, and the
+    tokenizer does not -- so one such character anywhere in the
+    entrypoint, including inside a string literal, would desynchronise
+    every AST-derived line index from every text-derived one.
+    `cleaning_index < first_split` would then be comparing two different
+    axes. Measured this session, reproduced in
+    `tests/test_dsx.py::TestPhase11_1Code`: a lone form-feed line above a
+    split marker makes `splitlines()` report one line too many, shifting
+    every reported "Line N" below it by one; the same happens for a
+    U+2028 character embedded inside an otherwise ordinary single-line
+    string literal.
+
+    Normalising `\\r\\n` and a lone `\\r` to `\\n`, then splitting on `\\n`
+    only, and dropping a single trailing empty element (matching
+    `str.splitlines()`'s own treatment of a final trailing newline),
+    reproduces the tokenizer's partition exactly -- so AST-derived and
+    text-derived indices coincide by construction rather than by luck.
+    This is also where the repo-wide CRLF rule is discharged for this
+    module: no pattern below needs `\\r?\\n` of its own, because every
+    pattern is matched against these already-normalised lines, never
+    against the raw source.
+    """
+    normalised = source.replace("\r\n", "\n").replace("\r", "\n")
+    parts = normalised.split("\n")
+    if parts and parts[-1] == "":
+        parts = parts[:-1]
+    return parts
+
+
 def _read_source(path: Path) -> str | None:
     suffix = path.suffix.lower()
     if suffix == ".py":
         try:
-            return path.read_text(encoding="utf-8")
+            raw = path.read_bytes()
         except OSError:
             return None
+        try:
+            # utf-8-sig decodes BOM-less UTF-8 identically and strips a
+            # leading byte-order mark when one is present. A BOM read as
+            # plain "utf-8" reaches ast.parse as U+FEFF and raises
+            # SyntaxError: invalid non-printable character U+FEFF.
+            return raw.decode("utf-8-sig")
+        except (UnicodeDecodeError, ValueError):
+            # Phase 11.1.1 plan 01 (Decision 3a): an undecodable entrypoint
+            # is never silently a pass. Today a UnicodeDecodeError
+            # propagates out of check() as a gate ERROR (exit 2); swallowing
+            # it to None instead would convert that loud failure into a
+            # silent exit-0 pass with zero findings, zero pass lines and
+            # zero decision records -- worse than either. A
+            # replacement-character read still finds any leak on the lines
+            # that decoded, and the degraded read is named on the pass
+            # line by check() itself. errors="replace" cannot itself raise.
+            return raw.decode("utf-8", errors="replace")
     if suffix == ".ipynb":
         try:
             nb = json.loads(path.read_text(encoding="utf-8"))
@@ -492,13 +561,36 @@ def _read_source(path: Path) -> str | None:
             return None
         chunks: list[str] = []
         for cell in nb.get("cells") or []:
-            if cell.get("cell_type") not in {"code", "markdown"}:
+            cell_type = cell.get("cell_type")
+            is_code = cell_type == "code"
+            is_markdown = cell_type == "markdown"
+            if not (is_code or is_markdown):
+                # raw / unknown cell types are dropped entirely, exactly as
+                # before.
                 continue
             src = cell.get("source") or ""
-            if isinstance(src, list):
-                chunks.append("".join(src))
-            else:
-                chunks.append(str(src))
+            chunk = "".join(src) if isinstance(src, list) else str(src)
+            if is_markdown:
+                # Phase 11.1.1 plan 01 (Decision 2): markdown cells are
+                # blanked CHARACTER-WISE, not line-counted. The rejected
+                # alternative, `max(1, len(src.splitlines()))` blank lines,
+                # under-counts by one whenever the cell text ends in a
+                # newline -- the common nbformat shape -- and miscounts
+                # again for \r, \x0c and the Unicode line separators.
+                # Measured this session against three markdown shapes: a
+                # 2-element list ending in a newline needs 3 line slots,
+                # not the 2 the count formula gives; the same list with no
+                # trailing newline needs 2 and the formula happens to
+                # agree; a plain string ending in a newline needs 3, not 2.
+                # Since preserving line geometry is the SOLE reason
+                # blank-padding was chosen over dropping markdown cells
+                # outright, an arithmetic that does not preserve it
+                # defeats its own purpose. Blanking every non-newline
+                # character of the SAME chunk the code-cell branch would
+                # otherwise contribute preserves geometry BY CONSTRUCTION:
+                # every newline survives, every other character does not.
+                chunk = re.sub(r"[^\r\n]", "", chunk)
+            chunks.append(chunk)
         return "\n".join(chunks)
     return None
 
