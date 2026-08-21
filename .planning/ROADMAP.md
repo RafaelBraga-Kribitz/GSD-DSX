@@ -734,6 +734,7 @@ overturns a phase-research conclusion, not an entry in the `brief.md` D-table or
 
 - **Reversed:** the approach recorded in `11.1.1-RESEARCH.md` — harden the line-ordered
   regular-expression scan in place, variant by variant.
+
 - **New evidence:** an uncommitted session-time probe of 12 variants scored the shipped
   scanner 3/12 and a 60-line stdlib `ast.parse` proof of concept 12/12. Seven of the nine
   differences were false negatives the phase already planned to chase one at a time; **two
@@ -744,11 +745,13 @@ overturns a phase-research conclusion, not an entry in the `brief.md` D-table or
   concatenates markdown with code. Phase 12 is chartered to publish a false-positive rate;
   it would have measured these. (The committed variant provenance for this phase remains the
   13-variant table in `11.1.1-RESEARCH.md` Pitfall 3 — 6 caught / 7 missed.)
+
 - **What would have made the original correct:** if `ast` were not in the standard library
   (D-01 forbids third-party imports on the gate path), or if entrypoints commonly failed to
   parse — in which case the fallback would be the normal path rather than the exception.
   Neither holds: `ast` is stdlib and already used at `dsx/suppressions.py:11`,
   `scripts/gen-finding-catalogue.py` and `tests/test_frame_boundary.py:30`.
+
 - **What did not change:** the goal, every `DSX-CODE-*` number, severity, title, remedy and
   citation, the phase's requirement status (none new), its position before Phase 12, and every
   honesty prohibition — nothing may record a code as sound, and no corpus expectation may be
@@ -784,12 +787,12 @@ overturns a phase-research conclusion, not an entry in the `brief.md` D-table or
      moves, it is surfaced and justified in both directions — never absorbed by editing
      `_TARGET_DEFECT_CODES`, `_EXPECTED_CAUGHT_DEFECTS` or `_INCIDENTAL_GAP_CODES`.
 
-**Plans**: 3 plans
+**Plans**: 1/3 plans executed
 
 Plans:
 **Wave 1**
 
-- [ ] 11.1.1-01-PLAN.md — SC1 + SC4 (.py half) + SC5: introduce the `ast.parse` primary path, `_source_lines` (the tokenizer's own line axis, so AST and text indices cannot desynchronise), the visible fallback contract, and migrate DSX-CODE-001 onto call nodes
+- [x] 11.1.1-01-PLAN.md — SC1 + SC4 (.py half) + SC5: introduce the `ast.parse` primary path, `_source_lines` (the tokenizer's own line axis, so AST and text indices cannot desynchronise), the visible fallback contract, and migrate DSX-CODE-001 onto call nodes
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -952,7 +955,7 @@ cases where absence permitted a false pass" is a debate, not a count.
 | 10. Pre-registered inference plan (`DSX-PRE-*`) | 6/6 | In Progress|  |
 | 11. Frequentist admissibility adjudicator (`DSX-ADM-*`) | 4/8 | In Progress|  |
 | 11.1 Generated-pipeline reality | 8/8 | Complete | 2026-08-21 |
-| 11.1.1 Detection-code hardening | 0/TBD | Not started | - |
+| 11.1.1 Detection-code hardening | 1/3 | In Progress|  |
 | 12. Calibration | 0/TBD | Not started | - |
 
 ## Dependency graph — v2.0.0

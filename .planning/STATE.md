@@ -6,9 +6,9 @@ current_phase: 11.1.1
 current_phase_name: detection-code-hardening-inserted
 status: executing
 stopped_at: Phase 11.1.1 re-scoped to an AST primary path (Option B) — 3 plans rewritten, design amended after a 4-blocker adversarial pass, execution not yet resumed
-last_updated: "2026-08-21T12:24:12.591Z"
+last_updated: "2026-08-21T20:41:50.305Z"
 last_activity: 2026-08-21
-last_activity_desc: Phase 11.1.1 re-scoped and re-planned (AST primary path); awaiting review before execution resumes
+last_activity_desc: Phase 11.1.1 execution resumed (wave continue)
 progress:
   total_phases: 10
   completed_phases: 6
@@ -117,7 +117,7 @@ parity and visible-fallback criteria added).
 Phase: 11.1.1 (detection-code-hardening-inserted) — EXECUTING
 Plan: 1 of 3
 Status: Executing Phase 11.1.1
-Last activity: 2026-08-21 — Quick task 260821-d6h (EDA protocol deepening; skills/templates only, roadmap untouched). Phase 11.1.1 execution still open.
+Last activity: 2026-08-21 — Phase 11.1.1 execution resumed (wave continue)
 
 ## Project Reference
 
