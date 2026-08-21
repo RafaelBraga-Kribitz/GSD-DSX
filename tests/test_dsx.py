@@ -1685,6 +1685,79 @@ class TestPhase11_1ML(unittest.TestCase):
         r2 = [f.code for f in ml.check(spec).findings]
         self.assertEqual(r1, r2)
 
+    # ── Plan 11.1-07 backstop truth, resolved at UAT (11.1-UAT.md, test 1) ──
+    #
+    # Plan 11.1-07 carried a `verification: backstop` truth reading "When more
+    # than one selection-ledger condition holds at once, the findings
+    # DSX-ML-090, DSX-ML-091 and DSX-ML-092 are emitted in a stable order across
+    # repeated runs". Reading _check_selection_ledger shows that scenario cannot
+    # arise: the three codes hang off a single if/elif/elif/else chain, so at
+    # most one of them fires per report and there is no order to stabilise. The
+    # truth is vacuously satisfied.
+    #
+    # The two tests below pin the invariant that makes it vacuous. A future edit
+    # splitting that chain into independent `if` statements would turn emission
+    # order into a real, unpinned question; it fails here instead of changing
+    # behaviour silently.
+
+    def test_at_most_one_selection_ledger_code_fires_across_the_branch_space(self):
+        ledger_codes = ("DSX-ML-090", "DSX-ML-091", "DSX-ML-092")
+        # Every basis in the locked vocabulary, plus blank, whitespace, a
+        # differently-cased member, an out-of-vocabulary misspelling, and the
+        # field being absent altogether.
+        bases = sorted(ml.SELECTION_BASES) + ["", "   ", "Test", "tset", None]
+        for algorithm in ("gradient_boosting", None):
+            for candidates in (["a", "b"], [], None):
+                for configurations in (18, 0, None):
+                    for basis in bases:
+                        ledger: dict = {}
+                        if candidates is not None:
+                            ledger["candidates_evaluated"] = candidates
+                        if configurations is not None:
+                            ledger["configurations_tried"] = configurations
+                        if basis is not None:
+                            ledger["selected_on"] = basis
+                        spec = {
+                            **self.BASE,
+                            "model": self._model(
+                                algorithm=algorithm, selection_ledger=ledger
+                            ),
+                        }
+                        with self.subTest(
+                            algorithm=algorithm,
+                            candidates=candidates,
+                            configurations=configurations,
+                            basis=basis,
+                        ):
+                            emitted = [
+                                f.code
+                                for f in ml.check(spec).findings
+                                if f.code in ledger_codes
+                            ]
+                            self.assertLessEqual(
+                                len(emitted),
+                                1,
+                                f"expected at most one selection-ledger code, got {emitted}",
+                            )
+
+    def test_incomplete_ledger_selected_on_test_emits_only_090(self):
+        # The exact "more than one condition holds at once" case the backstop
+        # truth names: the ledger is incomplete (DSX-ML-090's condition) while
+        # the declared basis is the test set (DSX-ML-091's condition). The elif
+        # chain resolves it to DSX-ML-090 alone, so no ordering question arises.
+        ledger_codes = ("DSX-ML-090", "DSX-ML-091", "DSX-ML-092")
+        spec = {
+            **self.BASE,
+            "model": self._model(
+                algorithm="gradient_boosting",
+                selection_ledger={"selected_on": "test"},
+            ),
+        }
+        emitted = [
+            f.code for f in ml.check(spec).findings if f.code in ledger_codes
+        ]
+        self.assertEqual(emitted, ["DSX-ML-090"])
+
 
 # ── Phase 11.1 plan 05: per-step cleaning boundary (DSX-ML-023/024) ────────────
 
