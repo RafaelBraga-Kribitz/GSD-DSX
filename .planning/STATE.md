@@ -171,3 +171,9 @@ Phase 10 context was re-verified 2026-08-14 (assumptions mode). Six unexecuted p
 - [Phase ?]: 06-09: `explain` carries no `--block-on` at all (argparse exits 2) rather than accepting-and-ignoring it — a block flag on a command that always passes is a lie in the help text (D-04)
 - [Phase ?]: 06-09: `add_common` gains keyword-only `include_block_on=True`, making "all four existing call sites unchanged" a property of the signature rather than a per-site re-verification
 - [Phase ?]: 06-09: gate-path trail write is a side channel — an unwritable trail directory leaves every gate exit code untouched; a trail that cannot be written is a missing trail, not a failed gate (D-16/D-18)
+
+## Session Continuity
+
+Last session: 2026-08-21T20:32:49.273Z
+Stopped at: Session resumed via /gsd-resume-work — context restored from the Phase 11.1.1 handoff; awaiting selection of next action (primary: execute Phase 11.1.1).
+Resume file: .planning/phases/11.1.1-detection-code-hardening-inserted/.continue-here.md
