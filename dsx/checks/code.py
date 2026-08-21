@@ -1,13 +1,33 @@
 """Entrypoint fit-before-split scans. Codes DSX-CODE-*.
 
-Stdlib-only: `.py` as text; `.ipynb` via json cell source concat in line order.
-Missing / non-text entrypoints are skipped (repro covers missing paths).
+Stdlib-only. Source is parsed with `ast` (Python 3.9+ -- `ast.unparse` is
+used to render argument tokens); `.py` is read as UTF-8 with an optional
+BOM, `.ipynb` contributes CODE cells verbatim and blanks markdown cells
+CHARACTER-WISE (every newline survives, every other character does not)
+so that reported line indices are unchanged by the cell filter. `lines`
+is built from the CPython tokenizer's own line partition
+(`_source_lines`), not `str.splitlines()` -- the latter also breaks on
+form feed, several C1 control-code separators, and the Unicode
+line/paragraph separator characters, which would desynchronise
+AST-derived line numbers from text-derived ones. When the source cannot
+be parsed, the legacy per-line text scan runs instead and every finding
+says so on four channels (a pass line, per-finding `scan` data, a
+detail-string sentence, and a decision-record input). `ast.parse`
+accepts the RUNNING interpreter's grammar, so which path an entrypoint
+takes can depend on the interpreter's Python version; both are disclosed
+in the decision records. Missing / non-text / unscannable entrypoints
+are named as NOT scanned rather than silently skipped (repro covers
+missing paths). Nothing here makes any DSX-CODE-* sound, complete or
+exhaustive -- real leaks remain uncaught by construction and by design.
 """
 
 from __future__ import annotations
 
+import ast
 import json
 import re
+import sys
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 from ..decisions import DecisionRecord, record_decision
@@ -46,8 +66,32 @@ RESAMPLE_BEFORE_RE = re.compile(
     r"(?i)\b(SMOTE|RandomOverSampler|RandomUnderSampler|ADASYN)\b"
 )
 
+# Phase 11.1.1 plan 01 (threat T-11.1-01, Decision 9). This pattern becomes
+# DEAD on the AST primary path -- any `.fit(...)` call is already a Call
+# node, of which `Pipeline(...).fit(X_train` is a strict subset -- but
+# stays reachable on the fallback and is kept for it (that redundancy is
+# stated here rather than left to be rediscovered).
+#
+# `.*` was replaced with a bounded `[^)\n]{0,200}` -- NOT the unbounded
+# `[^)\n]*` the plan's own design section proposed. Measured this session:
+# swapping only the character class (still unbounded) does NOT make the
+# adversarial shape `"Pipeline(" * n + ").fit(X_trai"` linear -- it stays
+# quadratic, 0.0018 / 0.0070 / 0.0278 / 0.1123 / 0.4360 s at n = 250 / 500
+# / 1,000 / 2,000 / 4,000, because `re.search` still retries the O(n)
+# scan-to-the-only-")" from each of the n literal "Pipeline(" starting
+# positions when the overall match fails everywhere. Only bounding the
+# repetition (so each retry costs O(1), not O(remaining-length)) makes it
+# linear by construction: 0.0003 / 0.0006 / 0.0012 / 0.0026 / 0.0048 s at
+# the same sizes, and 0.33 s even at n = 256,000. The bound trades one
+# real miss for that guarantee -- a `Pipeline(...)` argument list longer
+# than 200 characters, or one containing a nested `)` (e.g. a nested
+# tuple), no longer matches; `examples/` has no `Pipeline(` occurrence at
+# all, so no fixture is affected. Match set unchanged across 14 probe
+# shapes except that one nested-paren case, which the mere `.*` ->
+# `[^)\n]*` swap already excludes on its own (a `)` inside the argument
+# list was never going to survive dropping `.`).
 PIPELINE_FIT_TRAIN_RE = re.compile(
-    r"(?i)Pipeline\s*\(.*\)\s*\.\s*fit\s*\(\s*X_train\b"
+    r"(?i)Pipeline\s*\([^)\n]{0,200}\)\s*\.\s*fit\s*\(\s*X_train\b"
 )
 
 # Phase 11.1 (REQ-P11.1-01): full-frame cleaning idioms computed before any split
@@ -131,6 +175,143 @@ STAT_TEST_CALL_RE = re.compile(
     r"\s*\("
 )
 
+# Phase 11.1.1 plan 01 (§3.3 of 11.1.1-AST-DESIGN.md). Identical to
+# FIT_LEAK_MARKERS' method set, so the AST path and the fallback agree.
+# `partial_fit` is included for parity with FIT_LEAK_MARKERS (which
+# already has it) even though FIT_CALL_RE lacks it -- widening the AST
+# method set to match rather than deliberately narrowing it to preserve
+# that pre-existing asymmetry. `grep -rn "partial_fit" examples/ tests/`
+# returns nothing before this plan, so no fixture can move.
+FIT_METHOD_NAMES = frozenset({"fit", "fit_transform", "partial_fit"})
+
+# Phase 11.1.1 plan 01 (§3.6). The call-name equivalent of SPLIT_MARKERS,
+# deduplicated (SPLIT_MARKERS lists TimeSeriesSplit twice, once bare and
+# once with a trailing "(" -- a name set does not need that). SPLIT_MARKERS
+# itself is left untouched; it is still the fallback's detector and the
+# text half of first_split's union (Decision 5).
+SPLIT_CALL_NAMES = frozenset({
+    "train_test_split", "TimeSeriesSplit", "GroupKFold", "StratifiedKFold",
+    "StratifiedGroupKFold", "KFold", "ShuffleSplit", "GroupShuffleSplit",
+})
+
+
+@dataclass(frozen=True)
+class _CallSite:
+    """One `ast.Call` site, in ZERO-BASED physical line coordinates.
+
+    Phase 11.1.1 plan 01 (Decision 6). `(line, col_offset)` is NOT a total
+    order over the call sites in one file -- nested and chained calls
+    collide on both: `ast.parse("m.fit(x).fit(y)")` gives two calls at
+    `(0, 0)`, and `examples/analysis/leaky_model.py` has `fit_transform`
+    and `StandardScaler` both at line 6 column 4. Determinism would then
+    rest on `sorted` being stable and `ast.walk` being breadth-first -- an
+    accident no test could catch. Ascending `end_col_offset` breaks the
+    tie towards the innermost/leftmost-ending call, which is what today's
+    left-to-right `finditer` scan already reports. Measured this session:
+    `m.fit(full_frame_a).fit(full_frame_b)` reports `full_frame_a` first,
+    both before and after this change.
+    """
+
+    line: int
+    col: int
+    end_col: int
+    name: str
+    node: "ast.Call"
+
+
+def _resolve_callee_name(node: "ast.Call") -> str:
+    """Only the FINAL segment of the callee is used for matching (Phase
+    11.1.1 plan 01, §3.2) -- `sklearn.model_selection.train_test_split(...)`
+    and a bare `train_test_split(...)` must be treated identically. A
+    chained receiver is resolved for free: `StandardScaler().fit_transform(X)`
+    is an outer Call whose `func` is an Attribute whose `.value` is the
+    inner Call -- the outer call's name is `fit_transform`, and the inner
+    `StandardScaler()` is its own separate `_CallSite` named
+    `StandardScaler`, matching nothing. A callee this cannot resolve
+    (`getattr(m, "fit")(df)`, `handlers["fit"](df)`) returns `""`, which
+    matches nothing in `FIT_METHOD_NAMES` or `SPLIT_CALL_NAMES` by
+    construction -- named in the phase's uncaught-by-design record."""
+    func = node.func
+    if isinstance(func, ast.Name):
+        return func.id
+    if isinstance(func, ast.Attribute):
+        return func.attr
+    return ""
+
+
+def _call_sites(tree: "ast.AST") -> "tuple[_CallSite, ...]":
+    """Walk `tree` ONCE, collect every `ast.Call`, resolve its callee name,
+    and return the tuple sorted by `(line, col, end_col)` (Decision 6).
+
+    Phase 11.1.1 plan 01 (§3.1). Every consumer below reads this ONE
+    tuple; nothing re-walks. That is a correctness requirement -- walk
+    order would otherwise decide which token is reported, since
+    `ast.walk` is breadth-first and NOT source-ordered -- as much as a
+    performance one (one walk per `check()` call, not one per code)."""
+    sites: "list[_CallSite]" = []
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Call):
+            end_col = node.end_col_offset
+            sites.append(
+                _CallSite(
+                    line=node.lineno - 1,
+                    col=node.col_offset,
+                    end_col=end_col if end_col is not None else node.col_offset,
+                    name=_resolve_callee_name(node),
+                    node=node,
+                )
+            )
+    return tuple(sorted(sites, key=lambda s: (s.line, s.col, s.end_col)))
+
+
+def _prose_line_indices(tree: "ast.AST") -> "frozenset[int]":
+    """ZERO-BASED physical line indices that are pure prose -- a docstring,
+    a bare string statement, or the strictly interior lines of a
+    multi-line string constant -- and therefore skip-worthy for a
+    primary-path TEXT scan that must not let prose decide a verdict.
+
+    Phase 11.1.1 plan 01 (Decision 4). Rule A masks every line of an
+    `ast.Expr` whose `.value` is a string `ast.Constant` -- every
+    docstring (module, class, function) and every bare string statement.
+    Rule B masks only the STRICTLY INTERIOR lines of a multi-line string
+    constant -- NOT the opening line and NOT the closing line. The
+    opening line is spared because it can carry real code (an assignment
+    of a triple-quoted string on its opening line); the closing line
+    carries real code exactly as often (a second statement chained after
+    the closing triple-quote), and masking it would delete true-positive
+    CRITICAL findings on that exact statement shape -- review reproduced
+    two. Masking WHOLE LINES ONLY, never "any line a string touches", is
+    also load-bearing:
+    `df['Age'] = df['Age'].fillna(df['Age'].mean())` sits on three
+    single-line string constants and must not be masked.
+
+    In this wave the mask has exactly one consumer: the split-marker text
+    scan, via `_first_line_matching`'s `masked` parameter (Decision 5).
+    """
+    masked: "set[int]" = set()
+    for node in ast.walk(tree):
+        if (
+            isinstance(node, ast.Expr)
+            and isinstance(node.value, ast.Constant)
+            and isinstance(node.value.value, str)
+        ):
+            # Rule A: the whole bare-string statement (docstring or
+            # otherwise) is prose, opening and closing line included.
+            for lineno in range(node.lineno, node.end_lineno + 1):
+                masked.add(lineno - 1)
+        if (
+            isinstance(node, ast.Constant)
+            and isinstance(node.value, str)
+            and node.end_lineno is not None
+            and node.end_lineno > node.lineno
+        ):
+            # Rule B: only the interior lines of a multi-line string
+            # constant, wherever it appears (not only in a bare
+            # statement) -- the opening and closing lines are spared.
+            for lineno in range(node.lineno + 1, node.end_lineno):
+                masked.add(lineno - 1)
+    return frozenset(masked)
+
 
 def check(spec: dict, phase_dir: "str | None" = None) -> Report:
     """Entrypoint fit-before-split, full-frame-cleaning and fit-after-split scans
@@ -192,19 +373,81 @@ def check(spec: dict, phase_dir: "str | None" = None) -> Report:
     repro = section(spec, "reproducibility")
     entry = repro.get("entrypoint")
     if is_blank(entry):
+        # Phase 11.1.1 plan 01 (Decision 3b): a skipped scan must never be
+        # mistaken for a clean one. Every remaining early return below
+        # names itself the same way, before returning.
+        report.ok("entrypoint NOT scanned — no entrypoint declared (no leak scan ran)")
         return report
 
     path = _resolve_entrypoint(str(entry), phase_dir)
     if path is None:
+        report.ok(
+            f"entrypoint NOT scanned — entrypoint path not found: {entry!r} "
+            "(no leak scan ran)"
+        )
         return report
 
     source = _read_source(path)
     if source is None:
+        # _read_source returns None for an unresolvable OSError, an
+        # unsupported suffix, or an unparseable notebook JSON document — it
+        # does not distinguish which, so this reason names the whole class.
+        report.ok(
+            "entrypoint NOT scanned — could not be read (unreadable, "
+            "unsupported suffix, or invalid notebook JSON) (no leak scan ran)"
+        )
         return report
 
-    lines = source.splitlines()
-    first_split = _first_line_matching(lines, SPLIT_MARKERS)
-    first_fit = _first_fit_leak_line(lines)
+    suffix = path.suffix.lower()
+    lines = _source_lines(source)
+    tree, parse_reason = _parse_source(source, suffix)
+    degraded = tree is None
+    if degraded:
+        report.ok(f"entrypoint NOT parsed — text-only fallback scan ({parse_reason})")
+    else:
+        report.ok("entrypoint parsed with ast (call-level scan)")
+
+    scan_path_input = (
+        f"scan_path:text-fallback:{parse_reason}" if degraded else "scan_path:ast"
+    )
+    python_input = f"python:{sys.version_info.major}.{sys.version_info.minor}"
+
+    # Phase 11.1.1 plan 01 (§3, Decisions 4-6): one walk, one call-site
+    # tuple, one prose mask -- computed once per check() call and read by
+    # every consumer below, never re-walked. Empty on the fallback path
+    # (tree is None), which is exactly what makes the fallback's
+    # first_split union degrade to text-only and its DSX-CODE-001
+    # detection degrade to `_first_fit_leak_line`.
+    call_sites = _call_sites(tree) if tree is not None else ()
+    prose_mask = _prose_line_indices(tree) if tree is not None else frozenset()
+
+    # Phase 11.1.1 plan 01 (Decision 5): first_split is the UNION of the
+    # AST split-call index and the masked text-marker scan, not a
+    # replacement of one by the other. An AST-only split detector reads an
+    # aliased or helper-wrapped split as no split at all, which silences
+    # DSX-CODE-021 entirely and makes DSX-CODE-010 assert something the
+    # file contradicts. A split marker that appears only inside a
+    # docstring stops counting (the mask removes that line) -- stricter,
+    # and announced.
+    text_split = _first_line_matching(lines, SPLIT_MARKERS, masked=prose_mask)
+    ast_split_lines = [s.line for s in call_sites if s.name in SPLIT_CALL_NAMES]
+    ast_split = min(ast_split_lines) if ast_split_lines else None
+    split_candidates = [v for v in (text_split, ast_split) if v is not None]
+    first_split = min(split_candidates) if split_candidates else None
+
+    # Phase 11.1.1 plan 01 (§3.3-3.4, CR-01/CR-02): DSX-CODE-001 is driven
+    # from call sites on the parsed path -- closing whitespace, tab,
+    # backslash-continuation and multi-line forms, and structurally
+    # retiring the docstring/prose false positive, since a string constant
+    # holds no Call node. The fallback keeps the shipped text
+    # implementation, with CR-03's redundant literal re-check removed
+    # (see `_first_fit_leak_line`).
+    if tree is not None:
+        ast_fit_lines = [s.line for s in call_sites if s.name in FIT_METHOD_NAMES]
+        first_fit = min(ast_fit_lines) if ast_fit_lines else None
+    else:
+        first_fit = _first_fit_leak_line(lines)
+
     model_section = section(spec, "model")
     has_model = bool(model_section)
 
@@ -295,6 +538,8 @@ def check(spec: dict, phase_dir: "str | None" = None) -> Report:
                 f"cleaning_line:{'none' if cleaning_index is None else cleaning_index + 1}",
                 f"split_line:{'none' if first_split is None else first_split + 1}",
                 f"fit_line:{'none' if fit_after_split_index is None else fit_after_split_index + 1}",
+                scan_path_input,
+                python_input,
             ],
             rule=(
                 "DSX-CODE-020 fires when the cleaning-idiom line index is "
@@ -399,6 +644,8 @@ def check(spec: dict, phase_dir: "str | None" = None) -> Report:
                 f"split_line:{'none' if first_split is None else first_split + 1}",
                 f"stat_before_line:{'none' if stat_before_index is None else stat_before_index + 1}",
                 f"stat_after_line:{'none' if stat_after_index is None else stat_after_index + 1}",
+                scan_path_input,
+                python_input,
             ],
             rule=(
                 "DSX-CODE-030 fires when a statistical-test call referencing "
@@ -422,6 +669,22 @@ def check(spec: dict, phase_dir: "str | None" = None) -> Report:
         ),
     )
 
+    # Phase 11.1.1 plan 01 (threat T-11.1.1-13, Decision 8): the `break`
+    # used to sit inside the inner `if`, so a SUPPRESSED match (prior
+    # already names X_train) did not stop the outer loop -- it kept
+    # rebuilding `prior = "\n".join(lines[:index])`, an O(index)
+    # operation, for every one of the remaining matching lines, making the
+    # whole loop O(n^2) on the PRIMARY path. Measured this session with an
+    # `X_train = 1` line above N matching `StandardScaler().fit_transform`
+    # lines: 0.0223 / 0.0852 / 0.4545 / 1.4211 s at 2,000 / 4,000 / 8,000 /
+    # 16,000 -- roughly 4x per doubling, 1.4 s at 16,000, already over the
+    # house budget. Hoisting the `break` out of the inner `if` is provably
+    # behaviour-preserving: `lines[:j]` is a prefix superset of `lines[:i]`
+    # for `j > i`, so once "X_train" is in `prior` it is in every later
+    # `prior` too, and the loop is dead after the first suppressed match
+    # exactly as much as after the first accepted one. Pinned by
+    # test_scaler_full_loop_timing_is_linear, whose input is this exact
+    # shape.
     for index, line in enumerate(lines):
         if SCALER_FULL_RE.search(line):
             prior = "\n".join(lines[:index])
@@ -434,7 +697,7 @@ def check(spec: dict, phase_dir: "str | None" = None) -> Report:
                     remedy="Fit the scaler on X_train only, then transform X_train and X_test.",
                     where=f"entrypoint:{entry}",
                 )
-                break
+            break
 
     for index, line in enumerate(lines):
         if RESAMPLE_BEFORE_RE.search(line):
@@ -464,6 +727,34 @@ def check(spec: dict, phase_dir: "str | None" = None) -> Report:
     elif first_split is not None:
         report.ok(f"entrypoint split marker at line {first_split + 1}")
 
+    # Phase 11.1.1 plan 01 (Decision 7, §2.3 channels 2 and 3): a single
+    # post-pass, applied immediately before return, tags every finding with
+    # which scan produced the report and, on the fallback, appends the
+    # degraded-scan sentence to its detail. Finding is frozen
+    # (dsx/findings.py), so dataclasses.replace is required; a list-slice
+    # assignment preserves order, which the determinism guarantee depends
+    # on. Doing this as a post-pass keeps all eight report.add(...) call
+    # sites' first three arguments untouched, which is what
+    # scripts/gen-finding-catalogue.py --check requires.
+    if degraded:
+        degraded_note = (
+            " [scanned as text only: this entrypoint could not be parsed as "
+            f"Python ({parse_reason}), so the weaker text scan ran and may "
+            "have missed leaks it cannot see]."
+        )
+        report.findings[:] = [
+            replace(
+                f,
+                detail=(f.detail + degraded_note).strip(),
+                data={**f.data, "scan": "text-fallback"},
+            )
+            for f in report.findings
+        ]
+    else:
+        report.findings[:] = [
+            replace(f, data={**f.data, "scan": "ast"}) for f in report.findings
+        ]
+
     return report
 
 
@@ -478,13 +769,139 @@ def _resolve_entrypoint(entry: str, phase_dir: "str | None") -> Path | None:
     return None
 
 
+def _source_lines(source: str) -> list[str]:
+    """The CPython tokenizer's own line partition -- NOT `str.splitlines()`.
+
+    Phase 11.1.1 plan 01 (Decision 1). `ast` node positions index the
+    tokenizer's line partition, which splits only on `\\r\\n`, a lone `\\r`
+    or `\\n`. `str.splitlines()` additionally splits on `\\x0b \\x0c \\x1c
+    \\x1d \\x1e \\x85` and the Unicode line/paragraph separators, and the
+    tokenizer does not -- so one such character anywhere in the
+    entrypoint, including inside a string literal, would desynchronise
+    every AST-derived line index from every text-derived one.
+    `cleaning_index < first_split` would then be comparing two different
+    axes. Measured this session, reproduced in
+    `tests/test_dsx.py::TestPhase11_1Code`: a lone form-feed line above a
+    split marker makes `splitlines()` report one line too many, shifting
+    every reported "Line N" below it by one; the same happens for a
+    U+2028 character embedded inside an otherwise ordinary single-line
+    string literal.
+
+    Normalising `\\r\\n` and a lone `\\r` to `\\n`, then splitting on `\\n`
+    only, and dropping a single trailing empty element (matching
+    `str.splitlines()`'s own treatment of a final trailing newline),
+    reproduces the tokenizer's partition exactly -- so AST-derived and
+    text-derived indices coincide by construction rather than by luck.
+    This is also where the repo-wide CRLF rule is discharged for this
+    module: no pattern below needs `\\r?\\n` of its own, because every
+    pattern is matched against these already-normalised lines, never
+    against the raw source.
+    """
+    normalised = source.replace("\r\n", "\n").replace("\r", "\n")
+    parts = normalised.split("\n")
+    if parts and parts[-1] == "":
+        parts = parts[:-1]
+    return parts
+
+
+# Phase 11.1.1 plan 01 (§1.3 of 11.1.1-AST-DESIGN.md). Jupyter cell sources
+# routinely contain line magics (`%matplotlib inline`), cell magics
+# (`%%time`), and shell escapes (`!pip install pandas`) -- all three raise
+# SyntaxError from ast.parse. The repair blanks each such line to an empty
+# string, IN PLACE, so the blanked line count and every other line's index
+# are unchanged, then the caller re-parses once. Not repaired, and named in
+# the phase's uncaught-by-design record: the `?`/`??` introspection suffix
+# (`df.head?`) and a cell magic whose BODY is not Python (`%%bash`, `%%sql`,
+# `%%R`, `%%writefile`) -- blanking the magic line alone leaves a
+# non-Python body behind, so the notebook still fails to parse.
+_NOTEBOOK_MAGIC_LINE_RE = re.compile(r"^\s*(%%|%|!)")
+_NOTEBOOK_MAGIC_ASSIGN_RE = re.compile(r"^\s*\w[\w.]*\s*=\s*%")
+
+
+def _repair_notebook_magics(source: str) -> str:
+    lines = _source_lines(source)
+    repaired = [
+        ""
+        if _NOTEBOOK_MAGIC_LINE_RE.match(line) or _NOTEBOOK_MAGIC_ASSIGN_RE.match(line)
+        else line
+        for line in lines
+    ]
+    return "\n".join(repaired)
+
+
+def _parse_failure_reason(exc: BaseException) -> str:
+    """A VARIABLE reason, never a hardcoded "syntax error at line N" --
+    RecursionError, MemoryError and ValueError carry no `lineno` and would
+    otherwise print the literal word "None" (Phase 11.1.1 plan 01)."""
+    lineno = getattr(exc, "lineno", None)
+    if lineno is not None:
+        return f"syntax error at line {lineno}"
+    return type(exc).__name__
+
+
+def _parse_source(source: str, suffix: str) -> "tuple[ast.Module | None, str]":
+    """Attempt `ast.parse` once, with one notebook-only repair retry on
+    failure. Returns `(tree, reason)` — `tree` is `None` and `reason` names
+    why when both attempts (or the only attempt, for a non-notebook
+    source) failed; `reason` is `""` on success.
+
+    Phase 11.1.1 plan 01 (Decision 7). One `ast.parse` per `check()` call,
+    one flag — no per-code fallback and no partial tree. Two scanners
+    would otherwise disagree about `first_split` inside one run, and a
+    gate whose codes disagree about where the split is cannot be used as
+    evidence.
+
+    The guard is `(SyntaxError, ValueError, RecursionError, MemoryError)`.
+    `except SyntaxError` alone crashes the gate on an ordinary long
+    chained expression: measured this session, CPython 3.12.10 raises
+    RecursionError on a chain of 70,000 binary operators at a lowered
+    recursion limit; CPython 3.14.6's C parser does not honour
+    `sys.setrecursionlimit` until a far larger depth, consistent with the
+    documented claim that it parses 10,000 chained operators and only
+    raises at 50,000. `KeyboardInterrupt` and `SystemExit` are not
+    `Exception` subclasses and are not caught.
+
+    `ast.parse` accepts the RUNNING interpreter's grammar, so which path
+    an entrypoint takes can depend on the interpreter's Python version --
+    disclosed via `python:{major}.{minor}` in both decision records, not
+    hidden (Decision 7, T-11.1.1-12).
+    """
+    try:
+        return ast.parse(source), ""
+    except (SyntaxError, ValueError, RecursionError, MemoryError) as exc:
+        first_reason = _parse_failure_reason(exc)
+        if suffix != ".ipynb":
+            return None, first_reason
+        try:
+            return ast.parse(_repair_notebook_magics(source)), ""
+        except (SyntaxError, ValueError, RecursionError, MemoryError) as exc2:
+            return None, _parse_failure_reason(exc2)
+
+
 def _read_source(path: Path) -> str | None:
     suffix = path.suffix.lower()
     if suffix == ".py":
         try:
-            return path.read_text(encoding="utf-8")
+            raw = path.read_bytes()
         except OSError:
             return None
+        try:
+            # utf-8-sig decodes BOM-less UTF-8 identically and strips a
+            # leading byte-order mark when one is present. A BOM read as
+            # plain "utf-8" reaches ast.parse as U+FEFF and raises
+            # SyntaxError: invalid non-printable character U+FEFF.
+            return raw.decode("utf-8-sig")
+        except (UnicodeDecodeError, ValueError):
+            # Phase 11.1.1 plan 01 (Decision 3a): an undecodable entrypoint
+            # is never silently a pass. Today a UnicodeDecodeError
+            # propagates out of check() as a gate ERROR (exit 2); swallowing
+            # it to None instead would convert that loud failure into a
+            # silent exit-0 pass with zero findings, zero pass lines and
+            # zero decision records -- worse than either. A
+            # replacement-character read still finds any leak on the lines
+            # that decoded, and the degraded read is named on the pass
+            # line by check() itself. errors="replace" cannot itself raise.
+            return raw.decode("utf-8", errors="replace")
     if suffix == ".ipynb":
         try:
             nb = json.loads(path.read_text(encoding="utf-8"))
@@ -492,19 +909,53 @@ def _read_source(path: Path) -> str | None:
             return None
         chunks: list[str] = []
         for cell in nb.get("cells") or []:
-            if cell.get("cell_type") not in {"code", "markdown"}:
+            cell_type = cell.get("cell_type")
+            is_code = cell_type == "code"
+            is_markdown = cell_type == "markdown"
+            if not (is_code or is_markdown):
+                # raw / unknown cell types are dropped entirely, exactly as
+                # before.
                 continue
             src = cell.get("source") or ""
-            if isinstance(src, list):
-                chunks.append("".join(src))
-            else:
-                chunks.append(str(src))
+            chunk = "".join(src) if isinstance(src, list) else str(src)
+            if is_markdown:
+                # Phase 11.1.1 plan 01 (Decision 2): markdown cells are
+                # blanked CHARACTER-WISE, not line-counted. The rejected
+                # alternative, `max(1, len(src.splitlines()))` blank lines,
+                # under-counts by one whenever the cell text ends in a
+                # newline -- the common nbformat shape -- and miscounts
+                # again for \r, \x0c and the Unicode line separators.
+                # Measured this session against three markdown shapes: a
+                # 2-element list ending in a newline needs 3 line slots,
+                # not the 2 the count formula gives; the same list with no
+                # trailing newline needs 2 and the formula happens to
+                # agree; a plain string ending in a newline needs 3, not 2.
+                # Since preserving line geometry is the SOLE reason
+                # blank-padding was chosen over dropping markdown cells
+                # outright, an arithmetic that does not preserve it
+                # defeats its own purpose. Blanking every non-newline
+                # character of the SAME chunk the code-cell branch would
+                # otherwise contribute preserves geometry BY CONSTRUCTION:
+                # every newline survives, every other character does not.
+                chunk = re.sub(r"[^\r\n]", "", chunk)
+            chunks.append(chunk)
         return "\n".join(chunks)
     return None
 
 
-def _first_line_matching(lines: list[str], markers: tuple[str, ...]) -> int | None:
+def _first_line_matching(
+    lines: list[str],
+    markers: tuple[str, ...],
+    masked: "frozenset[int]" = frozenset(),
+) -> int | None:
+    """Phase 11.1.1 plan 01 (Decision 5): `masked` -- zero-based line
+    indices from `_prose_line_indices` -- are skipped in addition to the
+    existing comment/import skip guard, so a split marker that appears
+    only inside a docstring stops counting as a split. Empty by default,
+    so every caller other than `first_split`'s union is unaffected."""
     for index, line in enumerate(lines):
+        if index in masked:
+            continue
         stripped = line.strip()
         if stripped.startswith("#"):
             continue
@@ -517,6 +968,10 @@ def _first_line_matching(lines: list[str], markers: tuple[str, ...]) -> int | No
 
 
 def _first_fit_leak_line(lines: list[str]) -> int | None:
+    """The FALLBACK path's fit-before-split detector -- used only when the
+    entrypoint could not be parsed (`_parse_source` returned no tree). The
+    parsed path drives DSX-CODE-001 from `_call_sites` instead (Phase
+    11.1.1 plan 01, §3.3-3.4 of 11.1.1-AST-DESIGN.md)."""
     for index, line in enumerate(lines):
         stripped = line.strip()
         if stripped.startswith("#"):
@@ -529,8 +984,15 @@ def _first_fit_leak_line(lines: list[str]) -> int | None:
             return index
         for pattern in FIT_LEAK_MARKERS:
             if re.search(pattern, line):
-                if "fit(" in line or "fit_transform" in line or "partial_fit" in line:
-                    return index
+                # Phase 11.1.1 plan 01 (finding CR-03): a redundant literal
+                # re-check used to live here --
+                # `if "fit(" in line or "fit_transform" in line or
+                # "partial_fit" in line` -- which undid FIT_LEAK_MARKERS'
+                # own `\s*` tolerance: `model.fit (df)` (a space before the
+                # parenthesis) matched the regex but failed this literal
+                # check, so the finding never fired. Deleted; the regex
+                # match above is authoritative on its own.
+                return index
     return None
 
 
