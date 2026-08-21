@@ -5024,7 +5024,7 @@ class TestPhase11_1Code(unittest.TestCase):
             )
             self.assertIn("scanned as text only", found[0].detail)
             self.assertTrue(
-                any("text-fallback" in line for line in report.passed_checks)
+                any("fallback scan" in line for line in report.passed_checks)
             )
 
     def test_parsed_entrypoint_says_so_on_the_pass_line_and_in_finding_data(self):

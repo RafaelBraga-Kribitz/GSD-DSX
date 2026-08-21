@@ -23,8 +23,11 @@ exhaustive -- real leaks remain uncaught by construction and by design.
 
 from __future__ import annotations
 
+import ast
 import json
 import re
+import sys
+from dataclasses import replace
 from pathlib import Path
 
 from ..decisions import DecisionRecord, record_decision
@@ -209,17 +212,45 @@ def check(spec: dict, phase_dir: "str | None" = None) -> Report:
     repro = section(spec, "reproducibility")
     entry = repro.get("entrypoint")
     if is_blank(entry):
+        # Phase 11.1.1 plan 01 (Decision 3b): a skipped scan must never be
+        # mistaken for a clean one. Every remaining early return below
+        # names itself the same way, before returning.
+        report.ok("entrypoint NOT scanned — no entrypoint declared (no leak scan ran)")
         return report
 
     path = _resolve_entrypoint(str(entry), phase_dir)
     if path is None:
+        report.ok(
+            f"entrypoint NOT scanned — entrypoint path not found: {entry!r} "
+            "(no leak scan ran)"
+        )
         return report
 
     source = _read_source(path)
     if source is None:
+        # _read_source returns None for an unresolvable OSError, an
+        # unsupported suffix, or an unparseable notebook JSON document — it
+        # does not distinguish which, so this reason names the whole class.
+        report.ok(
+            "entrypoint NOT scanned — could not be read (unreadable, "
+            "unsupported suffix, or invalid notebook JSON) (no leak scan ran)"
+        )
         return report
 
+    suffix = path.suffix.lower()
     lines = _source_lines(source)
+    tree, parse_reason = _parse_source(source, suffix)
+    degraded = tree is None
+    if degraded:
+        report.ok(f"entrypoint NOT parsed — text-only fallback scan ({parse_reason})")
+    else:
+        report.ok("entrypoint parsed with ast (call-level scan)")
+
+    scan_path_input = (
+        f"scan_path:text-fallback:{parse_reason}" if degraded else "scan_path:ast"
+    )
+    python_input = f"python:{sys.version_info.major}.{sys.version_info.minor}"
+
     first_split = _first_line_matching(lines, SPLIT_MARKERS)
     first_fit = _first_fit_leak_line(lines)
     model_section = section(spec, "model")
@@ -312,6 +343,8 @@ def check(spec: dict, phase_dir: "str | None" = None) -> Report:
                 f"cleaning_line:{'none' if cleaning_index is None else cleaning_index + 1}",
                 f"split_line:{'none' if first_split is None else first_split + 1}",
                 f"fit_line:{'none' if fit_after_split_index is None else fit_after_split_index + 1}",
+                scan_path_input,
+                python_input,
             ],
             rule=(
                 "DSX-CODE-020 fires when the cleaning-idiom line index is "
@@ -416,6 +449,8 @@ def check(spec: dict, phase_dir: "str | None" = None) -> Report:
                 f"split_line:{'none' if first_split is None else first_split + 1}",
                 f"stat_before_line:{'none' if stat_before_index is None else stat_before_index + 1}",
                 f"stat_after_line:{'none' if stat_after_index is None else stat_after_index + 1}",
+                scan_path_input,
+                python_input,
             ],
             rule=(
                 "DSX-CODE-030 fires when a statistical-test call referencing "
@@ -481,6 +516,34 @@ def check(spec: dict, phase_dir: "str | None" = None) -> Report:
     elif first_split is not None:
         report.ok(f"entrypoint split marker at line {first_split + 1}")
 
+    # Phase 11.1.1 plan 01 (Decision 7, §2.3 channels 2 and 3): a single
+    # post-pass, applied immediately before return, tags every finding with
+    # which scan produced the report and, on the fallback, appends the
+    # degraded-scan sentence to its detail. Finding is frozen
+    # (dsx/findings.py), so dataclasses.replace is required; a list-slice
+    # assignment preserves order, which the determinism guarantee depends
+    # on. Doing this as a post-pass keeps all eight report.add(...) call
+    # sites' first three arguments untouched, which is what
+    # scripts/gen-finding-catalogue.py --check requires.
+    if degraded:
+        degraded_note = (
+            " [scanned as text only: this entrypoint could not be parsed as "
+            f"Python ({parse_reason}), so the weaker text scan ran and may "
+            "have missed leaks it cannot see]."
+        )
+        report.findings[:] = [
+            replace(
+                f,
+                detail=(f.detail + degraded_note).strip(),
+                data={**f.data, "scan": "text-fallback"},
+            )
+            for f in report.findings
+        ]
+    else:
+        report.findings[:] = [
+            replace(f, data={**f.data, "scan": "ast"}) for f in report.findings
+        ]
+
     return report
 
 
@@ -528,6 +591,80 @@ def _source_lines(source: str) -> list[str]:
     if parts and parts[-1] == "":
         parts = parts[:-1]
     return parts
+
+
+# Phase 11.1.1 plan 01 (§1.3 of 11.1.1-AST-DESIGN.md). Jupyter cell sources
+# routinely contain line magics (`%matplotlib inline`), cell magics
+# (`%%time`), and shell escapes (`!pip install pandas`) -- all three raise
+# SyntaxError from ast.parse. The repair blanks each such line to an empty
+# string, IN PLACE, so the blanked line count and every other line's index
+# are unchanged, then the caller re-parses once. Not repaired, and named in
+# the phase's uncaught-by-design record: the `?`/`??` introspection suffix
+# (`df.head?`) and a cell magic whose BODY is not Python (`%%bash`, `%%sql`,
+# `%%R`, `%%writefile`) -- blanking the magic line alone leaves a
+# non-Python body behind, so the notebook still fails to parse.
+_NOTEBOOK_MAGIC_LINE_RE = re.compile(r"^\s*(%%|%|!)")
+_NOTEBOOK_MAGIC_ASSIGN_RE = re.compile(r"^\s*\w[\w.]*\s*=\s*%")
+
+
+def _repair_notebook_magics(source: str) -> str:
+    lines = _source_lines(source)
+    repaired = [
+        ""
+        if _NOTEBOOK_MAGIC_LINE_RE.match(line) or _NOTEBOOK_MAGIC_ASSIGN_RE.match(line)
+        else line
+        for line in lines
+    ]
+    return "\n".join(repaired)
+
+
+def _parse_failure_reason(exc: BaseException) -> str:
+    """A VARIABLE reason, never a hardcoded "syntax error at line N" --
+    RecursionError, MemoryError and ValueError carry no `lineno` and would
+    otherwise print the literal word "None" (Phase 11.1.1 plan 01)."""
+    lineno = getattr(exc, "lineno", None)
+    if lineno is not None:
+        return f"syntax error at line {lineno}"
+    return type(exc).__name__
+
+
+def _parse_source(source: str, suffix: str) -> "tuple[ast.Module | None, str]":
+    """Attempt `ast.parse` once, with one notebook-only repair retry on
+    failure. Returns `(tree, reason)` — `tree` is `None` and `reason` names
+    why when both attempts (or the only attempt, for a non-notebook
+    source) failed; `reason` is `""` on success.
+
+    Phase 11.1.1 plan 01 (Decision 7). One `ast.parse` per `check()` call,
+    one flag — no per-code fallback and no partial tree. Two scanners
+    would otherwise disagree about `first_split` inside one run, and a
+    gate whose codes disagree about where the split is cannot be used as
+    evidence.
+
+    The guard is `(SyntaxError, ValueError, RecursionError, MemoryError)`.
+    `except SyntaxError` alone crashes the gate on an ordinary long
+    chained expression: measured this session, CPython 3.12.10 raises
+    RecursionError on a chain of 70,000 binary operators at a lowered
+    recursion limit; CPython 3.14.6's C parser does not honour
+    `sys.setrecursionlimit` until a far larger depth, consistent with the
+    documented claim that it parses 10,000 chained operators and only
+    raises at 50,000. `KeyboardInterrupt` and `SystemExit` are not
+    `Exception` subclasses and are not caught.
+
+    `ast.parse` accepts the RUNNING interpreter's grammar, so which path
+    an entrypoint takes can depend on the interpreter's Python version --
+    disclosed via `python:{major}.{minor}` in both decision records, not
+    hidden (Decision 7, T-11.1.1-12).
+    """
+    try:
+        return ast.parse(source), ""
+    except (SyntaxError, ValueError, RecursionError, MemoryError) as exc:
+        first_reason = _parse_failure_reason(exc)
+        if suffix != ".ipynb":
+            return None, first_reason
+        try:
+            return ast.parse(_repair_notebook_magics(source)), ""
+        except (SyntaxError, ValueError, RecursionError, MemoryError) as exc2:
+            return None, _parse_failure_reason(exc2)
 
 
 def _read_source(path: Path) -> str | None:
