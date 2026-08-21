@@ -53,17 +53,41 @@ PIPELINE_FIT_TRAIN_RE = re.compile(
 # Phase 11.1 (REQ-P11.1-01): full-frame cleaning idioms computed before any split
 # exists — a fillna imputation whose text also names a mean/median/mode aggregate,
 # or a row filter that both subscripts/filters a frame and names a std/quantile
-# call. Two independent lookaheads each, one bounded scan per lookahead — not a
-# nested quantifier — so co-occurrence on the line is order-independent and
-# linear, following the discipline dsx/spec.py's `_FALSIFIER_NUMBER_RE` comment
-# documents (threat T-11.1-01): a nested quantifier here would expose the gate to
-# catastrophic backtracking on adversarial, analyst-authored entrypoint text.
-FULL_FRAME_IMPUTE_RE = re.compile(
-    r"(?=.*\.fillna\s*\()(?=.*\.(?:mean|median|mode)\s*\()"
-)
-FULL_FRAME_SPREAD_FILTER_RE = re.compile(
-    r"(?=.*\w+\s*\[)(?=.*\.(?:std|quantile)\s*\()"
-)
+# call.
+#
+# Phase 11.1.1 (threat T-11.1-01): each of these was previously ONE pattern that
+# combined its two halves with sequential `.*`-prefixed lookaheads, under a
+# comment claiming the construction was linear. That claim was false and is
+# retracted here. `re.search()` retries a failing zero-width pattern at every
+# start position, and the spread filter's `.*\w+` had overlapping character
+# classes on top of that. Measured on a non-matching line, the spread filter grew
+# with a fitted exponent of 3.0 (cubic — 800 characters took 1.4 seconds) and the
+# imputation filter with an exponent of 2.0 (quadratic). Both run once per
+# non-comment line of an analyst-supplied entrypoint with no length cap, so an
+# ordinary long line could stall a blocking gate; and because the scan stops at
+# the first match, that cost fell on CLEAN files, not leaky ones.
+#
+# Each half is now its own unambiguous pattern — no leading `.*`, no overlapping
+# character classes — and the co-occurrence is decided in Python with `and`.
+# That is linear and measurably so (2,000,000 characters in 0.05 seconds), and it
+# matches exactly the same lines as the previous construction. The bar is pinned
+# by test_full_frame_cleaning_predicates_timing_no_catastrophic_backtracking.
+_IMPUTE_FILLNA_RE = re.compile(r"\.fillna\s*\(")
+_IMPUTE_STAT_RE = re.compile(r"\.(?:mean|median|mode)\s*\(")
+_SPREAD_SUBSCRIPT_RE = re.compile(r"\w\s*\[")
+_SPREAD_STAT_RE = re.compile(r"\.(?:std|quantile)\s*\(")
+
+
+def _is_full_frame_impute(line: str) -> bool:
+    """True when `line` both calls `.fillna(` and names a mean/median/mode
+    aggregate — the whole-frame imputation idiom (REQ-P11.1-01)."""
+    return bool(_IMPUTE_FILLNA_RE.search(line) and _IMPUTE_STAT_RE.search(line))
+
+
+def _is_full_frame_spread_filter(line: str) -> bool:
+    """True when `line` both subscripts a frame and names a std/quantile call —
+    the whole-frame outlier-filter idiom (REQ-P11.1-01)."""
+    return bool(_SPREAD_SUBSCRIPT_RE.search(line) and _SPREAD_STAT_RE.search(line))
 
 # Phase 11.1 (REQ-P11.1-01): the training-frame name lexicon, locked by this plan
 # per 11.1-RESEARCH.md's "Training-Frame Name Lexicon" section (marked [ASSUMED]
@@ -95,8 +119,11 @@ FIT_CALL_RE = re.compile(
 # hypothesis stage uses in place of any `.fit(`-shaped call — a co-occurrence
 # match, not a fit-scan, is what catches it. One bounded alternation of
 # literal function names followed by one bounded whitespace repetition and an
-# opening parenthesis: no nested quantifier, linear in line length, matching
-# the discipline `FULL_FRAME_IMPUTE_RE`'s comment documents (threat T-11.1-12).
+# opening parenthesis: no nested quantifier, no leading `.*`, and linear in line
+# length — measured at a fitted growth exponent of 0.7 (threat T-11.1-12). This
+# pattern previously cited `FULL_FRAME_IMPUTE_RE`'s comment as its precedent;
+# that comment's linearity claim was false and was retracted in Phase 11.1.1, so
+# this one now states its own measured property instead of borrowing one.
 # A leading `\b` keeps a longer identifier that merely contains one of these
 # names (e.g. `my_ttest_ind_variant(`) from matching.
 STAT_TEST_CALL_RE = re.compile(
@@ -508,18 +535,18 @@ def _first_fit_leak_line(lines: list[str]) -> int | None:
 
 
 def _first_full_frame_cleaning_line(lines: list[str]) -> int | None:
-    """Lowest line index matching `FULL_FRAME_IMPUTE_RE` or
-    `FULL_FRAME_SPREAD_FILTER_RE` (REQ-P11.1-01). Repeats `_first_line_matching`'s
+    """Lowest line index satisfying `_is_full_frame_impute` or
+    `_is_full_frame_spread_filter` (REQ-P11.1-01). Repeats `_first_line_matching`'s
     skip guard rather than reusing it — that helper takes plain substrings, this
-    one takes compiled patterns, and merging the two would widen a function three
-    shipped codes already depend on."""
+    one takes co-occurrence predicates, and merging the two would widen a function
+    three shipped codes already depend on."""
     for index, line in enumerate(lines):
         stripped = line.strip()
         if stripped.startswith("#"):
             continue
         if re.match(r"^(from|import)\b", stripped):
             continue
-        if FULL_FRAME_IMPUTE_RE.search(line) or FULL_FRAME_SPREAD_FILTER_RE.search(line):
+        if _is_full_frame_impute(line) or _is_full_frame_spread_filter(line):
             return index
     return None
 

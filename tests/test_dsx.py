@@ -4574,24 +4574,33 @@ class TestPhase11_1Code(unittest.TestCase):
         )
         self.assertNotIn("DSX-CODE-020", codes(report))
 
-    def test_full_frame_impute_re_matches_paper_style_idiom(self):
+    def test_full_frame_impute_predicate_matches_paper_style_idiom(self):
         from dsx.checks import code as code_mod
 
         self.assertTrue(
-            code_mod.FULL_FRAME_IMPUTE_RE.search(
+            code_mod._is_full_frame_impute(
                 "df['Age'] = df['Age'].fillna(df['Age'].mean())"
             )
         )
+        # Phase 11.1.1: both halves are required. Splitting the old single
+        # pattern into two independent searches must not have widened it.
+        self.assertFalse(code_mod._is_full_frame_impute("s.fillna(0)"))
+        self.assertFalse(code_mod._is_full_frame_impute("x = df['a'].mean()"))
 
-    def test_full_frame_spread_filter_re_matches_paper_style_idiom(self):
+    def test_full_frame_spread_filter_predicate_matches_paper_style_idiom(self):
         from dsx.checks import code as code_mod
 
         self.assertTrue(
-            code_mod.FULL_FRAME_SPREAD_FILTER_RE.search(
+            code_mod._is_full_frame_spread_filter(
                 "df = df[(df['Balance'] - df['Balance'].mean()).abs() "
                 "/ df['Balance'].std() < 3]"
             )
         )
+        # Phase 11.1.1: both halves are required, and the subscript half still
+        # demands an identifier character immediately before the bracket.
+        self.assertFalse(code_mod._is_full_frame_spread_filter("no brackets .std()"))
+        self.assertFalse(code_mod._is_full_frame_spread_filter("df['a'] only"))
+        self.assertFalse(code_mod._is_full_frame_spread_filter("a[0]"))
 
     # ── DSX-CODE-021: fit at/after split not on a recognised training frame ─
 
@@ -4733,6 +4742,42 @@ class TestPhase11_1Code(unittest.TestCase):
         start = time.perf_counter()
         code_mod.FIT_CALL_RE.search(text)
         self.assertLess(time.perf_counter() - start, 1.0)
+
+    def test_full_frame_cleaning_predicates_timing_no_catastrophic_backtracking(self):
+        # Phase 11.1.1 (threat T-11.1-01). The previous single-pattern
+        # construction was cubic (spread filter) and quadratic (imputation) in
+        # line length: 800 characters already took 1.4 seconds, so at this size
+        # it would not have finished in any practical time. Same house bar as
+        # test_fit_call_re_timing_no_catastrophic_backtracking above (20,000
+        # characters), but an order of magnitude tighter, because the replacement
+        # runs in well under a millisecond and a loose threshold would let a
+        # regression back to a backtracking construction slip through.
+        import time
+
+        from dsx.checks import code as code_mod
+
+        # The sizes ascend deliberately, and this loop must NOT use subTest: a
+        # regression to the old cubic construction has to abort at 800
+        # characters (about 1.4 seconds) rather than continue to 20,000, where
+        # the same construction runs for hours and would hang the suite instead
+        # of failing it. subTest records a failure and keeps going, which is
+        # exactly the wrong behaviour here.
+        for size, budget in ((800, 0.05), (20000, 0.1)):
+            for predicate in (
+                code_mod._is_full_frame_impute,
+                code_mod._is_full_frame_spread_filter,
+            ):
+                line = "x" * size  # satisfies neither predicate
+                start = time.perf_counter()
+                self.assertFalse(predicate(line))
+                elapsed = time.perf_counter() - start
+                self.assertLess(
+                    elapsed,
+                    budget,
+                    f"{predicate.__name__} took {elapsed:.4f}s on a "
+                    f"{size}-character non-matching line (budget {budget}s) — "
+                    "super-linear regression",
+                )
 
     def test_good_fixture_still_passes_all_four_gate_points(self):
         from dsx import cli
