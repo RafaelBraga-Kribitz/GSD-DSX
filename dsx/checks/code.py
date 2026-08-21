@@ -2,9 +2,17 @@
 
 Stdlib-only. Source is parsed with `ast` (Python 3.9+ -- `ast.unparse` is
 used to render argument tokens); `.py` is read as UTF-8 with an optional
-BOM, `.ipynb` contributes CODE cells verbatim and blanks markdown cells
-CHARACTER-WISE (every newline survives, every other character does not)
-so that reported line indices are unchanged by the cell filter. `lines`
+BOM, `.ipynb` is read the same way (also `utf-8-sig`) and contributes
+CODE cells verbatim, blanking markdown cells CHARACTER-WISE (every
+newline survives, every other character does not) so that reported line
+indices are unchanged by the cell filter -- a Jupyter magic or shell
+escape (`%matplotlib inline`, `!pip install pandas`) is repaired
+in-place, blank-per-blanked-line, only after a first parse attempt fails
+and only for `.ipynb`, then re-parsed once. For a `.ipynb`, `Line N`
+indexes the RECONSTRUCTED CELL CONCATENATION described above -- not the
+Nth line of the `.ipynb` JSON file, which a user cannot usefully open at
+that offset either way; this module does not change that coordinate
+space, only preserves it exactly across the markdown filter. `lines`
 is built from the CPython tokenizer's own line partition
 (`_source_lines`), not `str.splitlines()` -- the latter also breaks on
 form feed, several C1 control-code separators, and the Unicode
@@ -1010,7 +1018,16 @@ def _read_source(path: Path) -> str | None:
             return raw.decode("utf-8", errors="replace")
     if suffix == ".ipynb":
         try:
-            nb = json.loads(path.read_text(encoding="utf-8"))
+            # Phase 11.1.1 plan 02 (§1.1(a) of 11.1.1-AST-DESIGN.md,
+            # extended to .ipynb for consistency with the .py read above).
+            # A BOM breaks json.loads exactly as it breaks ast.parse --
+            # read as plain "utf-8" it reaches json.loads as a leading
+            # U+FEFF character and raises json.JSONDecodeError, which
+            # this except clause already returns None for -- silently
+            # marking a real, readable notebook as unscannable rather
+            # than scanning it. utf-8-sig decodes BOM-less UTF-8
+            # identically and strips a leading BOM when one is present.
+            nb = json.loads(path.read_text(encoding="utf-8-sig"))
         except (OSError, json.JSONDecodeError):
             return None
         chunks: list[str] = []

@@ -5203,6 +5203,110 @@ class TestPhase11_1Code(unittest.TestCase):
                     self.assertEqual(len(found), 1)
                     self.assertIn(f"Line {expected_line}", found[0].detail)
 
+    # -- Phase 11.1.1 plan 02 task 3: the notebook reader ---------------------
+    # -- Notebook markdown prose and both trailing-newline geometry shapes ---
+    # -- are already pinned by test_notebook_markdown_cell_mentioning_fit_ ---
+    # -- draws_no_code_001 and test_notebook_code_cell_line_numbers_are_ -----
+    # -- unchanged_by_the_markdown_filter above -- plan 01 closed the ------
+    # -- notebook markdown false positive one task early (character-wise ----
+    # -- blanking), so those two are not duplicated here (see the plan-02 ---
+    # -- SUMMARY). What remains for this task: BOM handling, magic repair, --
+    # -- the uncaught cell-magic-body pin, and degenerate notebook shapes. --
+
+    def test_notebook_magics_are_repaired_and_take_the_ast_path(self):
+        nb = {
+            "cells": [
+                {
+                    "cell_type": "code",
+                    "source": [
+                        "%matplotlib inline\n",
+                        "!pip install pandas\n",
+                        "t = %timeit -o f()\n",
+                        "from sklearn.model_selection import train_test_split\n",
+                        "train_test_split(df)\n",
+                        "model.fit(df)\n",
+                    ],
+                }
+            ]
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(tmp, json.dumps(nb), name="entry.ipynb")
+            report = self._check(tmp, entry)
+            # model.fit(df) sits AFTER train_test_split(df) here, so a
+            # successful repair-then-parse fires DSX-CODE-021 (fit at/after
+            # the split on a non-training-frame token), not DSX-CODE-001.
+            found = [f for f in report.findings if f.code == "DSX-CODE-021"]
+            self.assertEqual(len(found), 1)
+            self.assertEqual(found[0].data.get("scan"), "ast")
+
+    def test_notebook_cell_magic_body_stays_on_the_fallback(self):
+        """Uncaught-by-design: a `%%bash` cell body is not Python and is not
+        repaired (blanking only the `%%bash` line would leave a non-Python
+        body behind), so the notebook scans on the fallback. This is a REAL
+        limitation, not a true negative. If this test ever fails because
+        the notebook took the AST path, that is good news and the test
+        should be promoted rather than deleted."""
+        nb = {
+            "cells": [
+                {"cell_type": "code", "source": ["%%bash\n", "echo hi\n"]},
+            ]
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(tmp, json.dumps(nb), name="entry.ipynb")
+            report = self._check(tmp, entry)
+            reached_fallback = any(
+                f.data.get("scan") == "text-fallback" for f in report.findings
+            ) or any("fallback scan" in line for line in report.passed_checks)
+            self.assertTrue(reached_fallback)
+
+    def test_notebook_degenerate_shapes_produce_no_finding_no_exception(self):
+        shapes = {
+            "no_cells": {"cells": []},
+            "empty_source": {"cells": [{"cell_type": "code", "source": ""}]},
+            "raw_cell": {
+                "cells": [{"cell_type": "raw", "source": ["model.fit(df)\n"]}]
+            },
+        }
+        for name, nb in shapes.items():
+            with self.subTest(shape=name):
+                with tempfile.TemporaryDirectory() as tmp:
+                    entry = self._entrypoint(tmp, json.dumps(nb), name="entry.ipynb")
+                    report = self._check(tmp, entry)
+                    self.assertNotIn("DSX-CODE-001", codes(report))
+                    self.assertNotIn("DSX-CODE-021", codes(report))
+
+        # Malformed JSON: the whole document, not a per-cell shape.
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(tmp, "{not valid json", name="entry.ipynb")
+            report = self._check(tmp, entry)
+            self.assertEqual(codes(report), set())
+            self.assertTrue(any("NOT scanned" in line for line in report.passed_checks))
+
+    def test_bom_notebook_entrypoint_takes_the_ast_path(self):
+        # A BOM breaks json.loads exactly as it breaks ast.parse -- the
+        # .ipynb read needs the same utf-8-sig fix the .py read already
+        # has (plan 01), or a BOM'd notebook silently reads as "could not
+        # be read" (NOT scanned) rather than being scanned.
+        nb = {
+            "cells": [
+                {
+                    "cell_type": "code",
+                    "source": [
+                        "model.fit(df)\n",
+                        "from sklearn.model_selection import train_test_split\n",
+                        "train_test_split(df)\n",
+                    ],
+                }
+            ]
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp, "entry.ipynb")
+            path.write_bytes(b"\xef\xbb\xbf" + json.dumps(nb).encode("utf-8"))
+            report = self._check(tmp, "entry.ipynb")
+            found = [f for f in report.findings if f.code == "DSX-CODE-001"]
+            self.assertEqual(len(found), 1)
+            self.assertEqual(found[0].data.get("scan"), "ast")
+
     # -- Line axis --------------------------------------------------------
 
     def test_form_feed_line_does_not_desynchronise_reported_line_numbers(self):
