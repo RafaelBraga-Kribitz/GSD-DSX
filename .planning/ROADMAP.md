@@ -747,9 +747,16 @@ announced rather than slipped in.
 **Plans**: 3 plans
 
 Plans:
+**Wave 1**
 
 - [ ] 11.1.1-01-PLAN.md — SC1: restore DSX-CODE-001's whitespace tolerance (CR-03) and add an index-preserving backslash-continuation join, scoped to the before-split check only
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 11.1.1-02-PLAN.md — SC2 + SC3: widen `FIT_CALL_RE` for keyword arguments (CR-04) and promote `_fit_call_arguments` to all-matches extraction (WR-01), shipped as one behaviour change
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
 - [ ] 11.1.1-03-PLAN.md — SC2 honesty + SC4: pin `partial_fit`, chained-call and multi-line forms as knowingly uncaught, announce the behaviour change in `README.md`, and run the phase gate
 
 Note: line citations above (`dsx/checks/code.py:505`, `:541`) are stale as of commit
