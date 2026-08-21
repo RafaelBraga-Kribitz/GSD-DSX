@@ -2,24 +2,24 @@
 gsd_state_version: 1.0
 milestone: v2.0.0
 milestone_name: DSX Validity Frame
-current_phase: 11.2
-current_phase_name: Detection-code hardening
+current_phase: 11.1.1
+current_phase_name: detection-code-hardening-inserted
 status: executing
 stopped_at: Phase 11.1 complete — UAT 2/2, verification passed, security verified (44 threats, 0 open; T-11.1-01 found open and fixed)
-last_updated: "2026-08-21T12:03:28.095Z"
+last_updated: "2026-08-21T12:24:12.591Z"
 last_activity: 2026-08-21
-last_activity_desc: Phase 11.1 complete, transitioned to Phase 11.2
+last_activity_desc: Phase 11.1.1 execution started
 progress:
-  total_phases: 9
+  total_phases: 10
   completed_phases: 6
-  total_plans: 60
+  total_plans: 63
   completed_plans: 56
-  percent: 67
+  percent: 60
 ---
 
 # Project state
 
-**Status:** Ready to execute
+**Status:** Executing Phase 11.1.1
 **Progress:** [███████████████████░] 34/35 plans (97%)  
 **Locked decisions:** DQ = profile runner + hermetic gates; Glyph = hermetic svg_sha256 only (no MCP dep); forbidden claims = universal pack + optional phase YAML; repro_lock = ARS-style honest-null (not byte-replay); decision replay = structured thresholds only; suppressions = ADR/SPEC authority required (unknown codes → exit 2)  
 **v2.0.0 locked decisions:** DSX-PAR-010 is a distinct code, DSX-EXP-060 untouched (M-01); no `inference.stopping_rule` — PAR-010/011 read the existing `design.peeking_policy` (M-02); PEEKING_POLICIES gains an uncontrolled-continuous-monitoring value (M-03); automated import test enforces the D-03a boundary from M1 (M-04); SELF-001 stays a convention, REVERSALS.md template seeded in M1 (M-05); `validity_frame` sub-block requiredness gated by `question_type` (M-06); existing `suppressions[]` is the pre-v2.0.0 grandfather path (M-07); D-05 citation enforcement automated via `gen-finding-catalogue.py` (M-08); `dependence.method_family_required` reuses `VARIANCE_ADJUSTMENTS` (M-09)
@@ -90,17 +90,17 @@ progress:
 
 ## Current Position
 
-Phase: 11.2 — Prescriptive claim layer
-Plan: Not started
-Status: Ready to execute
-Last activity: 2026-08-21 — Phase 11.1 complete, transitioned to Phase 11.2
+Phase: 11.1.1 (detection-code-hardening-inserted) — EXECUTING
+Plan: 1 of 3
+Status: Executing Phase 11.1.1
+Last activity: 2026-08-21 — Phase 11.1.1 execution started
 
 ## Project Reference
 
 See: .planning/PROJECT.md (updated 2026-08-13)
 
 **Core value:** Gate analytical work on validity before the data is touched.
-**Current focus:** Phase 11.1 — generated-pipeline-reality
+**Current focus:** Phase 11.1.1 — detection-code-hardening-inserted
 
 ## Session
 
