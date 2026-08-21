@@ -787,7 +787,9 @@ overturns a phase-research conclusion, not an entry in the `brief.md` D-table or
      moves, it is surfaced and justified in both directions — never absorbed by editing
      `_TARGET_DEFECT_CODES`, `_EXPECTED_CAUGHT_DEFECTS` or `_INCIDENTAL_GAP_CODES`.
 
-**Plans**: 3/3 plans executed
+**Plans**: 3/3 executed, then 2 gap-closure plans added 2026-08-21. Verification
+(`11.1.1-VERIFICATION.md`) returned `gaps_found` at 3/6 success criteria: SC2, SC4 and SC5 each
+falsified by evidence reproduced directly against the shipped code. Plans 04 and 05 close them.
 
 Plans:
 **Wave 1**
@@ -801,6 +803,14 @@ Plans:
 **Wave 3** *(blocked on Wave 2 completion)*
 
 - [x] 11.1.1-03-PLAN.md — SC2 honesty + SC6: pin what remains uncaught (including the `exec`/`eval` regression), prove determinism, line-index stability and the performance bounds, announce both behaviour-change directions in `README.md`, reconcile the corpus, and run the phase gate
+
+**Gap closure — Wave 1** *(added after verification falsified SC2, SC4 and SC5)*
+
+- [ ] 11.1.1-04-PLAN.md — close the three reproduced code defects: the fallback text scan misses a real post-split leak whenever the recognised frame keyword is not the first keyword (SC2); the prose mask was never threaded into the scanners deciding `DSX-CODE-020`, `DSX-CODE-030` and `DSX-CODE-031`, so a docstring alone can decide a CRITICAL verdict on the primary parsed path (SC4); and a structurally malformed `.ipynb` crashes `check()` with an uncaught `AttributeError` and an exit code indistinguishable from a legitimate gate block (SC5)
+
+**Gap closure — Wave 2** *(blocked on gap-closure Wave 1)*
+
+- [ ] 11.1.1-05-PLAN.md — announce both directions of the resulting behaviour change in `README.md`, disclose the three residues that stay uncaught, extend the committed end-to-end variant table so the headline number measures the remediation, re-prove SC6 on both interpreters, and carry WR-02 and the honesty-tone judgment forward to the end-of-phase human check unresolved
 
 Note: the re-scope removed the line citations that used to sit in criteria 1 and 3
 (`dsx/checks/code.py:505`, `:541`), which were already stale as of commit `06ff2d7` and were
