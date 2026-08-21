@@ -4962,6 +4962,275 @@ class TestPhase11_1Code(unittest.TestCase):
             self.assertEqual(len(found), 1)
             self.assertIn("Line 3", found[0].detail)
 
+    # ── Phase 11.1.1 plan 03 task 1, Part A: the three forms superseded ──────
+    # ── plan 03 was written to pin as permanently uncaught, promoted to ──────
+    # ── FIRING tests because the mechanism change closed all three. All ──────
+    # ── three already exist, added by plan 02 as part of its own SC2/SC3 ─────
+    # ── firing set, before this plan's own task 1 was executed: ──────────────
+    # ── test_partial_fit_after_split_fires_code_021 (line ~4739 above), ──────
+    # ── test_chained_call_argument_after_split_fires_code_021 (~4756), and ───
+    # ── test_multi_line_fit_call_after_split_fires_code_021 (~4773). ─────────
+    # ── Measured against the live suite rather than assumed absent -- see ────
+    # ── this plan's own SUMMARY, "Part A already satisfied" -- no new test ───
+    # ── is added here to avoid a duplicate method name colliding with an ─────
+    # ── existing one in the same class. ───────────────────────────────────────
+
+    # ── Phase 11.1.1 plan 03 task 1, Part B: deliberate scope boundaries ─────
+    # ── this phase does not close, not true negatives. Each pin's docstring ──
+    # ── states the input is a REAL leak (or, for the two fallback-prose ──────
+    # ── pins, a REAL false positive) knowingly outside the scanner's reach, ──
+    # ── and carries the superseded plan's promotion protocol verbatim: if ────
+    # ── this test ever fails because a finding appeared (or, for the two ─────
+    # ── fallback-prose pins, disappeared), that is good news and the test ────
+    # ── should be promoted to a firing test rather than deleted. ─────────────
+
+    def test_dynamic_dispatch_fit_stays_uncaught_by_design(self):
+        """Not a regression -- dynamic dispatch was never caught by the text
+        scan either, since neither `getattr(model, "fit")(data)` nor
+        `handlers["fit"](data)` carries literal `.fit(`-shaped text.
+        `_resolve_callee_name` returns "" for both shapes -- `node.func` is
+        a Call in the first case and a Subscript in the second, neither an
+        `ast.Name` nor an `ast.Attribute` -- which matches nothing in
+        FIT_METHOD_NAMES by construction. Both are REAL leaks before the
+        split, measured against the shipped code before writing this test.
+        If this test ever fails because a finding appeared, that is good
+        news and the
+        test should be promoted to a firing test rather than deleted.
+        """
+        for source in (
+            "getattr(model, 'fit')(data)\n"
+            "from sklearn.model_selection import train_test_split\n"
+            "train_test_split(df)\n",
+            "handlers['fit'](data)\n"
+            "from sklearn.model_selection import train_test_split\n"
+            "train_test_split(df)\n",
+        ):
+            with self.subTest(source=source):
+                with tempfile.TemporaryDirectory() as tmp:
+                    entry = self._entrypoint(tmp, source)
+                    report = self._check(tmp, entry)
+                    self.assertNotIn("DSX-CODE-001", codes(report))
+
+    def test_out_of_allowlist_keyword_stays_uncaught_by_design(self):
+        """Deliberate, not a bug: `model.fit(training_frame=data)` after the
+        split draws no DSX-CODE-021, because `training_frame` is outside
+        FIT_FIRST_PARAM_NAMES. An allowlist trades this miss for immunity
+        from the false-positive flood threat T-11.1.1-07 names -- the
+        alternative, a blocklist, would report an unrelated keyword's value
+        as "the frame this was fitted on". `data` here is a REAL leak: the
+        full frame, unsplit. If this test ever fails because a finding
+        appeared, that is good news and the
+        test should be promoted to a firing test rather than deleted.
+        """
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(
+                tmp,
+                "from sklearn.model_selection import train_test_split\n"
+                "train_test_split(df)\n"
+                "model.fit(training_frame=data)\n",
+            )
+            report = self._check(tmp, entry)
+            self.assertNotIn("DSX-CODE-021", codes(report))
+
+    def test_starred_first_argument_stays_uncaught_by_design(self):
+        """Deliberate: `model.fit(*args)` after the split draws no
+        DSX-CODE-021. `_first_argument` skips a starred `node.args[0]`
+        rather than resolving it (§3.4 of 11.1.1-AST-DESIGN.md), and no
+        keyword is present to fall back to, so the call resolves to no
+        token and no finding. Whatever `args` unpacks to is a REAL,
+        unexamined leak surface. If this test ever fails because a finding
+        appeared, that is good news and the
+        test should be promoted to a firing test rather than deleted.
+        """
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(
+                tmp,
+                "from sklearn.model_selection import train_test_split\n"
+                "train_test_split(df)\n"
+                "model.fit(*args)\n",
+            )
+            report = self._check(tmp, entry)
+            self.assertNotIn("DSX-CODE-021", codes(report))
+
+    def test_laundered_training_frame_name_stays_uncaught_by_design(self):
+        """Deliberate: `X_train_like = data` then `model.fit(X_train_like)`
+        after the split draws no DSX-CODE-021, because `_is_training_frame`
+        PREFIX-matches the rendered token's NAME against
+        TRAINING_FRAME_NAMES and never follows the assignment --
+        `"X_train_like".startswith("X_train")` is True, so the token reads
+        as a training frame by name alone. `data` is the REAL leak: the
+        full, unsplit frame laundered through a training-frame-shaped
+        variable name. If this test ever fails because a finding appeared,
+        that is good news and the
+        test should be promoted to a firing test rather than deleted.
+        """
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(
+                tmp,
+                "from sklearn.model_selection import train_test_split\n"
+                "train_test_split(df)\n"
+                "X_train_like = data\n"
+                "model.fit(X_train_like)\n",
+            )
+            report = self._check(tmp, entry)
+            self.assertNotIn("DSX-CODE-021", codes(report))
+
+    def test_split_through_an_alias_stays_uncaught_by_design(self):
+        """Different in kind from the other pins in this block: the file
+        DOES split -- `do_split` is imported from another module and called
+        on line 2 -- but what is pinned is that the scanner reads it as
+        having NO split at all, because neither the AST call-name walk
+        (`do_split` is not in SPLIT_CALL_NAMES) nor the text-marker union
+        (no line contains the literal substring "train_test_split" or any
+        other SPLIT_MARKERS entry) can see a split performed entirely
+        inside an imported helper. Measured against the shipped code:
+        `first_split` is None, so `scaler.fit_transform(data)` (a REAL leak
+        if `data` is the unsplit frame) fires DSX-CODE-001 instead of
+        DSX-CODE-021, and DSX-CODE-010 ALSO fires, its own text asserting
+        "entrypoint has no declared split marker" for a file that plainly
+        contains one -- a known false statement in the finding's own text,
+        raised here for the end-of-phase human check rather than silently
+        absorbed. If this test ever fails because the code set changed,
+        that is worth a fresh look either way and the
+        test should be promoted to a firing test rather than deleted.
+        """
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(
+                tmp,
+                "from mymodule import do_split\n"
+                "a, b = do_split(df)\n"
+                "scaler.fit_transform(data)\n",
+            )
+            report = self._check(tmp, entry)
+            found = codes(report)
+            self.assertEqual(found, {"DSX-CODE-001", "DSX-CODE-010"})
+            code_010 = [f for f in report.findings if f.code == "DSX-CODE-010"]
+            self.assertIn("no declared split marker", code_010[0].title)
+
+    def test_backslash_continuation_on_the_fallback_stays_uncaught_by_design(
+        self,
+    ):
+        """A backslash-continued fit call IS caught on the parsed path
+        (pinned by test_fit_backslash_continuation_before_split_fires_
+        code_001 above -- the join happens inside ast.parse itself). This
+        pin is the fallback's own limitation: forced onto the fallback by
+        an unrelated unclosed parenthesis elsewhere in the file, the same
+        backslash-continued `model.fit \` / `(df)` pair draws NOTHING,
+        because the fallback's FIT_LEAK_MARKERS regex matches one physical
+        line at a time and the joining helper was deliberately never
+        written (11.1.1-AST-DESIGN.md §2.2, "Not carried over"). This is a
+        REAL leak before the split. If this test ever fails because a
+        finding appeared, that is good news and the
+        test should be promoted to a firing test rather than deleted.
+        """
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(
+                tmp,
+                "model.fit " + chr(92) + "\n"
+                "(df)\n"
+                "from sklearn.model_selection import train_test_split\n"
+                "train_test_split(df)\n"
+                "unclosed(\n",
+            )
+            report = self._check(tmp, entry)
+            reached_fallback = any(
+                f.data.get("scan") == "text-fallback" for f in report.findings
+            ) or any("fallback scan" in line for line in report.passed_checks)
+            self.assertTrue(reached_fallback)
+            self.assertNotIn("DSX-CODE-001", codes(report))
+
+    def test_trailing_comment_fit_on_the_fallback_stays_uncaught_by_design(
+        self,
+    ):
+        """The REVERSE direction from every other pin in this block: this
+        one documents a false positive that STAYS OPEN on the fallback,
+        rather than a leak that stays unseen. `z = 1  # scaler.fit(data)`
+        is pure prose -- the fit call is inside a trailing comment, not
+        code -- and forced onto the fallback by an unrelated unclosed
+        parenthesis elsewhere, it STILL fires DSX-CODE-001 CRITICAL.
+        Every text guard in this module tests only `stripped.startswith(
+        "#")`, a LEADING comment; a line that carries real code before a
+        trailing `#` is not skipped, so FIT_LEAK_MARKERS matches inside the
+        comment text. Measured, not assumed. If this test ever fails
+        because the finding disappeared, that would mean the fallback's
+        comment guard was widened -- good news -- but until then this pin
+        records the false positive that stays, and the
+        test should be promoted to a firing test rather than deleted.
+        """
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(
+                tmp,
+                "z = 1  # scaler.fit(data)\n"
+                "from sklearn.model_selection import train_test_split\n"
+                "train_test_split(df)\n"
+                "unclosed(\n",
+            )
+            report = self._check(tmp, entry)
+            reached_fallback = any(
+                f.data.get("scan") == "text-fallback" for f in report.findings
+            ) or any("fallback scan" in line for line in report.passed_checks)
+            self.assertTrue(reached_fallback)
+            self.assertIn("DSX-CODE-001", codes(report))
+
+    def test_multiline_string_interior_line_stays_uncaught_by_design(self):
+        """A split marker written on a STRICTLY INTERIOR line of a
+        triple-quoted string is masked deliberately (Rule B,
+        `_prose_line_indices`), so it does not count as a split.
+        `_prose_line_indices` currently has exactly ONE consumer in the
+        shipped code -- the split-marker text scan via `_first_line_
+        matching`'s `masked` parameter -- named "In this wave the mask has
+        exactly one consumer" in the source comment above it. The plan's
+        own draft framed this pin around a "cleaning idiom" (DSX-CODE-020),
+        but measured against the shipped code, DSX-CODE-020's own text loop
+        applies NO masking at all -- a cleaning idiom inside a multi-line
+        string's interior line still fires DSX-CODE-020 unconditionally,
+        which is the larger, separately-documented finding of this plan
+        (see this plan's SUMMARY, "prose mask coverage"). This pin is
+        rewritten to test the one place the mask genuinely applies: a split
+        marker string on the interior line of a triple-quoted assignment
+        stays masked, so a REAL split-then-fit sequence with a marker
+        mentioned only in prose reads, incorrectly, as having no split. If
+        this test ever fails because the split was suddenly detected, that
+        is good news and the
+        test should be promoted to a firing test rather than deleted.
+        """
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(
+                tmp,
+                "sql = " + '"""' + "\n"
+                "train_test_split lives here\n"
+                + '"""' + "\n"
+                "scaler.fit_transform(data)\n",
+            )
+            report = self._check(tmp, entry)
+            found = codes(report)
+            self.assertNotIn("DSX-CODE-021", found)
+            self.assertIn("DSX-CODE-001", found)
+            self.assertIn("DSX-CODE-010", found)
+
+    # ── Phase 11.1.1 plan 03 task 1, Part C: the documentation obligation ────
+    # ── made executable. FAILS until task 4 lands README.md's new section; ───
+    # ── this and task 4 are RED and GREEN of one obligation. ──────────────────
+
+    def test_entrypoint_scan_scope_boundary_is_documented(self):
+        readme = (self.ROOT / "README.md").read_text(encoding="utf-8")
+        self.assertIn("### What the entrypoint scan does not catch", readme)
+        required_substrings = (
+            "getattr",
+            "handlers[",
+            "bound method",
+            "training_frame",
+            "starred",
+            "laundered",
+            "alias",
+            "exec",
+            "backslash",
+            "trailing comment",
+        )
+        for substring in required_substrings:
+            with self.subTest(substring=substring):
+                self.assertIn(substring, readme)
+
     # ── Phase 11.1.1 plan 01: AST call-node walk replaces the line-ordered ──
     # ── regex scan that decides DSX-CODE-001 ─────────────────────────────────
 
@@ -5534,8 +5803,8 @@ class TestPhase11_1Code(unittest.TestCase):
         never caught by the text scan either, since the fit call itself
         carries no `.fit(`-shaped text. `f = model.fit` then `f(data)`
         before the split is a REAL leak. If this test ever fails because a
-        finding appeared, that is good news and the test should be promoted
-        to a firing test rather than deleted."""
+        finding appeared, that is good news and the
+        test should be promoted to a firing test rather than deleted."""
         with tempfile.TemporaryDirectory() as tmp:
             entry = self._entrypoint(
                 tmp,
