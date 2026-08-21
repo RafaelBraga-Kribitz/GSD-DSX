@@ -787,7 +787,7 @@ overturns a phase-research conclusion, not an entry in the `brief.md` D-table or
      moves, it is surfaced and justified in both directions — never absorbed by editing
      `_TARGET_DEFECT_CODES`, `_EXPECTED_CAUGHT_DEFECTS` or `_INCIDENTAL_GAP_CODES`.
 
-**Plans**: 1/3 plans executed
+**Plans**: 2/3 plans executed
 
 Plans:
 **Wave 1**
@@ -796,7 +796,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 11.1.1-02-PLAN.md — SC2 + SC3 + SC4: AST argument extraction (positional and keyword, chained, `partial_fit`, multiple calls per line) for DSX-CODE-021, plus `.ipynb` code-cells-only reconstruction with character-wise markdown blanking and the magic repair
+- [x] 11.1.1-02-PLAN.md — SC2 + SC3 + SC4: AST argument extraction (positional and keyword, chained, `partial_fit`, multiple calls per line) for DSX-CODE-021, plus `.ipynb` code-cells-only reconstruction with character-wise markdown blanking and the magic repair
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
@@ -955,7 +955,7 @@ cases where absence permitted a false pass" is a debate, not a count.
 | 10. Pre-registered inference plan (`DSX-PRE-*`) | 6/6 | In Progress|  |
 | 11. Frequentist admissibility adjudicator (`DSX-ADM-*`) | 4/8 | In Progress|  |
 | 11.1 Generated-pipeline reality | 8/8 | Complete | 2026-08-21 |
-| 11.1.1 Detection-code hardening | 1/3 | In Progress|  |
+| 11.1.1 Detection-code hardening | 2/3 | In Progress|  |
 | 12. Calibration | 0/TBD | Not started | - |
 
 ## Dependency graph — v2.0.0
