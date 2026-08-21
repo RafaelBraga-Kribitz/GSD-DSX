@@ -106,12 +106,18 @@ parity and visible-fallback criteria added).
 - Register new modules in `GATE_PROFILES`; assert every new code is reachable from at least one profile.
 - Emit decision records at each family's key judgment points (D-04).
 
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Status | Directory |
+|---|-------------|------|--------|--------|-----------|
+| 260821-d6h | Deepen dsx-explore-data into an insight-driving EDA protocol (branches, ledgers, spec reconciliation, EDA.md template) | 2026-08-21 | 40e015d | Verified | [260821-d6h-deepen-dsx-explore-data-into-an-insight-](./quick/260821-d6h-deepen-dsx-explore-data-into-an-insight-/) |
+
 ## Current Position
 
 Phase: 11.1.1 (detection-code-hardening-inserted) — EXECUTING
 Plan: 1 of 3
 Status: Executing Phase 11.1.1
-Last activity: 2026-08-21 — Phase 11.1.1 execution started
+Last activity: 2026-08-21 — Quick task 260821-d6h (EDA protocol deepening; skills/templates only, roadmap untouched). Phase 11.1.1 execution still open.
 
 ## Project Reference
 
