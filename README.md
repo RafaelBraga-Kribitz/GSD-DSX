@@ -151,6 +151,82 @@ named authority, not a way to make the finding go away. A suppression with no
 resolvable `authority` reference already produces `DSX-SPEC-070` — the
 grandfather path is deliberate, not silent.
 
+### The entrypoint leak scan now parses your code
+
+Phase 11.1.1 changed how `DSX-CODE-001` and `DSX-CODE-021` (fit-before-split
+and fit-after-split-on-the-wrong-frame) decide what a line of your entrypoint
+means. The scan used to read the file as plain text, matching patterns
+against each physical line's characters in turn. It now reads the file as
+Python — using the standard library's abstract syntax tree (AST), the same
+structure a compiler builds before running your code — and looks directly at
+which function calls exist and what they are called on. When a file cannot
+be parsed as Python, the scan falls back to the old text-matching approach,
+and it says so on every finding it produces from that fallback.
+
+**Some files that are blocked today will start passing — read this part
+first, because nobody files a bug about a gate that stopped complaining.**
+A module, class or function docstring that merely mentions a fit call —
+for example a comment reading "we never call `scaler.fit(X)` on the full
+frame" — used to block at CRITICAL severity, because the old scan matched
+the text of the sentence, not the code. It no longer does, because a
+docstring holds no function call for the new scan to find. The same is true
+of a Jupyter notebook markdown cell that describes a leakage rule in prose.
+Both were false alarms, and both are now fixed. In the same breath: code
+assembled as a string and run with Python's `exec` or `eval` functions used
+to be blocked — the old text scan could see the fit call written inside the
+string — and it is **not** blocked after this change, because a string is
+just data to a real Python parser, not a function call. This is a genuine
+leak the new scan cannot see, and it belongs here rather than buried in the
+limits section below.
+
+**Some files that pass today will start failing, and every one of those new
+findings is a true positive** — the leak was always in the file, and the old
+scan could not see it. The shapes a reader can match against their own code:
+a space or a tab before the opening parenthesis (`model.fit (df)`); a fit
+call split across two lines by a trailing backslash or by an open
+parenthesis; a fit call written with a keyword argument, such as
+`model.fit(X=data, y=target)`; a second fit call on a line that also has a
+safe first one, joined by a semicolon; a fit call whose argument is itself
+another function call (`model.fit(loader.get_full_frame())`); and
+`model.partial_fit(data)` written after the split, which used to draw
+nothing there even though the same call before the split already blocked.
+
+There is also a substitution worth naming plainly, rather than filing it
+under "stricter": a train/test split marker that appears only as a string
+literal, or is reached only through an alias or a helper function imported
+from elsewhere, no longer counts as a declared split. A file built that way
+may now draw `DSX-CODE-001` or `DSX-CODE-010` where it used to draw
+`DSX-CODE-021` instead. Where that happens, `DSX-CODE-010`'s own wording —
+"entrypoint has no declared split marker" — can be false for a file that
+plainly contains one; this document says so here because a finding's own
+text is not the place to discover a contradiction.
+
+The reported line number follows one rule: it is the physical line on which
+the fit call's expression *begins*. For a call spread across several
+physical lines, the reported line can move earlier than a per-line scan
+would have reported it, and never later. No finding that fired before this
+change stops firing because of that rule.
+
+Two smaller, cosmetic changes. First, when a `DSX-CODE-021` finding quotes
+the argument you fitted on, a token written with double quotes is now
+rendered with single quotes (`data[["Age"]]` becomes `data[['Age']]`); the
+verdict is unaffected, only the punctuation in the quoted text. Second,
+every report now carries one extra line naming which scan path ran — even
+the project's own clean example gains this line, which is a visible,
+intended change to that fixture's output, not an accident.
+
+When a file cannot be parsed as Python at all — a syntax error, an
+unsupported construct, or a file that is not really Python — the weaker,
+older text scan runs in its place, and every finding it produces says so in
+its own detail text, in the report's summary of what passed, and in the
+recorded decision for that run. A clean result from the fallback scan is
+weaker evidence than a clean result from the parser, and the tool now tells
+you which one you got, rather than leaving you to guess.
+
+If a new finding appears in your file, the fix has not changed: split the
+data first, then fit only on the training fold — the same remedy the
+finding itself already prints.
+
 ---
 
 ## What the gates actually catch
@@ -417,6 +493,120 @@ The `DSX-PAR-*` family's own symmetry argument — why neither the frequentist
 nor the Bayesian half of its monitoring-discipline pair is cheaper to satisfy
 dishonestly than the other — is committed separately at
 [`references/paradigm-symmetry.md`](references/paradigm-symmetry.md).
+
+### What the entrypoint scan does not catch
+
+A clean run of the entrypoint leak scan (`DSX-CODE-001`, `DSX-CODE-021` and
+their siblings) is evidence that these particular shapes were not found in
+your file. It is not evidence that the file does not leak, and no sentence
+anywhere in this project should be read the other way — including the fact
+that the scan now uses a real Python parser. Parsing your code means the
+scan resolves the *structure* of a function call correctly; it does not mean
+the scan understands what your code does at runtime, and the forms below are
+real leaks, or real blind spots, that this change does not close.
+
+The scan works by reading the one file you declared as your entrypoint,
+looking for calls it recognises by name, and reasoning about which of those
+calls happen before or after a declared train/test split. Every limit below
+follows from one of three narrower facts: a function call whose target it
+cannot resolve to a name, an argument shape it does not read, or a file it
+never opens.
+
+**A call the scan cannot resolve to a name.** Python lets you call a
+function through a level of indirection the scan does not follow. Dynamic
+dispatch — calling `getattr(model, "fit")(data)`, or looking a function up
+in a dictionary with `handlers["fit"](data)` — draws nothing, because
+neither shape is a direct call to something named `fit`. A bound method held
+in a variable is the same problem in a different shape: `f = model.fit`
+followed later by `f(data)` draws nothing either, because by the time `f` is
+called, the scan has already lost the connection to `model.fit`. A fit call
+performed inside a helper function or a module the entrypoint imports is
+invisible for the same underlying reason — only the one declared entrypoint
+file is read. And a train/test split performed through an alias or through
+an imported helper function, rather than a direct call the scan recognises
+by name, is read as if the file never split at all; the fit calls after it
+can then be misclassified as fit-before-split.
+
+**An argument shape the scan does not read.** `DSX-CODE-021` looks for a
+recognised training-frame name — one that starts with something like
+`X_train` or `train_df`, kept in the `TRAINING_FRAME_NAMES` list — as the
+first argument to a fit call made at or after the split. A keyword whose
+name is outside the small set the scan recognises, such as
+`model.fit(training_frame=data)`, draws nothing: this is a deliberate trade,
+accepting one kind of miss in exchange for never mistaking an unrelated
+keyword's value for the frame you fitted on. A starred first argument —
+`model.fit(*args)` — is skipped rather than resolved, for the same reason. A
+full, unsplit frame renamed to something that merely *looks* like a training
+frame — `X_train_like = data` followed by `model.fit(X_train_like)` — passes,
+because the check matches the variable's name against the recognised list
+and never follows the assignment back to what the name actually refers to;
+this is a laundered name, and it is a real leak the scan cannot see.
+
+**A file the scan never opens.** Only your declared entrypoint is read.
+Anything that exists only while your code is running — source assembled as
+a string and executed with `exec` or `eval`, code generated at runtime, or a
+data frame mutated between the split and the fit — cannot be seen by a tool
+that reads a file rather than running one. This is worth restating plainly
+because it changed direction in this phase: `exec`-assembled fit-shaped
+source used to be blocked by the old text scan (which could see the fit
+call's text sitting inside the string literal) and is not blocked now — see
+the announcement above.
+
+**What the fallback text scan additionally misses, and when it runs.** When
+a file cannot be parsed as Python — a syntax error, an unrepaired notebook
+magic command, or genuinely non-Python content — the scan falls back to the
+older, per-physical-line text match, and every finding produced that way
+says so. The fallback cannot see a fit call split across a backslash-
+continued line; it cannot resolve an argument that is itself a function
+call; and every text guard in this module checks only for a comment that
+*starts* a line, so a trailing comment on an otherwise real line of code
+still reaches the pattern match. Concretely: `z = 1  # scaler.fit(data)` on
+the fallback path still blocks at CRITICAL, even though the fit call lives
+entirely inside a comment — a persisting false positive on that one path
+that this phase did not close, named here rather than left for a user to
+discover on their own. Two related limits stay open on the primary (non-
+fallback) text checks that never moved to the parser: `DSX-CODE-002`
+(scaler fitted on the full frame) and `DSX-CODE-003` (a resampler such as
+SMOTE named before the split) still match a comment that merely *mentions*
+the pattern they look for — `# StandardScaler().fit_transform(X)` still
+blocks `DSX-CODE-002`, and `# never use SMOTE before the split` still blocks
+`DSX-CODE-003` — because neither of those two checks' text loops has ever
+been given a leading-comment guard. Notebooks reach the fallback more often
+than plain Python files do, because an introspection line such as
+`df.head?` does not parse and is not repaired.
+
+**The notebook line-number convention is a standing limit, not a fix.** For
+a Jupyter notebook, the "Line N" a finding reports counts lines in the
+reconstructed concatenation of the notebook's code cells — with each
+markdown cell replaced by a matching number of blank lines so that code-cell
+line numbers do not shift — not the line of the raw `.ipynb` file on disk,
+which a reader could not usefully open at that offset in either case. This
+change preserves that numbering exactly; it does not attempt to fix it.
+
+**The interpreter you run the scan with is now part of the answer.** The
+scan accepts whatever version of the Python language grammar the running
+interpreter accepts. A file using newer syntax can take the parser path on
+one machine and the weaker fallback path on another, for byte-identical
+input. This is disclosed in the tool's recorded decisions rather than left
+for someone to discover by getting two different answers on two machines.
+
+**Where these numbers come from, and why two of them are never compared
+directly.** This phase's own before-and-after count of leaky-call variants
+is a committed, runnable test — not a number asserted in prose — and is the
+figure this document stands behind. A second, earlier count exists in
+[`11.1.1-RESEARCH.md`](.planning/phases/11.1.1-detection-code-hardening-inserted/11.1.1-RESEARCH.md):
+thirteen variants, six caught and seven missed, measured on 2026-08-21
+against only the `DSX-CODE-021` argument-extraction path — a narrower
+instrument than the end-to-end count above, and cited here as the
+before-figure for that one path, not as a second reading of the same thing.
+An older, uncommitted figure circulated during an earlier verification
+session and has no committed enumeration behind it anywhere in this
+repository; it is not repeated here, and is not printed alongside either of
+the two figures above.
+
+None of this makes `DSX-CODE-001`, `DSX-CODE-021`, or any other
+`DSX-CODE-*` check sound, complete or exhaustive. Treat a clean scan as
+one input to your own judgement, not as a verdict.
 
 ---
 

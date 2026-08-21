@@ -4466,6 +4466,85 @@ class TestParadigmOutOfVocabularyFallback(unittest.TestCase):
 # ── Phase 11.1-01: full-frame cleaning + fit-after-split (DSX-CODE-020/021) ────
 
 
+# Phase 11.1.1 plan 03 task 5: the phase's headline number. A committed,
+# executable end-to-end variant table -- fixture in, finding codes out,
+# measured through check() (the whole gate mechanism), NOT through
+# FIT_CALL_RE/_fit_call_arguments in isolation. This is a DIFFERENT
+# instrument from the function-level thirteen-variant table in
+# 11.1.1-RESEARCH.md's Pitfall 3 (six caught / seven missed, measured
+# 2026-08-21 against the extraction functions alone) and is never printed
+# in one series with it -- see README.md "### What the entrypoint scan
+# does not catch" and this plan's SUMMARY for why.
+#
+# Each row's source places a real split marker before the fit call under
+# test, except the two "false positive closed" rows (which need none) and
+# the fallback row (which needs an independent syntax error to force the
+# text scan). Every row's expected code set was measured against the
+# shipped code before being written into this table, not assumed from the
+# row's label.
+_SPLIT_THEN = (
+    "from sklearn.model_selection import train_test_split\n"
+    "train_test_split(df)\n"
+)
+# Each row: (name, source, expected codes, entrypoint filename). The
+# filename defaults to "entry.py"; the one notebook row overrides it.
+_END_TO_END_VARIANT_TABLE = (
+    # The six variants the committed thirteen-variant table (11.1.1-
+    # RESEARCH.md Pitfall 3) already listed as caught by FIT_CALL_RE
+    # before this phase -- still caught, now via the AST path.
+    ("caught_bare_positional", _SPLIT_THEN + "model.fit(data)\n", frozenset({"DSX-CODE-021"}), "entry.py"),
+    ("caught_bracket_subscript_positional", _SPLIT_THEN + "model.fit(data[['Age']])\n", frozenset({"DSX-CODE-021"}), "entry.py"),
+    ("caught_fit_transform_bare", _SPLIT_THEN + "scaler.fit_transform(data)\n", frozenset({"DSX-CODE-021"}), "entry.py"),
+    ("caught_chained_constructor_plain_arg", _SPLIT_THEN + "build_pipeline().fit(data)\n", frozenset({"DSX-CODE-021"}), "entry.py"),
+    ("caught_whitespace_before_paren", _SPLIT_THEN + "model.fit (data)\n", frozenset({"DSX-CODE-021"}), "entry.py"),
+    ("caught_tab_before_paren", _SPLIT_THEN + "model.fit" + chr(9) + "(data)\n", frozenset({"DSX-CODE-021"}), "entry.py"),
+    # The seven variants the same table listed as missed -- ALL now caught,
+    # which is the phase's headline claim, made executable here rather
+    # than asserted in prose.
+    ("nowcaught_keyword_X", _SPLIT_THEN + "model.fit(X=data, y=target)\n", frozenset({"DSX-CODE-021"}), "entry.py"),
+    ("nowcaught_keyword_data", _SPLIT_THEN + "model.fit(data=data)\n", frozenset({"DSX-CODE-021"}), "entry.py"),
+    ("nowcaught_fit_transform_keyword", _SPLIT_THEN + "scaler.fit_transform(X=data)\n", frozenset({"DSX-CODE-021"}), "entry.py"),
+    ("nowcaught_partial_fit_bare", _SPLIT_THEN + "model.partial_fit(data)\n", frozenset({"DSX-CODE-021"}), "entry.py"),
+    ("nowcaught_partial_fit_keyword", _SPLIT_THEN + "model.partial_fit(X=data)\n", frozenset({"DSX-CODE-021"}), "entry.py"),
+    ("nowcaught_chained_call_argument", _SPLIT_THEN + "model.fit(loader.get_full_frame())\n", frozenset({"DSX-CODE-021"}), "entry.py"),
+    ("nowcaught_multiline_call", _SPLIT_THEN + "model.fit(\n    data\n)\n", frozenset({"DSX-CODE-021"}), "entry.py"),
+    # ROADMAP SC1 and SC3, made executable rather than "satisfied a
+    # fortiori" (this plan's <mechanism_change_ledger>, "Restated, not
+    # dropped").
+    ("sc1_backslash_continuation_before_split", "model.fit " + chr(92) + "\n(df)\n" + _SPLIT_THEN, frozenset({"DSX-CODE-001"}), "entry.py"),
+    ("sc3_semicolon_joined_two_fit_calls", _SPLIT_THEN + "imputer.fit(X_train); scaler.fit_transform(data)\n", frozenset({"DSX-CODE-021"}), "entry.py"),
+    # The false positives this phase closes: a docstring, a comment and a
+    # notebook markdown cell, each merely mentioning a fit call.
+    ("fp_closed_docstring_mentioning_fit", '"""We never call scaler.fit(X) on the full frame."""\n' + _SPLIT_THEN, frozenset(), "entry.py"),
+    ("fp_closed_comment_mentioning_fit", "x = 1  # scaler.fit(X) on the full frame\n" + _SPLIT_THEN, frozenset(), "entry.py"),
+    (
+        "fp_closed_notebook_markdown_mentioning_fit",
+        json.dumps({
+            "cells": [
+                {
+                    "cell_type": "markdown",
+                    "source": [
+                        "We must never call `scaler.fit(X)` on the full "
+                        "frame before the split.\n"
+                    ],
+                },
+                {
+                    "cell_type": "code",
+                    "source": [
+                        "from sklearn.model_selection import train_test_split\n",
+                        "train_test_split(df)\n",
+                    ],
+                },
+            ]
+        }),
+        frozenset(),
+        "entry.ipynb",
+    ),
+    # A file that reaches the fallback (text-only) scan.
+    ("fallback_path_fit_before_split", "model.fit(df\n" + _SPLIT_THEN, frozenset({"DSX-CODE-001"}), "entry.py"),
+)
+
+
 class TestPhase11_1Code(unittest.TestCase):
     ROOT = Path(__file__).resolve().parent.parent
 
@@ -4961,6 +5040,275 @@ class TestPhase11_1Code(unittest.TestCase):
             found = [f for f in report.findings if f.code == "DSX-CODE-021"]
             self.assertEqual(len(found), 1)
             self.assertIn("Line 3", found[0].detail)
+
+    # ── Phase 11.1.1 plan 03 task 1, Part A: the three forms superseded ──────
+    # ── plan 03 was written to pin as permanently uncaught, promoted to ──────
+    # ── FIRING tests because the mechanism change closed all three. All ──────
+    # ── three already exist, added by plan 02 as part of its own SC2/SC3 ─────
+    # ── firing set, before this plan's own task 1 was executed: ──────────────
+    # ── test_partial_fit_after_split_fires_code_021 (line ~4739 above), ──────
+    # ── test_chained_call_argument_after_split_fires_code_021 (~4756), and ───
+    # ── test_multi_line_fit_call_after_split_fires_code_021 (~4773). ─────────
+    # ── Measured against the live suite rather than assumed absent -- see ────
+    # ── this plan's own SUMMARY, "Part A already satisfied" -- no new test ───
+    # ── is added here to avoid a duplicate method name colliding with an ─────
+    # ── existing one in the same class. ───────────────────────────────────────
+
+    # ── Phase 11.1.1 plan 03 task 1, Part B: deliberate scope boundaries ─────
+    # ── this phase does not close, not true negatives. Each pin's docstring ──
+    # ── states the input is a REAL leak (or, for the two fallback-prose ──────
+    # ── pins, a REAL false positive) knowingly outside the scanner's reach, ──
+    # ── and carries the superseded plan's promotion protocol verbatim: if ────
+    # ── this test ever fails because a finding appeared (or, for the two ─────
+    # ── fallback-prose pins, disappeared), that is good news and the test ────
+    # ── should be promoted to a firing test rather than deleted. ─────────────
+
+    def test_dynamic_dispatch_fit_stays_uncaught_by_design(self):
+        """Not a regression -- dynamic dispatch was never caught by the text
+        scan either, since neither `getattr(model, "fit")(data)` nor
+        `handlers["fit"](data)` carries literal `.fit(`-shaped text.
+        `_resolve_callee_name` returns "" for both shapes -- `node.func` is
+        a Call in the first case and a Subscript in the second, neither an
+        `ast.Name` nor an `ast.Attribute` -- which matches nothing in
+        FIT_METHOD_NAMES by construction. Both are REAL leaks before the
+        split, measured against the shipped code before writing this test.
+        If this test ever fails because a finding appeared, that is good
+        news and the
+        test should be promoted to a firing test rather than deleted.
+        """
+        for source in (
+            "getattr(model, 'fit')(data)\n"
+            "from sklearn.model_selection import train_test_split\n"
+            "train_test_split(df)\n",
+            "handlers['fit'](data)\n"
+            "from sklearn.model_selection import train_test_split\n"
+            "train_test_split(df)\n",
+        ):
+            with self.subTest(source=source):
+                with tempfile.TemporaryDirectory() as tmp:
+                    entry = self._entrypoint(tmp, source)
+                    report = self._check(tmp, entry)
+                    self.assertNotIn("DSX-CODE-001", codes(report))
+
+    def test_out_of_allowlist_keyword_stays_uncaught_by_design(self):
+        """Deliberate, not a bug: `model.fit(training_frame=data)` after the
+        split draws no DSX-CODE-021, because `training_frame` is outside
+        FIT_FIRST_PARAM_NAMES. An allowlist trades this miss for immunity
+        from the false-positive flood threat T-11.1.1-07 names -- the
+        alternative, a blocklist, would report an unrelated keyword's value
+        as "the frame this was fitted on". `data` here is a REAL leak: the
+        full frame, unsplit. If this test ever fails because a finding
+        appeared, that is good news and the
+        test should be promoted to a firing test rather than deleted.
+        """
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(
+                tmp,
+                "from sklearn.model_selection import train_test_split\n"
+                "train_test_split(df)\n"
+                "model.fit(training_frame=data)\n",
+            )
+            report = self._check(tmp, entry)
+            self.assertNotIn("DSX-CODE-021", codes(report))
+
+    def test_starred_first_argument_stays_uncaught_by_design(self):
+        """Deliberate: `model.fit(*args)` after the split draws no
+        DSX-CODE-021. `_first_argument` skips a starred `node.args[0]`
+        rather than resolving it (§3.4 of 11.1.1-AST-DESIGN.md), and no
+        keyword is present to fall back to, so the call resolves to no
+        token and no finding. Whatever `args` unpacks to is a REAL,
+        unexamined leak surface. If this test ever fails because a finding
+        appeared, that is good news and the
+        test should be promoted to a firing test rather than deleted.
+        """
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(
+                tmp,
+                "from sklearn.model_selection import train_test_split\n"
+                "train_test_split(df)\n"
+                "model.fit(*args)\n",
+            )
+            report = self._check(tmp, entry)
+            self.assertNotIn("DSX-CODE-021", codes(report))
+
+    def test_laundered_training_frame_name_stays_uncaught_by_design(self):
+        """Deliberate: `X_train_like = data` then `model.fit(X_train_like)`
+        after the split draws no DSX-CODE-021, because `_is_training_frame`
+        PREFIX-matches the rendered token's NAME against
+        TRAINING_FRAME_NAMES and never follows the assignment --
+        `"X_train_like".startswith("X_train")` is True, so the token reads
+        as a training frame by name alone. `data` is the REAL leak: the
+        full, unsplit frame laundered through a training-frame-shaped
+        variable name. If this test ever fails because a finding appeared,
+        that is good news and the
+        test should be promoted to a firing test rather than deleted.
+        """
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(
+                tmp,
+                "from sklearn.model_selection import train_test_split\n"
+                "train_test_split(df)\n"
+                "X_train_like = data\n"
+                "model.fit(X_train_like)\n",
+            )
+            report = self._check(tmp, entry)
+            self.assertNotIn("DSX-CODE-021", codes(report))
+
+    def test_split_through_an_alias_stays_uncaught_by_design(self):
+        """Different in kind from the other pins in this block: the file
+        DOES split -- `do_split` is imported from another module and called
+        on line 2 -- but what is pinned is that the scanner reads it as
+        having NO split at all, because neither the AST call-name walk
+        (`do_split` is not in SPLIT_CALL_NAMES) nor the text-marker union
+        (no line contains the literal substring "train_test_split" or any
+        other SPLIT_MARKERS entry) can see a split performed entirely
+        inside an imported helper. Measured against the shipped code:
+        `first_split` is None, so `scaler.fit_transform(data)` (a REAL leak
+        if `data` is the unsplit frame) fires DSX-CODE-001 instead of
+        DSX-CODE-021, and DSX-CODE-010 ALSO fires, its own text asserting
+        "entrypoint has no declared split marker" for a file that plainly
+        contains one -- a known false statement in the finding's own text,
+        raised here for the end-of-phase human check rather than silently
+        absorbed. If this test ever fails because the code set changed,
+        that is worth a fresh look either way and the
+        test should be promoted to a firing test rather than deleted.
+        """
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(
+                tmp,
+                "from mymodule import do_split\n"
+                "a, b = do_split(df)\n"
+                "scaler.fit_transform(data)\n",
+            )
+            report = self._check(tmp, entry)
+            found = codes(report)
+            self.assertEqual(found, {"DSX-CODE-001", "DSX-CODE-010"})
+            code_010 = [f for f in report.findings if f.code == "DSX-CODE-010"]
+            self.assertIn("no declared split marker", code_010[0].title)
+
+    def test_backslash_continuation_on_the_fallback_stays_uncaught_by_design(
+        self,
+    ):
+        """A backslash-continued fit call IS caught on the parsed path
+        (pinned by test_fit_backslash_continuation_before_split_fires_
+        code_001 above -- the join happens inside ast.parse itself). This
+        pin is the fallback's own limitation: forced onto the fallback by
+        an unrelated unclosed parenthesis elsewhere in the file, the same
+        backslash-continued "model.fit \\" / "(df)" pair draws NOTHING,
+        because the fallback's FIT_LEAK_MARKERS regex matches one physical
+        line at a time and the joining helper was deliberately never
+        written (11.1.1-AST-DESIGN.md §2.2, "Not carried over"). This is a
+        REAL leak before the split. If this test ever fails because a
+        finding appeared, that is good news and the
+        test should be promoted to a firing test rather than deleted.
+        """
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(
+                tmp,
+                "model.fit " + chr(92) + "\n"
+                "(df)\n"
+                "from sklearn.model_selection import train_test_split\n"
+                "train_test_split(df)\n"
+                "unclosed(\n",
+            )
+            report = self._check(tmp, entry)
+            reached_fallback = any(
+                f.data.get("scan") == "text-fallback" for f in report.findings
+            ) or any("fallback scan" in line for line in report.passed_checks)
+            self.assertTrue(reached_fallback)
+            self.assertNotIn("DSX-CODE-001", codes(report))
+
+    def test_trailing_comment_fit_on_the_fallback_stays_uncaught_by_design(
+        self,
+    ):
+        """The REVERSE direction from every other pin in this block: this
+        one documents a false positive that STAYS OPEN on the fallback,
+        rather than a leak that stays unseen. `z = 1  # scaler.fit(data)`
+        is pure prose -- the fit call is inside a trailing comment, not
+        code -- and forced onto the fallback by an unrelated unclosed
+        parenthesis elsewhere, it STILL fires DSX-CODE-001 CRITICAL.
+        Every text guard in this module tests only `stripped.startswith(
+        "#")`, a LEADING comment; a line that carries real code before a
+        trailing `#` is not skipped, so FIT_LEAK_MARKERS matches inside the
+        comment text. Measured, not assumed. If this test ever fails
+        because the finding disappeared, that would mean the fallback's
+        comment guard was widened -- good news -- but until then this pin
+        records the false positive that stays, and the
+        test should be promoted to a firing test rather than deleted.
+        """
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(
+                tmp,
+                "z = 1  # scaler.fit(data)\n"
+                "from sklearn.model_selection import train_test_split\n"
+                "train_test_split(df)\n"
+                "unclosed(\n",
+            )
+            report = self._check(tmp, entry)
+            reached_fallback = any(
+                f.data.get("scan") == "text-fallback" for f in report.findings
+            ) or any("fallback scan" in line for line in report.passed_checks)
+            self.assertTrue(reached_fallback)
+            self.assertIn("DSX-CODE-001", codes(report))
+
+    def test_multiline_string_interior_line_stays_uncaught_by_design(self):
+        """A split marker written on a STRICTLY INTERIOR line of a
+        triple-quoted string is masked deliberately (Rule B,
+        `_prose_line_indices`), so it does not count as a split.
+        `_prose_line_indices` currently has exactly ONE consumer in the
+        shipped code -- the split-marker text scan via `_first_line_
+        matching`'s `masked` parameter -- named "In this wave the mask has
+        exactly one consumer" in the source comment above it. The plan's
+        own draft framed this pin around a "cleaning idiom" (DSX-CODE-020),
+        but measured against the shipped code, DSX-CODE-020's own text loop
+        applies NO masking at all -- a cleaning idiom inside a multi-line
+        string's interior line still fires DSX-CODE-020 unconditionally,
+        which is the larger, separately-documented finding of this plan
+        (see this plan's SUMMARY, "prose mask coverage"). This pin is
+        rewritten to test the one place the mask genuinely applies: a split
+        marker string on the interior line of a triple-quoted assignment
+        stays masked, so a REAL split-then-fit sequence with a marker
+        mentioned only in prose reads, incorrectly, as having no split. If
+        this test ever fails because the split was suddenly detected, that
+        is good news and the
+        test should be promoted to a firing test rather than deleted.
+        """
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(
+                tmp,
+                "sql = " + '"""' + "\n"
+                "train_test_split lives here\n"
+                + '"""' + "\n"
+                "scaler.fit_transform(data)\n",
+            )
+            report = self._check(tmp, entry)
+            found = codes(report)
+            self.assertNotIn("DSX-CODE-021", found)
+            self.assertIn("DSX-CODE-001", found)
+            self.assertIn("DSX-CODE-010", found)
+
+    # ── Phase 11.1.1 plan 03 task 1, Part C: the documentation obligation ────
+    # ── made executable. FAILS until task 4 lands README.md's new section; ───
+    # ── this and task 4 are RED and GREEN of one obligation. ──────────────────
+
+    def test_entrypoint_scan_scope_boundary_is_documented(self):
+        readme = (self.ROOT / "README.md").read_text(encoding="utf-8")
+        self.assertIn("### What the entrypoint scan does not catch", readme)
+        required_substrings = (
+            "getattr",
+            "handlers[",
+            "bound method",
+            "training_frame",
+            "starred",
+            "laundered",
+            "alias",
+            "exec",
+            "backslash",
+            "trailing comment",
+        )
+        for substring in required_substrings:
+            with self.subTest(substring=substring):
+                self.assertIn(substring, readme)
 
     # ── Phase 11.1.1 plan 01: AST call-node walk replaces the line-ordered ──
     # ── regex scan that decides DSX-CODE-001 ─────────────────────────────────
@@ -5534,8 +5882,8 @@ class TestPhase11_1Code(unittest.TestCase):
         never caught by the text scan either, since the fit call itself
         carries no `.fit(`-shaped text. `f = model.fit` then `f(data)`
         before the split is a REAL leak. If this test ever fails because a
-        finding appeared, that is good news and the test should be promoted
-        to a firing test rather than deleted."""
+        finding appeared, that is good news and the
+        test should be promoted to a firing test rather than deleted."""
         with tempfile.TemporaryDirectory() as tmp:
             entry = self._entrypoint(
                 tmp,
@@ -6084,7 +6432,15 @@ class TestPhase11_1Code(unittest.TestCase):
         start = time.perf_counter()
         code_mod.PIPELINE_FIT_TRAIN_RE.search(text)
         elapsed = time.perf_counter() - start
-        self.assertLess(elapsed, 1.0)
+        # Phase 11.1.1 plan 03 task 3, Pin 2. Tightened from 1.0s to 0.05s:
+        # a 1.0s budget would NOT catch a regression back to the unbounded-
+        # but-still-quadratic `[^)\n]*` swap this same comment block already
+        # measured at 0.4360s at n=4,000 -- comfortably under 1.0s, so that
+        # budget could not have caught the exact regression this pin exists
+        # to catch. Measured this session on the shipped bounded pattern:
+        # 0.0048s (`python` 3.12.10), 0.0053s (`python3` 3.14.6) -- both
+        # comfortably under 0.05s.
+        self.assertLess(elapsed, 0.05)
 
     def test_pipeline_fit_train_re_match_set_unchanged_across_probe_shapes(self):
         # 14 probe shapes (matching and non-matching), recorded in the
@@ -6121,6 +6477,393 @@ class TestPhase11_1Code(unittest.TestCase):
         for text in non_matching:
             with self.subTest(text=text):
                 self.assertIsNone(code_mod.PIPELINE_FIT_TRAIN_RE.search(text))
+
+    # ── Phase 11.1.1 plan 03 task 3: every retained pattern measured on its ──
+    # ── own worst-case shape, no sibling's linearity inherited (11.1.1- ──────
+    # ── RESEARCH.md Pitfall 6). Pin 1 (the AST pipeline,
+    # ── ((5_000, 0.5), (20_000, 1.0)), no subTest) is already satisfied by ───
+    # ── test_ast_scan_timing_is_linear_on_a_large_entrypoint above. Pin 2's ──
+    # ── FIT_CALL_RE re-measurement is already satisfied by test_fit_call_ ────
+    # ── re_timing_no_catastrophic_backtracking_with_keyword_form above, and ──
+    # ── PIPELINE_FIT_TRAIN_RE's own pin (above this comment) was tightened ───
+    # ── from 1.0s to 0.05s so it can actually catch the regression it ────────
+    # ── exists to catch. Pin 3 (the DSX-CODE-002 loop) is already satisfied ──
+    # ── by test_scaler_full_loop_timing_is_linear above, and the break was ───
+    # ── already hoisted (verified: dsx/checks/code.py's DSX-CODE-002 loop ────
+    # ── has the break outside the inner if) -- no source edit made here. ─────
+    # ── What follows: the three retained patterns with no timing pin at ──────
+    # ── all (FIT_LEAK_MARKERS, SCALER_FULL_RE, RESAMPLE_BEFORE_RE), and ───────
+    # ── Pin 4, the mechanical D-05 structural guard. ──────────────────────────
+
+    def test_fit_leak_markers_timing_no_catastrophic_backtracking(self):
+        # FIT_LEAK_MARKERS -- three bounded `\.method\s*\(` patterns, no
+        # nested quantifier -- measured on a 20,000-character non-matching
+        # line and on a near-miss (".fit" followed by whitespace with no
+        # opening parenthesis, which makes the trailing `\(` fail after the
+        # bounded `\s*` repetition has already been walked once).
+        import re
+        import time
+
+        from dsx.checks import code as code_mod
+
+        non_matching = "a" * 20000
+        near_miss = ".fit" + (" " * 19990)
+        for pattern in code_mod.FIT_LEAK_MARKERS:
+            compiled = re.compile(pattern)
+            for text in (non_matching, near_miss):
+                with self.subTest(pattern=pattern, text=text[:10]):
+                    start = time.perf_counter()
+                    compiled.search(text)
+                    self.assertLess(time.perf_counter() - start, 1.0)
+
+    def test_scaler_full_re_timing_no_catastrophic_backtracking(self):
+        # SCALER_FULL_RE. Near-miss: a real "StandardScaler()" prefix and a
+        # real "fit_transform(" suffix with 20,000 characters of dots
+        # between them, so the `\s*\.\s*` between the two halves is walked
+        # to the end before the whole match fails.
+        import time
+
+        from dsx.checks import code as code_mod
+
+        non_matching = "a" * 20000
+        near_miss = "StandardScaler()" + ("." * 19980) + "fit_transform(X"
+        for text in (non_matching, near_miss):
+            with self.subTest(text=text[:20]):
+                start = time.perf_counter()
+                code_mod.SCALER_FULL_RE.search(text)
+                self.assertLess(time.perf_counter() - start, 1.0)
+
+    def test_resample_before_re_timing_no_catastrophic_backtracking(self):
+        # RESAMPLE_BEFORE_RE -- a `\b`-anchored alternation of four literal
+        # names with no quantifier inside the alternation at all.
+        import time
+
+        from dsx.checks import code as code_mod
+
+        non_matching = "a" * 20000
+        near_miss = "SMOT" + ("x" * 19996)  # "SMOT" without the final "E"
+        for text in (non_matching, near_miss):
+            with self.subTest(text=text[:20]):
+                start = time.perf_counter()
+                code_mod.RESAMPLE_BEFORE_RE.search(text)
+                self.assertLess(time.perf_counter() - start, 1.0)
+
+    def test_every_dsx_code_report_add_call_resolves_to_check(self):
+        # Pin 4: the D-05 structural guard made mechanical. The finding-
+        # catalogue generator's own --check cannot be relied on for this
+        # (11.1.1-RESEARCH.md / this plan's <planning_verification>:
+        # _resolve_docstrings is last-write-wins over a breadth-first walk,
+        # so an uncited helper can pass at one nesting depth and fail at
+        # another). This test AST-parses dsx/checks/code.py directly and
+        # asserts every report.add(...) call whose first argument is a
+        # "DSX-CODE-..." string literal sits lexically inside the
+        # FunctionDef named "check" -- not inside any nested helper.
+        import ast
+
+        source_path = self.ROOT / "dsx" / "checks" / "code.py"
+        tree = ast.parse(source_path.read_text(encoding="utf-8"))
+        check_func = next(
+            node
+            for node in ast.walk(tree)
+            if isinstance(node, ast.FunctionDef) and node.name == "check"
+        )
+        check_call_ids = {id(node) for node in ast.walk(check_func)}
+
+        violations = []
+        for node in ast.walk(tree):
+            if (
+                isinstance(node, ast.Call)
+                and isinstance(node.func, ast.Attribute)
+                and node.func.attr == "add"
+                and node.args
+                and isinstance(node.args[0], ast.Constant)
+                and isinstance(node.args[0].value, str)
+                and node.args[0].value.startswith("DSX-CODE-")
+            ):
+                if id(node) not in check_call_ids:
+                    violations.append(node.args[0].value)
+
+        self.assertEqual(violations, [])
+
+    # ── Phase 11.1.1 plan 03 task 2: non-regression pins for the mechanism ───
+    # ── change -- line-index stability, the line axis, notebook geometry, ────
+    # ── determinism/ordering, degraded-path signalling and prose-mask ────────
+    # ── boundaries. Groups 1 (line-index stability) and 3 (notebook ──────────
+    # ── geometry, including the third false-positive fixture) are already ────
+    # ── fully pinned by existing tests above -- test_multi_line_fit_call_ ────
+    # ── after_split_fires_code_021, test_fit_multiline_open_paren_before_ ────
+    # ── split_fires_code_001, test_lowest_physical_line_reported_for_ ────────
+    # ── code_001, test_at_most_one_dsx_code_021_lowest_line, test_run_ ───────
+    # ── twice_over_same_entrypoint_is_deterministic, test_notebook_code_ ─────
+    # ── cell_line_numbers_are_unchanged_by_the_markdown_filter and test_ ─────
+    # ── notebook_markdown_cell_mentioning_fit_draws_no_code_001 -- cited ──────
+    # ── here rather than duplicated, per this plan's SUMMARY. What follows ───
+    # ── is the remainder: Group 2's split-line supplement, Group 4's ─────────
+    # ── module-state pin, Group 5's decision-record and blank/not-scanned ────
+    # ── pins, and Group 6's prose-mask boundary pins -- the last of which ────
+    # ── are measured against the shipped code rather than against AST- ───────
+    # ── DESIGN.md's fuller promise, and two of which pin a PERSISTING false ──
+    # ── positive (assertIn, not assertNotIn) because that is what was ────────
+    # ── measured. See this plan's SUMMARY, "prose mask coverage", for the ────
+    # ── full account. ──────────────────────────────────────────────────────
+
+    def test_line_axis_desync_fixtures_also_report_the_true_split_line(self):
+        """Supplements test_form_feed_line_does_not_desynchronise_reported_
+        line_numbers and test_string_literal_line_separator_does_not_
+        desynchronise_reported_line_numbers above (both left unmodified,
+        per this task's instruction): the split line named inside
+        DSX-CODE-001's own detail text must also equal the TRUE physical
+        line of the split call, not a splitlines()-shifted one, for the
+        same two desynchronising shapes."""
+        for prefix in (chr(12) + "\n", "s = 'before" + chr(8232) + "after'\n"):
+            with self.subTest(prefix=repr(prefix)):
+                with tempfile.TemporaryDirectory() as tmp:
+                    entry = self._entrypoint(
+                        tmp,
+                        prefix
+                        + "df['Age'] = df['Age'].fillna(df['Age'].mean())\n"
+                        "model.fit(df)\n"
+                        "from sklearn.model_selection import train_test_split\n"
+                        "train_test_split(df)\n",
+                    )
+                    report = self._check(tmp, entry)
+                    code_001 = [
+                        f for f in report.findings if f.code == "DSX-CODE-001"
+                    ]
+                    self.assertEqual(len(code_001), 1)
+                    self.assertIn("line 5", code_001[0].detail)
+
+    def test_no_module_level_cache_grows_across_repeated_check_calls(self):
+        """No committed module-level mutable container may grow across
+        check() calls -- that would be exactly the shared mutable state
+        the determinism guarantee forbids (11.1.1-AST-DESIGN.md §7, "not
+        used: any parse caching"). Every module-level name bound to a
+        list, dict or set is enumerated and its size recorded before and
+        after ten check() calls over distinct inputs; none may grow."""
+        from dsx.checks import code as code_mod
+
+        def container_sizes():
+            return {
+                name: len(value)
+                for name, value in vars(code_mod).items()
+                if isinstance(value, (list, dict, set))
+            }
+
+        before = container_sizes()
+        for i in range(10):
+            with tempfile.TemporaryDirectory() as tmp:
+                entry = self._entrypoint(tmp, f"model.fit(df_{i})\n")
+                self._check(tmp, entry)
+        after = container_sizes()
+        self.assertEqual(before, after)
+
+    def test_decision_records_carry_scan_path_on_both_mechanisms(self):
+        """Channel 4 of the four degrade-signalling channels
+        (11.1.1-AST-DESIGN.md §2.3): both decision records gain a
+        scan_path:ast or scan_path:text-fallback:<reason> input -- the
+        durable channel that lands in DECISIONS.jsonl and is replayable
+        through `dsx explain`. Verified directly on report.context here,
+        not only inferred from the pass line and finding data channels
+        the two existing tests above already cover."""
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(
+                tmp,
+                "model.fit(df)\n"
+                "from sklearn.model_selection import train_test_split\n"
+                "train_test_split(df)\n",
+            )
+            report = self._check(tmp, entry)
+            decisions = report.context["decisions"]
+            self.assertTrue(decisions)
+            self.assertTrue(
+                all(
+                    any(i == "scan_path:ast" for i in d["inputs"])
+                    for d in decisions
+                )
+            )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(
+                tmp,
+                "model.fit(df\n"
+                "from sklearn.model_selection import train_test_split\n"
+                "train_test_split(df)\n",
+            )
+            report = self._check(tmp, entry)
+            decisions = report.context["decisions"]
+            self.assertTrue(decisions)
+            self.assertTrue(
+                all(
+                    any(
+                        i.startswith("scan_path:text-fallback:")
+                        for i in d["inputs"]
+                    )
+                    for d in decisions
+                )
+            )
+
+    def test_blank_entrypoint_retains_silence_including_no_decision_record(
+        self,
+    ):
+        """Deliberately NOT changed (11.1.1-AST-DESIGN.md blocker B4/B6
+        table, "Deliberately NOT changed"): no entrypoint declared at all
+        is a different case from an entrypoint that exists but cannot be
+        scanned. Nothing was declared, so nothing is repudiated -- the
+        early return fires before any record_decision call, exactly as it
+        did before this phase. Named here so the retention is deliberate
+        and visible, not an oversight this test would otherwise silently
+        accept."""
+        from dsx.checks import code as code_mod
+
+        report = code_mod.check(
+            {
+                "model": {"task": "binary_classification"},
+                "reproducibility": {"entrypoint": ""},
+            },
+            ".",
+        )
+        self.assertEqual(report.findings, [])
+        self.assertIsNone(report.context.get("decisions"))
+        self.assertTrue(
+            any("no entrypoint declared" in line for line in report.passed_checks)
+        )
+
+    def test_unscannable_entrypoint_also_produces_no_decision_record(self):
+        """Measured, not assumed, against 11.1.1-AST-DESIGN.md's blocker
+        B4/B6 table, which specifies a scan_path:not-scanned:<reason>
+        decision input for a declared entrypoint that cannot be scanned.
+        Measured against the shipped code: check() returns before any
+        record_decision call for an entrypoint that resolves but cannot
+        be read (unsupported suffix, unreadable, or invalid notebook
+        JSON) -- the SAME early-return shape as the blank-entrypoint case,
+        so no decision record of any kind is produced here, not one
+        carrying a not-scanned scan_path. Channel 1 (the report.ok pass
+        line) is the only channel that actually fires for this case;
+        channels 2-4 do not apply because no Finding and no DecisionRecord
+        are ever constructed on this path. Flagged here for the
+        end-of-phase human check as a possible gap between design and
+        ship, named in this plan's SUMMARY."""
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(tmp, "model.fit(df)\n", name="entry.txt")
+            report = self._check(tmp, entry)
+            self.assertEqual(report.findings, [])
+            self.assertIsNone(report.context.get("decisions"))
+            self.assertTrue(
+                any("NOT scanned" in line for line in report.passed_checks)
+            )
+
+    def test_docstring_and_comment_mentioning_fit_both_stay_closed_on_the_parsed_path(
+        self,
+    ):
+        """DSX-CODE-001's docstring false positive (test_docstring_
+        mentioning_fit_draws_no_code_001 above) closes STRUCTURALLY, not
+        via the prose mask: a comment is stripped by the tokenizer before
+        ast.parse ever sees it, so neither a docstring NOR a trailing
+        comment mentioning a fit call produces a Call node, on the parsed
+        path -- both shapes pinned here."""
+        for source in (
+            '"""We never call scaler.fit(X) on the full frame."""\n'
+            "from sklearn.model_selection import train_test_split\n"
+            "train_test_split(df)\n",
+            "x = 1  # scaler.fit(X) on the full frame\n"
+            "from sklearn.model_selection import train_test_split\n"
+            "train_test_split(df)\n",
+        ):
+            with self.subTest(source=source):
+                with tempfile.TemporaryDirectory() as tmp:
+                    entry = self._entrypoint(tmp, source)
+                    report = self._check(tmp, entry)
+                    self.assertNotIn("DSX-CODE-001", codes(report))
+
+    def test_comment_mentioning_smote_still_fires_code_003_measured_not_assumed(
+        self,
+    ):
+        """Measured, not assumed, against 11.1.1-AST-DESIGN.md §3.8, which
+        specifies a comment guard for DSX-CODE-002 and DSX-CODE-003 ("The
+        guard is added to both, on both paths"). Measured against the
+        shipped code: RESAMPLE_BEFORE_RE's loop over `lines` carries no
+        `#`-leading guard at all -- unlike every other text scanner in
+        this module -- so a comment mentioning SMOTE still fires
+        DSX-CODE-003 HIGH. This is a genuine implementation gap relative
+        to the design, not this plan's to fix (plan 03's own scope
+        excludes mechanism work); it is named in this plan's SUMMARY and
+        raised for the end-of-phase human check. If this test ever fails
+        because the finding disappeared, that would mean the guard was
+        added -- good news -- but until then this pin records the false
+        positive that stays, and the
+        test should be promoted to a firing test rather than deleted.
+        """
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(tmp, "# never use SMOTE before the split\n")
+            report = self._check(tmp, entry)
+            self.assertIn("DSX-CODE-003", codes(report))
+
+    def test_comment_mentioning_scaler_fit_transform_still_fires_code_002_measured_not_assumed(
+        self,
+    ):
+        """Same measured gap as test_comment_mentioning_smote_still_fires_
+        code_003_measured_not_assumed above, for DSX-CODE-002:
+        SCALER_FULL_RE's loop also carries no `#`-leading guard. If this
+        test ever fails because the finding disappeared, that would mean
+        the guard was added -- good news -- but until then this pin
+        records the false positive that stays, and the
+        test should be promoted to a firing test rather than deleted.
+        """
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(
+                tmp, "# StandardScaler().fit_transform(X)\n"
+            )
+            report = self._check(tmp, entry)
+            self.assertIn("DSX-CODE-002", codes(report))
+
+    def test_split_marker_on_the_opening_or_closing_line_of_a_multiline_string_still_counts(
+        self,
+    ):
+        """Completes blocker B2's boundary proof for the one place the
+        prose mask is actually wired in the shipped code (the split-marker
+        text scan; see test_multiline_string_interior_line_stays_
+        uncaught_by_design above, task 1). Rule B masks only strictly
+        interior lines -- the opening and closing lines of a multi-line
+        string are spared, so a split marker written on either one still
+        counts as a split."""
+        for source, label in (
+            (
+                "sql = " + '"""' + "train_test_split\n"
+                "abc\n" + '"""' + "\n"
+                "scaler.fit_transform(data)\n",
+                "opening",
+            ),
+            (
+                "sql = " + '"""' + "\n"
+                "abc\n"
+                "train_test_split" + '"""' + "\n"
+                "scaler.fit_transform(data)\n",
+                "closing",
+            ),
+        ):
+            with self.subTest(line=label):
+                with tempfile.TemporaryDirectory() as tmp:
+                    entry = self._entrypoint(tmp, source)
+                    report = self._check(tmp, entry)
+                    self.assertIn("DSX-CODE-021", codes(report))
+
+    # ── Phase 11.1.1 plan 03 task 5: the phase's headline number, made ────────
+    # ── executable. _END_TO_END_VARIANT_TABLE is defined at module level, ─────
+    # ── beside this class, per this plan's key_link. ───────────────────────────
+
+    def test_end_to_end_variant_table_matches_committed_expectations(self):
+        """Drives _END_TO_END_VARIANT_TABLE end to end through check() --
+        NOT through FIT_CALL_RE/_fit_call_arguments in isolation, which is
+        what 11.1.1-RESEARCH.md's thirteen-variant table measured. The two
+        tables are different instruments (function-level extraction versus
+        the whole gate mechanism) and are never printed as one series --
+        see README.md and this plan's SUMMARY."""
+        for name, source, expected_codes, filename in _END_TO_END_VARIANT_TABLE:
+            with self.subTest(variant=name):
+                with tempfile.TemporaryDirectory() as tmp:
+                    entry = self._entrypoint(tmp, source, name=filename)
+                    report = self._check(tmp, entry)
+                    self.assertEqual(codes(report), expected_codes)
 
 
 if __name__ == "__main__":
