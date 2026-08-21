@@ -5,10 +5,10 @@ milestone_name: DSX Validity Frame
 current_phase: 11.1.1
 current_phase_name: detection-code-hardening-inserted
 status: executing
-stopped_at: Phase 11.1 complete — UAT 2/2, verification passed, security verified (44 threats, 0 open; T-11.1-01 found open and fixed)
+stopped_at: Phase 11.1.1 re-scoped to an AST primary path (Option B) — 3 plans rewritten, design amended after a 4-blocker adversarial pass, execution not yet resumed
 last_updated: "2026-08-21T12:24:12.591Z"
 last_activity: 2026-08-21
-last_activity_desc: Phase 11.1.1 execution started
+last_activity_desc: Phase 11.1.1 re-scoped and re-planned (AST primary path); awaiting review before execution resumes
 progress:
   total_phases: 10
   completed_phases: 6
@@ -20,7 +20,7 @@ progress:
 # Project state
 
 **Status:** Executing Phase 11.1.1
-**Progress:** [███████████████████░] 34/35 plans (97%)  
+**Progress:** [██████████████████░░] 56/63 plans (89%)  
 **Locked decisions:** DQ = profile runner + hermetic gates; Glyph = hermetic svg_sha256 only (no MCP dep); forbidden claims = universal pack + optional phase YAML; repro_lock = ARS-style honest-null (not byte-replay); decision replay = structured thresholds only; suppressions = ADR/SPEC authority required (unknown codes → exit 2)  
 **v2.0.0 locked decisions:** DSX-PAR-010 is a distinct code, DSX-EXP-060 untouched (M-01); no `inference.stopping_rule` — PAR-010/011 read the existing `design.peeking_policy` (M-02); PEEKING_POLICIES gains an uncontrolled-continuous-monitoring value (M-03); automated import test enforces the D-03a boundary from M1 (M-04); SELF-001 stays a convention, REVERSALS.md template seeded in M1 (M-05); `validity_frame` sub-block requiredness gated by `question_type` (M-06); existing `suppressions[]` is the pre-v2.0.0 grandfather path (M-07); D-05 citation enforcement automated via `gen-finding-catalogue.py` (M-08); `dependence.method_family_required` reuses `VARIANCE_ADJUSTMENTS` (M-09)
 
@@ -74,6 +74,24 @@ progress:
 - Phase 10: `_D05_ALLOWLIST_PREFIXES` (`scripts/gen-finding-catalogue.py:65`) is an **inclusion** list, not an exemption list, and does not cover `DSX-PRE-`. Without that edit the brief-D-05 citation gate is silently disabled for this family and `--check` still passes (10-CONTEXT D-13 item 4).
 - Phase 10: `brief.md` §7 names no pre-registration source and gains the Gelman & Loken (2014) anchor — a citation addition where none existed, not a brief-D-14 reversal (10-CONTEXT D-14). **Resolved 2026-08-20** — `brief.md` §7 now carries the Gelman & Loken (2014) anchor, both locator warnings intact, plus the Simmons, Nelson & Simonsohn (2011) and Nosek, Ebersole, DeHaven & Mellor (2018) secondary sources, each with its own scope note (10-06).
 - Phase 10: two decisions left to the planner's discretion, settled at execute 2026-08-20 (10-06) — the content-lock comparison is set membership over every recorded plan-time digest rather than a most-recent or earliest pick, because `InvocationHeader` records no specification identity and any ordering rule produces cross-specification false positives in a shared trail directory; and trail reconciliation is scoped to a real `dsx gate` invocation only, because the read-only inspection commands (`dsx check`/`dsx audit`) never write a trail and could therefore never satisfy the precondition.
+
+### Phase 11.1.1 re-scope (2026-08-21)
+
+Mechanism changed from hand-patching the regular-expression text scanner to an `ast.parse`
+primary path with the text scan retained as a visible fallback (owner decision, Option B).
+Driver: the shipped scanner scored 3/12 on a session-time variant probe against 12/12 for a
+stdlib proof of concept, and two of the misses were **false positives** — a module docstring
+or a notebook markdown cell that merely describes leakage blocks byte-identical code. Phase 12
+publishes a false-positive rate, so those would have been measured.
+
+Three adversarial lenses returned `design-needs-amendment` with four blockers (notebook line
+geometry, undecodable-entrypoint silent pass, `splitlines()` vs tokenizer line axis, prose
+mask eating a closing line). All four are discharged in the rewritten plans;
+`11.1.1-AST-DESIGN.md` carries an amendment banner naming each and its owning plan. Original
+plans preserved under `superseded/`. ROADMAP success criteria amended to six (false-positive
+parity and visible-fallback criteria added).
+
+**Execution not yet resumed** — stopping at re-planned was the explicit instruction.
 
 ### Roadmap Evolution
 

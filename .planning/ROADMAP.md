@@ -18,7 +18,7 @@
 - [x] **Phase 10: Pre-registered inference plan (`DSX-PRE-*`)** - fallback-rule DSL, `declared_at` provenance, declared-vs-executed branch reconciliation (M3) — completed 2026-08-20
 - [ ] **Phase 11: Frequentist admissibility adjudicator (`DSX-ADM-*`)** - `references/families.yaml`, ranked admissible set, `no_admissible_procedure` escalation (M4)
 - [x] **Phase 11.1: Generated-pipeline reality (INSERTED)** - widened entrypoint fit-scan (pandas cleaning idioms, non-training-frame fits, target-in-test-call), cleaning-stage fit boundary, score/selection provenance, imbalance disclosure, paper-shaped corpus case — completed 2026-08-21
-- [ ] **Phase 11.1.1: Detection-code hardening (INSERTED)** - restore `DSX-CODE-001` against whitespace variants of `.fit (`, and widen `DSX-CODE-021`'s argument extraction (keyword arguments, multiple fit calls per line). The two backtracking patterns and their false "linear" threat-model comment were fixed early, during Phase 11.1's security gate (commit `06ff2d7`, threat T-11.1-01)
+- [ ] **Phase 11.1.1: Detection-code hardening (INSERTED)** - **re-scoped 2026-08-21** from hand-patching the regular-expression text scanner to an `ast.parse` primary path with the text scan retained as fallback. Closes the whitespace/continuation/keyword/multi-call false negatives AND two false positives (a docstring or notebook markdown cell describing leakage currently blocks identical code). The two backtracking patterns and their false "linear" threat-model comment were fixed early, during Phase 11.1's security gate (commit `06ff2d7`, threat T-11.1-01)
 - [ ] **Phase 11.2: Prescriptive claim layer (INSERTED)** - `prescriptive` claim type + coherence ladder, causal-verb lexicon tiers, `decision.revisit_when`, amendment counting on the locked plan, self-reported-fields view
 - [ ] **Phase 11.3: Reporting completeness and missing-data discipline (INSERTED)** - multiplicity family covers reported tests, examined-vs-reported gap, missingness method vocabulary + single-imputation denial, exclusion rules under the plan-time lock, chart-review conformance
 - [ ] **Phase 12: Calibration** - full known-bad corpus, measured catch rate and FPR, `dsx stats --paradigm`, backlog re-evaluation (M5)
@@ -720,49 +720,91 @@ high because the corpus does not vary its phrasing, not because the check genera
 first-argument extraction logic and both make the same check fire more often, so they should be
 tested as one behaviour change.
 
-**Known behaviour change**: fixing `CR-03` and `CR-04` makes files that pass the gate today
-start failing it. Those are true positives, but the change is user-visible and must be
-announced rather than slipped in.
+**Known behaviour change**: files that pass the gate today start failing it (true positives),
+and — new under the re-scope — files that FAIL today start passing (false positives removed).
+Both directions are user-visible and must be announced rather than slipped in. The plans carry
+the full announcement list; the looser direction is the more dangerous one to leave unstated,
+because nobody files a bug about a gate that stopped complaining.
+
+**Re-scoped 2026-08-21 (mechanism change, not a goal change)**
+
+Recorded in the shape `REVERSALS.md` requires, though no formal `REV-NNN` is filed: this
+overturns a phase-research conclusion, not an entry in the `brief.md` D-table or
+`PROJECT.md` M-table, which is what that log is scoped to.
+
+- **Reversed:** the approach recorded in `11.1.1-RESEARCH.md` — harden the line-ordered
+  regular-expression scan in place, variant by variant.
+- **New evidence:** an uncommitted session-time probe of 12 variants scored the shipped
+  scanner 3/12 and a 60-line stdlib `ast.parse` proof of concept 12/12. Seven of the nine
+  differences were false negatives the phase already planned to chase one at a time; **two
+  were false positives nobody had catalogued** — a module docstring reading
+  `"""We never call scaler.fit(X) on the full frame."""` blocks the file CRITICAL, and
+  deleting that one sentence makes byte-identical executable code pass. The same holds for a
+  `.ipynb` whose MARKDOWN cell describes the leakage it avoids, because `_read_source`
+  concatenates markdown with code. Phase 12 is chartered to publish a false-positive rate;
+  it would have measured these. (The committed variant provenance for this phase remains the
+  13-variant table in `11.1.1-RESEARCH.md` Pitfall 3 — 6 caught / 7 missed.)
+- **What would have made the original correct:** if `ast` were not in the standard library
+  (D-01 forbids third-party imports on the gate path), or if entrypoints commonly failed to
+  parse — in which case the fallback would be the normal path rather than the exception.
+  Neither holds: `ast` is stdlib and already used at `dsx/suppressions.py:11`,
+  `scripts/gen-finding-catalogue.py` and `tests/test_frame_boundary.py:30`.
+- **What did not change:** the goal, every `DSX-CODE-*` number, severity, title, remedy and
+  citation, the phase's requirement status (none new), its position before Phase 12, and every
+  honesty prohibition — nothing may record a code as sound, and no corpus expectation may be
+  edited to absorb a verdict change.
 
 **Success Criteria** (what must be TRUE):
 
-  1. `DSX-CODE-001` fires on every whitespace variant of a fit-before-split call — `.fit (`,
-     `.fit  (`, tab, and backslash line continuation. Today the redundant literal re-check at
-     `dsx/checks/code.py:505` defeats all of them, and the gate returns exit 0 with an
-     affirmative pass line on a file that leaks. There is no safety net: `DSX-CODE-021` only
-     fires at or after the split, so a leak before it is skipped by construction.
+  1. `DSX-CODE-001` fires on a fit-before-split call however it is written — `.fit (`,
+     `.fit  (`, tab, backslash line continuation, and a call spread across several physical
+     lines. Whitespace and line-breaking stop being detection-relevant at all, because the
+     primary path reads call nodes rather than characters.
 
-  2. `DSX-CODE-021` fires on keyword-argument fit calls (`model.fit(X=data, y=target)`). The
-     plan must record honestly that this closes one of at least three same-shaped holes —
-     multi-line calls, chained method calls and `partial_fit` remain uncaught (9 of 12 leaky
-     variants were missed end-to-end when measured). Nothing may record `DSX-CODE-021` as sound.
+  2. `DSX-CODE-021` fires on keyword-argument fit calls (`model.fit(X=data, y=target)`), on
+     chained calls, on `partial_fit`, and on a non-training frame whatever the call's shape.
+     The plans must still record honestly what remains uncaught — `exec`/`eval`-assembled
+     source is a REGRESSION against the text scan and must be announced as such, not filed as
+     a standing limit. Nothing may record `DSX-CODE-021` as sound.
 
-  3. A semicolon-joined line carrying two fit calls yields both, not just the first
-     (`dsx/checks/code.py:541` uses first-match-only today, so a leaky second call preceded by
-     a safe first call is silently dropped).
+  3. A semicolon-joined line carrying two fit calls yields both, not just the first, and the
+     reported line index is the original physical one, stable across repeated runs.
 
-  4. The full suite and the known-bad corpus stay green, and no existing fixture's gate exit
-     code moves except where criterion 1 or 2 deliberately moves it.
+  4. **Identical executable code receives an identical verdict regardless of comments,
+     docstrings, string literals or notebook markdown cells.** Two files differing only in a
+     sentence of documentation must not receive opposite verdicts. This criterion did not
+     exist before the re-scope; it is the false-positive half, and Phase 12's false-positive
+     rate depends on it.
+
+  5. A source that cannot be parsed degrades to the text scan **visibly** — never silently.
+     The user can tell a parsed verdict from a fallback verdict, and an unreadable or
+     undecodable entrypoint never becomes a silent pass.
+
+  6. The full suite and the known-bad corpus stay green. Where a fixture's gate exit code
+     moves, it is surfaced and justified in both directions — never absorbed by editing
+     `_TARGET_DEFECT_CODES`, `_EXPECTED_CAUGHT_DEFECTS` or `_INCIDENTAL_GAP_CODES`.
 
 **Plans**: 3 plans
 
 Plans:
 **Wave 1**
 
-- [ ] 11.1.1-01-PLAN.md — SC1: restore DSX-CODE-001's whitespace tolerance (CR-03) and add an index-preserving backslash-continuation join, scoped to the before-split check only
+- [ ] 11.1.1-01-PLAN.md — SC1 + SC4 (.py half) + SC5: introduce the `ast.parse` primary path, `_source_lines` (the tokenizer's own line axis, so AST and text indices cannot desynchronise), the visible fallback contract, and migrate DSX-CODE-001 onto call nodes
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 11.1.1-02-PLAN.md — SC2 + SC3: widen `FIT_CALL_RE` for keyword arguments (CR-04) and promote `_fit_call_arguments` to all-matches extraction (WR-01), shipped as one behaviour change
+- [ ] 11.1.1-02-PLAN.md — SC2 + SC3 + SC4: AST argument extraction (positional and keyword, chained, `partial_fit`, multiple calls per line) for DSX-CODE-021, plus `.ipynb` code-cells-only reconstruction with character-wise markdown blanking and the magic repair
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 11.1.1-03-PLAN.md — SC2 honesty + SC4: pin `partial_fit`, chained-call and multi-line forms as knowingly uncaught, announce the behaviour change in `README.md`, and run the phase gate
+- [ ] 11.1.1-03-PLAN.md — SC2 honesty + SC6: pin what remains uncaught (including the `exec`/`eval` regression), prove determinism, line-index stability and the performance bounds, announce both behaviour-change directions in `README.md`, reconcile the corpus, and run the phase gate
 
-Note: line citations above (`dsx/checks/code.py:505`, `:541`) are stale as of commit
-`06ff2d7`. Verified at HEAD during planning: the redundant literal re-check is at line 532
-and the first-match-only extraction is at line 568. The plans instruct executors to locate
-by symbol name rather than by line number.
+Note: the re-scope removed the line citations that used to sit in criteria 1 and 3
+(`dsx/checks/code.py:505`, `:541`), which were already stale as of commit `06ff2d7` and were
+re-verified at 532 and 568 during the original planning. Criteria are now stated as observable
+gate behaviour rather than as internal call sites, and the plans instruct executors to locate
+by symbol name. The full mechanism lives in `11.1.1-AST-DESIGN.md`, whose amendment banner
+records the four blockers the adversarial pass raised against it and which plan owns each.
 
 ### Phase 11.2: Prescriptive claim layer (INSERTED)
 
