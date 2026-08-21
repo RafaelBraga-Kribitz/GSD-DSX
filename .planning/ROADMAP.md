@@ -17,7 +17,7 @@
 - [x] **Phase 9: Monitoring discipline, symmetric (`DSX-PAR-*`)** - the atomic `DSX-PAR-010`/`-011` pair plus `DSX-PAR-002` (M2c) — completed 2026-08-13
 - [x] **Phase 10: Pre-registered inference plan (`DSX-PRE-*`)** - fallback-rule DSL, `declared_at` provenance, declared-vs-executed branch reconciliation (M3) — completed 2026-08-20
 - [ ] **Phase 11: Frequentist admissibility adjudicator (`DSX-ADM-*`)** - `references/families.yaml`, ranked admissible set, `no_admissible_procedure` escalation (M4)
-- [ ] **Phase 11.1: Generated-pipeline reality (INSERTED)** - widened entrypoint fit-scan (pandas cleaning idioms, non-training-frame fits, target-in-test-call), cleaning-stage fit boundary, score/selection provenance, imbalance disclosure, paper-shaped corpus case
+- [x] **Phase 11.1: Generated-pipeline reality (INSERTED)** - widened entrypoint fit-scan (pandas cleaning idioms, non-training-frame fits, target-in-test-call), cleaning-stage fit boundary, score/selection provenance, imbalance disclosure, paper-shaped corpus case — completed 2026-08-21
 - [ ] **Phase 11.1.1: Detection-code hardening (INSERTED)** - restore `DSX-CODE-001` against whitespace variants of `.fit (`, and widen `DSX-CODE-021`'s argument extraction (keyword arguments, multiple fit calls per line). The two backtracking patterns and their false "linear" threat-model comment were fixed early, during Phase 11.1's security gate (commit `06ff2d7`, threat T-11.1-01)
 - [ ] **Phase 11.2: Prescriptive claim layer (INSERTED)** - `prescriptive` claim type + coherence ladder, causal-verb lexicon tiers, `decision.revisit_when`, amendment counting on the locked plan, self-reported-fields view
 - [ ] **Phase 11.3: Reporting completeness and missing-data discipline (INSERTED)** - multiplicity family covers reported tests, examined-vs-reported gap, missingness method vocabulary + single-imputation denial, exclusion rules under the plan-time lock, chart-review conformance
@@ -891,6 +891,8 @@ cases where absence permitted a false pass" is a debate, not a count.
 | 9. Monitoring discipline, symmetric (`DSX-PAR-*`) | 7/7 | Complete | 2026-08-13 |
 | 10. Pre-registered inference plan (`DSX-PRE-*`) | 6/6 | In Progress|  |
 | 11. Frequentist admissibility adjudicator (`DSX-ADM-*`) | 4/8 | In Progress|  |
+| 11.1 Generated-pipeline reality | 8/8 | Complete | 2026-08-21 |
+| 11.1.1 Detection-code hardening | 0/TBD | Not started | - |
 | 12. Calibration | 0/TBD | Not started | - |
 
 ## Dependency graph — v2.0.0
