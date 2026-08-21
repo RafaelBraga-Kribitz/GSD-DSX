@@ -787,7 +787,7 @@ overturns a phase-research conclusion, not an entry in the `brief.md` D-table or
      moves, it is surfaced and justified in both directions — never absorbed by editing
      `_TARGET_DEFECT_CODES`, `_EXPECTED_CAUGHT_DEFECTS` or `_INCIDENTAL_GAP_CODES`.
 
-**Plans**: 2/3 plans executed
+**Plans**: 3/3 plans executed
 
 Plans:
 **Wave 1**
@@ -800,7 +800,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 11.1.1-03-PLAN.md — SC2 honesty + SC6: pin what remains uncaught (including the `exec`/`eval` regression), prove determinism, line-index stability and the performance bounds, announce both behaviour-change directions in `README.md`, reconcile the corpus, and run the phase gate
+- [x] 11.1.1-03-PLAN.md — SC2 honesty + SC6: pin what remains uncaught (including the `exec`/`eval` regression), prove determinism, line-index stability and the performance bounds, announce both behaviour-change directions in `README.md`, reconcile the corpus, and run the phase gate
 
 Note: the re-scope removed the line citations that used to sit in criteria 1 and 3
 (`dsx/checks/code.py:505`, `:541`), which were already stale as of commit `06ff2d7` and were
@@ -955,7 +955,7 @@ cases where absence permitted a false pass" is a debate, not a count.
 | 10. Pre-registered inference plan (`DSX-PRE-*`) | 6/6 | In Progress|  |
 | 11. Frequentist admissibility adjudicator (`DSX-ADM-*`) | 4/8 | In Progress|  |
 | 11.1 Generated-pipeline reality | 8/8 | Complete | 2026-08-21 |
-| 11.1.1 Detection-code hardening | 2/3 | In Progress|  |
+| 11.1.1 Detection-code hardening | 3/3 | In Progress|  |
 | 12. Calibration | 0/TBD | Not started | - |
 
 ## Dependency graph — v2.0.0
