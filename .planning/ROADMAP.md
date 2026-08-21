@@ -18,6 +18,7 @@
 - [x] **Phase 10: Pre-registered inference plan (`DSX-PRE-*`)** - fallback-rule DSL, `declared_at` provenance, declared-vs-executed branch reconciliation (M3) — completed 2026-08-20
 - [ ] **Phase 11: Frequentist admissibility adjudicator (`DSX-ADM-*`)** - `references/families.yaml`, ranked admissible set, `no_admissible_procedure` escalation (M4)
 - [ ] **Phase 11.1: Generated-pipeline reality (INSERTED)** - widened entrypoint fit-scan (pandas cleaning idioms, non-training-frame fits, target-in-test-call), cleaning-stage fit boundary, score/selection provenance, imbalance disclosure, paper-shaped corpus case
+- [ ] **Phase 11.1.1: Detection-code hardening (INSERTED)** - remove the cubic/quadratic backtracking in the two full-frame-cleaning patterns, correct the false "linear" threat-model comment they sit under, restore `DSX-CODE-001` against whitespace variants of `.fit (`, and widen `DSX-CODE-021`'s argument extraction (keyword arguments, multiple calls per line)
 - [ ] **Phase 11.2: Prescriptive claim layer (INSERTED)** - `prescriptive` claim type + coherence ladder, causal-verb lexicon tiers, `decision.revisit_when`, amendment counting on the locked plan, self-reported-fields view
 - [ ] **Phase 11.3: Reporting completeness and missing-data discipline (INSERTED)** - multiplicity family covers reported tests, examined-vs-reported gap, missingness method vocabulary + single-imputation denial, exclusion rules under the plan-time lock, chart-review conformance
 - [ ] **Phase 12: Calibration** - full known-bad corpus, measured catch rate and FPR, `dsx stats --paradigm`, backlog re-evaluation (M5)
@@ -690,6 +691,69 @@ CRITICAL, `DSX-CODE-030` CRITICAL, `DSX-CODE-031` HIGH, `DSX-ML-023` CRITICAL, `
 `DSX-ML-043` HIGH, `DSX-ML-052` HIGH, `DSX-ML-053` MEDIUM, `DSX-ML-090` HIGH, `DSX-ML-091`
 CRITICAL, `DSX-ML-092` HIGH. `DSX-ML-033` keeps its number and gains a new call site. Every new
 code is enumerated individually in `_D05_ALLOWLIST_CODES`, never by family prefix.
+
+### Phase 11.1.1: Detection-code hardening (INSERTED)
+
+**Goal**: The detection code shipped in Phase 11.1 actually holds against the input class it
+claims to screen — it cannot be stalled by an ordinary long line, cannot be defeated by
+whitespace, and does not miss the argument forms that generated pipelines idiomatically use.
+
+**Origin**: Not a requirement gap. Raised at Phase 11.1 UAT (`11.1-UAT.md` test 2, Option A)
+from `11.1-REVIEW.md`'s findings CR-01, CR-02, CR-03, CR-04 and WR-01 — all independently
+reproduced. No Phase 11.1 must_have truth, success criterion or requirement ID is falsified by
+any of them; Phase 11.1 closed on its declared criteria. This phase exists because the gaps are
+real and the code is about to be built on.
+
+**Depends on**: Phase 11.1. Independent of Phases 11.2 and 11.3 (neither touches
+`dsx/checks/code.py`). **Must precede Phase 12** — Phase 12 measures catch rate and
+false-positive rate over the known-bad corpus, and every fixture in that corpus uses the exact
+phrasing these patterns already handle, so a catch rate computed before this phase would read
+high because the corpus does not vary its phrasing, not because the check generalises.
+
+**Requirements**: None new. Remediation of defects in already-shipped code.
+
+**Ordering constraints**: The comment correction (success criterion 2) is independent of the
+pattern fixes and should land first — a newer pattern at `dsx/checks/code.py:99` already cites
+the false comment as the house template, and Phases 11.2 and 11.3 both add pattern-driven
+checks whose authors would inherit the same reasoning. CR-01 and CR-02 must be fixed together
+(they share one comment block and one construct; fixing CR-02 alone yields no measurable
+improvement because CR-01 dominates on the same line). CR-04 and WR-01 must be fixed together
+(shared first-argument extraction logic, same direction of behaviour change).
+
+**Known behaviour change**: fixing CR-03 and CR-04 makes files that pass the gate today start
+failing it. Those are true positives, but the change is user-visible and must be announced
+rather than slipped in.
+
+**Success Criteria** (what must be TRUE):
+
+  1. `FULL_FRAME_SPREAD_FILTER_RE` and `FULL_FRAME_IMPUTE_RE` scan in linear time. Measured
+     today at fitted growth exponents 2.99 (cubic) and 2.00 (quadratic) respectively; a clean
+     entrypoint with one long line pays the full cost because the scan stops at the first
+     match, so the slowdown falls on correct work. A timing test exists whose threshold fails
+     against today's code — the suite's one existing timing test guards a different pattern and
+     its 20,000-characters-under-one-second bar would not catch this.
+
+  2. The threat-model comment at `dsx/checks/code.py:53-60` no longer claims these patterns are
+     "linear ... not a nested quantifier", and the citation at `dsx/checks/code.py:99` that
+     forwards that claim is corrected with it.
+
+  3. `DSX-CODE-001` fires on every whitespace variant of a fit-before-split call — `.fit (`,
+     `.fit  (`, tab, and backslash line continuation. Today the redundant literal re-check at
+     `dsx/checks/code.py:505` defeats all of them, and the gate returns exit 0 with an
+     affirmative pass line on a file that leaks.
+
+  4. `DSX-CODE-021` fires on keyword-argument fit calls (`model.fit(X=data, y=target)`). The
+     plan must record honestly that this closes one of at least three same-shaped holes:
+     multi-line calls, chained method calls and `partial_fit` remain uncaught. Nothing may
+     record `DSX-CODE-021` as sound.
+
+  5. A semicolon-joined line carrying two fit calls yields both, not just the first
+     (`dsx/checks/code.py:541` uses first-match-only today).
+
+  6. The full suite and the known-bad corpus stay green, and no existing fixture's gate exit
+     code moves except where criterion 3 or 4 deliberately moves it.
+
+**Plans**: TBD
 
 ### Phase 11.2: Prescriptive claim layer (INSERTED)
 

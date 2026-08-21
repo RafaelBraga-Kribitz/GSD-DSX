@@ -31,3 +31,51 @@ new signal (7 or 8) added by this task names any finding code.
 a phase touching `agents/dsx-ml-integrity-auditor.md` again — narrow the scan
 to the `<leakage_heuristics>` block, or to lines added by the diff, rather
 than the whole file.
+
+## UAT decision (Option A) — code-review findings WR-02 and IN-01
+
+**Item:** Two of the seven findings in `11.1-REVIEW.md`, both independently
+reproduced, deliberately deferred at UAT rather than fixed. The other five
+(CR-01, CR-02, CR-03, CR-04, WR-01) were routed to a gap-closure plan due
+before Phase 11.2 — see `11.1-UAT.md` test 2.
+
+**WR-02 — `dsx/decisions.py::append()` writes `
+`, contract says `
+`.**
+The module docstring (`dsx/decisions.py:13-15`) states each record is followed
+by a single `
+`; `append()` (line 116) opens in text mode with no `newline=`
+argument, so Windows translates it to `
+`. Reproduced. Note the review
+understated one thing and overstated another: this is *already materialised*,
+not latent — roughly 28.5 MB / 31,290 lines of existing decision-trail files
+carry the wrong terminator — but the practical consequence is narrower than
+"a future consumer would break", because a naive newline-splitting JSON parser
+still reads every record (the extra byte is insignificant whitespace to JSON).
+Real exposure is byte-exact consumers only: checksums, golden-file comparison,
+byte-offset arithmetic.
+
+**Resolution taken:** Not fixed. One-line fix (`newline="
+"` on the open).
+Deferred because nothing reading the file today is affected.
+
+**Left for:** whoever next touches `dsx/decisions.py`. Two things to decide at
+that point, neither resolved here: (a) existing files stay mixed-terminator
+unless rewritten, since only new lines get the fix; (b) this graduates to
+urgent the moment any work computes a checksum or byte offset over the trail.
+Add a byte-level assertion — none exists today.
+
+**IN-01 — dead entries in `SPLIT_MARKERS` (`dsx/checks/code.py:23-33`).**
+Reproduced, and wider than the review states: there are **three** dead entries,
+not one. `TimeSeriesSplit(` is shadowed by `TimeSeriesSplit`, `StratifiedGroupKFold`
+by `GroupKFold`, and `GroupShuffleSplit` by `ShuffleSplit` — all by the same
+mechanism, since `_first_line_matching` tests plain substring membership.
+
+**Resolution taken:** Not fixed. Purely cosmetic; measured as a no-op.
+
+**Left for:** whoever next edits `SPLIT_MARKERS`. **Fix trap, do not skip
+this:** removing the *live* entry instead of the dead one also looks like a
+no-op, because the dead entry silently takes over — a green test run does NOT
+prove the removed entry was the redundant one. Do not remove `KFold(`; it is
+the only entry catching a bare `KFold(...)` call. There is currently zero test
+coverage of the affected markers, so add the regression test as part of the fix.
