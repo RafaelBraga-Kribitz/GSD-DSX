@@ -62,9 +62,16 @@ _PARADIGM_CONDITIONAL: "dict[str, tuple[str, ...]]" = {
 # phase that ships it lands; two invariant tests in tests/test_dsx.py prove
 # every 'applied' prefix resolves to a known code and every prefix here
 # resolves to none.
-_NOT_SHIPPED: "dict[str, str]" = {
-    "DSX-ADM-": "Phase 11 ships DSX-ADM-* (frequentist procedure admissibility).",
-}
+#
+# Currently empty: every prefix this dict has ever tracked has shipped —
+# DSX-ADM- (frequentist procedure admissibility) shipped in 11-06's first
+# report.add("DSX-ADM-010", ...) call, which is also what forced this
+# deletion into that same commit — dsx/suppressions.py::known_codes() scans
+# source rather than gate registration, so the honesty-control invariant in
+# tests/test_dsx.py flips at the report.add(...) call site, independent of
+# whether the check is registered in GATE_PROFILES (plan 11-07's job). This
+# dict stays as the mechanism for the next unshipped family.
+_NOT_SHIPPED: "dict[str, str]" = {}
 
 # The single member of PEEKING_POLICIES both halves of the DSX-PAR-010/011
 # pair trigger on. Neither half reads results.interim_looks (D-04): at

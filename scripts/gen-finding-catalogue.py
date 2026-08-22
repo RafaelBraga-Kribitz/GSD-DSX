@@ -52,6 +52,9 @@ PREFIX_GROUPS = [
     ("DSX-PRE", "Pre-registered inference plan",
      "The declared fallback rule resolved against the declared observed facts, the plan-time "
      "content lock, and reconciliation of the declared branch against the executed procedure."),
+    ("DSX-ADM", "Frequentist admissibility",
+     "The ranked admissible set for a declared frequentist frame, naming the assumptions each "
+     "family buys and charges, and the refusal when no procedure in the ontology is admissible."),
 ]
 
 # D-20: the finite, visible exemption boundary for D-05 citation/reference-value
