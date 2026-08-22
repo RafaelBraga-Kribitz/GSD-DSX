@@ -581,7 +581,7 @@ run a verification spike before writing any requirement on it.
      `families.yaml` entry declares a Bayesian inference method — the axis space is capped to
      v1's frequentist scope, with Bayesian admissibility left in the gated backlog.
 
-**Plans**: 6/8 plans executed
+**Plans**: 8/8 plans executed
 
 Plans:
 
@@ -601,10 +601,10 @@ Plans:
 - [x] 11-06-PLAN.md — the ranking rule table, `admissible_families()`, and `DSX-ADM-010` /
       `DSX-ADM-020` with the guard set their existence trips
 
-- [ ] 11-07-PLAN.md — gate registration at plan, verify and ship, and the additive
+- [x] 11-07-PLAN.md — gate registration at plan, verify and ship, and the additive
       `dsx recommend-test` composition
 
-- [ ] 11-08-PLAN.md — the build-time citation gate over the ontology data, and `"DSX-ADM-"` added
+- [x] 11-08-PLAN.md — the build-time citation gate over the ontology data, and `"DSX-ADM-"` added
       to the D-05 inclusion list
 
 ### Phase 11.1: Generated-pipeline reality (INSERTED)
@@ -978,7 +978,7 @@ cases where absence permitted a false pass" is a debate, not a count.
 | 8. Interference, triggering, stability (`DSX-INT-*`) | 10/10 | Complete | 2026-08-14 |
 | 9. Monitoring discipline, symmetric (`DSX-PAR-*`) | 7/7 | Complete | 2026-08-13 |
 | 10. Pre-registered inference plan (`DSX-PRE-*`) | 6/6 | In Progress|  |
-| 11. Frequentist admissibility adjudicator (`DSX-ADM-*`) | 6/8 | In Progress|  |
+| 11. Frequentist admissibility adjudicator (`DSX-ADM-*`) | 8/8 | In Progress|  |
 | 11.1 Generated-pipeline reality | 8/8 | Complete | 2026-08-21 |
 | 11.1.1 Detection-code hardening | 7/7 | Complete | 2026-08-22 |
 | 12. Calibration | 0/TBD | Not started | - |
