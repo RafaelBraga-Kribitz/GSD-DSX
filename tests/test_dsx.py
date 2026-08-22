@@ -5952,6 +5952,169 @@ class TestPhase11_1Code(unittest.TestCase):
                         any("NOT scanned" in line for line in report.passed_checks)
                     )
 
+    def test_non_list_cells_value_is_named_not_scanned_without_raising(self):
+        # SC5: a `cells` value that is valid JSON but not a list -- an
+        # integer, a boolean, an object, null, a string -- or a document
+        # with no `cells` key at all. Today the first two ({"cells": 5},
+        # {"cells": true}) raise TypeError out of the `for cell in ...`
+        # loop; the other four ({"cells": {}}, {"cells": null},
+        # {"cells": "cells"}, {}) fall through the `or []` guard and
+        # return the empty string, printing the affirmative "entrypoint
+        # parsed with ast" pass line over a document nothing was read
+        # from.
+        from dsx.checks import code as code_mod
+
+        for content in (
+            '{"cells": 5}',
+            '{"cells": true}',
+            '{"cells": {}}',
+            '{"cells": null}',
+            '{"cells": "cells"}',
+            "{}",
+        ):
+            with self.subTest(content=content):
+                with tempfile.TemporaryDirectory() as tmp:
+                    path = Path(tmp, "entry.ipynb")
+                    path.write_text(content, encoding="utf-8")
+                    self.assertIsNone(code_mod._read_source(path))
+
+                    entry = self._entrypoint(tmp, content, name="entry.ipynb")
+                    report = self._check(tmp, entry)
+                    self.assertEqual(report.findings, [])
+                    self.assertTrue(
+                        any("NOT scanned" in line for line in report.passed_checks)
+                    )
+
+    def test_empty_cells_list_still_scans_as_an_empty_notebook(self):
+        # Control (SC5 boundary): {"cells": []} is a legitimately empty
+        # notebook, not a malformed one. It must keep taking the
+        # affirmative parsed path, not the NOT-scanned path the other
+        # tests in this group pin -- a guard meant to catch malformed
+        # input must not also catch input that is merely empty.
+        #
+        # No "model" section is declared here (unlike self._check's
+        # fixed spec) -- an empty entrypoint with a declared model block
+        # legitimately fires DSX-CODE-010 (no split marker), which would
+        # make this control assert something unrelated to SC5. Calling
+        # code_mod.check() directly with no model section isolates the
+        # one property this test pins: the read/parse path taken.
+        from dsx.checks import code as code_mod
+
+        content = '{"cells": []}'
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp, "entry.ipynb")
+            path.write_text(content, encoding="utf-8")
+            self.assertEqual(code_mod._read_source(path), "")
+
+            entry = self._entrypoint(tmp, content, name="entry.ipynb")
+            report = code_mod.check(
+                {"reproducibility": {"entrypoint": entry}}, tmp
+            )
+            self.assertEqual(report.findings, [])
+            self.assertTrue(
+                any(
+                    "entrypoint parsed with ast" in line
+                    for line in report.passed_checks
+                )
+            )
+
+    def test_non_string_source_element_is_named_not_scanned_without_raising(self):
+        # SC5: a cell's `source` is a list, but one element of that list
+        # is not a string -- an integer, null, or a nested list, in
+        # either a code cell or a markdown cell. Today
+        # "".join(src) raises TypeError: sequence item N: expected str
+        # instance, ... found.
+        from dsx.checks import code as code_mod
+
+        docs = (
+            json.dumps(
+                {"cells": [{"cell_type": "code", "source": ["import pandas", 5]}]}
+            ),
+            json.dumps(
+                {"cells": [{"cell_type": "code", "source": ["import pandas", None]}]}
+            ),
+            json.dumps(
+                {
+                    "cells": [
+                        {"cell_type": "code", "source": ["import pandas", ["nested"]]}
+                    ]
+                }
+            ),
+            json.dumps(
+                {"cells": [{"cell_type": "markdown", "source": ["# title", 5]}]}
+            ),
+        )
+        for content in docs:
+            with self.subTest(content=content):
+                with tempfile.TemporaryDirectory() as tmp:
+                    path = Path(tmp, "entry.ipynb")
+                    path.write_text(content, encoding="utf-8")
+                    self.assertIsNone(code_mod._read_source(path))
+
+                    entry = self._entrypoint(tmp, content, name="entry.ipynb")
+                    report = self._check(tmp, entry)
+                    self.assertEqual(report.findings, [])
+                    self.assertTrue(
+                        any("NOT scanned" in line for line in report.passed_checks)
+                    )
+
+    def test_non_string_non_list_source_is_named_not_scanned_without_raising(self):
+        # SC5: a cell's `source` is neither absent, a string, nor a list
+        # -- a JSON object or a number. Today str(src) scans the Python
+        # rendering of the value as if it were code the notebook
+        # contains ("{'a': 'model.fit(df)'}", "5").
+        from dsx.checks import code as code_mod
+
+        docs = (
+            json.dumps(
+                {
+                    "cells": [
+                        {
+                            "cell_type": "code",
+                            "source": {"a": "model.fit(df)"},
+                        }
+                    ]
+                }
+            ),
+            json.dumps({"cells": [{"cell_type": "code", "source": 5}]}),
+        )
+        for content in docs:
+            with self.subTest(content=content):
+                with tempfile.TemporaryDirectory() as tmp:
+                    path = Path(tmp, "entry.ipynb")
+                    path.write_text(content, encoding="utf-8")
+                    self.assertIsNone(code_mod._read_source(path))
+
+                    entry = self._entrypoint(tmp, content, name="entry.ipynb")
+                    report = self._check(tmp, entry)
+                    self.assertEqual(report.findings, [])
+                    self.assertTrue(
+                        any("NOT scanned" in line for line in report.passed_checks)
+                    )
+
+    def test_deeply_nested_notebook_json_is_named_not_scanned_without_raising(self):
+        # SC5, found while planning and named by neither the
+        # verification report nor the code review: a document nested
+        # more deeply than the running interpreter's recursion limit.
+        # 20,000 nested JSON arrays raise RecursionError out of
+        # json.loads on CPython 3.12.10 in under one millisecond; chosen
+        # for margin across the 3.10, 3.12 and 3.14 interpreters this
+        # repository is tested on.
+        from dsx.checks import code as code_mod
+
+        content = "[" * 20000 + "]" * 20000
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp, "entry.ipynb")
+            path.write_text(content, encoding="utf-8")
+            self.assertIsNone(code_mod._read_source(path))
+
+            entry = self._entrypoint(tmp, content, name="entry.ipynb")
+            report = self._check(tmp, entry)
+            self.assertEqual(report.findings, [])
+            self.assertTrue(
+                any("NOT scanned" in line for line in report.passed_checks)
+            )
+
     def test_bom_notebook_entrypoint_takes_the_ast_path(self):
         # A BOM breaks json.loads exactly as it breaks ast.parse -- the
         # .ipynb read needs the same utf-8-sig fix the .py read already
