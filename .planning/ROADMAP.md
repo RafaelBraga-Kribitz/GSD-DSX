@@ -980,7 +980,7 @@ cases where absence permitted a false pass" is a debate, not a count.
 | 10. Pre-registered inference plan (`DSX-PRE-*`) | 6/6 | In Progress|  |
 | 11. Frequentist admissibility adjudicator (`DSX-ADM-*`) | 4/8 | In Progress|  |
 | 11.1 Generated-pipeline reality | 8/8 | Complete | 2026-08-21 |
-| 11.1.1 Detection-code hardening | 7/7 | In Progress|  |
+| 11.1.1 Detection-code hardening | 7/7 | Complete | 2026-08-22 |
 | 12. Calibration | 0/TBD | Not started | - |
 
 ## Dependency graph — v2.0.0
