@@ -4653,6 +4653,97 @@ class TestPhase11_1Code(unittest.TestCase):
         )
         self.assertNotIn("DSX-CODE-020", codes(report))
 
+    # -- GAP-2 (SC4): the prose mask reaches DSX-CODE-020 too -----------------
+
+    def test_docstring_describing_a_cleaning_idiom_draws_no_code_020(self):
+        # A module docstring merely DESCRIBING a cleaning idiom must not
+        # decide a CRITICAL verdict on the parsed path -- masked exactly as
+        # the split-marker text scan already masks a bare string statement.
+        multiline = (
+            '"""\n'
+            "We deliberately avoid df.fillna(df.mean()) before splitting.\n"
+            '"""\n'
+            "from sklearn.model_selection import train_test_split\n"
+            "train_test_split(df)\n"
+        )
+        single_line = (
+            '"""We deliberately avoid df.fillna(df.mean()) before splitting."""\n'
+            "from sklearn.model_selection import train_test_split\n"
+            "train_test_split(df)\n"
+        )
+        for label, text in (("multiline", multiline), ("single_line", single_line)):
+            with self.subTest(form=label):
+                with tempfile.TemporaryDirectory() as tmp:
+                    entry = self._entrypoint(tmp, text)
+                    report = self._check(tmp, entry)
+                    self.assertNotIn("DSX-CODE-020", codes(report))
+
+    def test_real_cleaning_idiom_still_fires_code_020_with_the_mask_wired(self):
+        # Control: masking prose must not delete a true positive.
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(
+                tmp,
+                "from sklearn.model_selection import train_test_split\n"
+                "df['Age'] = df['Age'].fillna(df['Age'].mean())\n"
+                "train_test_split(df)\n",
+            )
+            report = self._check(tmp, entry)
+            found = [f for f in report.findings if f.code == "DSX-CODE-020"]
+            self.assertEqual(len(found), 1)
+            self.assertEqual(found[0].severity, Severity.CRITICAL)
+            self.assertIn("Line 2", found[0].detail)
+
+    def test_multiline_string_opening_line_still_fires_code_020_stays_uncaught_by_design(
+        self,
+    ):
+        """Deliberate limit that survives this task's fix, not a bug: Rule B
+        (`_prose_line_indices`) masks only the STRICTLY INTERIOR lines of a
+        multi-line string constant, sparing the opening and closing lines
+        because either can carry real code. Here the opening line of a
+        multi-line string constant merely CONTAINS the text
+        "df.fillna(df.mean())" as part of the string's own VALUE -- not
+        real code -- but the text scanner reads physical lines, not string
+        values, and the opening line is not in the mask. This is a REAL
+        false positive that this task does not close. If this test ever
+        fails because the finding disappeared, that is good news and the
+        test should be promoted to a firing test rather than deleted.
+        """
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(
+                tmp,
+                'sql = """x; df = df.fillna(df.mean())\n'
+                "abc\n"
+                '"""\n',
+            )
+            report = self._check(tmp, entry)
+            self.assertIn("DSX-CODE-020", codes(report))
+
+    def test_docstring_still_fires_code_020_on_the_fallback_stays_uncaught_by_design(
+        self,
+    ):
+        """Deliberate limit that survives this task's fix, not a bug: on
+        the FALLBACK path there is no ast tree, so `prose_mask` is the
+        empty frozenset and the docstring false positive this task closes
+        on the PRIMARY path persists here. A REAL false positive, knowingly
+        outside the fallback's reach. If this test ever fails because the
+        finding disappeared, that is good news and the
+        test should be promoted to a firing test rather than deleted.
+        """
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(
+                tmp,
+                '"""We deliberately avoid df.fillna(df.mean()) before splitting."""\n'
+                "from sklearn.model_selection import train_test_split\n"
+                "train_test_split(df)\n"
+                "unclosed(\n",
+            )
+            report = self._check(tmp, entry)
+            self.assertIn("DSX-CODE-020", codes(report))
+            reached_fallback = any(
+                "fallback scan" in line for line in report.passed_checks
+            )
+            self.assertTrue(reached_fallback)
+
     def test_full_frame_impute_predicate_matches_paper_style_idiom(self):
         from dsx.checks import code as code_mod
 
@@ -4965,6 +5056,153 @@ class TestPhase11_1Code(unittest.TestCase):
             report = self._check(tmp, entry)
             self.assertNotIn("DSX-CODE-021", codes(report))
 
+    # -- GAP-1 (SC2): the fallback resolves a reordered keyword ---------------
+
+    def test_reordered_keyword_leak_fires_code_021_on_the_fallback_path(self):
+        # Forced onto the fallback by a trailing unclosed parenthesis. Today
+        # (before this task) this file produces zero findings, while the
+        # identical call fires DSX-CODE-021 on the parsed path.
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(
+                tmp,
+                "from sklearn.model_selection import train_test_split\n"
+                "train_test_split(df)\n"
+                "model.fit(y=y_train, X=full_frame)\n"
+                "unclosed(\n",
+            )
+            report = self._check(tmp, entry)
+            found = [f for f in report.findings if f.code == "DSX-CODE-021"]
+            self.assertEqual(len(found), 1)
+            self.assertEqual(found[0].severity, Severity.CRITICAL)
+            self.assertIn("'full_frame'", found[0].detail)
+            reached_fallback = any(
+                f.data.get("scan") == "text-fallback" for f in report.findings
+            ) or any("fallback scan" in line for line in report.passed_checks)
+            self.assertTrue(reached_fallback)
+
+    def test_reordered_keyword_leak_verdicts_agree_across_both_paths(self):
+        text = (
+            "from sklearn.model_selection import train_test_split\n"
+            "train_test_split(df)\n"
+            "model.fit(y=y_train, X=full_frame)\n"
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(tmp, text)
+            report = self._check(tmp, entry)
+            found = [f for f in report.findings if f.code == "DSX-CODE-021"]
+            self.assertEqual(len(found), 1)
+            self.assertEqual(found[0].severity, Severity.CRITICAL)
+            self.assertIn("'full_frame'", found[0].detail)
+            self.assertIn(
+                "entrypoint parsed with ast (call-level scan)", report.passed_checks
+            )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(tmp, text + "unclosed(\n")
+            report = self._check(tmp, entry)
+            found = [f for f in report.findings if f.code == "DSX-CODE-021"]
+            self.assertEqual(len(found), 1)
+            self.assertEqual(found[0].severity, Severity.CRITICAL)
+            self.assertIn("'full_frame'", found[0].detail)
+            self.assertTrue(
+                any("fallback scan" in line for line in report.passed_checks)
+            )
+
+    def test_several_unrecognised_keywords_before_an_allowlisted_one_resolve_the_allowlisted_value(
+        self,
+    ):
+        text = (
+            "from sklearn.model_selection import train_test_split\n"
+            "train_test_split(df)\n"
+            "model.fit(sample_weight=w, groups=g, data=full_frame)\n"
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(tmp, text)
+            report = self._check(tmp, entry)
+            found = [f for f in report.findings if f.code == "DSX-CODE-021"]
+            self.assertEqual(len(found), 1)
+            self.assertIn("'full_frame'", found[0].detail)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(tmp, text + "unclosed(\n")
+            report = self._check(tmp, entry)
+            found = [f for f in report.findings if f.code == "DSX-CODE-021"]
+            self.assertEqual(len(found), 1)
+            self.assertIn("'full_frame'", found[0].detail)
+
+    def test_equality_comparison_first_argument_is_not_read_as_a_keyword_on_either_path(
+        self,
+    ):
+        # An equality comparison in the first positional slot is not a
+        # keyword argument on either mechanism, and must not be consumed as
+        # one: the fallback's new skip-fragment carries a `(?!=)` guard so
+        # `a==b` is never misread as a keyword `a` whose value swallows the
+        # second `=`.
+        text = (
+            "from sklearn.model_selection import train_test_split\n"
+            "train_test_split(df)\n"
+            "model.fit(a==b, y)\n"
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(tmp, text)
+            report = self._check(tmp, entry)
+            self.assertNotIn("DSX-CODE-021", codes(report))
+
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(tmp, text + "unclosed(\n")
+            report = self._check(tmp, entry)
+            self.assertNotIn("DSX-CODE-021", codes(report))
+
+    def test_fit_call_re_timing_no_catastrophic_backtracking_with_reordered_keyword_form(
+        self,
+    ):
+        # The re-widened fallback pattern's own measurement
+        # (11.1.1-RESEARCH.md Pitfall 6), not inherited from the
+        # single-keyword-prefix figure. Two adversarial non-matching inputs
+        # built from repeated `name=value,` pairs -- short values, and
+        # values at the inner run's `{0,80}` bound -- each under a
+        # 1.0-second budget.
+        import time
+
+        from dsx.checks import code as code_mod
+
+        short_value = ".fit(" + "n=1," * 200_000
+        self.assertEqual(len(short_value), 800_005)
+        start = time.perf_counter()
+        code_mod.FIT_CALL_RE.search(short_value)
+        self.assertLess(time.perf_counter() - start, 1.0)
+
+        long_value = ".fit(" + ("n=" + "v" * 80 + ",") * 20_000
+        self.assertEqual(len(long_value), 1_660_005)
+        start = time.perf_counter()
+        code_mod.FIT_CALL_RE.search(long_value)
+        self.assertLess(time.perf_counter() - start, 1.0)
+
+    def test_keyword_beyond_the_skip_bound_stays_uncaught_by_design_on_the_fallback(
+        self,
+    ):
+        """Deliberate, not a bug: the widened fallback skips at most 8
+        non-allowlisted `name=value,` pairs (the stated bound) before
+        giving up on resolving an allowlisted keyword. A REAL post-split
+        leak whose recognised keyword arrives after 9 skipped keywords --
+        one more than the bound -- draws no DSX-CODE-021 on the fallback.
+        `full_frame` here is a REAL leak: the full, unsplit frame. If this
+        test ever fails because a finding appeared, that is good news and
+        the
+        test should be promoted to a firing test rather than deleted.
+        """
+        skips = ", ".join(f"k{i}=v{i}" for i in range(9))
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(
+                tmp,
+                "from sklearn.model_selection import train_test_split\n"
+                "train_test_split(df)\n"
+                f"model.fit({skips}, data=full_frame)\n"
+                "unclosed(\n",
+            )
+            report = self._check(tmp, entry)
+            self.assertNotIn("DSX-CODE-021", codes(report))
+
     # -- SC3: multiple calls, source order, nested tie-break -----------------
 
     def test_semicolon_joined_two_fit_calls_fire_code_021(self):
@@ -5254,23 +5492,30 @@ class TestPhase11_1Code(unittest.TestCase):
     def test_multiline_string_interior_line_stays_uncaught_by_design(self):
         """A split marker written on a STRICTLY INTERIOR line of a
         triple-quoted string is masked deliberately (Rule B,
-        `_prose_line_indices`), so it does not count as a split.
-        `_prose_line_indices` currently has exactly ONE consumer in the
-        shipped code -- the split-marker text scan via `_first_line_
-        matching`'s `masked` parameter -- named "In this wave the mask has
-        exactly one consumer" in the source comment above it. The plan's
-        own draft framed this pin around a "cleaning idiom" (DSX-CODE-020),
-        but measured against the shipped code, DSX-CODE-020's own text loop
-        applies NO masking at all -- a cleaning idiom inside a multi-line
-        string's interior line still fires DSX-CODE-020 unconditionally,
-        which is the larger, separately-documented finding of this plan
-        (see this plan's SUMMARY, "prose mask coverage"). This pin is
-        rewritten to test the one place the mask genuinely applies: a split
-        marker string on the interior line of a triple-quoted assignment
-        stays masked, so a REAL split-then-fit sequence with a marker
-        mentioned only in prose reads, incorrectly, as having no split. If
-        this test ever fails because the split was suddenly detected, that
-        is good news and the
+        `_prose_line_indices`), so it does not count as a split. This task
+        changes nothing about the split-marker scan, so this case stays
+        genuinely uncaught and the three assertions below stay correct.
+
+        Phase 11.1.1 plan 04 (GAP-2, SC4) update: `_prose_line_indices` now
+        has THREE consumers on the parsed path -- the split-marker text
+        scan via `_first_line_matching`'s `masked` parameter (what this pin
+        exercises), the full-frame-cleaning scan via
+        `_first_full_frame_cleaning_line`'s `masked` parameter, and the
+        statistical-test scan via `_stat_test_lines_referencing`'s `masked`
+        parameter, including its lookback window -- see the rewritten
+        source sentence above `_prose_line_indices`, which replaced the
+        single-consumer claim this docstring used to quote.
+
+        The plan-02 draft this pin superseded framed itself around a
+        "cleaning idiom" (DSX-CODE-020), and measured against the code
+        shipped at that time, DSX-CODE-020's own text loop applied NO
+        masking at all -- a cleaning idiom inside a multi-line string's
+        interior line fired DSX-CODE-020 unconditionally (plan 03 measured
+        this and declared it outside its own scope; see plan 03's SUMMARY,
+        "prose mask coverage"). Plan 04 task 2 closed that gap by threading
+        the same mask into that scan, so a cleaning idiom on a strictly
+        interior line no longer fires DSX-CODE-020. If this test ever fails
+        because the split was suddenly detected, that is good news and the
         test should be promoted to a firing test rather than deleted.
         """
         with tempfile.TemporaryDirectory() as tmp:
@@ -5629,6 +5874,53 @@ class TestPhase11_1Code(unittest.TestCase):
             report = self._check(tmp, entry)
             self.assertEqual(codes(report), set())
             self.assertTrue(any("NOT scanned" in line for line in report.passed_checks))
+
+    def test_non_dict_notebook_document_is_named_not_scanned_without_raising(self):
+        # GAP-3 (SC5): valid JSON, but the top-level document is not an
+        # object -- `nb.get("cells")` assumes it is. Covers a list document
+        # and a JSON `null` document, both reproduced raising
+        # AttributeError out of check() today.
+        from dsx.checks import code as code_mod
+
+        for content in ("[]", "null"):
+            with self.subTest(content=content):
+                with tempfile.TemporaryDirectory() as tmp:
+                    path = Path(tmp, "entry.ipynb")
+                    path.write_text(content, encoding="utf-8")
+                    self.assertIsNone(code_mod._read_source(path))
+
+                    entry = self._entrypoint(tmp, content, name="entry.ipynb")
+                    report = self._check(tmp, entry)
+                    self.assertEqual(report.findings, [])
+                    self.assertTrue(
+                        any("NOT scanned" in line for line in report.passed_checks)
+                    )
+
+    def test_non_dict_notebook_cell_is_named_not_scanned_without_raising(self):
+        # GAP-3 (SC5): the document is an object, but a cell inside `cells`
+        # is not -- `cell.get("cell_type")` assumes it is. Covers a cell
+        # entry that is a bare string, and a `cells` value that is an
+        # object rather than a list (so iterating it yields its keys,
+        # themselves not cell objects), both reproduced raising
+        # AttributeError out of check() today.
+        from dsx.checks import code as code_mod
+
+        for content in (
+            '{"cells": ["not-a-dict-cell"]}',
+            '{"cells": {"a": 1}}',
+        ):
+            with self.subTest(content=content):
+                with tempfile.TemporaryDirectory() as tmp:
+                    path = Path(tmp, "entry.ipynb")
+                    path.write_text(content, encoding="utf-8")
+                    self.assertIsNone(code_mod._read_source(path))
+
+                    entry = self._entrypoint(tmp, content, name="entry.ipynb")
+                    report = self._check(tmp, entry)
+                    self.assertEqual(report.findings, [])
+                    self.assertTrue(
+                        any("NOT scanned" in line for line in report.passed_checks)
+                    )
 
     def test_bom_notebook_entrypoint_takes_the_ast_path(self):
         # A BOM breaks json.loads exactly as it breaks ast.parse -- the
@@ -6155,6 +6447,78 @@ class TestPhase11_1Code(unittest.TestCase):
             self.assertEqual(len(found), 1)
             self.assertEqual(found[0].severity, Severity.HIGH)
             self.assertNotIn("DSX-CODE-030", codes(report))
+
+    # -- GAP-2 (SC4): the prose mask reaches DSX-CODE-030/031 too ------------
+
+    def test_docstring_mentioning_a_stat_test_draws_no_code_030(self):
+        # A module docstring merely MENTIONING a statistical-test call on
+        # the declared target must not decide a CRITICAL verdict.
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(
+                tmp,
+                "\"\"\"We considered ttest_ind(df['Exited'], x) but skipped "
+                "it.\"\"\"\n"
+                "from sklearn.model_selection import train_test_split\n"
+                "train_test_split(df)\n",
+            )
+            report = self._check_with_target(tmp, entry, "Exited")
+            self.assertNotIn("DSX-CODE-030", codes(report))
+
+    def test_docstring_after_the_split_mentioning_a_stat_test_draws_no_code_031(
+        self,
+    ):
+        # Same masking, applied to a FUNCTION docstring placed after the
+        # split -- Rule A masks every bare string statement, module,
+        # class or function.
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(
+                tmp,
+                "from sklearn.model_selection import train_test_split\n"
+                "train_test_split(df)\n"
+                "def helper():\n"
+                "    \"\"\"ttest_ind(df['Exited'], x) is not actually "
+                "called here.\"\"\"\n",
+            )
+            report = self._check_with_target(tmp, entry, "Exited")
+            self.assertNotIn("DSX-CODE-031", codes(report))
+
+    def test_prose_only_target_reference_draws_no_code_030_for_a_real_stat_test_call(
+        self,
+    ):
+        # A REAL chi2_contingency(table) call whose ONLY target reference
+        # sits on a masked prose line inside the lookback window must not
+        # fire -- the mask applies to BOTH places
+        # _stat_test_lines_referencing reads `lines`: the candidate line
+        # itself, and the lookback window that supplies the target
+        # reference.
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(
+                tmp,
+                "\"\"\"dataset['Exited'] is the target column.\"\"\"\n"
+                "table = pd.crosstab(x, y)\n"
+                "chi2_contingency(table)\n"
+                "from sklearn.model_selection import train_test_split\n"
+                "train_test_split(x)\n",
+            )
+            report = self._check_with_target(tmp, entry, "Exited")
+            self.assertNotIn("DSX-CODE-030", codes(report))
+
+    def test_real_target_reference_still_fires_code_030_with_the_mask_wired(self):
+        # Control: masking prose must not delete a true positive.
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(
+                tmp,
+                "import pandas as pd\n"
+                "table = pd.crosstab(x, df['Exited'])\n"
+                "chi2_contingency(table)\n"
+                "from sklearn.model_selection import train_test_split\n"
+                "train_test_split(x)\n",
+            )
+            report = self._check_with_target(tmp, entry, "Exited")
+            found = [f for f in report.findings if f.code == "DSX-CODE-030"]
+            self.assertEqual(len(found), 1)
+            self.assertEqual(found[0].severity, Severity.CRITICAL)
+            self.assertIn("Line 3", found[0].detail)
 
     def test_call_on_same_line_as_split_marker_is_at_or_after(self):
         # The comparison is strictly-less-than for "before", never <=.
@@ -6819,13 +7183,18 @@ class TestPhase11_1Code(unittest.TestCase):
     def test_split_marker_on_the_opening_or_closing_line_of_a_multiline_string_still_counts(
         self,
     ):
-        """Completes blocker B2's boundary proof for the one place the
-        prose mask is actually wired in the shipped code (the split-marker
-        text scan; see test_multiline_string_interior_line_stays_
-        uncaught_by_design above, task 1). Rule B masks only strictly
-        interior lines -- the opening and closing lines of a multi-line
-        string are spared, so a split marker written on either one still
-        counts as a split."""
+        """Completes blocker B2's boundary proof for the split-marker text
+        scan (see test_multiline_string_interior_line_stays_
+        uncaught_by_design above, task 1) -- one of the THREE places the
+        prose mask is wired after Phase 11.1.1 plan 04 task 2 (GAP-2, SC4)
+        also threaded it into the full-frame-cleaning and statistical-test
+        scans. Rule B masks only strictly interior lines -- the opening and
+        closing lines of a multi-line string are spared, so a split marker
+        written on either one still counts as a split. That is the SAME
+        boundary all three consumers share, which is why it becomes
+        user-visible for DSX-CODE-020 for the first time in plan 04 task 2
+        (see test_multiline_string_opening_line_still_fires_code_020_
+        stays_uncaught_by_design)."""
         for source, label in (
             (
                 "sql = " + '"""' + "train_test_split\n"

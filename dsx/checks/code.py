@@ -90,14 +90,20 @@ RESAMPLE_BEFORE_RE = re.compile(
 # positions when the overall match fails everywhere. Only bounding the
 # repetition (so each retry costs O(1), not O(remaining-length)) makes it
 # linear by construction: 0.0003 / 0.0006 / 0.0012 / 0.0026 / 0.0048 s at
-# the same sizes, and 0.33 s even at n = 256,000. The bound trades one
-# real miss for that guarantee -- a `Pipeline(...)` argument list longer
-# than 200 characters, or one containing a nested `)` (e.g. a nested
-# tuple), no longer matches; `examples/` has no `Pipeline(` occurrence at
-# all, so no fixture is affected. Match set unchanged across 14 probe
-# shapes except that one nested-paren case, which the mere `.*` ->
-# `[^)\n]*` swap already excludes on its own (a `)` inside the argument
-# list was never going to survive dropping `.`).
+# the same sizes, and 0.33 s even at n = 256,000.
+#
+# Phase 11.1.1 plan 04 (WR-01, documentation half). The bound above does
+# trade away a `Pipeline(...)` argument list longer than 200 characters,
+# or one containing a nested `)` (e.g. a nested tuple) -- but for either
+# shape, DSX-CODE-001's verdict on the FALLBACK is unchanged: any such
+# line still contains a literal `.fit(`, which `FIT_LEAK_MARKERS`' first
+# pattern (`\.fit\s*\(`) already matches, and `_first_fit_leak_line`
+# returns the same index from either branch. The case this pattern still
+# uniquely distinguishes is a whitespace-separated dot --
+# `Pipeline(steps) . fit (X_train)` -- which `\.fit\s*\(` cannot match
+# because it requires the dot and the method name to be adjacent.
+# Measured, not reasoned: on that exact line, `PIPELINE_FIT_TRAIN_RE.search`
+# returns a match and no `FIT_LEAK_MARKERS` pattern does.
 PIPELINE_FIT_TRAIN_RE = re.compile(
     r"(?i)Pipeline\s*\([^)\n]{0,200}\)\s*\.\s*fit\s*\(\s*X_train\b"
 )
@@ -165,24 +171,43 @@ TRAINING_FRAME_NAMES = (
 # `[A-Za-z_]`.
 #
 # Phase 11.1.1 plan 02 (§2.2/§3.4 of 11.1.1-AST-DESIGN.md, Edit F). Widened so
-# the FALLBACK agrees with the AST path instead of contradicting it:
 # `partial_fit` joins the alternation (longest-first, so it is tried before the
 # `fit` prefix it would otherwise partially match) to match FIT_METHOD_NAMES,
-# and an OPTIONAL keyword prefix is added, gated on the SAME
-# FIT_FIRST_PARAM_NAMES allowlist `_first_argument` uses. An any-identifier
-# prefix would make `model.fit(y=y_test)` a CRITICAL finding on the fallback
-# while the AST path stays silent -- two mechanisms disagreeing about one
-# source line, in the false-positive direction, on a path one stray character
-# reaches (T-11.1.1-07). The capture group and the trailing `\s*[),]` stay
-# byte-identical to the pre-widened pattern: the capture is still the VALUE,
-# never the keyword name, and the trailing requirement still makes a call with
-# no closing parenthesis fail to match rather than capture a truncated token.
-# Re-measured, not inherited (11.1.1-RESEARCH.md Pitfall 6): 0.0000 s on
-# 19,995 non-matching characters, 0.0003 s on a 1,000,000-character `x=`
-# near-miss -- see test_fit_call_re_timing_no_catastrophic_backtracking_with_
-# keyword_form.
+# and an OPTIONAL keyword prefix is added before the captured value, gated on
+# the SAME FIT_FIRST_PARAM_NAMES allowlist `_first_argument` uses. An
+# any-identifier prefix would make `model.fit(y=y_test)` a CRITICAL finding on
+# the fallback while the AST path stays silent -- a false-positive flood in
+# exactly the direction T-11.1.1-07 names. This narrowed, but did not close,
+# the gap between the two mechanisms: it only recognised an allowlisted
+# keyword when it was the FIRST token after the opening parenthesis, so
+# `model.fit(y=y_train, X=full_frame)` -- a real post-split leak, caught on
+# the AST path -- still produced zero matches here (verification's GAP-1,
+# reproduced against the shipped code).
+#
+# Phase 11.1.1 plan 04 (GAP-1, SC2). Widened again to skip a bounded run of
+# NON-allowlisted `name = value ,` pairs before the recognised keyword, so an
+# allowlisted keyword resolves at any position up to a stated bound rather
+# than only the first. The skip fragment's inner character run is bounded at
+# `{0,80}` and the whole repetition at `{0,8}` -- both explicit, both pinned
+# by test_keyword_beyond_the_skip_bound_stays_uncaught_by_design_on_the_
+# fallback, which stays silent when a real leak's keyword arrives after more
+# skipped keywords than the bound allows. Widening POSITION never widens
+# MEMBERSHIP: the allowlist itself, the capture group and the trailing
+# `\s*[),]` are unchanged, so the capture is still the VALUE, never the
+# keyword name, and a call with no closing parenthesis still fails to match
+# rather than capture a truncated token. A `(?!=)` guard on the skip
+# fragment's `=` keeps an equality comparison (`model.fit(a==b, y)`) from
+# being misread as a keyword argument. This still does not make the two
+# mechanisms agree in general: beyond the stated bound, or for any argument
+# shape this pattern cannot express, the fallback finds nothing where the
+# parsed path still does -- nothing here makes DSX-CODE-021, or any
+# DSX-CODE-*, sound, complete or exhaustive. Re-measured, not inherited
+# (11.1.1-RESEARCH.md Pitfall 6): see
+# test_fit_call_re_timing_no_catastrophic_backtracking_with_reordered_
+# keyword_form for this shape's own figures.
 FIT_CALL_RE = re.compile(
     r"\.(?:fit_transform|partial_fit|fit)\s*\(\s*"
+    r"(?:[A-Za-z_]\w*\s*=(?!=)\s*[^(),\n]{0,80},\s*){0,8}"
     r"(?:(?:X|x|data|df|frame|features)\s*=\s*)?"
     r"([A-Za-z_][\w.\[\]'\"]*)\s*[),]"
 )
@@ -354,8 +379,15 @@ def _prose_line_indices(tree: "ast.AST") -> "frozenset[int]":
     `df['Age'] = df['Age'].fillna(df['Age'].mean())` sits on three
     single-line string constants and must not be masked.
 
-    In this wave the mask has exactly one consumer: the split-marker text
-    scan, via `_first_line_matching`'s `masked` parameter (Decision 5).
+    Phase 11.1.1 plan 04 (GAP-2, SC4): the mask has THREE consumers on the
+    parsed path -- the split-marker text scan, via `_first_line_matching`'s
+    `masked` parameter (Decision 5); the full-frame-cleaning scan, via
+    `_first_full_frame_cleaning_line`'s `masked` parameter; and the
+    statistical-test scan, via `_stat_test_lines_referencing`'s `masked`
+    parameter, including its `_TARGET_REFERENCE_LOOKBACK` window. The mask
+    is EMPTY on the fallback path -- there is no tree to derive it from --
+    so the docstring false positive this plan closes on the parsed path
+    for DSX-CODE-020, DSX-CODE-030 and DSX-CODE-031 persists there.
     """
     masked: "set[int]" = set()
     for node in ast.walk(tree):
@@ -394,13 +426,19 @@ def _first_argument(node: "ast.Call") -> "ast.AST | None":
        `arg` is in `FIT_FIRST_PARAM_NAMES` (`model.fit(X=data, y=target)`
        -> `data`; `**kwargs` has `arg is None` and is skipped).
     3. Otherwise `None`.
-    4. **If the resolved node is an `ast.Constant`, return `None`.** No
-       token, no finding. This preserves today's documented exclusion of
-       `model.fit(42)` and extends it to strings and `None`/`True`/`False`
-       -- all four are `ast.Constant`, so one rule covers the class.
-       Without this rule the primary path would newly emit a CRITICAL
-       finding reading "fits on '42'", naming a token that is not a frame
-       at all.
+    4. **If the resolved node is an `ast.Constant` or an `ast.Compare`,
+       return `None`.** No token, no finding. The `ast.Constant` rule
+       preserves today's documented exclusion of `model.fit(42)` and
+       extends it to strings and `None`/`True`/`False` -- all four are
+       `ast.Constant`, so one rule covers the class. The `ast.Compare` rule
+       (Phase 11.1.1 plan 04, GAP-1's false-positive-guard test) covers
+       `model.fit(a==b, y)`: an equality comparison in the first positional
+       slot is not a keyword argument and is not a frame reference either,
+       so rendering it (`ast.unparse` -> `"a == b"`) and reporting it as
+       "not a recognised training frame" would be a false-positive finding
+       naming a token that was never a candidate frame. Without either rule
+       the primary path would newly emit a CRITICAL finding naming a token
+       that is not a frame at all.
     """
     resolved: "ast.AST | None" = None
     if node.args and not isinstance(node.args[0], ast.Starred):
@@ -410,7 +448,7 @@ def _first_argument(node: "ast.Call") -> "ast.AST | None":
             if kw.arg is not None and kw.arg in FIT_FIRST_PARAM_NAMES:
                 resolved = kw.value
                 break
-    if isinstance(resolved, ast.Constant):
+    if isinstance(resolved, (ast.Constant, ast.Compare)):
         return None
     return resolved
 
@@ -509,11 +547,14 @@ def check(spec: dict, phase_dir: "str | None" = None) -> Report:
     source = _read_source(path)
     if source is None:
         # _read_source returns None for an unresolvable OSError, an
-        # unsupported suffix, or an unparseable notebook JSON document — it
-        # does not distinguish which, so this reason names the whole class.
+        # unsupported suffix, an unparseable notebook JSON document, or a
+        # notebook document that IS valid JSON but is not a cell-bearing
+        # object (Phase 11.1.1 plan 04, GAP-3) — it does not distinguish
+        # which, so this reason names the whole class.
         report.ok(
             "entrypoint NOT scanned — could not be read (unreadable, "
-            "unsupported suffix, or invalid notebook JSON) (no leak scan ran)"
+            "unsupported suffix, invalid notebook JSON, or a notebook "
+            "document that is not a cell-bearing object) (no leak scan ran)"
         )
         return report
 
@@ -589,7 +630,7 @@ def check(spec: dict, phase_dir: "str | None" = None) -> Report:
             fit_line=first_fit + 1,
         )
 
-    cleaning_index = _first_full_frame_cleaning_line(lines)
+    cleaning_index = _first_full_frame_cleaning_line(lines, masked=prose_mask)
     cleaning_blocked = cleaning_index is not None and (
         first_split is None or cleaning_index < first_split
     )
@@ -717,7 +758,9 @@ def check(spec: dict, phase_dir: "str | None" = None) -> Report:
     raw_target = model_section.get("target")
     target_text = raw_target if isinstance(raw_target, str) else ""
     stat_test_lines = (
-        [] if is_blank(target_text) else _stat_test_lines_referencing(lines, target_text)
+        []
+        if is_blank(target_text)
+        else _stat_test_lines_referencing(lines, target_text, masked=prose_mask)
     )
 
     stat_before_index: "int | None" = None
@@ -1058,8 +1101,32 @@ def _read_source(path: Path) -> str | None:
             nb = json.loads(path.read_text(encoding="utf-8-sig"))
         except (OSError, json.JSONDecodeError):
             return None
+        # Phase 11.1.1 plan 04 (GAP-3, SC5). Valid JSON guarantees nothing
+        # about SHAPE: `[]` and `null` are both valid JSON documents with
+        # no `.get` method, and a `cells` entry can itself be anything JSON
+        # allows (a bare string, a number, ...). Returning None here routes
+        # into check()'s existing `source is None` -- "could not be read"
+        # -- branch instead of letting `nb.get("cells")` raise AttributeError
+        # uncaught out of check(), a raw traceback with the same exit code
+        # (1) EXIT_BLOCK uses, which defeats the documented contract that
+        # exit 2 means "the check could not run".
+        if not isinstance(nb, dict):
+            return None
         chunks: list[str] = []
         for cell in nb.get("cells") or []:
+            # A non-object cell is returned as None -- NOT skipped with
+            # `continue` -- for two reasons, both measured while planning.
+            # `continue` reads a cell like the bare string "x" as
+            # contributing no lines, so a document whose only cell is
+            # malformed would scan as the EMPTY string: check() would then
+            # print the affirmative "entrypoint parsed with ast" pass line
+            # over a document nothing was actually read from -- a silent
+            # pass, which SC5 forbids. Silently dropping a cell would also
+            # renumber every line below it, breaking the byte-identical
+            # notebook line geometry plans 01 and 02 built the markdown
+            # character-wise blanking to preserve.
+            if not isinstance(cell, dict):
+                return None
             cell_type = cell.get("cell_type")
             is_code = cell_type == "code"
             is_markdown = cell_type == "markdown"
@@ -1147,13 +1214,24 @@ def _first_fit_leak_line(lines: list[str]) -> int | None:
     return None
 
 
-def _first_full_frame_cleaning_line(lines: list[str]) -> int | None:
+def _first_full_frame_cleaning_line(
+    lines: list[str], masked: "frozenset[int]" = frozenset()
+) -> int | None:
     """Lowest line index satisfying `_is_full_frame_impute` or
     `_is_full_frame_spread_filter` (REQ-P11.1-01). Repeats `_first_line_matching`'s
     skip guard rather than reusing it — that helper takes plain substrings, this
     one takes co-occurrence predicates, and merging the two would widen a function
-    three shipped codes already depend on."""
+    three shipped codes already depend on.
+
+    Phase 11.1.1 plan 04 (GAP-2, SC4): `masked` -- zero-based line indices
+    from `_prose_line_indices` -- is skipped BEFORE the existing
+    comment/import guard, identical in name, type, default and skip
+    placement to `_first_line_matching`'s own `masked` parameter, so the
+    module has one masking convention rather than two. Empty by default,
+    so a caller that does not pass it is unaffected."""
     for index, line in enumerate(lines):
+        if index in masked:
+            continue
         stripped = line.strip()
         if stripped.startswith("#"):
             continue
@@ -1177,10 +1255,14 @@ def _fit_call_arguments(lines: list[str]) -> "list[tuple[int, str]]":
     trailing `\\s*[),]` is what still keeps a malformed call (no closing
     parenthesis, or a bare numeric first argument) out -- a call that fails
     to match yields no match object for `finditer` to iterate over, exactly
-    as it yielded none for `search` to return. The keyword prefix is
-    allowlisted to the same `FIT_FIRST_PARAM_NAMES` the AST path accepts
-    (Edit F), so the two mechanisms agree about which keyword names a
-    training frame instead of disagreeing on it.
+    as it yielded none for `search` to return. The recognised keyword is
+    allowlisted to the same `FIT_FIRST_PARAM_NAMES` the AST path accepts, and
+    Phase 11.1.1 plan 04 widened the pattern to resolve that keyword at any
+    position in the argument list, up to a bounded skip count, rather than
+    only the first token. That widening narrows, but does not eliminate, the
+    gap between the two mechanisms: beyond the stated bound, and for any
+    argument shape the pattern cannot express, the fallback still finds
+    nothing where the parsed path does.
 
     Exactly ONE extraction path exists per mechanism: no `search`-based
     single-match variant survives beside this one (plan 02 prohibition 3)."""
@@ -1207,11 +1289,23 @@ def _is_training_frame(token: str) -> bool:
     return any(token.startswith(name) for name in TRAINING_FRAME_NAMES)
 
 
-def _stat_test_lines_referencing(lines: list[str], target: str) -> list[int]:
+def _stat_test_lines_referencing(
+    lines: list[str], target: str, masked: "frozenset[int]" = frozenset()
+) -> list[int]:
     """Indices of non-comment, non-import lines where `STAT_TEST_CALL_RE`
     matches, and either that line itself or one of the
     `_TARGET_REFERENCE_LOOKBACK` (three) lines immediately preceding it
     references `target` (REQ-P11.1-03).
+
+    Phase 11.1.1 plan 04 (GAP-2, SC4): `masked` -- zero-based line indices
+    from `_prose_line_indices`, identical in name, type and default to
+    `_first_line_matching`'s and `_first_full_frame_cleaning_line`'s own
+    `masked` parameters -- is applied in BOTH places this function reads
+    `lines`: a masked line is skipped as a CANDIDATE statistical-test-call
+    line, and a masked line is excluded from the lookback window before the
+    target-reference search runs, so a prose line cannot supply the target
+    reference that decides a real call's verdict. Empty by default, so a
+    caller that does not pass it is unaffected.
 
     The lookback exists because the reproduction's own idiom
     (`references/The AI Data Scientist.md`, Table 1) builds the contingency
@@ -1243,6 +1337,8 @@ def _stat_test_lines_referencing(lines: list[str], target: str) -> list[int]:
     )
     results: list[int] = []
     for index, line in enumerate(lines):
+        if index in masked:
+            continue
         stripped = line.strip()
         if stripped.startswith("#"):
             continue
@@ -1251,7 +1347,11 @@ def _stat_test_lines_referencing(lines: list[str], target: str) -> list[int]:
         if not STAT_TEST_CALL_RE.search(line):
             continue
         window_start = max(0, index - _TARGET_REFERENCE_LOOKBACK)
-        window = lines[window_start : index + 1]
+        window = [
+            candidate
+            for offset, candidate in enumerate(lines[window_start : index + 1])
+            if (window_start + offset) not in masked
+        ]
         if any(reference_re.search(candidate) for candidate in window):
             results.append(index)
     return results
