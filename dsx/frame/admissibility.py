@@ -18,6 +18,7 @@ Applies D-05, D-18 and the run-time half of D-24.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from functools import cmp_to_key
 from pathlib import Path
 
 from ..findings import CheckError
@@ -389,4 +390,150 @@ def resolve_declared_procedure(
         family_id="",
         outside_axes=(),
         detail=f"{declared!r} does not match any known alias in the ontology.",
+    )
+
+
+# Non-rule placement reasons -- named constants so a test asserts against a
+# name rather than a repeated string literal. Neither is a RankingRule id
+# and neither ever collides with one: ranking_rules: ids in families.yaml are
+# authored short handles (e.g. "welch_over_students"), never these two
+# reserved sentences.
+_MANSKI_RULE = "manski_fewer_assumptions_charged"
+_TIEBREAK_RULE = "lexicographic_id_tiebreak"
+
+
+@dataclass(frozen=True)
+class RankedEntry:
+    """One ranked admissible-set entry -- the shape both `admissible_families()`
+    (task 2) and `DSX-ADM-010` (task 3) build on. `rank` runs 1 upward with no
+    gaps; `placed_by` names the mechanism that placed this entry immediately
+    below its predecessor -- a `RankingRule.id`, `_MANSKI_RULE`, or
+    `_TIEBREAK_RULE` -- and is the empty string for the rank-1 entry, because
+    nothing sits above it to place it."""
+
+    rank: int
+    id: str
+    family: str
+    buys: "tuple[str, ...]"
+    charges: "tuple[str, ...]"
+    citation: str
+    locator_status: str
+    notes: str
+    placed_by: str
+
+
+def _preference_reason(
+    preferred_id: str, dominated_id: str, applicable_rules: "tuple[RankingRule, ...]"
+) -> "str | None":
+    """The id of the applicable rule whose `prefers` is `preferred_id` and whose
+    `over` is `dominated_id`, or `None` when no such rule is applicable."""
+    for rule in applicable_rules:
+        if rule.prefers == preferred_id and rule.over == dominated_id:
+            return rule.id
+    return None
+
+
+def rank_admissible(
+    candidates: "tuple[Family, ...]", rules: "tuple[RankingRule, ...]"
+) -> "tuple[RankedEntry, ...]":
+    """Order `candidates` by a cited pairwise rule table, a fewer-assumptions
+    credibility fallback, and a lexicographic identifier tiebreak -- never by
+    a numeric score.
+
+    This is a rule table and not a scoring function, because admissibility is
+    a partial order by construction: no uniformly most powerful test exists
+    for a two-sided or a general composite alternative, so no single number
+    could honestly stand in for "how good is this family" across every
+    candidate pair. The fewer-assumptions fallback branch is Manski's Law of
+    Decreasing Credibility (Manski, C.F. (2003), Partial Identification of
+    Probability Distributions, Introduction) -- a statement about how much an
+    analyst has to assume to license a conclusion, about credibility, never
+    about statistical efficiency or power. The base sort by
+    `(len(charges), id)` plus a stable comparator-driven sort is what
+    guarantees the same candidate set always produces the same order, even if
+    the pairwise rules in `references/families.yaml` ever stopped being
+    mutually transitive: the base ordering is itself a total order, so the
+    combined result never depends on which order the caller happened to pass
+    `candidates` in.
+
+    Returns an empty tuple for an empty `candidates`, and a single rank-1
+    entry with an empty `placed_by` for a one-element `candidates` -- neither
+    case raises.
+    """
+    if not candidates:
+        return ()
+
+    candidate_ids = frozenset(family.id for family in candidates)
+    applicable_rules = tuple(
+        rule
+        for rule in rules
+        if rule.prefers in candidate_ids and rule.over in candidate_ids
+    )
+
+    base_ordering = sorted(candidates, key=lambda family: (len(family.charges), family.id))
+
+    def _compare(a: Family, b: Family) -> int:
+        if _preference_reason(a.id, b.id, applicable_rules) is not None:
+            return -1
+        if _preference_reason(b.id, a.id, applicable_rules) is not None:
+            return 1
+        if len(a.charges) != len(b.charges):
+            return -1 if len(a.charges) < len(b.charges) else 1
+        if a.id != b.id:
+            return -1 if a.id < b.id else 1
+        return 0
+
+    ordered = sorted(base_ordering, key=cmp_to_key(_compare))
+
+    entries: "list[RankedEntry]" = []
+    for index, family in enumerate(ordered):
+        if index == 0:
+            placed_by = ""
+        else:
+            predecessor = ordered[index - 1]
+            reason = _preference_reason(predecessor.id, family.id, applicable_rules)
+            if reason is not None:
+                placed_by = reason
+            elif len(predecessor.charges) != len(family.charges):
+                placed_by = _MANSKI_RULE
+            else:
+                placed_by = _TIEBREAK_RULE
+        entries.append(
+            RankedEntry(
+                rank=index + 1,
+                id=family.id,
+                family=family.family,
+                buys=family.buys,
+                charges=family.charges,
+                citation=family.citation,
+                locator_status=family.locator_status,
+                notes=family.notes,
+                placed_by=placed_by,
+            )
+        )
+    return tuple(entries)
+
+
+def dominating_rules(
+    family_id: str,
+    candidates: "tuple[Family, ...]",
+    rules: "tuple[RankingRule, ...]",
+) -> "tuple[RankingRule, ...]":
+    """Rules whose `over` is `family_id` and whose `prefers` is also a member
+    of `candidates`, ordered as they appear in `rules` (ontology order).
+
+    This is the predicate `DSX-ADM-010` (task 3) keys on, kept separate from
+    `rank_admissible()` so that ordering a candidate set and asserting a
+    domination against one specific family stay two different questions.
+    Returns an empty tuple for a one-element `candidates` -- a lone candidate
+    can never be dominated by a rule whose preferred side is absent from its
+    own candidate set.
+    """
+    if len(candidates) <= 1:
+        return ()
+    candidate_ids = frozenset(family.id for family in candidates)
+    return tuple(
+        rule
+        for rule in rules
+        if rule.over == family_id and rule.prefers in candidate_ids
     )
