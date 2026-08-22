@@ -787,7 +787,7 @@ overturns a phase-research conclusion, not an entry in the `brief.md` D-table or
      moves, it is surfaced and justified in both directions — never absorbed by editing
      `_TARGET_DEFECT_CODES`, `_EXPECTED_CAUGHT_DEFECTS` or `_INCIDENTAL_GAP_CODES`.
 
-**Plans**: 4/5 plans executed
+**Plans**: 5/5 plans executed
 (`11.1.1-VERIFICATION.md`) returned `gaps_found` at 3/6 success criteria: SC2, SC4 and SC5 each
 falsified by evidence reproduced directly against the shipped code. Plans 04 and 05 close them.
 
@@ -810,7 +810,7 @@ Plans:
 
 **Gap closure — Wave 2** *(blocked on gap-closure Wave 1)*
 
-- [ ] 11.1.1-05-PLAN.md — announce both directions of the resulting behaviour change in `README.md`, disclose the three residues that stay uncaught, extend the committed end-to-end variant table so the headline number measures the remediation, re-prove SC6 on both interpreters, and carry WR-02 and the honesty-tone judgment forward to the end-of-phase human check unresolved
+- [x] 11.1.1-05-PLAN.md — announce both directions of the resulting behaviour change in `README.md`, disclose the three residues that stay uncaught, extend the committed end-to-end variant table so the headline number measures the remediation, re-prove SC6 on both interpreters, and carry WR-02 and the honesty-tone judgment forward to the end-of-phase human check unresolved
 
 Note: the re-scope removed the line citations that used to sit in criteria 1 and 3
 (`dsx/checks/code.py:505`, `:541`), which were already stale as of commit `06ff2d7` and were
@@ -965,7 +965,7 @@ cases where absence permitted a false pass" is a debate, not a count.
 | 10. Pre-registered inference plan (`DSX-PRE-*`) | 6/6 | In Progress|  |
 | 11. Frequentist admissibility adjudicator (`DSX-ADM-*`) | 4/8 | In Progress|  |
 | 11.1 Generated-pipeline reality | 8/8 | Complete | 2026-08-21 |
-| 11.1.1 Detection-code hardening | 4/5 | In Progress|  |
+| 11.1.1 Detection-code hardening | 5/5 | In Progress|  |
 | 12. Calibration | 0/TBD | Not started | - |
 
 ## Dependency graph — v2.0.0
