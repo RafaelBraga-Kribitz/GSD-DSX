@@ -4653,6 +4653,97 @@ class TestPhase11_1Code(unittest.TestCase):
         )
         self.assertNotIn("DSX-CODE-020", codes(report))
 
+    # -- GAP-2 (SC4): the prose mask reaches DSX-CODE-020 too -----------------
+
+    def test_docstring_describing_a_cleaning_idiom_draws_no_code_020(self):
+        # A module docstring merely DESCRIBING a cleaning idiom must not
+        # decide a CRITICAL verdict on the parsed path -- masked exactly as
+        # the split-marker text scan already masks a bare string statement.
+        multiline = (
+            '"""\n'
+            "We deliberately avoid df.fillna(df.mean()) before splitting.\n"
+            '"""\n'
+            "from sklearn.model_selection import train_test_split\n"
+            "train_test_split(df)\n"
+        )
+        single_line = (
+            '"""We deliberately avoid df.fillna(df.mean()) before splitting."""\n'
+            "from sklearn.model_selection import train_test_split\n"
+            "train_test_split(df)\n"
+        )
+        for label, text in (("multiline", multiline), ("single_line", single_line)):
+            with self.subTest(form=label):
+                with tempfile.TemporaryDirectory() as tmp:
+                    entry = self._entrypoint(tmp, text)
+                    report = self._check(tmp, entry)
+                    self.assertNotIn("DSX-CODE-020", codes(report))
+
+    def test_real_cleaning_idiom_still_fires_code_020_with_the_mask_wired(self):
+        # Control: masking prose must not delete a true positive.
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(
+                tmp,
+                "from sklearn.model_selection import train_test_split\n"
+                "df['Age'] = df['Age'].fillna(df['Age'].mean())\n"
+                "train_test_split(df)\n",
+            )
+            report = self._check(tmp, entry)
+            found = [f for f in report.findings if f.code == "DSX-CODE-020"]
+            self.assertEqual(len(found), 1)
+            self.assertEqual(found[0].severity, Severity.CRITICAL)
+            self.assertIn("Line 2", found[0].detail)
+
+    def test_multiline_string_opening_line_still_fires_code_020_stays_uncaught_by_design(
+        self,
+    ):
+        """Deliberate limit that survives this task's fix, not a bug: Rule B
+        (`_prose_line_indices`) masks only the STRICTLY INTERIOR lines of a
+        multi-line string constant, sparing the opening and closing lines
+        because either can carry real code. Here the opening line of a
+        multi-line string constant merely CONTAINS the text
+        "df.fillna(df.mean())" as part of the string's own VALUE -- not
+        real code -- but the text scanner reads physical lines, not string
+        values, and the opening line is not in the mask. This is a REAL
+        false positive that this task does not close. If this test ever
+        fails because the finding disappeared, that is good news and the
+        test should be promoted to a firing test rather than deleted.
+        """
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(
+                tmp,
+                'sql = """x; df = df.fillna(df.mean())\n'
+                "abc\n"
+                '"""\n',
+            )
+            report = self._check(tmp, entry)
+            self.assertIn("DSX-CODE-020", codes(report))
+
+    def test_docstring_still_fires_code_020_on_the_fallback_stays_uncaught_by_design(
+        self,
+    ):
+        """Deliberate limit that survives this task's fix, not a bug: on
+        the FALLBACK path there is no ast tree, so `prose_mask` is the
+        empty frozenset and the docstring false positive this task closes
+        on the PRIMARY path persists here. A REAL false positive, knowingly
+        outside the fallback's reach. If this test ever fails because the
+        finding disappeared, that is good news and the
+        test should be promoted to a firing test rather than deleted.
+        """
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(
+                tmp,
+                '"""We deliberately avoid df.fillna(df.mean()) before splitting."""\n'
+                "from sklearn.model_selection import train_test_split\n"
+                "train_test_split(df)\n"
+                "unclosed(\n",
+            )
+            report = self._check(tmp, entry)
+            self.assertIn("DSX-CODE-020", codes(report))
+            reached_fallback = any(
+                "fallback scan" in line for line in report.passed_checks
+            )
+            self.assertTrue(reached_fallback)
+
     def test_full_frame_impute_predicate_matches_paper_style_idiom(self):
         from dsx.checks import code as code_mod
 
@@ -6302,6 +6393,78 @@ class TestPhase11_1Code(unittest.TestCase):
             self.assertEqual(len(found), 1)
             self.assertEqual(found[0].severity, Severity.HIGH)
             self.assertNotIn("DSX-CODE-030", codes(report))
+
+    # -- GAP-2 (SC4): the prose mask reaches DSX-CODE-030/031 too ------------
+
+    def test_docstring_mentioning_a_stat_test_draws_no_code_030(self):
+        # A module docstring merely MENTIONING a statistical-test call on
+        # the declared target must not decide a CRITICAL verdict.
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(
+                tmp,
+                "\"\"\"We considered ttest_ind(df['Exited'], x) but skipped "
+                "it.\"\"\"\n"
+                "from sklearn.model_selection import train_test_split\n"
+                "train_test_split(df)\n",
+            )
+            report = self._check_with_target(tmp, entry, "Exited")
+            self.assertNotIn("DSX-CODE-030", codes(report))
+
+    def test_docstring_after_the_split_mentioning_a_stat_test_draws_no_code_031(
+        self,
+    ):
+        # Same masking, applied to a FUNCTION docstring placed after the
+        # split -- Rule A masks every bare string statement, module,
+        # class or function.
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(
+                tmp,
+                "from sklearn.model_selection import train_test_split\n"
+                "train_test_split(df)\n"
+                "def helper():\n"
+                "    \"\"\"ttest_ind(df['Exited'], x) is not actually "
+                "called here.\"\"\"\n",
+            )
+            report = self._check_with_target(tmp, entry, "Exited")
+            self.assertNotIn("DSX-CODE-031", codes(report))
+
+    def test_prose_only_target_reference_draws_no_code_030_for_a_real_stat_test_call(
+        self,
+    ):
+        # A REAL chi2_contingency(table) call whose ONLY target reference
+        # sits on a masked prose line inside the lookback window must not
+        # fire -- the mask applies to BOTH places
+        # _stat_test_lines_referencing reads `lines`: the candidate line
+        # itself, and the lookback window that supplies the target
+        # reference.
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(
+                tmp,
+                "\"\"\"dataset['Exited'] is the target column.\"\"\"\n"
+                "table = pd.crosstab(x, y)\n"
+                "chi2_contingency(table)\n"
+                "from sklearn.model_selection import train_test_split\n"
+                "train_test_split(x)\n",
+            )
+            report = self._check_with_target(tmp, entry, "Exited")
+            self.assertNotIn("DSX-CODE-030", codes(report))
+
+    def test_real_target_reference_still_fires_code_030_with_the_mask_wired(self):
+        # Control: masking prose must not delete a true positive.
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(
+                tmp,
+                "import pandas as pd\n"
+                "table = pd.crosstab(x, df['Exited'])\n"
+                "chi2_contingency(table)\n"
+                "from sklearn.model_selection import train_test_split\n"
+                "train_test_split(x)\n",
+            )
+            report = self._check_with_target(tmp, entry, "Exited")
+            found = [f for f in report.findings if f.code == "DSX-CODE-030"]
+            self.assertEqual(len(found), 1)
+            self.assertEqual(found[0].severity, Severity.CRITICAL)
+            self.assertIn("Line 3", found[0].detail)
 
     def test_call_on_same_line_as_split_marker_is_at_or_after(self):
         # The comparison is strictly-less-than for "before", never <=.
