@@ -787,9 +787,16 @@ overturns a phase-research conclusion, not an entry in the `brief.md` D-table or
      moves, it is surfaced and justified in both directions — never absorbed by editing
      `_TARGET_DEFECT_CODES`, `_EXPECTED_CAUGHT_DEFECTS` or `_INCIDENTAL_GAP_CODES`.
 
-**Plans**: 5/5 plans executed
+**Plans**: 7 plans (5 executed, 2 planned)
 (`11.1.1-VERIFICATION.md`) returned `gaps_found` at 3/6 success criteria: SC2, SC4 and SC5 each
 falsified by evidence reproduced directly against the shipped code. Plans 04 and 05 close them.
+Re-verification after 04 and 05 scored 5/6: SC2 and SC4 are genuinely closed, **SC5 is still
+falsified**. Five malformed-notebook shapes reach the `.ipynb` branch of `_read_source` and
+either raise uncaught (non-UTF-8 bytes, a `cells` value that is a non-iterable scalar, a
+non-string element in a `source` list, and — found while planning plans 06/07, named by neither
+the verification report nor the code review — a document nested past the interpreter's recursion
+limit) or return the empty string and take the affirmative parsed pass line over a document
+nothing was read from. Plans 06 and 07 close the code half and the honesty half.
 
 Plans:
 **Wave 1**
@@ -811,6 +818,14 @@ Plans:
 **Gap closure — Wave 2** *(blocked on gap-closure Wave 1)*
 
 - [x] 11.1.1-05-PLAN.md — announce both directions of the resulting behaviour change in `README.md`, disclose the three residues that stay uncaught, extend the committed end-to-end variant table so the headline number measures the remediation, re-prove SC6 on both interpreters, and carry WR-02 and the honesty-tone judgment forward to the end-of-phase human check unresolved
+
+**Second gap closure — Wave 1** *(added after re-verification left SC5 open at 5/6)*
+
+- [ ] 11.1.1-06-PLAN.md — close the code half of SC5: guard every JSON shape the `.ipynb` read can meet. A widened exception tuple on the read-and-decode step (`UnicodeDecodeError`, `RecursionError` and `MemoryError` added), a guard requiring `cells` to be a list, and a guard requiring a cell's `source` to be absent, a string, or a list of strings — with six regression tests pinning each shape at both the `_read_source` and the `check()` level, and a control pinning that a legitimately empty notebook still scans
+
+**Second gap closure — Wave 2** *(blocked on second-gap-closure Wave 1)*
+
+- [ ] 11.1.1-07-PLAN.md — close the honesty half of SC5: replace `README.md`'s generalised malformed-notebook claim with an enumeration checked against the shipped guards, disclose the four residual limits (the deliberate `.py`/`.ipynb` decode asymmetry, the deep-nesting guard, the absent size bound, and NOT scanned being a passing outcome whose line prints only under `--verbose`), pin those disclosures in the committed README-substring test, re-prove SC6 on both interpreters, and carry WR-02 and the D7/D8 tone judgment forward to the end-of-phase human check still unresolved
 
 Note: the re-scope removed the line citations that used to sit in criteria 1 and 3
 (`dsx/checks/code.py:505`, `:541`), which were already stale as of commit `06ff2d7` and were
@@ -965,7 +980,7 @@ cases where absence permitted a false pass" is a debate, not a count.
 | 10. Pre-registered inference plan (`DSX-PRE-*`) | 6/6 | In Progress|  |
 | 11. Frequentist admissibility adjudicator (`DSX-ADM-*`) | 4/8 | In Progress|  |
 | 11.1 Generated-pipeline reality | 8/8 | Complete | 2026-08-21 |
-| 11.1.1 Detection-code hardening | 5/5 | In Progress|  |
+| 11.1.1 Detection-code hardening | 5/7 | In Progress|  |
 | 12. Calibration | 0/TBD | Not started | - |
 
 ## Dependency graph — v2.0.0
