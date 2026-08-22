@@ -222,5 +222,201 @@ class TestFamilyAndRankingRuleFrozen(_CacheClearingTestCase):
             rule.id = "mutated"  # type: ignore[misc]
 
 
+def _fam(**overrides) -> "admissibility.Family":
+    base = dict(
+        id="fam",
+        family="fam",
+        estimand="difference_in_means",
+        inference_method="frequentist",
+        dependence="none",
+        aliases=(),
+        buys=(),
+        charges=(),
+        traceability="fixture",
+        citation="Example (2020)",
+        locator_status="verified",
+        notes="fixture",
+    )
+    base.update(overrides)
+    return admissibility.Family(**base)
+
+
+class TestAliasIndex(_CacheClearingTestCase):
+    def test_index_maps_pair_to_normalized_alias_to_family_id(self):
+        ontology = admissibility.load_ontology()
+        index = admissibility.alias_index(ontology)
+        pair = ("difference_in_proportions", "none")
+        self.assertIn(pair, index)
+        self.assertEqual(index[pair]["fishers_exact"], "fishers_exact")
+
+    def test_collision_within_same_pair_raises_check_error_naming_both_and_alias(self):
+        fam_a = _fam(id="fam_a", aliases=("shared_alias",))
+        fam_b = _fam(id="fam_b", aliases=("Shared-Alias",))
+        ontology = admissibility.Ontology(
+            families=(fam_a, fam_b), rules=(), tokens={}, dropped_uncited=()
+        )
+        with self.assertRaises(CheckError) as ctx:
+            admissibility.alias_index(ontology)
+        message = str(ctx.exception)
+        self.assertIn("fam_a", message)
+        self.assertIn("fam_b", message)
+        self.assertIn("shared_alias", message.lower())
+
+    def test_same_alias_in_different_pairs_does_not_raise(self):
+        ontology = admissibility.load_ontology()
+        index = admissibility.alias_index(ontology)
+        independent = index[("difference_in_proportions", "none")]
+        clustered = index[("difference_in_proportions", "clustered")]
+        self.assertEqual(independent["two_proportion_z"], "two_proportion_z")
+        self.assertEqual(clustered["two_proportion_z"], "two_proportion_z_cluster_robust")
+
+
+class TestCandidateFamilies(_CacheClearingTestCase):
+    def test_matches_both_axes_sorted_lexicographically_by_id(self):
+        ontology = admissibility.load_ontology()
+        candidates = admissibility.candidate_families(
+            ontology, "difference_in_proportions", "clustered"
+        )
+        self.assertEqual([f.id for f in candidates], ["two_proportion_z_cluster_robust"])
+
+    def test_case_and_hyphen_insensitive_axis_match(self):
+        ontology = admissibility.load_ontology()
+        candidates = admissibility.candidate_families(
+            ontology, "Difference-In-Proportions", "CLUSTERED"
+        )
+        self.assertEqual([f.id for f in candidates], ["two_proportion_z_cluster_robust"])
+
+    def test_unknown_pair_returns_empty_tuple(self):
+        ontology = admissibility.load_ontology()
+        self.assertEqual(
+            admissibility.candidate_families(ontology, "ratio_of_means", "spatial"), ()
+        )
+
+    def test_blank_or_none_axis_returns_empty_tuple(self):
+        ontology = admissibility.load_ontology()
+        self.assertEqual(admissibility.candidate_families(ontology, "", "none"), ())
+        self.assertEqual(
+            admissibility.candidate_families(ontology, "difference_in_means", ""), ()
+        )
+        self.assertEqual(
+            admissibility.candidate_families(ontology, None, "none"), ()  # type: ignore[arg-type]
+        )
+
+    def test_order_independent_of_family_order_in_ontology(self):
+        ontology = admissibility.load_ontology()
+        reversed_ontology = dataclasses.replace(
+            ontology, families=tuple(reversed(ontology.families))
+        )
+        original = [
+            f.id
+            for f in admissibility.candidate_families(
+                ontology, "regression_coefficient", "clustered"
+            )
+        ]
+        flipped = [
+            f.id
+            for f in admissibility.candidate_families(
+                reversed_ontology, "regression_coefficient", "clustered"
+            )
+        ]
+        self.assertEqual(original, flipped)
+        self.assertEqual(original, sorted(original))
+
+
+class TestResolveDeclaredProcedure(_CacheClearingTestCase):
+    def test_not_declared_on_blank(self):
+        ontology = admissibility.load_ontology()
+        for declared in ("", "   ", None):
+            with self.subTest(declared=declared):
+                resolution = admissibility.resolve_declared_procedure(
+                    ontology, "difference_in_means", "none", declared
+                )
+                self.assertEqual(resolution.status, "not_declared")
+                self.assertEqual(resolution.family_id, "")
+
+    def test_in_candidate_set_on_exact_normalized_alias(self):
+        ontology = admissibility.load_ontology()
+        resolution = admissibility.resolve_declared_procedure(
+            ontology, "difference_in_proportions", "clustered", "two_proportion_z"
+        )
+        self.assertEqual(resolution.status, "in_candidate_set")
+        self.assertEqual(resolution.family_id, "two_proportion_z_cluster_robust")
+        self.assertEqual(resolution.outside_axes, ())
+
+    def test_case_and_hyphen_insensitive_resolution(self):
+        ontology = admissibility.load_ontology()
+        resolution = admissibility.resolve_declared_procedure(
+            ontology, "difference_in_proportions", "clustered", "TWO-PROPORTION-Z"
+        )
+        self.assertEqual(resolution.status, "in_candidate_set")
+
+    def test_outside_candidate_set_names_the_family_and_its_own_axes(self):
+        ontology = admissibility.load_ontology()
+        resolution = admissibility.resolve_declared_procedure(
+            ontology, "difference_in_means", "none", "fishers_exact"
+        )
+        self.assertEqual(resolution.status, "outside_candidate_set")
+        self.assertEqual(resolution.family_id, "fishers_exact")
+        self.assertEqual(
+            resolution.outside_axes, ("difference_in_proportions", "none")
+        )
+
+    def test_unresolved_on_unknown_alias(self):
+        ontology = admissibility.load_ontology()
+        resolution = admissibility.resolve_declared_procedure(
+            ontology, "difference_in_means", "none", "welch_tt"
+        )
+        self.assertEqual(resolution.status, "unresolved")
+        self.assertEqual(resolution.family_id, "")
+
+    def test_near_miss_variants_of_a_real_alias_are_unresolved(self):
+        ontology = admissibility.load_ontology()
+        # "welch_t" is a real alias; a prefix, and two one/two-character
+        # edits of it, are deliberately not.
+        near_misses = ["welch_", "welch_tx", "welch_txx"]
+        for declared in near_misses:
+            with self.subTest(declared=declared):
+                resolution = admissibility.resolve_declared_procedure(
+                    ontology, "difference_in_means", "none", declared
+                )
+                self.assertEqual(resolution.status, "unresolved")
+
+    def test_status_vocabulary_is_closed_to_exactly_four_values(self):
+        self.assertEqual(
+            set(admissibility._RESOLUTION_STATUSES),
+            {"not_declared", "in_candidate_set", "outside_candidate_set", "unresolved"},
+        )
+
+
+class TestDeclaredProcedure(_CacheClearingTestCase):
+    def test_non_dict_spec_returns_empty_string(self):
+        self.assertEqual(admissibility.declared_procedure(None), "")
+        self.assertEqual(admissibility.declared_procedure("not a spec"), "")  # type: ignore[arg-type]
+        self.assertEqual(admissibility.declared_procedure([]), "")  # type: ignore[arg-type]
+
+    def test_no_inference_block_returns_empty_string(self):
+        self.assertEqual(admissibility.declared_procedure({}), "")
+
+    def test_non_mapping_inference_value_returns_empty_string(self):
+        self.assertEqual(
+            admissibility.declared_procedure({"inference": "not a mapping"}), ""
+        )
+
+    def test_blank_primary_procedure_returns_empty_string(self):
+        self.assertEqual(
+            admissibility.declared_procedure({"inference": {"primary_procedure": ""}}),
+            "",
+        )
+        self.assertEqual(admissibility.declared_procedure({"inference": {}}), "")
+
+    def test_declared_string_returned_unchanged(self):
+        self.assertEqual(
+            admissibility.declared_procedure(
+                {"inference": {"primary_procedure": "welch_t"}}
+            ),
+            "welch_t",
+        )
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
