@@ -5588,6 +5588,31 @@ class TestPhase11_1Code(unittest.TestCase):
             with self.subTest(substring=substring):
                 self.assertIn(substring, readme)
 
+    def test_not_scanned_line_carried_unconditionally_by_json_and_report_regardless_of_verbose(self):
+        # README's fourth residual-limit disclosure (plan 07, corrected by the
+        # 11.1.1 code review's WR-01): the NOT-scanned pass line is gated by
+        # `--verbose` only in the default plain-text render. `--json`
+        # (Report.to_dict) and `--report FILE.md` (_markdown_report's "## Passed"
+        # section) both carry it unconditionally. Pins the corrected claim's
+        # substance, not just the README's wording -- a regression in either
+        # to_dict's or the default renderer's gating now fails a test, not
+        # just a prose review.
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(tmp, '{"cells": 5}', name="entry.ipynb")
+            report = self._check(tmp, entry)
+            self.assertEqual(report.findings, [])
+
+            # --json path: to_dict has no verbose parameter -- unconditional.
+            passed = report.to_dict(Severity.CRITICAL)["passed_checks"]
+            self.assertTrue(any("NOT scanned" in line for line in passed))
+
+            # default plain-text render: gated by verbose, exactly as the
+            # README's corrected wording now states.
+            quiet = report.render(Severity.CRITICAL, verbose=False)
+            self.assertNotIn("NOT scanned", quiet)
+            loud = report.render(Severity.CRITICAL, verbose=True)
+            self.assertIn("NOT scanned", loud)
+
     # ── Phase 11.1.1 plan 01: AST call-node walk replaces the line-ordered ──
     # ── regex scan that decides DSX-CODE-001 ─────────────────────────────────
 

@@ -25,8 +25,13 @@ accepts the RUNNING interpreter's grammar, so which path an entrypoint
 takes can depend on the interpreter's Python version; both are disclosed
 in the decision records. Missing / non-text / unscannable entrypoints
 are named as NOT scanned rather than silently skipped (repro covers
-missing paths). Nothing here makes any DSX-CODE-* sound, complete or
-exhaustive -- real leaks remain uncaught by construction and by design.
+missing paths). For `.ipynb`, this also covers a document that is valid
+JSON but not the shape the notebook format defines -- a non-list `cells`,
+a non-dict cell, a cell `source` that is not text or a list of text, or a
+document nested past the interpreter's recursion limit -- each named as
+NOT scanned rather than raising. Nothing here makes any DSX-CODE-* sound,
+complete or exhaustive -- real leaks remain uncaught by construction and
+by design.
 """
 
 from __future__ import annotations

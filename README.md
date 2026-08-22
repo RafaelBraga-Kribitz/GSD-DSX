@@ -638,12 +638,18 @@ error during the read it is reported as NOT scanned, and where it does not,
 it is not caught.
 
 Fourth, and most important to state plainly: NOT scanned is a passing
-outcome. It exits 0, it produces no finding, and the line that says the
-file was not scanned prints only when `--verbose` is passed. A notebook
-that is corrupted — by accident or on purpose — therefore makes the leak
-scan go quiet rather than loud, and a reader running without `--verbose`
-sees a passing code check that looks like a clean scan. This is a limit
-the tool currently has, not one that is fixed.
+outcome. It exits 0 and produces no finding. In the default plain-text
+render — no `--json`, no `--report` — the line that says the file was
+not scanned prints only when `--verbose` is passed, so a notebook that
+is corrupted, by accident or on purpose, makes the leak scan go quiet
+rather than loud there, and a reader running the default renderer
+without `--verbose` sees a passing code check that looks like a clean
+scan. `--json` output and an `--report FILE.md` markdown report both
+carry this line unconditionally — inside `passed_checks` and the
+`## Passed` section respectively — regardless of `--verbose`, so a
+machine-readable or archived report always carries the signal even when
+the terminal does not. This is a limit of the default terminal output,
+not one that is fixed.
 
 **What the fallback text scan additionally misses, and when it runs.** When
 a file cannot be parsed as Python — a syntax error, an unrepaired notebook
