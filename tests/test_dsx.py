@@ -7579,5 +7579,71 @@ class TestAdmissibilityGateRegistration(unittest.TestCase):
         self.assertEqual(adm, [])
 
 
+# ── 11-07 Task 2: dsx recommend-test extended by composition, additively ──
+
+
+class TestAdmissibilityRecommendComposition(unittest.TestCase):
+    ROOT = Path(__file__).resolve().parent.parent
+
+    def _recommend(self, args: "list[str]", cwd: "str | None" = None):
+        import subprocess
+
+        env = dict(__import__("os").environ, PYTHONPATH=str(self.ROOT))
+        cmd = [sys.executable, "-m", "dsx.cli", "recommend-test", *args]
+        return subprocess.run(
+            cmd, capture_output=True, text=True, cwd=cwd or str(self.ROOT), env=env
+        )
+
+    def test_no_spec_output_is_byte_identical_regardless_of_working_directory(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            in_tmp = self._recommend(["proportion", "--groups", "2"], cwd=tmp)
+            at_root = self._recommend(["proportion", "--groups", "2"], cwd=str(self.ROOT))
+            self.assertEqual(in_tmp.returncode, 0, in_tmp.stderr)
+            self.assertEqual(at_root.returncode, 0, at_root.stderr)
+            self.assertEqual(in_tmp.stdout, at_root.stdout)
+            keys = list(json.loads(at_root.stdout))
+            self.assertEqual(keys, ["test", "rationale", "alternatives", "effect_size"])
+
+    def test_spec_flag_is_additive_with_the_four_original_values_unchanged(self):
+        base = json.loads(
+            self._recommend(["proportion", "--groups", "2"]).stdout
+        )
+        composed = self._recommend(
+            ["proportion", "--groups", "2", "--spec", "examples/good-ANALYSIS-SPEC.yaml"]
+        )
+        self.assertEqual(composed.returncode, 0, composed.stderr)
+        out = json.loads(composed.stdout)
+        self.assertEqual(
+            list(out), ["test", "rationale", "alternatives", "effect_size", "admissibility"]
+        )
+        self.assertEqual({k: out[k] for k in base}, base)
+        self.assertEqual(
+            out["admissibility"]["admissible"][0]["id"], "two_proportion_z_cluster_robust"
+        )
+
+    def test_named_missing_spec_exits_2(self):
+        result = self._recommend(
+            ["proportion", "--groups", "2", "--spec", "does/not/exist.yaml"]
+        )
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("does/not/exist.yaml", result.stderr)
+
+    def test_help_lists_spec_and_phase_dir_not_block_on(self):
+        result = self._recommend(["--help"])
+        self.assertIn("--spec", result.stdout)
+        self.assertIn("--phase-dir", result.stdout)
+        self.assertNotIn("--block-on", result.stdout)
+
+    def test_stats_module_is_untouched_and_frame_free(self):
+        # D-04/D-04a: recommend_test() itself is not moved, wrapped or edited,
+        # and dsx/checks/stats.py never imports dsx.frame — proved separately
+        # by tests/test_frame_boundary.py's reverse-direction scanner. Here we
+        # only confirm the composition happened in dsx/cli.py, not by
+        # reaching into dsx/checks/stats.py.
+        import dsx.checks.stats as stats_mod
+
+        self.assertFalse(hasattr(stats_mod, "admissible_families"))
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
