@@ -7456,5 +7456,126 @@ class TestPhase11_1Code(unittest.TestCase):
                     self.assertEqual(codes(report), expected_codes)
 
 
+# ── 11-07 Task 1: admissibility registered in CHECKS, GATE_PROFILES, run_checks ──
+
+
+class TestAdmissibilityGateRegistration(unittest.TestCase):
+    ROOT = Path(__file__).resolve().parent.parent
+
+    def _run(self, argv: list[str]) -> tuple[int, str, str]:
+        out, err = io.StringIO(), io.StringIO()
+        with redirect_stdout(out), redirect_stderr(err):
+            code = cli.main(argv)
+        return code, out.getvalue(), err.getvalue()
+
+    def _spec_variant(self, tmp: str, mutate) -> Path:
+        """Copy examples/ into tmp, load the good fixture, apply ``mutate`` to
+        the loaded dict in place, and write it back — same pattern
+        TestCLI._bayesian_variant_spec_path already uses (06-07)."""
+        import json
+        import shutil
+
+        from dsx.loader import load
+
+        target = Path(tmp) / "examples"
+        shutil.copytree(self.ROOT / "examples", target)
+        spec_path = target / "good-ANALYSIS-SPEC.yaml"
+        spec = load(spec_path)
+        mutate(spec)
+        spec_path.write_text(json.dumps(spec), encoding="utf-8")
+        return spec_path
+
+    def test_admissibility_registered_in_checks(self):
+        from dsx.cli import CHECKS
+        from dsx.frame import admissibility
+
+        self.assertIs(CHECKS["admissibility"], admissibility.check)
+
+    def test_admissibility_registered_at_plan_verify_ship_not_execute(self):
+        from dsx.cli import GATE_PROFILES
+
+        self.assertIn("admissibility", GATE_PROFILES["plan"])
+        self.assertIn("admissibility", GATE_PROFILES["verify"])
+        self.assertIn("admissibility", GATE_PROFILES["ship"])
+        self.assertNotIn("admissibility", GATE_PROFILES["execute"])
+
+    def test_every_gate_profile_name_is_a_known_check_or_repro(self):
+        from dsx.cli import CHECKS, GATE_PROFILES
+
+        for point, checks in GATE_PROFILES.items():
+            for name in checks:
+                with self.subTest(point=point, name=name):
+                    self.assertTrue(name in CHECKS or name == "repro")
+
+    def test_run_checks_computes_scoping_via_paradigm_helper_not_the_adjudicator(self):
+        """D-22: a frequentist (undeclared-paradigm-widened) spec with a blank
+        estimand axis draws DSX-ADM-020 through run_checks; the identical
+        blank-axis spec with an honest bayesian declaration draws nothing,
+        proving the scoping boolean — not the axis — is what changed."""
+        from dsx.cli import run_checks
+        from dsx.loader import load
+
+        good = load(self.ROOT / "examples" / "good-ANALYSIS-SPEC.yaml")
+
+        blank = dict(good)
+        blank["validity_frame"] = dict(good["validity_frame"])
+        blank["validity_frame"]["estimand"] = dict(good["validity_frame"]["estimand"])
+        blank["validity_frame"]["estimand"]["type"] = ""
+        report = run_checks(
+            blank, ("admissibility",), None, resolve_root=str(self.ROOT / "examples")
+        )
+        self.assertIn("DSX-ADM-020", codes(report))
+
+        bayesian_blank = dict(blank)
+        bayesian_blank["inference"] = dict(blank["inference"])
+        bayesian_blank["inference"]["paradigm"] = "bayesian"
+        report2 = run_checks(
+            bayesian_blank, ("admissibility",), None, resolve_root=str(self.ROOT / "examples")
+        )
+        self.assertEqual(codes(report2), set())
+
+    def test_blank_estimand_type_exits_1_at_gate_plan_with_dsx_adm_020_critical(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            spec_path = self._spec_variant(
+                tmp,
+                lambda spec: spec.setdefault("validity_frame", {})
+                .setdefault("estimand", {})
+                .update({"type": ""}),
+            )
+            code, out, err = self._run(["gate", "plan", "--spec", str(spec_path), "--json"])
+            self.assertEqual(code, 1, err)
+            payload = json.loads(out)
+            findings = [f for f in payload["findings"] if f["code"] == "DSX-ADM-020"]
+            self.assertEqual(len(findings), 1)
+            self.assertEqual(findings[0]["severity"], "CRITICAL")
+
+    def test_bayesian_declaration_draws_no_dsx_adm_finding_at_plan_verify_or_ship(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            spec_path = self._spec_variant(
+                tmp, lambda spec: spec.setdefault("inference", {}).update({"paradigm": "bayesian"})
+            )
+            for point in ("plan", "verify", "ship"):
+                with self.subTest(point=point):
+                    code, out, err = self._run(
+                        ["gate", point, "--spec", str(spec_path), "--json"]
+                    )
+                    payload = json.loads(out)
+                    adm = [f for f in payload["findings"] if f["code"].startswith("DSX-ADM-")]
+                    self.assertEqual(adm, [], f"{point}: {adm}")
+
+    def test_dsx_audit_runs_without_error_on_good_fixture(self):
+        fixture = self.ROOT / "examples" / "good-ANALYSIS-SPEC.yaml"
+        code, out, err = self._run(["audit", "--spec", str(fixture), "--json"])
+        self.assertEqual(code, 0, err)
+
+    def test_gate_execute_excludes_admissibility(self):
+        fixture = self.ROOT / "examples" / "good-ANALYSIS-SPEC.yaml"
+        code, out, err = self._run(["gate", "execute", "--spec", str(fixture), "--json"])
+        self.assertEqual(code, 0, err)
+        payload = json.loads(out)
+        adm = [f for f in payload["findings"] if f["code"].startswith("DSX-ADM-")]
+        self.assertEqual(adm, [])
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
