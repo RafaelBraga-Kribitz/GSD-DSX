@@ -7544,7 +7544,9 @@ class TestAdmissibilityGateRegistration(unittest.TestCase):
             )
             code, out, err = self._run(["gate", "plan", "--spec", str(spec_path), "--json"])
             self.assertEqual(code, 1, err)
-            payload = json.loads(out)
+            # Blocking output goes to stderr (dsx.findings.emit); passing
+            # output goes to stdout. code == 1 here means stderr carries it.
+            payload = json.loads(err)
             findings = [f for f in payload["findings"] if f["code"] == "DSX-ADM-020"]
             self.assertEqual(len(findings), 1)
             self.assertEqual(findings[0]["severity"], "CRITICAL")
