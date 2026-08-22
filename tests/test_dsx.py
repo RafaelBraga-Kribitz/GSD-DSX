@@ -4965,6 +4965,153 @@ class TestPhase11_1Code(unittest.TestCase):
             report = self._check(tmp, entry)
             self.assertNotIn("DSX-CODE-021", codes(report))
 
+    # -- GAP-1 (SC2): the fallback resolves a reordered keyword ---------------
+
+    def test_reordered_keyword_leak_fires_code_021_on_the_fallback_path(self):
+        # Forced onto the fallback by a trailing unclosed parenthesis. Today
+        # (before this task) this file produces zero findings, while the
+        # identical call fires DSX-CODE-021 on the parsed path.
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(
+                tmp,
+                "from sklearn.model_selection import train_test_split\n"
+                "train_test_split(df)\n"
+                "model.fit(y=y_train, X=full_frame)\n"
+                "unclosed(\n",
+            )
+            report = self._check(tmp, entry)
+            found = [f for f in report.findings if f.code == "DSX-CODE-021"]
+            self.assertEqual(len(found), 1)
+            self.assertEqual(found[0].severity, Severity.CRITICAL)
+            self.assertIn("'full_frame'", found[0].detail)
+            reached_fallback = any(
+                f.data.get("scan") == "text-fallback" for f in report.findings
+            ) or any("fallback scan" in line for line in report.passed_checks)
+            self.assertTrue(reached_fallback)
+
+    def test_reordered_keyword_leak_verdicts_agree_across_both_paths(self):
+        text = (
+            "from sklearn.model_selection import train_test_split\n"
+            "train_test_split(df)\n"
+            "model.fit(y=y_train, X=full_frame)\n"
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(tmp, text)
+            report = self._check(tmp, entry)
+            found = [f for f in report.findings if f.code == "DSX-CODE-021"]
+            self.assertEqual(len(found), 1)
+            self.assertEqual(found[0].severity, Severity.CRITICAL)
+            self.assertIn("'full_frame'", found[0].detail)
+            self.assertIn(
+                "entrypoint parsed with ast (call-level scan)", report.passed_checks
+            )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(tmp, text + "unclosed(\n")
+            report = self._check(tmp, entry)
+            found = [f for f in report.findings if f.code == "DSX-CODE-021"]
+            self.assertEqual(len(found), 1)
+            self.assertEqual(found[0].severity, Severity.CRITICAL)
+            self.assertIn("'full_frame'", found[0].detail)
+            self.assertTrue(
+                any("fallback scan" in line for line in report.passed_checks)
+            )
+
+    def test_several_unrecognised_keywords_before_an_allowlisted_one_resolve_the_allowlisted_value(
+        self,
+    ):
+        text = (
+            "from sklearn.model_selection import train_test_split\n"
+            "train_test_split(df)\n"
+            "model.fit(sample_weight=w, groups=g, data=full_frame)\n"
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(tmp, text)
+            report = self._check(tmp, entry)
+            found = [f for f in report.findings if f.code == "DSX-CODE-021"]
+            self.assertEqual(len(found), 1)
+            self.assertIn("'full_frame'", found[0].detail)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(tmp, text + "unclosed(\n")
+            report = self._check(tmp, entry)
+            found = [f for f in report.findings if f.code == "DSX-CODE-021"]
+            self.assertEqual(len(found), 1)
+            self.assertIn("'full_frame'", found[0].detail)
+
+    def test_equality_comparison_first_argument_is_not_read_as_a_keyword_on_either_path(
+        self,
+    ):
+        # An equality comparison in the first positional slot is not a
+        # keyword argument on either mechanism, and must not be consumed as
+        # one: the fallback's new skip-fragment carries a `(?!=)` guard so
+        # `a==b` is never misread as a keyword `a` whose value swallows the
+        # second `=`.
+        text = (
+            "from sklearn.model_selection import train_test_split\n"
+            "train_test_split(df)\n"
+            "model.fit(a==b, y)\n"
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(tmp, text)
+            report = self._check(tmp, entry)
+            self.assertNotIn("DSX-CODE-021", codes(report))
+
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(tmp, text + "unclosed(\n")
+            report = self._check(tmp, entry)
+            self.assertNotIn("DSX-CODE-021", codes(report))
+
+    def test_fit_call_re_timing_no_catastrophic_backtracking_with_reordered_keyword_form(
+        self,
+    ):
+        # The re-widened fallback pattern's own measurement
+        # (11.1.1-RESEARCH.md Pitfall 6), not inherited from the
+        # single-keyword-prefix figure. Two adversarial non-matching inputs
+        # built from repeated `name=value,` pairs -- short values, and
+        # values at the inner run's `{0,80}` bound -- each under a
+        # 1.0-second budget.
+        import time
+
+        from dsx.checks import code as code_mod
+
+        short_value = ".fit(" + "n=1," * 200_000
+        self.assertEqual(len(short_value), 800_005)
+        start = time.perf_counter()
+        code_mod.FIT_CALL_RE.search(short_value)
+        self.assertLess(time.perf_counter() - start, 1.0)
+
+        long_value = ".fit(" + ("n=" + "v" * 80 + ",") * 20_000
+        self.assertEqual(len(long_value), 1_660_005)
+        start = time.perf_counter()
+        code_mod.FIT_CALL_RE.search(long_value)
+        self.assertLess(time.perf_counter() - start, 1.0)
+
+    def test_keyword_beyond_the_skip_bound_stays_uncaught_by_design_on_the_fallback(
+        self,
+    ):
+        """Deliberate, not a bug: the widened fallback skips at most 8
+        non-allowlisted `name=value,` pairs (the stated bound) before
+        giving up on resolving an allowlisted keyword. A REAL post-split
+        leak whose recognised keyword arrives after 9 skipped keywords --
+        one more than the bound -- draws no DSX-CODE-021 on the fallback.
+        `full_frame` here is a REAL leak: the full, unsplit frame. If this
+        test ever fails because a finding appeared, that is good news and
+        the
+        test should be promoted to a firing test rather than deleted.
+        """
+        skips = ", ".join(f"k{i}=v{i}" for i in range(9))
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(
+                tmp,
+                "from sklearn.model_selection import train_test_split\n"
+                "train_test_split(df)\n"
+                f"model.fit({skips}, data=full_frame)\n"
+                "unclosed(\n",
+            )
+            report = self._check(tmp, entry)
+            self.assertNotIn("DSX-CODE-021", codes(report))
+
     # -- SC3: multiple calls, source order, nested tie-break -----------------
 
     def test_semicolon_joined_two_fit_calls_fire_code_021(self):
