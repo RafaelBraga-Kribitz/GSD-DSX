@@ -13,7 +13,7 @@ a suppression or a reference in a review stays valid across versions.
 **Gate thresholds.** `plan` and `execute` block at CRITICAL; `verify` and
 `ship` block at HIGH.
 
-**Total: 243 codes.**
+**Total: 245 codes.**
 
 ## Contract structure — `DSX-SPEC-*`
 
@@ -404,3 +404,12 @@ The declared fallback rule resolved against the declared observed facts, the pla
 | `DSX-PRE-010` | CRITICAL | Declared fallback rule does not resolve to a branch |
 | `DSX-PRE-020` | CRITICAL | Declared pre-data plan is not the plan recorded at gate plan |
 | `DSX-PRE-030` | CRITICAL | Executed procedure differs from the declared branch |
+
+## Frequentist admissibility — `DSX-ADM-*`
+
+The ranked admissible set for a declared frequentist frame, naming the assumptions each family buys and charges, and the refusal when no procedure in the ontology is admissible.
+
+| Code | Severity | Finding |
+|---|---|---|
+| `DSX-ADM-010` | HIGH | Declared procedure is admissible but a cited ordering prefers another family |
+| `DSX-ADM-020` | CRITICAL | No admissible procedure for the declared frame |
