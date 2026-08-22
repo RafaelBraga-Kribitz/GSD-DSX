@@ -313,5 +313,219 @@ class TestD05RealTreeStandingGuarantee(unittest.TestCase):
         self.assertEqual(g.check_d05(g.collect(), g.ROOT / "dsx", g.ROOT / "tests"), [])
 
 
+# ── Task 1: check_families_citations() — the build-time citation gate over the
+#    ontology data (D-23, D-24) ──────────────────────────────────────────────
+
+_REAL_FAMILIES_YAML = _ROOT / "references" / "families.yaml"
+
+
+def _minimal_families_yaml(
+    *,
+    family_citation: str | None = '"Author, A. (2020), Some Paper"',
+    assumption_citation: str | None = '"Author, A. (2020), Some Paper"',
+    rule_citation: str | None = '"Author, A. (2020), Some Paper"',
+    include_families_key: bool = True,
+) -> str:
+    """A minimal, schema-shaped families.yaml, with each block's citation
+    independently overridable so a single field can be blanked or omitted
+    without disturbing the other two blocks."""
+
+    def _citation_line(value: str | None) -> str:
+        if value is None:
+            return ""  # key omitted entirely
+        return f"    citation: {value}\n"
+
+    families_block = ""
+    if include_families_key:
+        families_block = (
+            "families:\n"
+            '  - id: "family_one"\n'
+            '    estimand: "difference_in_proportions"\n'
+            '    family: "family_one"\n'
+            '    inference_method: "frequentist"\n'
+            '    dependence: "none"\n'
+            '    aliases: ["family_one"]\n'
+            "    buys: []\n"
+            '    charges: ["exchangeability"]\n'
+            '    traceability: "n/a"\n'
+            f"{_citation_line(family_citation)}"
+            '    locator_status: "verified"\n'
+            '    notes: "n/a"\n'
+        )
+
+    return (
+        "vocabulary_is_not_exhaustive: true\n\n"
+        "assumption_vocabulary:\n"
+        '  - token: "exchangeability"\n'
+        f"{_citation_line(assumption_citation)}"
+        '    locator_status: "verified"\n'
+        '    notes: "n/a"\n\n'
+        "ranking_rules:\n"
+        '  - id: "rule_one"\n'
+        '    prefers: "a"\n'
+        '    over: "b"\n'
+        '    condition: "c"\n'
+        '    strength: "default_preference"\n'
+        f"{_citation_line(rule_citation)}"
+        '    locator_status: "verified"\n'
+        '    notes: "n/a"\n\n'
+        f"{families_block}"
+    )
+
+
+class TestFamiliesCitationGate(unittest.TestCase):
+    def test_committed_families_yaml_has_no_citation_problems(self):
+        self.assertEqual(g.check_families_citations(_REAL_FAMILIES_YAML), [])
+
+    def test_blank_family_citation_reports_one_problem_naming_the_id(self):
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / "families.yaml"
+            path.write_text(
+                _minimal_families_yaml(family_citation='""'), encoding="utf-8"
+            )
+            problems = g.check_families_citations(path)
+            self.assertEqual(len(problems), 1, problems)
+            self.assertIn("family_one", problems[0])
+
+    def test_missing_family_citation_key_reports_one_problem_naming_the_id(self):
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / "families.yaml"
+            path.write_text(
+                _minimal_families_yaml(family_citation=None), encoding="utf-8"
+            )
+            problems = g.check_families_citations(path)
+            self.assertEqual(len(problems), 1, problems)
+            self.assertIn("family_one", problems[0])
+
+    def test_blank_assumption_vocabulary_citation_reports_problem_naming_the_token(self):
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / "families.yaml"
+            path.write_text(
+                _minimal_families_yaml(assumption_citation='""'), encoding="utf-8"
+            )
+            problems = g.check_families_citations(path)
+            self.assertEqual(len(problems), 1, problems)
+            self.assertIn("exchangeability", problems[0])
+
+    def test_blank_ranking_rule_citation_reports_problem_naming_the_id(self):
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / "families.yaml"
+            path.write_text(
+                _minimal_families_yaml(rule_citation='""'), encoding="utf-8"
+            )
+            problems = g.check_families_citations(path)
+            self.assertEqual(len(problems), 1, problems)
+            self.assertIn("rule_one", problems[0])
+
+    def test_reports_every_problem_rather_than_stopping_at_the_first(self):
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / "families.yaml"
+            path.write_text(
+                _minimal_families_yaml(
+                    family_citation='""',
+                    assumption_citation='""',
+                    rule_citation='""',
+                ),
+                encoding="utf-8",
+            )
+            problems = g.check_families_citations(path)
+            self.assertEqual(len(problems), 3, problems)
+
+    def test_nonexistent_path_reports_one_problem_naming_the_path(self):
+        missing = Path(tempfile.mkdtemp()) / "does-not-exist.yaml"
+        problems = g.check_families_citations(missing)
+        self.assertEqual(len(problems), 1, problems)
+        self.assertIn(str(missing), problems[0])
+
+    def test_top_level_sequence_reports_one_problem_naming_the_path(self):
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / "families.yaml"
+            path.write_text('- "a"\n- "b"\n', encoding="utf-8")
+            problems = g.check_families_citations(path)
+            self.assertEqual(len(problems), 1, problems)
+            self.assertIn(str(path), problems[0])
+
+    def test_families_key_absent_reports_one_problem_naming_the_path(self):
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / "families.yaml"
+            path.write_text(
+                _minimal_families_yaml(include_families_key=False), encoding="utf-8"
+            )
+            problems = g.check_families_citations(path)
+            self.assertEqual(len(problems), 1, problems)
+            self.assertIn(str(path), problems[0])
+
+    def test_families_key_not_a_list_reports_one_problem_naming_the_path(self):
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / "families.yaml"
+            content = _minimal_families_yaml(include_families_key=False)
+            content += 'families: "not a list"\n'
+            path.write_text(content, encoding="utf-8")
+            problems = g.check_families_citations(path)
+            self.assertEqual(len(problems), 1, problems)
+            self.assertIn(str(path), problems[0])
+
+    def test_repeated_calls_do_not_duplicate_the_repository_root_on_sys_path(self):
+        g.check_families_citations(_REAL_FAMILIES_YAML)
+        before = sys.path.count(str(g.ROOT))
+        g.check_families_citations(_REAL_FAMILIES_YAML)
+        after = sys.path.count(str(g.ROOT))
+        self.assertEqual(before, 1)
+        self.assertEqual(after, 1)
+
+    def test_check_exits_0_against_the_committed_tree(self):
+        result = subprocess.run(
+            [sys.executable, str(_SCRIPT), "--check"],
+            cwd=str(_ROOT),
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertNotIn("D-24:", result.stderr)
+
+    def test_check_exits_1_with_d24_prefix_on_an_uncited_family(self):
+        import shutil
+
+        with tempfile.TemporaryDirectory() as tmp:
+            tree = Path(tmp) / "tree"
+            shutil.copytree(_ROOT, tree, ignore=shutil.ignore_patterns(".git"))
+            fam_path = tree / "references" / "families.yaml"
+            text = fam_path.read_text(encoding="utf-8")
+            # Blank the first family's citation line — two_proportion_z is the
+            # first entry in the committed file.
+            text = text.replace(
+                'citation: "Agresti, A. (2013), Categorical Data Analysis, 3rd edition"\n'
+                '    locator_status: "unverified"\n'
+                "    notes: \"No chapter locator was confirmed by this project for the "
+                "two-proportion z-test's normal-approximation source.",
+                'citation: ""\n'
+                '    locator_status: "unverified"\n'
+                "    notes: \"No chapter locator was confirmed by this project for the "
+                "two-proportion z-test's normal-approximation source.",
+                1,
+            )
+            fam_path.write_text(text, encoding="utf-8")
+            result = subprocess.run(
+                [sys.executable, str(tree / "scripts" / "gen-finding-catalogue.py"), "--check"],
+                cwd=str(tree),
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+            d24_lines = [
+                line for line in result.stderr.splitlines() if line.startswith("D-24:")
+            ]
+            self.assertTrue(d24_lines, result.stderr)
+            self.assertIn("two_proportion_z", d24_lines[0])
+            # The two prefixes are told apart: no line carries both.
+            for line in result.stderr.splitlines():
+                self.assertFalse(
+                    line.startswith("D-05:") and "D-24:" in line, result.stderr
+                )
+                self.assertFalse(
+                    line.startswith("D-24:") and "D-05:" in line, result.stderr
+                )
+
+
 if __name__ == "__main__":
     unittest.main()
