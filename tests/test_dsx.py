@@ -7626,7 +7626,11 @@ class TestAdmissibilityRecommendComposition(unittest.TestCase):
             ["proportion", "--groups", "2", "--spec", "does/not/exist.yaml"]
         )
         self.assertEqual(result.returncode, 2)
-        self.assertIn("does/not/exist.yaml", result.stderr)
+        # Path("does/not/exist.yaml") renders with the platform's own
+        # separator (str(Path(...)) on Windows uses backslashes), so match
+        # on the filename rather than the separator-bearing path string.
+        self.assertIn("exist.yaml", result.stderr)
+        self.assertIn("not found", result.stderr)
 
     def test_help_lists_spec_and_phase_dir_not_block_on(self):
         result = self._recommend(["--help"])

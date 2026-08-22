@@ -429,6 +429,7 @@ def cmd_profile(args: argparse.Namespace) -> int:
 
 def cmd_recommend(args: argparse.Namespace) -> int:
     from .checks.stats import recommend_test
+    from .frame.admissibility import admissible_families
 
     recommendation = recommend_test(
         args.outcome_type,
@@ -439,7 +440,22 @@ def cmd_recommend(args: argparse.Namespace) -> int:
         n_per_group=args.n_per_group,
         overdispersed=_tri(args.overdispersed),
     )
-    print(json.dumps(recommendation, indent=2))
+    # Copy into a new dict so the four existing keys keep their insertion
+    # order — recommend_test()'s own return value is never mutated in place.
+    out = dict(recommendation)
+
+    # Composition is opt-in only: find_spec(None, None) would search the
+    # working directory, making this command's output depend on where the
+    # operator happens to be standing, which is exactly what the byte-
+    # identity requirement (REQ-P11-05) forbids. 11-RESEARCH.md's auto-
+    # discovery variant was considered and rejected for that reason — a
+    # spec is composed in only when the operator names one explicitly.
+    if args.spec is not None or args.phase_dir is not None:
+        path = find_spec(args.spec, args.phase_dir)
+        spec = load(path)
+        out["admissibility"] = admissible_families(spec)
+
+    print(json.dumps(out, indent=2))
     return 0
 
 
@@ -766,6 +782,13 @@ def build_parser() -> argparse.ArgumentParser:
     p_rec.add_argument("--equal-variance", choices=["true", "false"])
     p_rec.add_argument("--overdispersed", choices=["true", "false"])
     p_rec.add_argument("--n-per-group", type=int)
+    # Deliberately not add_common(...): that helper also adds --block-on,
+    # and this command never blocks — a blocking-severity flag on a command
+    # that always exits 0 (once its spec resolves) would be a lie in the
+    # help text, the same reasoning already recorded for `explain` (D-04).
+    # Only the two spec-resolution flags are added, additively (D-04a).
+    p_rec.add_argument("--spec", help="path to ANALYSIS-SPEC (adds an admissibility section)")
+    p_rec.add_argument("--phase-dir", help="GSD phase directory to resolve --spec against")
     p_rec.set_defaults(func=cmd_recommend)
 
     p_power = sub.add_parser("power", help="sample size, achieved power and detectable effect")
