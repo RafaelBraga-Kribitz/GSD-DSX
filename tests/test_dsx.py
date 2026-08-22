@@ -7456,5 +7456,339 @@ class TestPhase11_1Code(unittest.TestCase):
                     self.assertEqual(codes(report), expected_codes)
 
 
+# ── 11-07 Task 1: admissibility registered in CHECKS, GATE_PROFILES, run_checks ──
+
+
+class TestAdmissibilityGateRegistration(unittest.TestCase):
+    ROOT = Path(__file__).resolve().parent.parent
+
+    def _run(self, argv: list[str]) -> tuple[int, str, str]:
+        out, err = io.StringIO(), io.StringIO()
+        with redirect_stdout(out), redirect_stderr(err):
+            code = cli.main(argv)
+        return code, out.getvalue(), err.getvalue()
+
+    def _spec_variant(self, tmp: str, mutate) -> Path:
+        """Copy examples/ into tmp, load the good fixture, apply ``mutate`` to
+        the loaded dict in place, and write it back — same pattern
+        TestCLI._bayesian_variant_spec_path already uses (06-07)."""
+        import json
+        import shutil
+
+        from dsx.loader import load
+
+        target = Path(tmp) / "examples"
+        shutil.copytree(self.ROOT / "examples", target)
+        spec_path = target / "good-ANALYSIS-SPEC.yaml"
+        spec = load(spec_path)
+        mutate(spec)
+        spec_path.write_text(json.dumps(spec), encoding="utf-8")
+        return spec_path
+
+    def test_admissibility_registered_in_checks(self):
+        from dsx.cli import CHECKS
+        from dsx.frame import admissibility
+
+        self.assertIs(CHECKS["admissibility"], admissibility.check)
+
+    def test_admissibility_registered_at_plan_verify_ship_not_execute(self):
+        from dsx.cli import GATE_PROFILES
+
+        self.assertIn("admissibility", GATE_PROFILES["plan"])
+        self.assertIn("admissibility", GATE_PROFILES["verify"])
+        self.assertIn("admissibility", GATE_PROFILES["ship"])
+        self.assertNotIn("admissibility", GATE_PROFILES["execute"])
+
+    def test_every_gate_profile_name_is_a_known_check_or_repro(self):
+        from dsx.cli import CHECKS, GATE_PROFILES
+
+        for point, checks in GATE_PROFILES.items():
+            for name in checks:
+                with self.subTest(point=point, name=name):
+                    self.assertTrue(name in CHECKS or name == "repro")
+
+    def test_run_checks_computes_scoping_via_paradigm_helper_not_the_adjudicator(self):
+        """D-22: a frequentist (undeclared-paradigm-widened) spec with a blank
+        estimand axis draws DSX-ADM-020 through run_checks; the identical
+        blank-axis spec with an honest bayesian declaration draws nothing,
+        proving the scoping boolean — not the axis — is what changed."""
+        from dsx.cli import run_checks
+        from dsx.loader import load
+
+        good = load(self.ROOT / "examples" / "good-ANALYSIS-SPEC.yaml")
+
+        blank = dict(good)
+        blank["validity_frame"] = dict(good["validity_frame"])
+        blank["validity_frame"]["estimand"] = dict(good["validity_frame"]["estimand"])
+        blank["validity_frame"]["estimand"]["type"] = ""
+        report = run_checks(
+            blank, ("admissibility",), None, resolve_root=str(self.ROOT / "examples")
+        )
+        self.assertIn("DSX-ADM-020", codes(report))
+
+        bayesian_blank = dict(blank)
+        bayesian_blank["inference"] = dict(blank["inference"])
+        bayesian_blank["inference"]["paradigm"] = "bayesian"
+        report2 = run_checks(
+            bayesian_blank, ("admissibility",), None, resolve_root=str(self.ROOT / "examples")
+        )
+        self.assertEqual(codes(report2), set())
+
+    def test_blank_estimand_type_exits_1_at_gate_plan_with_dsx_adm_020_critical(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            spec_path = self._spec_variant(
+                tmp,
+                lambda spec: spec.setdefault("validity_frame", {})
+                .setdefault("estimand", {})
+                .update({"type": ""}),
+            )
+            code, out, err = self._run(["gate", "plan", "--spec", str(spec_path), "--json"])
+            self.assertEqual(code, 1, err)
+            # Blocking output goes to stderr (dsx.findings.emit); passing
+            # output goes to stdout. code == 1 here means stderr carries it.
+            payload = json.loads(err)
+            findings = [f for f in payload["findings"] if f["code"] == "DSX-ADM-020"]
+            self.assertEqual(len(findings), 1)
+            self.assertEqual(findings[0]["severity"], "CRITICAL")
+
+    def test_bayesian_declaration_draws_no_dsx_adm_finding_at_plan_verify_or_ship(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            spec_path = self._spec_variant(
+                tmp, lambda spec: spec.setdefault("inference", {}).update({"paradigm": "bayesian"})
+            )
+            for point in ("plan", "verify", "ship"):
+                with self.subTest(point=point):
+                    code, out, err = self._run(
+                        ["gate", point, "--spec", str(spec_path), "--json"]
+                    )
+                    payload = json.loads(out)
+                    adm = [f for f in payload["findings"] if f["code"].startswith("DSX-ADM-")]
+                    self.assertEqual(adm, [], f"{point}: {adm}")
+
+    def test_dsx_audit_runs_without_error_on_good_fixture(self):
+        fixture = self.ROOT / "examples" / "good-ANALYSIS-SPEC.yaml"
+        code, out, err = self._run(["audit", "--spec", str(fixture), "--json"])
+        self.assertEqual(code, 0, err)
+
+    def test_gate_execute_excludes_admissibility(self):
+        fixture = self.ROOT / "examples" / "good-ANALYSIS-SPEC.yaml"
+        code, out, err = self._run(["gate", "execute", "--spec", str(fixture), "--json"])
+        self.assertEqual(code, 0, err)
+        payload = json.loads(out)
+        adm = [f for f in payload["findings"] if f["code"].startswith("DSX-ADM-")]
+        self.assertEqual(adm, [])
+
+
+# ── 11-07 Task 2: dsx recommend-test extended by composition, additively ──
+
+
+class TestAdmissibilityRecommendComposition(unittest.TestCase):
+    ROOT = Path(__file__).resolve().parent.parent
+
+    def _recommend(self, args: "list[str]", cwd: "str | None" = None):
+        import subprocess
+
+        env = dict(__import__("os").environ, PYTHONPATH=str(self.ROOT))
+        cmd = [sys.executable, "-m", "dsx.cli", "recommend-test", *args]
+        return subprocess.run(
+            cmd, capture_output=True, text=True, cwd=cwd or str(self.ROOT), env=env
+        )
+
+    def test_no_spec_output_is_byte_identical_regardless_of_working_directory(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            in_tmp = self._recommend(["proportion", "--groups", "2"], cwd=tmp)
+            at_root = self._recommend(["proportion", "--groups", "2"], cwd=str(self.ROOT))
+            self.assertEqual(in_tmp.returncode, 0, in_tmp.stderr)
+            self.assertEqual(at_root.returncode, 0, at_root.stderr)
+            self.assertEqual(in_tmp.stdout, at_root.stdout)
+            keys = list(json.loads(at_root.stdout))
+            self.assertEqual(keys, ["test", "rationale", "alternatives", "effect_size"])
+
+    def test_spec_flag_is_additive_with_the_four_original_values_unchanged(self):
+        base = json.loads(
+            self._recommend(["proportion", "--groups", "2"]).stdout
+        )
+        composed = self._recommend(
+            ["proportion", "--groups", "2", "--spec", "examples/good-ANALYSIS-SPEC.yaml"]
+        )
+        self.assertEqual(composed.returncode, 0, composed.stderr)
+        out = json.loads(composed.stdout)
+        self.assertEqual(
+            list(out), ["test", "rationale", "alternatives", "effect_size", "admissibility"]
+        )
+        self.assertEqual({k: out[k] for k in base}, base)
+        self.assertEqual(
+            out["admissibility"]["admissible"][0]["id"], "two_proportion_z_cluster_robust"
+        )
+
+    def test_named_missing_spec_exits_2(self):
+        result = self._recommend(
+            ["proportion", "--groups", "2", "--spec", "does/not/exist.yaml"]
+        )
+        self.assertEqual(result.returncode, 2)
+        # Path("does/not/exist.yaml") renders with the platform's own
+        # separator (str(Path(...)) on Windows uses backslashes), so match
+        # on the filename rather than the separator-bearing path string.
+        self.assertIn("exist.yaml", result.stderr)
+        self.assertIn("not found", result.stderr)
+
+    def test_help_lists_spec_and_phase_dir_not_block_on(self):
+        result = self._recommend(["--help"])
+        self.assertIn("--spec", result.stdout)
+        self.assertIn("--phase-dir", result.stdout)
+        self.assertNotIn("--block-on", result.stdout)
+
+    def test_stats_module_is_untouched_and_frame_free(self):
+        # D-04/D-04a: recommend_test() itself is not moved, wrapped or edited,
+        # and dsx/checks/stats.py never imports dsx.frame — proved separately
+        # by tests/test_frame_boundary.py's reverse-direction scanner. Here we
+        # only confirm the composition happened in dsx/cli.py, not by
+        # reaching into dsx/checks/stats.py.
+        import dsx.checks.stats as stats_mod
+
+        self.assertFalse(hasattr(stats_mod, "admissible_families"))
+
+
+# ── 11-07 Task 3: a durable corpus regression test for the registered check ──
+
+
+class TestAdmissibilityCorpusRegression(unittest.TestCase):
+    """Pins the one invariant this phase was required not to break: no
+    committed spec's ``dsx gate`` exit code moves once ``admissibility`` is
+    registered in ``GATE_PROFILES``, except ``examples/bad-ANALYSIS-SPEC.yaml``
+    — the single documented exception.
+
+    That fixture declares no ``validity_frame.dependence.structure`` at all
+    (a blank required axis), which is exactly the ``DSX-ADM-020`` blank-axis
+    refusal cause, and it is built to block every gate on other grounds
+    regardless. Its exit codes are unchanged by this phase: 1 at ``plan``,
+    ``execute``, ``verify`` and ``ship`` — all four, measured directly
+    against the live CLI in ``test_bad_fixture_blocks_all_four_gate_points``
+    below.
+
+    Specs are discovered by globbing ``examples/*-ANALYSIS-SPEC.yaml``,
+    ``examples/known-bad/*-ANALYSIS-SPEC.yaml`` and
+    ``templates/ANALYSIS-SPEC.yaml`` — never nine hard-coded paths — so a
+    tenth committed spec inherits every assertion here automatically.
+    """
+
+    ROOT = Path(__file__).resolve().parent.parent
+
+    def _run(self, argv: "list[str]") -> "tuple[int, str, str]":
+        out, err = io.StringIO(), io.StringIO()
+        with redirect_stdout(out), redirect_stderr(err):
+            code = cli.main(argv)
+        return code, out.getvalue(), err.getvalue()
+
+    def _committed_specs(self) -> "list[Path]":
+        import glob
+
+        paths = (
+            sorted(self.ROOT.glob("examples/*-ANALYSIS-SPEC.yaml"))
+            + sorted(self.ROOT.glob("examples/known-bad/*-ANALYSIS-SPEC.yaml"))
+            + [self.ROOT / "templates" / "ANALYSIS-SPEC.yaml"]
+        )
+        return paths
+
+    def test_globbing_finds_at_least_nine_committed_specs(self):
+        specs = self._committed_specs()
+        self.assertGreaterEqual(
+            len(specs), 9, f"only found {len(specs)}: {specs} — a globbing mistake"
+        )
+
+    def test_no_non_bayesian_committed_spec_draws_dsx_adm_010(self):
+        from dsx.frame import admissibility as A
+        from dsx.frame import paradigm as P
+        from dsx.loader import load
+
+        for path in self._committed_specs():
+            with self.subTest(spec=str(path)):
+                spec = load(path)
+                report = A.check(
+                    spec, applies_to_frame=P.applies_to_frequentist_admissibility(spec)
+                )
+                self.assertNotIn("DSX-ADM-010", {f.code for f in report.findings})
+
+    def test_no_known_bad_fixture_draws_any_dsx_adm_finding(self):
+        from dsx.frame import admissibility as A
+        from dsx.frame import paradigm as P
+        from dsx.loader import load
+
+        known_bad = sorted(self.ROOT.glob("examples/known-bad/*-ANALYSIS-SPEC.yaml"))
+        self.assertGreaterEqual(len(known_bad), 6, known_bad)
+        for path in known_bad:
+            with self.subTest(spec=str(path)):
+                spec = load(path)
+                report = A.check(
+                    spec, applies_to_frame=P.applies_to_frequentist_admissibility(spec)
+                )
+                adm = [f.code for f in report.findings if f.code.startswith("DSX-ADM-")]
+                self.assertEqual(adm, [])
+
+    def test_good_fixture_draws_no_finding_and_exits_zero_at_all_four_gates(self):
+        fixture = self.ROOT / "examples" / "good-ANALYSIS-SPEC.yaml"
+        for point in ("plan", "execute", "verify", "ship"):
+            with self.subTest(point=point):
+                code, out, err = self._run(["gate", point, "--spec", str(fixture), "--json"])
+                self.assertEqual(code, 0, err)
+                payload = json.loads(out)
+                adm = [f for f in payload["findings"] if f["code"].startswith("DSX-ADM-")]
+                self.assertEqual(adm, [])
+
+    def test_template_draws_no_finding_and_exits_zero_at_gate_plan(self):
+        template = self.ROOT / "templates" / "ANALYSIS-SPEC.yaml"
+        code, out, err = self._run(["gate", "plan", "--spec", str(template), "--json"])
+        self.assertEqual(code, 0, err)
+        payload = json.loads(out)
+        adm = [f for f in payload["findings"] if f["code"].startswith("DSX-ADM-")]
+        self.assertEqual(adm, [])
+
+    def test_bayesian_continuous_monitoring_fixture_draws_no_dsx_adm_finding_anywhere(self):
+        fixture = (
+            self.ROOT / "examples" / "known-bad"
+            / "bayesian-continuous-monitoring-ANALYSIS-SPEC.yaml"
+        )
+        for point in ("plan", "execute", "verify", "ship"):
+            with self.subTest(point=point):
+                code, out, err = self._run(["gate", point, "--spec", str(fixture), "--json"])
+                payload = json.loads(out if code == 0 else err)
+                adm = [f for f in payload["findings"] if f["code"].startswith("DSX-ADM-")]
+                self.assertEqual(adm, [], f"{point}: {adm}")
+
+    def test_bad_fixture_blocks_all_four_gate_points(self):
+        # The single documented exception — see class docstring.
+        fixture = self.ROOT / "examples" / "bad-ANALYSIS-SPEC.yaml"
+        for point in ("plan", "execute", "verify", "ship"):
+            with self.subTest(point=point):
+                code, _, _ = self._run(["gate", point, "--spec", str(fixture)])
+                self.assertEqual(code, 1)
+
+    def test_synthetic_blank_estimand_spec_exits_1_at_plan_and_names_dsx_adm_020(self):
+        import json as json_mod
+        import shutil
+
+        from dsx.loader import load
+
+        with tempfile.TemporaryDirectory() as tmp:
+            target = Path(tmp) / "examples"
+            shutil.copytree(self.ROOT / "examples", target)
+            spec_path = target / "good-ANALYSIS-SPEC.yaml"
+            spec = load(spec_path)
+            spec["validity_frame"]["estimand"]["type"] = ""
+            spec_path.write_text(json_mod.dumps(spec), encoding="utf-8")
+
+            code, _, err = self._run(["gate", "plan", "--spec", str(spec_path), "--json"])
+            self.assertEqual(code, 1)
+            payload = json_mod.loads(err)
+            self.assertIn(
+                "DSX-ADM-020", {f["code"] for f in payload["findings"]}
+            )
+
+            code2, _, err2 = self._run(
+                ["gate", "plan", "--spec", str(spec_path), "--block-on", "HIGH", "--json"]
+            )
+            self.assertEqual(code2, 1)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

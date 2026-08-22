@@ -47,7 +47,7 @@ from .decisions import (
     read_all,
 )
 from .findings import EXIT_ERROR, CheckError, Report, Severity, emit, merge
-from .frame import interference, paradigm, prereg, val
+from .frame import admissibility, interference, paradigm, prereg, val
 from .loader import SpecParseError, load
 from .spec import describe_vocabulary, validate_structure
 from .suppressions import apply_suppressions
@@ -79,6 +79,7 @@ CHECKS: dict[str, Callable] = {
     "val": val.check,
     "interference": interference.check,
     "prereg": prereg.check,
+    "admissibility": admissibility.check,
 }
 
 # Which checks each GSD loop point cares about. Keeping this here rather than in
@@ -97,18 +98,33 @@ CHECKS: dict[str, Callable] = {
 # points. Severity (CRITICAL, dsx/frame/prereg.py) is a separate knob from
 # registration: registration decides *where* the family runs at all, severity
 # decides whether a fired finding blocks once it does.
+#
+# "admissibility" (DSX-ADM-*, dsx/frame/admissibility.py) is registered at
+# plan, verify and ship, and absent from execute. It is registered at plan
+# because an underdetermined frame — a blank estimand type or dependence
+# structure, or a declared procedure the ontology cannot resolve — is a
+# planning-time defect an analyst can fix before touching data; it is absent
+# from execute for the same reason "prereg" is: there is nothing about a run
+# in progress for it to adjudicate. Whether the family applies at all to a
+# given spec is a third, separate knob from registration and severity: it is
+# computed by dsx/frame/paradigm.py::applies_to_frequentist_admissibility and
+# passed into run_checks's dedicated "admissibility" branch below, never
+# decided inside the adjudicator itself (D-22).
 GATE_PROFILES: dict[str, tuple[str, ...]] = {
-    "plan": ("spec", "design", "metrics", "coherence", "paradigm", "val", "interference"),
+    "plan": (
+        "spec", "design", "metrics", "coherence", "paradigm", "val",
+        "interference", "admissibility",
+    ),
     "execute": ("spec", "ml", "repro", "dq", "code", "paradigm"),
     "verify": (
         "spec", "design", "stats", "ml", "metrics", "claims", "viz", "repro",
         "dq", "coherence", "smells", "figures", "narrative", "code", "decision",
-        "paradigm", "val", "interference", "prereg",
+        "paradigm", "val", "interference", "prereg", "admissibility",
     ),
     "ship": (
         "spec", "design", "stats", "ml", "metrics", "claims", "viz", "repro",
         "dq", "coherence", "smells", "figures", "narrative", "code", "decision",
-        "paradigm", "val", "interference", "prereg",
+        "paradigm", "val", "interference", "prereg", "admissibility",
     ),
 }
 
@@ -191,6 +207,24 @@ def run_checks(
             reports.append(decision.check(spec, gate_point=gate_point))
         elif name == "prereg":
             reports.append(prereg.check(spec, root, reconcile_trail=reconcile_trail))
+        elif name == "admissibility":
+            # The frequentist-only scoping decision this check needs is
+            # forbidden to the adjudicator itself: dsx/frame/admissibility.py
+            # is scanned by the D-11 boundary test and must never read
+            # inference.paradigm. dsx/frame/paradigm.py is the one module
+            # that scanner exempts, so the boolean is computed here, on the
+            # one line that both may see, and handed in as a plain parameter
+            # — the same shape `strict` and `reconcile_trail` already take.
+            # Computed inside this branch rather than once outside the loop
+            # alongside those two, so the call is paid only when the check
+            # actually runs and its helper and consumer stay on adjacent
+            # lines for a reader.
+            reports.append(
+                admissibility.check(
+                    spec,
+                    applies_to_frame=paradigm.applies_to_frequentist_admissibility(spec),
+                )
+            )
         elif name in CHECKS:
             reports.append(CHECKS[name](spec))
         else:
@@ -395,6 +429,7 @@ def cmd_profile(args: argparse.Namespace) -> int:
 
 def cmd_recommend(args: argparse.Namespace) -> int:
     from .checks.stats import recommend_test
+    from .frame.admissibility import admissible_families
 
     recommendation = recommend_test(
         args.outcome_type,
@@ -405,7 +440,22 @@ def cmd_recommend(args: argparse.Namespace) -> int:
         n_per_group=args.n_per_group,
         overdispersed=_tri(args.overdispersed),
     )
-    print(json.dumps(recommendation, indent=2))
+    # Copy into a new dict so the four existing keys keep their insertion
+    # order — recommend_test()'s own return value is never mutated in place.
+    out = dict(recommendation)
+
+    # Composition is opt-in only: find_spec(None, None) would search the
+    # working directory, making this command's output depend on where the
+    # operator happens to be standing, which is exactly what the byte-
+    # identity requirement (REQ-P11-05) forbids. 11-RESEARCH.md's auto-
+    # discovery variant was considered and rejected for that reason — a
+    # spec is composed in only when the operator names one explicitly.
+    if args.spec is not None or args.phase_dir is not None:
+        path = find_spec(args.spec, args.phase_dir)
+        spec = load(path)
+        out["admissibility"] = admissible_families(spec)
+
+    print(json.dumps(out, indent=2))
     return 0
 
 
@@ -732,6 +782,13 @@ def build_parser() -> argparse.ArgumentParser:
     p_rec.add_argument("--equal-variance", choices=["true", "false"])
     p_rec.add_argument("--overdispersed", choices=["true", "false"])
     p_rec.add_argument("--n-per-group", type=int)
+    # Deliberately not add_common(...): that helper also adds --block-on,
+    # and this command never blocks — a blocking-severity flag on a command
+    # that always exits 0 (once its spec resolves) would be a lie in the
+    # help text, the same reasoning already recorded for `explain` (D-04).
+    # Only the two spec-resolution flags are added, additively (D-04a).
+    p_rec.add_argument("--spec", help="path to ANALYSIS-SPEC (adds an admissibility section)")
+    p_rec.add_argument("--phase-dir", help="GSD phase directory to resolve --spec against")
     p_rec.set_defaults(func=cmd_recommend)
 
     p_power = sub.add_parser("power", help="sample size, achieved power and detectable effect")
