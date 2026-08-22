@@ -418,5 +418,162 @@ class TestDeclaredProcedure(_CacheClearingTestCase):
         )
 
 
+# ── Task 1: rank_admissible() -- the comparator, the rule table, and ────────
+# byte-stable order (D-12, D-13, D-14, D-15)
+
+
+class TestRankAdmissible(_CacheClearingTestCase):
+    def test_ranked_entry_has_expected_fields_and_sequence_types(self):
+        ontology = admissibility.load_ontology()
+        candidates = admissibility.candidate_families(
+            ontology, "difference_in_means", "none"
+        )
+        ranked = admissibility.rank_admissible(candidates, ontology.rules)
+        self.assertEqual(len(ranked), 2)
+        for index, entry in enumerate(ranked, start=1):
+            self.assertEqual(entry.rank, index)
+            self.assertIsInstance(entry.buys, tuple)
+            self.assertIsInstance(entry.charges, tuple)
+
+    def test_welch_over_students_places_welch_first(self):
+        ontology = admissibility.load_ontology()
+        candidates = admissibility.candidate_families(
+            ontology, "difference_in_means", "none"
+        )
+        ranked = admissibility.rank_admissible(candidates, ontology.rules)
+        self.assertEqual([e.id for e in ranked], ["welch_t", "students_t"])
+        self.assertEqual(ranked[0].placed_by, "")
+        self.assertEqual(ranked[1].placed_by, "welch_over_students")
+
+    def test_interacted_adjustment_overrides_fewer_assumptions_criterion(self):
+        ontology = admissibility.load_ontology()
+        candidates = admissibility.candidate_families(
+            ontology, "regression_coefficient", "none"
+        )
+        ranked = admissibility.rank_admissible(candidates, ontology.rules)
+        self.assertEqual(ranked[0].id, "linear_regression_interacted_adjustment")
+        self.assertGreater(len(ranked[0].charges), len(ranked[1].charges))
+        self.assertEqual(ranked[1].placed_by, "interacted_adjustment_over_unadjusted")
+
+    def test_manski_fallback_and_lexicographic_tiebreak_in_one_ranking(self):
+        # A single real four-family candidate set exercises both non-rule
+        # placement branches in sequence: boschloo_over_fishers_exact places
+        # the first two by a cited rule, fishers -> two_proportion_z falls
+        # back to the fewer-assumptions criterion (2 charges vs 5), and
+        # two_proportion_z -> two_proportion_z_always_valid (5 charges each,
+        # no rule between them) falls back to the lexicographic tiebreak.
+        ontology = admissibility.load_ontology()
+        candidates = admissibility.candidate_families(
+            ontology, "difference_in_proportions", "none"
+        )
+        ranked = admissibility.rank_admissible(candidates, ontology.rules)
+        self.assertEqual(
+            [e.id for e in ranked],
+            [
+                "boschloo_exact",
+                "fishers_exact",
+                "two_proportion_z",
+                "two_proportion_z_always_valid",
+            ],
+        )
+        self.assertEqual(ranked[0].placed_by, "")
+        self.assertEqual(ranked[1].placed_by, "boschloo_over_fishers_exact")
+        self.assertEqual(ranked[2].placed_by, admissibility._MANSKI_RULE)
+        self.assertEqual(ranked[3].placed_by, admissibility._TIEBREAK_RULE)
+
+    def test_permutation_of_input_order_produces_byte_identical_ranking(self):
+        import itertools
+
+        ontology = admissibility.load_ontology()
+        candidates = list(
+            admissibility.candidate_families(
+                ontology, "difference_in_proportions", "none"
+            )
+        )
+        base = [
+            e.id
+            for e in admissibility.rank_admissible(tuple(candidates), ontology.rules)
+        ]
+        outcomes = {
+            tuple(
+                e.id
+                for e in admissibility.rank_admissible(tuple(p), ontology.rules)
+            )
+            for p in itertools.permutations(candidates)
+        }
+        self.assertEqual(len(outcomes), 1)
+        self.assertEqual(list(next(iter(outcomes))), base)
+
+    def test_calling_twice_produces_equal_output(self):
+        ontology = admissibility.load_ontology()
+        candidates = admissibility.candidate_families(
+            ontology, "difference_in_proportions", "none"
+        )
+        first = admissibility.rank_admissible(candidates, ontology.rules)
+        second = admissibility.rank_admissible(candidates, ontology.rules)
+        self.assertEqual(first, second)
+
+    def test_empty_candidate_tuple_returns_empty_tuple(self):
+        ontology = admissibility.load_ontology()
+        self.assertEqual(admissibility.rank_admissible((), ontology.rules), ())
+
+    def test_single_element_candidate_tuple_ranks_first_with_no_placement(self):
+        ontology = admissibility.load_ontology()
+        candidates = admissibility.candidate_families(
+            ontology, "difference_in_proportions", "clustered"
+        )
+        self.assertEqual(len(candidates), 1)
+        ranked = admissibility.rank_admissible(candidates, ontology.rules)
+        self.assertEqual(len(ranked), 1)
+        self.assertEqual(ranked[0].rank, 1)
+        self.assertEqual(ranked[0].placed_by, "")
+
+    def test_rule_whose_partner_is_absent_from_candidates_is_inert(self):
+        # welch_over_students names students_t and welch_t; scoping the
+        # candidate set to a pair that contains neither must never surface
+        # that rule id as a placed_by value.
+        ontology = admissibility.load_ontology()
+        candidates = admissibility.candidate_families(
+            ontology, "difference_in_proportions", "none"
+        )
+        ranked = admissibility.rank_admissible(candidates, ontology.rules)
+        placed_by_values = {e.placed_by for e in ranked}
+        self.assertNotIn("welch_over_students", placed_by_values)
+
+
+class TestDominatingRules(_CacheClearingTestCase):
+    def test_returns_rules_naming_the_family_as_dominated(self):
+        ontology = admissibility.load_ontology()
+        candidates = admissibility.candidate_families(
+            ontology, "difference_in_means", "none"
+        )
+        rules = admissibility.dominating_rules(
+            "students_t", candidates, ontology.rules
+        )
+        self.assertEqual([r.id for r in rules], ["welch_over_students"])
+
+    def test_returns_empty_tuple_when_no_rule_dominates(self):
+        ontology = admissibility.load_ontology()
+        candidates = admissibility.candidate_families(
+            ontology, "difference_in_means", "none"
+        )
+        self.assertEqual(
+            admissibility.dominating_rules("welch_t", candidates, ontology.rules), ()
+        )
+
+    def test_returns_empty_tuple_for_a_one_element_candidate_set(self):
+        ontology = admissibility.load_ontology()
+        candidates = admissibility.candidate_families(
+            ontology, "difference_in_proportions", "clustered"
+        )
+        self.assertEqual(len(candidates), 1)
+        self.assertEqual(
+            admissibility.dominating_rules(
+                candidates[0].id, candidates, ontology.rules
+            ),
+            (),
+        )
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
