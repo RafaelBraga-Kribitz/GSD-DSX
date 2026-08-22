@@ -257,16 +257,21 @@ intended change to that fixture's output, not an accident.
 
 One more change belongs here, stated plainly rather than as a footnote,
 because it changes what a caller sees rather than what the scan catches. A
-Jupyter notebook file can be valid JSON and still not be a notebook — for
-example, the two characters `[]`, or a document whose list of cells
-contains something that is not itself an object. Before this phase, a file
-shaped like that crashed the whole run: a raw Python error and exit code 1
-— the same number the gate uses to mean "this file was scanned and
-blocked." A caller reading only the exit code could not tell a genuine
-leak apart from a notebook the tool never managed to read at all. It is now
-reported as NOT scanned, the same outcome the tool already gives a file it
-cannot open at all, so the exit code and the report both say what actually
-happened.
+Jupyter notebook file can be valid JSON and still not be a notebook. This
+now covers: a document that is not an object at all; a document whose list
+of cells holds something that is not an object; a document with no list of
+cells, or one whose `cells` value is a number, a boolean or an object; a
+cell whose source is a list holding something that is not text; a cell
+whose source is neither text nor a list; and a document nested too deeply
+to decode. Before this phase, a file shaped like any of these crashed the
+whole run: a raw Python error and exit code 1 — the same number the gate
+uses to mean "this file was scanned and blocked." A caller reading only
+the exit code could not tell a genuine leak apart from a notebook the tool
+never managed to read at all. It is now reported as NOT scanned, the same
+outcome the tool already gives a file it cannot open at all, so the exit
+code and the report both say what actually happened. In the other
+direction, a notebook that legitimately contains no cells is still read
+and scanned as an empty file, not reported as unreadable.
 
 When a file cannot be parsed as Python at all — a syntax error, an
 unsupported construct, or a file that is not really Python — the weaker,
