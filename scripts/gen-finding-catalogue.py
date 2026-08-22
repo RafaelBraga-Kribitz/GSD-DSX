@@ -68,7 +68,12 @@ PREFIX_GROUPS = [
 # human noticing the allow-list needs updating. A single code that lives inside a
 # pre-existing family — where a family prefix would drag the whole legacy family
 # into enforcement — is named individually in `_D05_ALLOWLIST_CODES` instead.
-_D05_ALLOWLIST_PREFIXES = ("DSX-PAR-", "DSX-VAL-", "DSX-INT-", "DSX-PRE-")
+#
+# Phase 11 adds "DSX-ADM-" here: `dsx/frame/admissibility.py`'s two report.add
+# call sites (DSX-ADM-010, DSX-ADM-020) already carry `Citation:` and
+# `Structural criterion:` docstring lines and `# D-05:` test markers, so this
+# entry is what turns those from convention into an enforced build gate.
+_D05_ALLOWLIST_PREFIXES = ("DSX-PAR-", "DSX-VAL-", "DSX-INT-", "DSX-PRE-", "DSX-ADM-")
 
 # The individually-enumerated half of D-20's finite, visible boundary: exact
 # codes this milestone introduced inside a pre-existing family (DSX-SPEC-*,
