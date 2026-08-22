@@ -4542,6 +4542,33 @@ _END_TO_END_VARIANT_TABLE = (
     ),
     # A file that reaches the fallback (text-only) scan.
     ("fallback_path_fit_before_split", "model.fit(df\n" + _SPLIT_THEN, frozenset({"DSX-CODE-001"}), "entry.py"),
+    # Phase 11.1.1 plan 05 (gap-closure re-proof): the three shapes plan 04
+    # recovered or closed. Each expected code set was measured directly
+    # against the shipped code before being written here (see 11.1.1-05-
+    # SUMMARY.md). No row is added for the DSX-CODE-030/031 docstring
+    # closures: this driver's spec declares no `model.target`, so neither
+    # code can fire in this harness at all -- pinned instead by
+    # test_docstring_mentioning_a_stat_test_draws_no_code_030 and
+    # test_docstring_after_the_split_mentioning_a_stat_test_draws_no_code_031
+    # in TestPhase11_1Code, which do supply a target.
+    (
+        "nowcaught_reordered_keyword_on_the_fallback",
+        _SPLIT_THEN + "model.fit(y=y_train, X=full_frame)\n" + "unclosed(\n",
+        frozenset({"DSX-CODE-021"}),
+        "entry.py",
+    ),
+    (
+        "fp_closed_docstring_describing_a_cleaning_idiom",
+        '"""We deliberately avoid df.fillna(df.mean()) before splitting."""\n' + _SPLIT_THEN,
+        frozenset(),
+        "entry.py",
+    ),
+    (
+        "contract_malformed_notebook_is_named_not_scanned",
+        "[]",
+        frozenset(),
+        "entry.ipynb",
+    ),
 )
 
 
@@ -5550,6 +5577,9 @@ class TestPhase11_1Code(unittest.TestCase):
             "exec",
             "backslash",
             "trailing comment",
+            "up to eight",
+            "mask is empty",
+            "opening line and the closing line",
         )
         for substring in required_substrings:
             with self.subTest(substring=substring):
