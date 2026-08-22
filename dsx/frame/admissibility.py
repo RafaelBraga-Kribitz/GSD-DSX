@@ -23,7 +23,7 @@ from pathlib import Path
 
 from ..findings import CheckError
 from ..loader import SpecParseError, load
-from ..spec import is_blank, is_blank_text, normalize
+from ..spec import get, is_blank, is_blank_text, normalize
 
 # From dsx/frame/admissibility.py, parents[2] is the repository root: [0] is
 # dsx/frame, [1] is dsx, [2] is the root -- the same package-sibling idiom
@@ -537,3 +537,123 @@ def dominating_rules(
         for rule in rules
         if rule.over == family_id and rule.prefers in candidate_ids
     )
+
+
+# admissible_families()'s refusal vocabulary -- module-level string constants
+# so a test can assert the cause set never silently grows a fourth member.
+# The count is load-bearing (D-16): three distinct causes -- a required axis
+# blank or absent, the complete (estimand, dependence) key matching zero
+# families, and a declared procedure label that resolves to no family in the
+# candidate set (or resolves only outside it) -- collapse into the single
+# DSX-ADM-020 finding in task 3, because all three share one remedy and
+# finding numbers are irreversible (D-06). Splitting them into separate codes
+# later would burn irreversible code numbers for no operator benefit.
+_REFUSAL = "no_admissible_procedure"
+_CAUSE_BLANK_AXIS = "required_axis_blank"
+_CAUSE_NO_MATCHING_FAMILY = "no_matching_family"
+_CAUSE_UNRESOLVED = "declared_procedure_unresolved"
+_REFUSAL_CAUSES = (_CAUSE_BLANK_AXIS, _CAUSE_NO_MATCHING_FAMILY, _CAUSE_UNRESOLVED)
+
+
+def _ranked_entry_to_dict(entry: RankedEntry) -> "dict[str, object]":
+    """Convert one ``RankedEntry`` into a plain, JSON-serialisable dict --
+    every tuple field becomes a list, matching the pure-return-shape contract
+    ``admissible_families()`` promises its own caller."""
+    return {
+        "rank": entry.rank,
+        "id": entry.id,
+        "family": entry.family,
+        "buys": list(entry.buys),
+        "charges": list(entry.charges),
+        "citation": entry.citation,
+        "locator_status": entry.locator_status,
+        "notes": entry.notes,
+        "placed_by": entry.placed_by,
+    }
+
+
+def admissible_families(spec: "dict | None") -> "dict[str, object]":
+    """Rank the admissible procedure set for one declared frame -- a pure,
+    total function mirroring the split already shipped in
+    ``dsx/checks/stats.py`` between the pure ``recommend_test()`` and the
+    ``Report``-emitting ``_check_declared_test()``. No ``Report``, no
+    finding, no ``DecisionRecord``, no file write happens anywhere in this
+    function -- that split is what lets ``dsx/cli.py::cmd_recommend`` call
+    the ranking directly without a gate report, and what lets task 3's
+    ``check()`` call this function exactly once and read every judgement it
+    needs off the returned dict.
+
+    Reads the two frame axes with the dotted-path helper
+    (``validity_frame.estimand.type``, ``validity_frame.dependence.structure``)
+    and the declared procedure with ``declared_procedure(spec)`` (plan
+    11-05), which reads the paradigm-neutral procedure block as a plain
+    mapping chain rather than a combined dotted-path string. ``get()``
+    already degrades a non-mapping ``spec`` to its default, so a ``None`` or
+    non-dict ``spec`` reaches the same blank-axis refusal shape as a real
+    spec with blank axes, rather than raising.
+
+    Every dataclass and tuple is converted to a list or dict before
+    returning, so the result survives ``json.dumps`` unchanged and calling
+    this function twice on the same spec produces byte-identical JSON.
+
+    The three refusal causes are checked in a fixed order -- blank axis,
+    then no matching family, then unresolved declared procedure -- and
+    exactly one is ever reported, because a spec can be blank *and* miss
+    every family at once, and the order has to be a property of this
+    function, not of which branch happened to be written first.
+    """
+    ontology = load_ontology()
+
+    estimand = get(spec, "validity_frame.estimand.type")
+    dependence = get(spec, "validity_frame.dependence.structure")
+    declared = declared_procedure(spec)
+
+    resolution = resolve_declared_procedure(ontology, estimand, dependence, declared)
+
+    base: "dict[str, object]" = {
+        "estimand": estimand if isinstance(estimand, str) else (estimand or ""),
+        "dependence": dependence if isinstance(dependence, str) else (dependence or ""),
+        "declared_procedure": declared,
+        "resolution": resolution.status,
+        "resolved_family": resolution.family_id,
+        # The number of families the ontology loaded after uncited entries
+        # were dropped -- lets an operator reading `dsx recommend-test`
+        # output tell an empty admissible set caused by a narrow frame apart
+        # from one caused by a stripped ontology.
+        "ontology_entries": len(ontology.families),
+    }
+
+    if is_blank(estimand) or is_blank(dependence):
+        return {
+            **base,
+            "admissible": [],
+            "refusal": _REFUSAL,
+            "refusal_cause": _CAUSE_BLANK_AXIS,
+        }
+
+    candidates = candidate_families(ontology, estimand, dependence)
+    if not candidates:
+        return {
+            **base,
+            "admissible": [],
+            "refusal": _REFUSAL,
+            "refusal_cause": _CAUSE_NO_MATCHING_FAMILY,
+        }
+
+    ranked = rank_admissible(candidates, ontology.rules)
+    admissible_list = [_ranked_entry_to_dict(entry) for entry in ranked]
+
+    if resolution.status in ("unresolved", "outside_candidate_set"):
+        return {
+            **base,
+            "admissible": admissible_list,
+            "refusal": _REFUSAL,
+            "refusal_cause": _CAUSE_UNRESOLVED,
+        }
+
+    return {
+        **base,
+        "admissible": admissible_list,
+        "refusal": "",
+        "refusal_cause": "",
+    }
