@@ -29,8 +29,10 @@ sys.path.insert(0, str(ROOT))
 
 from dsx.findings import CheckError  # noqa: E402
 from dsx.frame import admissibility  # noqa: E402
+from dsx.loader import load  # noqa: E402
 
 FAMILIES_PATH = ROOT / "references" / "families.yaml"
+GOOD_SPEC_PATH = ROOT / "examples" / "good-ANALYSIS-SPEC.yaml"
 
 
 # A single, always-valid minimal ontology fixture -- one token, one rule, one
@@ -572,6 +574,155 @@ class TestDominatingRules(_CacheClearingTestCase):
                 candidates[0].id, candidates, ontology.rules
             ),
             (),
+        )
+
+
+# ── Task 2: admissible_families() -- the pure return shape naming ───────────
+# assumptions bought and charged (REQ-P11-03, REQ-P11-04, D-16)
+
+
+_ADMISSIBLE_ENTRY_KEYS = {
+    "rank", "id", "family", "buys", "charges", "citation", "locator_status",
+    "notes", "placed_by",
+}
+
+
+class TestAdmissibleFamilies(_CacheClearingTestCase):
+    def test_returns_plain_json_serialisable_dict_with_expected_keys(self):
+        import json
+
+        result = admissibility.admissible_families(load(GOOD_SPEC_PATH))
+        self.assertEqual(
+            set(result),
+            {
+                "estimand", "dependence", "declared_procedure", "resolution",
+                "resolved_family", "admissible", "refusal", "refusal_cause",
+                "ontology_entries",
+            },
+        )
+        # No dataclass, no tuple anywhere in the returned structure.
+        json.dumps(result)
+
+    def test_good_fixture_resolves_to_exactly_one_admissible_family(self):
+        result = admissibility.admissible_families(load(GOOD_SPEC_PATH))
+        self.assertEqual(
+            [e["id"] for e in result["admissible"]],
+            ["two_proportion_z_cluster_robust"],
+        )
+        self.assertEqual(result["resolution"], "in_candidate_set")
+        self.assertEqual(result["refusal"], "")
+        self.assertEqual(result["refusal_cause"], "")
+        self.assertTrue(_ADMISSIBLE_ENTRY_KEYS <= set(result["admissible"][0]))
+
+    def test_blank_estimand_refuses_with_required_axis_blank(self):
+        spec = {
+            "validity_frame": {
+                "estimand": {"type": ""},
+                "dependence": {"structure": "none"},
+            }
+        }
+        result = admissibility.admissible_families(spec)
+        self.assertEqual(result["admissible"], [])
+        self.assertEqual(result["refusal"], "no_admissible_procedure")
+        self.assertEqual(result["refusal_cause"], "required_axis_blank")
+
+    def test_blank_dependence_refuses_with_required_axis_blank(self):
+        spec = {
+            "validity_frame": {
+                "estimand": {"type": "difference_in_means"},
+                "dependence": {"structure": ""},
+            }
+        }
+        result = admissibility.admissible_families(spec)
+        self.assertEqual(result["refusal_cause"], "required_axis_blank")
+
+    def test_no_matching_family_refuses_with_no_matching_family(self):
+        spec = {
+            "validity_frame": {
+                "estimand": {"type": "ratio_of_means"},
+                "dependence": {"structure": "hierarchical"},
+            }
+        }
+        result = admissibility.admissible_families(spec)
+        self.assertEqual(result["admissible"], [])
+        self.assertEqual(result["refusal_cause"], "no_matching_family")
+
+    def test_unresolved_declared_procedure_refuses_but_still_lists_candidates(self):
+        spec = {
+            "validity_frame": {
+                "estimand": {"type": "difference_in_means"},
+                "dependence": {"structure": "none"},
+            },
+            "inference": {"primary_procedure": "not_a_real_test"},
+        }
+        result = admissibility.admissible_families(spec)
+        self.assertEqual(result["refusal_cause"], "declared_procedure_unresolved")
+        self.assertTrue(result["admissible"])
+
+    def test_outside_candidate_set_declared_procedure_refuses(self):
+        spec = {
+            "validity_frame": {
+                "estimand": {"type": "difference_in_means"},
+                "dependence": {"structure": "none"},
+            },
+            "inference": {"primary_procedure": "fishers_exact"},
+        }
+        result = admissibility.admissible_families(spec)
+        self.assertEqual(result["refusal_cause"], "declared_procedure_unresolved")
+        self.assertTrue(result["admissible"])
+
+    def test_causes_checked_in_order_blank_axis_first(self):
+        # Both a blank axis AND a non-matching pair could apply -- blank axis
+        # must win, proving the checked order.
+        spec = {
+            "validity_frame": {
+                "estimand": {"type": ""},
+                "dependence": {"structure": "spatial"},
+            }
+        }
+        result = admissibility.admissible_families(spec)
+        self.assertEqual(result["refusal_cause"], "required_axis_blank")
+
+    def test_undeclared_procedure_is_not_a_refusal(self):
+        spec = {
+            "validity_frame": {
+                "estimand": {"type": "difference_in_means"},
+                "dependence": {"structure": "none"},
+            }
+        }
+        result = admissibility.admissible_families(spec)
+        self.assertEqual(result["resolution"], "not_declared")
+        self.assertEqual(result["refusal"], "")
+        self.assertEqual(len(result["admissible"]), 2)
+
+    def test_none_and_non_mapping_spec_return_blank_axis_refusal_shape(self):
+        for spec in (None, ["not", "a", "mapping"]):
+            with self.subTest(spec=spec):
+                result = admissibility.admissible_families(spec)
+                self.assertEqual(result["refusal_cause"], "required_axis_blank")
+                self.assertEqual(result["admissible"], [])
+
+    def test_calling_twice_produces_json_identical_results(self):
+        import json
+
+        spec = load(GOOD_SPEC_PATH)
+        first = admissibility.admissible_families(spec)
+        second = admissibility.admissible_families(spec)
+        self.assertEqual(json.dumps(first, sort_keys=True), json.dumps(second, sort_keys=True))
+
+    def test_ontology_entries_counts_loaded_families(self):
+        ontology = admissibility.load_ontology()
+        result = admissibility.admissible_families(load(GOOD_SPEC_PATH))
+        self.assertEqual(result["ontology_entries"], len(ontology.families))
+
+    def test_refusal_cause_vocabulary_is_closed_to_exactly_three_members(self):
+        self.assertEqual(
+            set(admissibility._REFUSAL_CAUSES),
+            {
+                "required_axis_blank",
+                "no_matching_family",
+                "declared_procedure_unresolved",
+            },
         )
 
 
