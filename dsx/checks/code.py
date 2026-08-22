@@ -379,8 +379,15 @@ def _prose_line_indices(tree: "ast.AST") -> "frozenset[int]":
     `df['Age'] = df['Age'].fillna(df['Age'].mean())` sits on three
     single-line string constants and must not be masked.
 
-    In this wave the mask has exactly one consumer: the split-marker text
-    scan, via `_first_line_matching`'s `masked` parameter (Decision 5).
+    Phase 11.1.1 plan 04 (GAP-2, SC4): the mask has THREE consumers on the
+    parsed path -- the split-marker text scan, via `_first_line_matching`'s
+    `masked` parameter (Decision 5); the full-frame-cleaning scan, via
+    `_first_full_frame_cleaning_line`'s `masked` parameter; and the
+    statistical-test scan, via `_stat_test_lines_referencing`'s `masked`
+    parameter, including its `_TARGET_REFERENCE_LOOKBACK` window. The mask
+    is EMPTY on the fallback path -- there is no tree to derive it from --
+    so the docstring false positive this plan closes on the parsed path
+    for DSX-CODE-020, DSX-CODE-030 and DSX-CODE-031 persists there.
     """
     masked: "set[int]" = set()
     for node in ast.walk(tree):
@@ -620,7 +627,7 @@ def check(spec: dict, phase_dir: "str | None" = None) -> Report:
             fit_line=first_fit + 1,
         )
 
-    cleaning_index = _first_full_frame_cleaning_line(lines)
+    cleaning_index = _first_full_frame_cleaning_line(lines, masked=prose_mask)
     cleaning_blocked = cleaning_index is not None and (
         first_split is None or cleaning_index < first_split
     )
@@ -748,7 +755,9 @@ def check(spec: dict, phase_dir: "str | None" = None) -> Report:
     raw_target = model_section.get("target")
     target_text = raw_target if isinstance(raw_target, str) else ""
     stat_test_lines = (
-        [] if is_blank(target_text) else _stat_test_lines_referencing(lines, target_text)
+        []
+        if is_blank(target_text)
+        else _stat_test_lines_referencing(lines, target_text, masked=prose_mask)
     )
 
     stat_before_index: "int | None" = None
@@ -1178,13 +1187,24 @@ def _first_fit_leak_line(lines: list[str]) -> int | None:
     return None
 
 
-def _first_full_frame_cleaning_line(lines: list[str]) -> int | None:
+def _first_full_frame_cleaning_line(
+    lines: list[str], masked: "frozenset[int]" = frozenset()
+) -> int | None:
     """Lowest line index satisfying `_is_full_frame_impute` or
     `_is_full_frame_spread_filter` (REQ-P11.1-01). Repeats `_first_line_matching`'s
     skip guard rather than reusing it — that helper takes plain substrings, this
     one takes co-occurrence predicates, and merging the two would widen a function
-    three shipped codes already depend on."""
+    three shipped codes already depend on.
+
+    Phase 11.1.1 plan 04 (GAP-2, SC4): `masked` -- zero-based line indices
+    from `_prose_line_indices` -- is skipped BEFORE the existing
+    comment/import guard, identical in name, type, default and skip
+    placement to `_first_line_matching`'s own `masked` parameter, so the
+    module has one masking convention rather than two. Empty by default,
+    so a caller that does not pass it is unaffected."""
     for index, line in enumerate(lines):
+        if index in masked:
+            continue
         stripped = line.strip()
         if stripped.startswith("#"):
             continue
@@ -1242,11 +1262,23 @@ def _is_training_frame(token: str) -> bool:
     return any(token.startswith(name) for name in TRAINING_FRAME_NAMES)
 
 
-def _stat_test_lines_referencing(lines: list[str], target: str) -> list[int]:
+def _stat_test_lines_referencing(
+    lines: list[str], target: str, masked: "frozenset[int]" = frozenset()
+) -> list[int]:
     """Indices of non-comment, non-import lines where `STAT_TEST_CALL_RE`
     matches, and either that line itself or one of the
     `_TARGET_REFERENCE_LOOKBACK` (three) lines immediately preceding it
     references `target` (REQ-P11.1-03).
+
+    Phase 11.1.1 plan 04 (GAP-2, SC4): `masked` -- zero-based line indices
+    from `_prose_line_indices`, identical in name, type and default to
+    `_first_line_matching`'s and `_first_full_frame_cleaning_line`'s own
+    `masked` parameters -- is applied in BOTH places this function reads
+    `lines`: a masked line is skipped as a CANDIDATE statistical-test-call
+    line, and a masked line is excluded from the lookback window before the
+    target-reference search runs, so a prose line cannot supply the target
+    reference that decides a real call's verdict. Empty by default, so a
+    caller that does not pass it is unaffected.
 
     The lookback exists because the reproduction's own idiom
     (`references/The AI Data Scientist.md`, Table 1) builds the contingency
@@ -1278,6 +1310,8 @@ def _stat_test_lines_referencing(lines: list[str], target: str) -> list[int]:
     )
     results: list[int] = []
     for index, line in enumerate(lines):
+        if index in masked:
+            continue
         stripped = line.strip()
         if stripped.startswith("#"):
             continue
@@ -1286,7 +1320,11 @@ def _stat_test_lines_referencing(lines: list[str], target: str) -> list[int]:
         if not STAT_TEST_CALL_RE.search(line):
             continue
         window_start = max(0, index - _TARGET_REFERENCE_LOOKBACK)
-        window = lines[window_start : index + 1]
+        window = [
+            candidate
+            for offset, candidate in enumerate(lines[window_start : index + 1])
+            if (window_start + offset) not in masked
+        ]
         if any(reference_re.search(candidate) for candidate in window):
             results.append(index)
     return results

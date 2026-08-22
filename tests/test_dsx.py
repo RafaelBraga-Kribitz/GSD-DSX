@@ -5492,23 +5492,30 @@ class TestPhase11_1Code(unittest.TestCase):
     def test_multiline_string_interior_line_stays_uncaught_by_design(self):
         """A split marker written on a STRICTLY INTERIOR line of a
         triple-quoted string is masked deliberately (Rule B,
-        `_prose_line_indices`), so it does not count as a split.
-        `_prose_line_indices` currently has exactly ONE consumer in the
-        shipped code -- the split-marker text scan via `_first_line_
-        matching`'s `masked` parameter -- named "In this wave the mask has
-        exactly one consumer" in the source comment above it. The plan's
-        own draft framed this pin around a "cleaning idiom" (DSX-CODE-020),
-        but measured against the shipped code, DSX-CODE-020's own text loop
-        applies NO masking at all -- a cleaning idiom inside a multi-line
-        string's interior line still fires DSX-CODE-020 unconditionally,
-        which is the larger, separately-documented finding of this plan
-        (see this plan's SUMMARY, "prose mask coverage"). This pin is
-        rewritten to test the one place the mask genuinely applies: a split
-        marker string on the interior line of a triple-quoted assignment
-        stays masked, so a REAL split-then-fit sequence with a marker
-        mentioned only in prose reads, incorrectly, as having no split. If
-        this test ever fails because the split was suddenly detected, that
-        is good news and the
+        `_prose_line_indices`), so it does not count as a split. This task
+        changes nothing about the split-marker scan, so this case stays
+        genuinely uncaught and the three assertions below stay correct.
+
+        Phase 11.1.1 plan 04 (GAP-2, SC4) update: `_prose_line_indices` now
+        has THREE consumers on the parsed path -- the split-marker text
+        scan via `_first_line_matching`'s `masked` parameter (what this pin
+        exercises), the full-frame-cleaning scan via
+        `_first_full_frame_cleaning_line`'s `masked` parameter, and the
+        statistical-test scan via `_stat_test_lines_referencing`'s `masked`
+        parameter, including its lookback window -- see the rewritten
+        source sentence above `_prose_line_indices`, which replaced the
+        single-consumer claim this docstring used to quote.
+
+        The plan-02 draft this pin superseded framed itself around a
+        "cleaning idiom" (DSX-CODE-020), and measured against the code
+        shipped at that time, DSX-CODE-020's own text loop applied NO
+        masking at all -- a cleaning idiom inside a multi-line string's
+        interior line fired DSX-CODE-020 unconditionally (plan 03 measured
+        this and declared it outside its own scope; see plan 03's SUMMARY,
+        "prose mask coverage"). Plan 04 task 2 closed that gap by threading
+        the same mask into that scan, so a cleaning idiom on a strictly
+        interior line no longer fires DSX-CODE-020. If this test ever fails
+        because the split was suddenly detected, that is good news and the
         test should be promoted to a firing test rather than deleted.
         """
         with tempfile.TemporaryDirectory() as tmp:
@@ -7129,13 +7136,18 @@ class TestPhase11_1Code(unittest.TestCase):
     def test_split_marker_on_the_opening_or_closing_line_of_a_multiline_string_still_counts(
         self,
     ):
-        """Completes blocker B2's boundary proof for the one place the
-        prose mask is actually wired in the shipped code (the split-marker
-        text scan; see test_multiline_string_interior_line_stays_
-        uncaught_by_design above, task 1). Rule B masks only strictly
-        interior lines -- the opening and closing lines of a multi-line
-        string are spared, so a split marker written on either one still
-        counts as a split."""
+        """Completes blocker B2's boundary proof for the split-marker text
+        scan (see test_multiline_string_interior_line_stays_
+        uncaught_by_design above, task 1) -- one of the THREE places the
+        prose mask is wired after Phase 11.1.1 plan 04 task 2 (GAP-2, SC4)
+        also threaded it into the full-frame-cleaning and statistical-test
+        scans. Rule B masks only strictly interior lines -- the opening and
+        closing lines of a multi-line string are spared, so a split marker
+        written on either one still counts as a split. That is the SAME
+        boundary all three consumers share, which is why it becomes
+        user-visible for DSX-CODE-020 for the first time in plan 04 task 2
+        (see test_multiline_string_opening_line_still_fires_code_020_
+        stays_uncaught_by_design)."""
         for source, label in (
             (
                 "sql = " + '"""' + "train_test_split\n"
