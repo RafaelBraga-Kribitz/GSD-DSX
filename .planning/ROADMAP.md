@@ -787,7 +787,7 @@ overturns a phase-research conclusion, not an entry in the `brief.md` D-table or
      moves, it is surfaced and justified in both directions — never absorbed by editing
      `_TARGET_DEFECT_CODES`, `_EXPECTED_CAUGHT_DEFECTS` or `_INCIDENTAL_GAP_CODES`.
 
-**Plans**: 3/3 executed, then 2 gap-closure plans added 2026-08-21. Verification
+**Plans**: 4/5 plans executed
 (`11.1.1-VERIFICATION.md`) returned `gaps_found` at 3/6 success criteria: SC2, SC4 and SC5 each
 falsified by evidence reproduced directly against the shipped code. Plans 04 and 05 close them.
 
@@ -806,7 +806,7 @@ Plans:
 
 **Gap closure — Wave 1** *(added after verification falsified SC2, SC4 and SC5)*
 
-- [ ] 11.1.1-04-PLAN.md — close the three reproduced code defects: the fallback text scan misses a real post-split leak whenever the recognised frame keyword is not the first keyword (SC2); the prose mask was never threaded into the scanners deciding `DSX-CODE-020`, `DSX-CODE-030` and `DSX-CODE-031`, so a docstring alone can decide a CRITICAL verdict on the primary parsed path (SC4); and a structurally malformed `.ipynb` crashes `check()` with an uncaught `AttributeError` and an exit code indistinguishable from a legitimate gate block (SC5)
+- [x] 11.1.1-04-PLAN.md — close the three reproduced code defects: the fallback text scan misses a real post-split leak whenever the recognised frame keyword is not the first keyword (SC2); the prose mask was never threaded into the scanners deciding `DSX-CODE-020`, `DSX-CODE-030` and `DSX-CODE-031`, so a docstring alone can decide a CRITICAL verdict on the primary parsed path (SC4); and a structurally malformed `.ipynb` crashes `check()` with an uncaught `AttributeError` and an exit code indistinguishable from a legitimate gate block (SC5)
 
 **Gap closure — Wave 2** *(blocked on gap-closure Wave 1)*
 
@@ -965,7 +965,7 @@ cases where absence permitted a false pass" is a debate, not a count.
 | 10. Pre-registered inference plan (`DSX-PRE-*`) | 6/6 | In Progress|  |
 | 11. Frequentist admissibility adjudicator (`DSX-ADM-*`) | 4/8 | In Progress|  |
 | 11.1 Generated-pipeline reality | 8/8 | Complete | 2026-08-21 |
-| 11.1.1 Detection-code hardening | 3/3 | In Progress|  |
+| 11.1.1 Detection-code hardening | 4/5 | In Progress|  |
 | 12. Calibration | 0/TBD | Not started | - |
 
 ## Dependency graph — v2.0.0
