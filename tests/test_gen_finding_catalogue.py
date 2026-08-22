@@ -466,12 +466,18 @@ class TestFamiliesCitationGate(unittest.TestCase):
             self.assertIn(str(path), problems[0])
 
     def test_repeated_calls_do_not_duplicate_the_repository_root_on_sys_path(self):
+        # Other test modules under this suite insert ROOT (or an equivalent
+        # path) onto sys.path themselves at import time, unguarded — so the
+        # baseline count here is whatever the rest of the discovered suite
+        # already left behind, not necessarily zero or one. What this test
+        # proves is narrower and still exact: *this function's own guard*
+        # never adds a second entry once ROOT is already present.
         g.check_families_citations(_REAL_FAMILIES_YAML)
         before = sys.path.count(str(g.ROOT))
         g.check_families_citations(_REAL_FAMILIES_YAML)
         after = sys.path.count(str(g.ROOT))
-        self.assertEqual(before, 1)
-        self.assertEqual(after, 1)
+        self.assertEqual(before, after)
+        self.assertGreaterEqual(before, 1)
 
     def test_check_exits_0_against_the_committed_tree(self):
         result = subprocess.run(
