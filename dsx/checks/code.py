@@ -547,11 +547,14 @@ def check(spec: dict, phase_dir: "str | None" = None) -> Report:
     source = _read_source(path)
     if source is None:
         # _read_source returns None for an unresolvable OSError, an
-        # unsupported suffix, or an unparseable notebook JSON document — it
-        # does not distinguish which, so this reason names the whole class.
+        # unsupported suffix, an unparseable notebook JSON document, or a
+        # notebook document that IS valid JSON but is not a cell-bearing
+        # object (Phase 11.1.1 plan 04, GAP-3) — it does not distinguish
+        # which, so this reason names the whole class.
         report.ok(
             "entrypoint NOT scanned — could not be read (unreadable, "
-            "unsupported suffix, or invalid notebook JSON) (no leak scan ran)"
+            "unsupported suffix, invalid notebook JSON, or a notebook "
+            "document that is not a cell-bearing object) (no leak scan ran)"
         )
         return report
 
@@ -1098,8 +1101,32 @@ def _read_source(path: Path) -> str | None:
             nb = json.loads(path.read_text(encoding="utf-8-sig"))
         except (OSError, json.JSONDecodeError):
             return None
+        # Phase 11.1.1 plan 04 (GAP-3, SC5). Valid JSON guarantees nothing
+        # about SHAPE: `[]` and `null` are both valid JSON documents with
+        # no `.get` method, and a `cells` entry can itself be anything JSON
+        # allows (a bare string, a number, ...). Returning None here routes
+        # into check()'s existing `source is None` -- "could not be read"
+        # -- branch instead of letting `nb.get("cells")` raise AttributeError
+        # uncaught out of check(), a raw traceback with the same exit code
+        # (1) EXIT_BLOCK uses, which defeats the documented contract that
+        # exit 2 means "the check could not run".
+        if not isinstance(nb, dict):
+            return None
         chunks: list[str] = []
         for cell in nb.get("cells") or []:
+            # A non-object cell is returned as None -- NOT skipped with
+            # `continue` -- for two reasons, both measured while planning.
+            # `continue` reads a cell like the bare string "x" as
+            # contributing no lines, so a document whose only cell is
+            # malformed would scan as the EMPTY string: check() would then
+            # print the affirmative "entrypoint parsed with ast" pass line
+            # over a document nothing was actually read from -- a silent
+            # pass, which SC5 forbids. Silently dropping a cell would also
+            # renumber every line below it, breaking the byte-identical
+            # notebook line geometry plans 01 and 02 built the markdown
+            # character-wise blanking to preserve.
+            if not isinstance(cell, dict):
+                return None
             cell_type = cell.get("cell_type")
             is_code = cell_type == "code"
             is_markdown = cell_type == "markdown"
