@@ -7621,6 +7621,32 @@ class TestAdmissibilityRecommendComposition(unittest.TestCase):
             out["admissibility"]["admissible"][0]["id"], "two_proportion_z_cluster_robust"
         )
 
+    def test_bayesian_spec_omits_admissibility_key_rather_than_refusing(self):
+        # CR-01 (11-REVIEW.md): the frequentist-only scoping decision
+        # run_checks's "admissibility" branch applies (D-22/REQ-P11-05) was
+        # missing here, so a spec that legitimately declares
+        # inference.paradigm: bayesian produced a spurious
+        # no_admissible_procedure refusal naming the analyst's own declared
+        # Bayesian procedure as an unresolved frequentist test. Reproduced
+        # before the fix: this exact command returned a "refusal":
+        # "no_admissible_procedure" payload citing "bayesian_ab" as
+        # unresolved. After the fix, the admissibility key is omitted
+        # entirely -- the same widen-never-penalise shape
+        # admissibility.check() itself uses when applies_to_frame is False.
+        composed = self._recommend(
+            [
+                "proportion",
+                "--groups",
+                "2",
+                "--spec",
+                "examples/known-bad/bayesian-continuous-monitoring-ANALYSIS-SPEC.yaml",
+            ]
+        )
+        self.assertEqual(composed.returncode, 0, composed.stderr)
+        out = json.loads(composed.stdout)
+        self.assertNotIn("admissibility", out)
+        self.assertEqual(list(out), ["test", "rationale", "alternatives", "effect_size"])
+
     def test_named_missing_spec_exits_2(self):
         result = self._recommend(
             ["proportion", "--groups", "2", "--spec", "does/not/exist.yaml"]

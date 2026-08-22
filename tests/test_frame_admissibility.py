@@ -206,6 +206,31 @@ class TestLoadOntologyDroppedUncited(_CacheClearingTestCase):
             self.assertEqual(ontology.families, ())
             self.assertEqual(ontology.dropped_uncited, ("family_a",))
 
+    def test_one_uncited_ranking_rule_is_dropped_and_named(self):
+        # WR-03 (11-REVIEW.md): the run-time drop must cover ranking_rules
+        # too, not just families -- a rule's citation is surfaced directly
+        # inside a live DSX-ADM-010 finding's detail text via
+        # dominating_rules(), so an uncited rule reaching a live gate run
+        # (e.g. a hand-edited file that skipped --check) must not be usable
+        # to cite an empty string in a finding.
+        text = _MINIMAL_VALID_YAML.replace(
+            '    citation: "Example, A. (2020), Example Journal"\n'
+            '    locator_status: "verified"\n'
+            '    notes: "fixture"\n'
+            "families:",
+            '    citation: ""\n'
+            '    locator_status: "unverified"\n'
+            '    notes: "deliberately uncited fixture rule"\n'
+            "families:",
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            path = _write_yaml(Path(tmp), "uncited-rule.yaml", text)
+            ontology = admissibility.load_ontology(path)
+            self.assertEqual(ontology.rules, ())
+            self.assertEqual(ontology.dropped_uncited, ("example_rule",))
+            # The families block, untouched by this fixture edit, still loads.
+            self.assertEqual(len(ontology.families), 1)
+
 
 class TestFamilyAndRankingRuleFrozen(_CacheClearingTestCase):
     def test_family_is_frozen_with_tuple_sequence_fields(self):
@@ -575,6 +600,46 @@ class TestDominatingRules(_CacheClearingTestCase):
             ),
             (),
         )
+
+    def test_order_independent_of_ontology_file_order_when_two_rules_dominate(self):
+        # WR-01 (11-REVIEW.md): every other order-sensitive path in this
+        # module refuses to let the ontology file's own entry order leak
+        # into an outcome (alias_index() raises on a collision rather than
+        # last-one-wins; candidate_families() sorts by id;
+        # resolve_declared_procedure() takes the lexicographically first id
+        # on a tie). dominating_rules() must do the same -- its return order
+        # must not depend on which of two dominating rules the ontology file
+        # happens to list first. Not reachable in the committed
+        # references/families.yaml today (no family is currently named
+        # `over` by two different ranking_rules entries), so this is
+        # synthetic by necessity, exactly the case the review's own
+        # reproduction used.
+        def _family(fid):
+            return admissibility.Family(
+                id=fid, family=fid, estimand="e", inference_method="frequentist",
+                dependence="none", aliases=(), buys=(), charges=(),
+                traceability="", citation="c", locator_status="verified", notes="",
+            )
+
+        def _rule(rid, prefers):
+            return admissibility.RankingRule(
+                id=rid, prefers=prefers, over="b", condition="always",
+                strength="uniform_domination", citation="c",
+                locator_status="verified", notes="",
+            )
+
+        candidates = (_family("a"), _family("b"), _family("z"))
+        rule_a_first = _rule("rule_a_first", "a")
+        rule_z_last = _rule("rule_z_last", "z")
+
+        forward = admissibility.dominating_rules(
+            "b", candidates, (rule_a_first, rule_z_last)
+        )
+        reversed_ = admissibility.dominating_rules(
+            "b", candidates, (rule_z_last, rule_a_first)
+        )
+        self.assertEqual([r.id for r in forward], [r.id for r in reversed_])
+        self.assertEqual([r.id for r in forward], ["rule_a_first", "rule_z_last"])
 
 
 # ── Task 2: admissible_families() -- the pure return shape naming ───────────

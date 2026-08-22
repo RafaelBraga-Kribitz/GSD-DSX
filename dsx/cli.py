@@ -430,6 +430,7 @@ def cmd_profile(args: argparse.Namespace) -> int:
 def cmd_recommend(args: argparse.Namespace) -> int:
     from .checks.stats import recommend_test
     from .frame.admissibility import admissible_families
+    from .frame.paradigm import applies_to_frequentist_admissibility
 
     recommendation = recommend_test(
         args.outcome_type,
@@ -453,7 +454,16 @@ def cmd_recommend(args: argparse.Namespace) -> int:
     if args.spec is not None or args.phase_dir is not None:
         path = find_spec(args.spec, args.phase_dir)
         spec = load(path)
-        out["admissibility"] = admissible_families(spec)
+        # Same frequentist-only scoping decision run_checks's "admissibility"
+        # branch applies (D-22/REQ-P11-05) — admissible_families() has no
+        # scoping of its own and always evaluates against the frequentist-only
+        # ontology, so a declared non-frequentist paradigm (e.g. bayesian)
+        # must never reach it here either, or this command would refuse a
+        # procedure the analyst never claimed was frequentist in the first
+        # place. Omit the key rather than emit a not-applicable marker,
+        # matching admissibility.check()'s own widen-never-penalise shape.
+        if applies_to_frequentist_admissibility(spec):
+            out["admissibility"] = admissible_families(spec)
 
     print(json.dumps(out, indent=2))
     return 0

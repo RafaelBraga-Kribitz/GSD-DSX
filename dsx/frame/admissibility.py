@@ -149,11 +149,13 @@ def load_ontology(path: "str | Path | None" = None) -> Ontology:
     is admissible), not an installation defect, so it returns cleanly with
     zero families rather than raising.
 
-    A family entry whose citation is missing or blank after stripping is
-    dropped, never raised on -- the run-time half of the two-sided citation
-    enforcement (the build-time half is ``check_families_citations()``,
-    plan 11-08). Dropping here means a hand-edited file that skipped the
-    build-time gate still cannot rank an uncited family.
+    A ``families`` or ``ranking_rules`` entry whose citation is missing or
+    blank after stripping is dropped, never raised on -- the run-time half
+    of the two-sided citation enforcement (the build-time half is
+    ``check_families_citations()``, plan 11-08, which covers all three
+    blocks including ``assumption_vocabulary``). Dropping here means a
+    hand-edited file that skipped the build-time gate still cannot rank an
+    uncited family or cite an uncited rule in a live finding.
     """
     resolved = Path(path) if path is not None else _ONTOLOGY_PATH
     key = str(resolved)
@@ -206,9 +208,26 @@ def load_ontology(path: "str | Path | None" = None) -> Ontology:
             continue
         families.append(_coerce_family(entry))
 
-    rules = tuple(
-        _coerce_rule(entry) for entry in rules_raw if isinstance(entry, dict)
-    )
+    # WR-03 (11-REVIEW.md): the two-sided citation enforcement this
+    # docstring claims is symmetric was, before this fix, a strict subset --
+    # only `families` entries were dropped on a blank citation; a
+    # `ranking_rules` entry with a blank citation still reached
+    # `dominating_rules()` and surfaced its (empty) citation directly inside
+    # a live `DSX-ADM-010` finding's `detail` text. The build-time gate
+    # (`check_families_citations()`, plan 11-08) already covers all three
+    # blocks, so the committed tree is clean either way -- this closes the
+    # gap for a hand-edited file that skips `--check` and reaches a live
+    # gate run directly, exactly the scenario the run-time half exists for.
+    rules: "list[RankingRule]" = []
+    for entry in rules_raw:
+        if not isinstance(entry, dict):
+            continue
+        citation = str(entry.get("citation", "")).strip()
+        if not citation:
+            dropped.append(str(entry.get("id", "")))
+            continue
+        rules.append(_coerce_rule(entry))
+    rules = tuple(rules)
 
     tokens = {
         str(entry.get("token", "")): str(entry.get("citation", ""))
@@ -521,7 +540,8 @@ def dominating_rules(
     rules: "tuple[RankingRule, ...]",
 ) -> "tuple[RankingRule, ...]":
     """Rules whose `over` is `family_id` and whose `prefers` is also a member
-    of `candidates`, ordered as they appear in `rules` (ontology order).
+    of `candidates`, sorted lexicographically by rule `id` -- never by
+    `rules`' own ontology-file order (WR-01, 11-REVIEW.md).
 
     This is the predicate `DSX-ADM-010` (task 3) keys on, kept separate from
     `rank_admissible()` so that ordering a candidate set and asserting a
@@ -529,15 +549,29 @@ def dominating_rules(
     Returns an empty tuple for a one-element `candidates` -- a lone candidate
     can never be dominated by a rule whose preferred side is absent from its
     own candidate set.
+
+    Every other order-sensitive path in this module refuses to let the
+    ontology file's own entry order leak into an outcome -- `alias_index()`
+    raises rather than "last one wins" on a collision, `candidate_families()`
+    sorts by family id, `resolve_declared_procedure()` takes the
+    lexicographically first family id on a tie. A caller that took the first
+    element of this function's return value in `rules`' own order (as this
+    module's `_check_declared_procedure_ranking` did before this fix) would
+    make which citation lands in a `DSX-ADM-010` finding a silent function of
+    where two dominating rules happen to sit in `references/families.yaml`,
+    the moment more than one ever names the same `family_id`. Sorting here,
+    once, means every current and future caller inherits the guarantee
+    without having to remember to sort it themselves.
     """
     if len(candidates) <= 1:
         return ()
     candidate_ids = frozenset(family.id for family in candidates)
-    return tuple(
+    matches = tuple(
         rule
         for rule in rules
         if rule.over == family_id and rule.prefers in candidate_ids
     )
+    return tuple(sorted(matches, key=lambda rule: rule.id))
 
 
 # admissible_families()'s refusal vocabulary -- module-level string constants
