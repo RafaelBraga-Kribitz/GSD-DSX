@@ -533,5 +533,101 @@ class TestFamiliesCitationGate(unittest.TestCase):
                 )
 
 
+# ── Task 2: "DSX-ADM-" in _D05_ALLOWLIST_PREFIXES — proving the citation
+#    enforcement is live for the new family, not merely allow-listed (D-25) ───
+
+
+class TestDsxAdmAllowlistEntry(unittest.TestCase):
+    def test_dsx_adm_prefix_present_and_every_entry_hyphen_terminated(self):
+        self.assertIn("DSX-ADM-", g._D05_ALLOWLIST_PREFIXES)
+        for prefix in g._D05_ALLOWLIST_PREFIXES:
+            self.assertTrue(prefix.endswith("-"), f"{prefix!r} is not hyphen-terminated")
+
+    def test_check_d05_on_the_real_tree_is_still_empty_with_dsx_adm_covered(self):
+        self.assertEqual(g.check_d05(g.collect(), g.ROOT / "dsx", g.ROOT / "tests"), [])
+
+    def test_covered_code_set_on_the_real_tree_includes_both_new_codes(self):
+        rows = g.collect()
+        covered = {
+            row[0]
+            for row in rows
+            if row[0].startswith(g._D05_ALLOWLIST_PREFIXES) or row[0] in g._D05_ALLOWLIST_CODES
+        }
+        self.assertIn("DSX-ADM-010", covered)
+        self.assertIn("DSX-ADM-020", covered)
+
+    def test_missing_citation_line_on_dsx_adm_010_is_reported(self):
+        # Proves the gate is *live*, not merely that the real tree passes --
+        # a passing-real-tree-only assertion would pass identically with the
+        # prefix absent.
+        with tempfile.TemporaryDirectory() as code_dir, tempfile.TemporaryDirectory() as tests_dir:
+            _write(
+                Path(code_dir),
+                "check.py",
+                '''
+def f(report):
+    """
+    Structural criterion: fires when x.
+    """
+    report.add("DSX-ADM-010", "HIGH", "t")
+''',
+            )
+            _write(Path(tests_dir), "test_marker.py", "# D-05: DSX-ADM-010\n")
+            rows = [("DSX-ADM-010", "HIGH", "t", "frame/admissibility")]
+            problems = g.check_d05(rows, Path(code_dir), Path(tests_dir))
+            self.assertTrue(
+                any("Citation" in p and "DSX-ADM-010" in p for p in problems), problems
+            )
+
+    def test_missing_structural_criterion_line_on_dsx_adm_010_is_reported(self):
+        with tempfile.TemporaryDirectory() as code_dir, tempfile.TemporaryDirectory() as tests_dir:
+            _write(
+                Path(code_dir),
+                "check.py",
+                '''
+def f(report):
+    """
+    Citation: Example, A. (2020), "A Study", Table 1.
+    """
+    report.add("DSX-ADM-010", "HIGH", "t")
+''',
+            )
+            _write(Path(tests_dir), "test_marker.py", "# D-05: DSX-ADM-010\n")
+            rows = [("DSX-ADM-010", "HIGH", "t", "frame/admissibility")]
+            problems = g.check_d05(rows, Path(code_dir), Path(tests_dir))
+            self.assertTrue(
+                any("Reference value" in p and "DSX-ADM-010" in p for p in problems), problems
+            )
+
+    def test_missing_test_marker_for_dsx_adm_010_is_reported(self):
+        with tempfile.TemporaryDirectory() as code_dir, tempfile.TemporaryDirectory() as tests_dir:
+            _write(
+                Path(code_dir),
+                "check.py",
+                '''
+def f(report):
+    """
+    Citation: Example, A. (2020), "A Study", Table 1.
+    Structural criterion: fires when x.
+    """
+    report.add("DSX-ADM-010", "HIGH", "t")
+''',
+            )
+            # Deliberately no "# D-05: DSX-ADM-010" marker anywhere in tests_dir.
+            _write(Path(tests_dir), "test_other.py", "# D-05: DSX-ADM-020\n")
+            rows = [("DSX-ADM-010", "HIGH", "t", "frame/admissibility")]
+            problems = g.check_d05(rows, Path(code_dir), Path(tests_dir))
+            self.assertTrue(any("marker" in p and "DSX-ADM-010" in p for p in problems), problems)
+
+    def test_check_exits_0_on_the_committed_tree(self):
+        result = subprocess.run(
+            [sys.executable, str(_SCRIPT), "--check"],
+            cwd=str(_ROOT),
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+
 if __name__ == "__main__":
     unittest.main()
