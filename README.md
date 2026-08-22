@@ -179,6 +179,31 @@ just data to a real Python parser, not a function call. This is a genuine
 leak the new scan cannot see, and it belongs here rather than buried in the
 limits section below.
 
+This phase closes three more false alarms of the same shape, for three
+different checks — read this part first too, for the same reason as above.
+A module, class or function docstring, a bare string statement, or the
+interior lines of a multi-line string — writing that merely *describes* a
+full-frame cleaning idiom rather than performing one, for example a
+sentence saying the file deliberately avoids filling missing values with a
+column's average before splitting — used to block at CRITICAL severity
+under `DSX-CODE-020`. It no longer does, for the same reason as the
+docstring case above: the sentence describes the operation, and the
+executable code never actually calls it. The same is true of `DSX-CODE-030`
+(CRITICAL) and `DSX-CODE-031` (HIGH) when the prose mentions a
+statistical-test call on the column your model targets. A second, related
+shape closes alongside these three: `DSX-CODE-030` and `DSX-CODE-031`
+decide whether a statistical-test call is about your target column by
+checking whether that call's own line, or one of the three lines
+immediately above it, mentions the target column's name. A mention of the
+target column that appears only inside a docstring or a bare string
+statement in that three-line window no longer counts — so a real
+statistical-test call sitting a few lines below an explanatory sentence
+stops being blocked on the strength of that sentence alone. Say this
+plainly, for all four of these: in every case the executable code never
+performed the operation the prose sentence described, so removing the
+block is a corrected false alarm, not a weakened check. A file blocked
+yesterday for any of these reasons can pass today.
+
 **Some files that pass today will start failing, and every one of those new
 findings is a true positive** — the leak was always in the file, and the old
 scan could not see it. The shapes a reader can match against their own code:
@@ -190,6 +215,21 @@ safe first one, joined by a semicolon; a fit call whose argument is itself
 another function call (`model.fit(loader.get_full_frame())`); and
 `model.partial_fit(data)` written after the split, which used to draw
 nothing there even though the same call before the split already blocked.
+
+One more true positive belongs in this list, narrower than the rest because
+it applies only on the FALLBACK path — the weaker text scan that runs when
+a file cannot be parsed as Python at all. A fit call whose recognised
+training-frame keyword arrives after another keyword — `model.fit(y=y_train,
+X=full_frame)`, or the same call with several unrelated keywords in front of
+the frame keyword — used to draw nothing there, even though the identical
+call already blocked on the path that reads the file as real Python. It
+blocks on the fallback now too. This is a true positive, not a new rule: the
+leak was always in the file, and the parser-based path already caught it —
+only the weaker fallback scan changed to agree with it. This matters only
+for the files that reach the fallback in the first place — files that
+cannot be parsed as Python at all, for example a genuine syntax error or an
+unrepaired notebook command — so a file that parses cleanly is unaffected by
+this particular fix.
 
 There is also a substitution worth naming plainly, rather than filing it
 under "stricter": a train/test split marker that appears only as a string
@@ -214,6 +254,19 @@ verdict is unaffected, only the punctuation in the quoted text. Second,
 every report now carries one extra line naming which scan path ran — even
 the project's own clean example gains this line, which is a visible,
 intended change to that fixture's output, not an accident.
+
+One more change belongs here, stated plainly rather than as a footnote,
+because it changes what a caller sees rather than what the scan catches. A
+Jupyter notebook file can be valid JSON and still not be a notebook — for
+example, the two characters `[]`, or a document whose list of cells
+contains something that is not itself an object. Before this phase, a file
+shaped like that crashed the whole run: a raw Python error and exit code 1
+— the same number the gate uses to mean "this file was scanned and
+blocked." A caller reading only the exit code could not tell a genuine
+leak apart from a notebook the tool never managed to read at all. It is now
+reported as NOT scanned, the same outcome the tool already gives a file it
+cannot open at all, so the exit code and the report both say what actually
+happened.
 
 When a file cannot be parsed as Python at all — a syntax error, an
 unsupported construct, or a file that is not really Python — the weaker,
@@ -564,16 +617,54 @@ still reaches the pattern match. Concretely: `z = 1  # scaler.fit(data)` on
 the fallback path still blocks at CRITICAL, even though the fit call lives
 entirely inside a comment — a persisting false positive on that one path
 that this phase did not close, named here rather than left for a user to
-discover on their own. Two related limits stay open on the primary (non-
-fallback) text checks that never moved to the parser: `DSX-CODE-002`
-(scaler fitted on the full frame) and `DSX-CODE-003` (a resampler such as
-SMOTE named before the split) still match a comment that merely *mentions*
-the pattern they look for — `# StandardScaler().fit_transform(X)` still
-blocks `DSX-CODE-002`, and `# never use SMOTE before the split` still blocks
-`DSX-CODE-003` — because neither of those two checks' text loops has ever
-been given a leading-comment guard. Notebooks reach the fallback more often
-than plain Python files do, because an introspection line such as
-`df.head?` does not parse and is not repaired.
+discover on their own.
+
+The fallback's keyword-order fix, announced above, has its own stated edge.
+It resolves a recognised training-frame keyword arriving after up to eight
+other, non-recognised keyword arguments in the same call. A call whose
+recognised keyword arrives after more than eight others still draws nothing
+on the fallback, even though the path that reads the file as real Python
+still catches it — a bound, not an oversight, and pinned by this project's
+own tests so a future change cannot silently narrow or widen it without
+someone noticing.
+
+The docstring and prose fixes announced above, for `DSX-CODE-020`,
+`DSX-CODE-030` and `DSX-CODE-031`, apply only on the path that reads the
+file as real Python. The fallback has no parsed structure to build that
+mask from, so on the fallback the mask is empty, and a docstring or a bare
+string statement describing a cleaning idiom, or mentioning a
+statistical-test call on the target column, still blocks `DSX-CODE-020`,
+`DSX-CODE-030` and `DSX-CODE-031` there — the same false alarm this phase
+just closed on the other path, still open on this one. This is the honest
+residue of that fix, not a separate limit.
+
+The prose mask that closes those three false alarms has a boundary worth
+stating on its own, because it becomes visible for `DSX-CODE-020` for the
+first time here. The mask covers a whole bare string statement and the
+strictly interior lines of a multi-line string, but it deliberately spares
+the opening line and the closing line of a multi-line string, because
+either one can carry real code alongside the quotation marks. A full-frame
+cleaning idiom written on the same physical line as a multi-line string's
+opening quote — or its closing quote — therefore still fires
+`DSX-CODE-020`. The sparing is deliberate, and it buys one specific
+guarantee: the mask never hides a line that also carries executable code.
+
+Two related limits stay open on the primary (non-fallback) text checks
+that never moved to the parser and were never given the prose mask at all:
+`DSX-CODE-002` (scaler fitted on the full frame) and `DSX-CODE-003` (a
+resampler such as SMOTE named before the split) still match a comment that
+merely *mentions* the pattern they look for — `# StandardScaler().fit_transform(X)`
+still blocks `DSX-CODE-002`, and `# never use SMOTE before the split` still
+blocks `DSX-CODE-003`. This is a different defect from the mask described
+above, not a smaller version of it: `DSX-CODE-002` and `DSX-CODE-003` have
+no leading-comment guard in their text loops at all, so even a single
+leading `#` does not spare them, while `DSX-CODE-020`, `DSX-CODE-030` and
+`DSX-CODE-031` do have the mask now on the path that reads the file as real
+Python, and lose it only on the fallback described above. Closing the
+`DSX-CODE-002` / `DSX-CODE-003` gap was outside this remediation's scope,
+and it stays open. Notebooks reach the fallback more often than plain
+Python files do, because an introspection line such as `df.head?` does not
+parse and is not repaired.
 
 **The notebook line-number convention is a standing limit, not a fix.** For
 a Jupyter notebook, the "Line N" a finding reports counts lines in the

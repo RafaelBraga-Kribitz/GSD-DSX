@@ -5550,6 +5550,9 @@ class TestPhase11_1Code(unittest.TestCase):
             "exec",
             "backslash",
             "trailing comment",
+            "up to eight",
+            "mask is empty",
+            "opening line and the closing line",
         )
         for substring in required_substrings:
             with self.subTest(substring=substring):
