@@ -54,7 +54,15 @@ written profile.
   `DSX-PRE-*`) complete 2026-08-20 — 6 plans, re-verification passed 5/5, 640 tests
   green; the declared fallback branch is now reconciled against the executed procedure
   at verify and ship, blocking on branch identity alone. Package version is 2.0.0.
-  Phases 11–12 remain.
+  Phase 11.1 (M4 addendum, generated-pipeline reality) complete 2026-08-21 — 8/8 plans.
+  Phase 11.1.1 (INSERTED, detection-code hardening) complete 2026-08-22 — 7/7 plans
+  across two gap-closure rounds, re-verification passed 6/6 success criteria, no new
+  requirements (remediation of detection-coverage gaps in already-shipped code). One
+  human decision (WR-02, closing the unscannable-entrypoint decision-record gap) is
+  recorded but not yet implemented — tracked as follow-up in `11.1.1-UAT.md`, needs a
+  new plan. Phase 11 itself (frequentist admissibility adjudicator) remains at 4/8,
+  in progress, independent of 11.1/11.1.1/11.2/11.3. Phases 11 (remaining), 11.2, 11.3
+  and 12 remain.
 
 ## Current Milestone: v2.0.0 DSX Validity Frame
 
@@ -194,4 +202,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-08-20 after Phase 10*
+*Last updated: 2026-08-22 after Phase 11.1.1*
