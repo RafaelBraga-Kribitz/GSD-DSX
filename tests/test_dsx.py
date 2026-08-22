@@ -5580,6 +5580,9 @@ class TestPhase11_1Code(unittest.TestCase):
             "up to eight",
             "mask is empty",
             "opening line and the closing line",
+            "not valid UTF-8",
+            "deeply nested",
+            "--verbose",
         )
         for substring in required_substrings:
             with self.subTest(substring=substring):

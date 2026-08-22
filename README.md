@@ -257,16 +257,21 @@ intended change to that fixture's output, not an accident.
 
 One more change belongs here, stated plainly rather than as a footnote,
 because it changes what a caller sees rather than what the scan catches. A
-Jupyter notebook file can be valid JSON and still not be a notebook — for
-example, the two characters `[]`, or a document whose list of cells
-contains something that is not itself an object. Before this phase, a file
-shaped like that crashed the whole run: a raw Python error and exit code 1
-— the same number the gate uses to mean "this file was scanned and
-blocked." A caller reading only the exit code could not tell a genuine
-leak apart from a notebook the tool never managed to read at all. It is now
-reported as NOT scanned, the same outcome the tool already gives a file it
-cannot open at all, so the exit code and the report both say what actually
-happened.
+Jupyter notebook file can be valid JSON and still not be a notebook. This
+now covers: a document that is not an object at all; a document whose list
+of cells holds something that is not an object; a document with no list of
+cells, or one whose `cells` value is a number, a boolean or an object; a
+cell whose source is a list holding something that is not text; a cell
+whose source is neither text nor a list; and a document nested too deeply
+to decode. Before this phase, a file shaped like any of these crashed the
+whole run: a raw Python error and exit code 1 — the same number the gate
+uses to mean "this file was scanned and blocked." A caller reading only
+the exit code could not tell a genuine leak apart from a notebook the tool
+never managed to read at all. It is now reported as NOT scanned, the same
+outcome the tool already gives a file it cannot open at all, so the exit
+code and the report both say what actually happened. In the other
+direction, a notebook that legitimately contains no cells is still read
+and scanned as an empty file, not reported as unreadable.
 
 When a file cannot be parsed as Python at all — a syntax error, an
 unsupported construct, or a file that is not really Python — the weaker,
@@ -604,6 +609,41 @@ because it changed direction in this phase: `exec`-assembled fit-shaped
 source used to be blocked by the old text scan (which could see the fit
 call's text sitting inside the string literal) and is not blocked now — see
 the announcement above.
+
+**A notebook file the scan cannot decode, or whose shape it cannot trust.**
+Four things belong here.
+
+First, the deliberate asymmetry between the two reads. A Python file whose
+bytes are not valid UTF-8 is still scanned, with the bytes that would not
+decode replaced, because most of such a file is still readable code. A
+notebook file carrying that same defect is REJECTED OUTRIGHT instead
+— the gate exits 2 with an error message and does not run any check at all,
+rather than exiting 0 with a NOT-scanned pass line — because a notebook
+must decode as a whole before any of it can be read, and a partial decode
+would let the tool claim it parsed text it could not actually read. This is
+not a NOT-scanned outcome and must not be described as one: it is a
+blocking "could not run" outcome, the same family a missing spec file
+produces, and it predates this plan untouched. The two file types don't
+just differ in degree here — one keeps running and reports a pass, the
+other stops the run and reports an error.
+
+Second, a notebook nested more deeply than the running interpreter's
+recursion limit allows is reported as NOT scanned rather than scanned. This
+is a guard against a crash, and it means a legitimately very deeply nested
+document reads as unscannable.
+
+Third, no size limit is applied before the file is read, so a large enough
+declared entrypoint can exhaust memory; where that surfaces as a memory
+error during the read it is reported as NOT scanned, and where it does not,
+it is not caught.
+
+Fourth, and most important to state plainly: NOT scanned is a passing
+outcome. It exits 0, it produces no finding, and the line that says the
+file was not scanned prints only when `--verbose` is passed. A notebook
+that is corrupted — by accident or on purpose — therefore makes the leak
+scan go quiet rather than loud, and a reader running without `--verbose`
+sees a passing code check that looks like a clean scan. This is a limit
+the tool currently has, not one that is fixed.
 
 **What the fallback text scan additionally misses, and when it runs.** When
 a file cannot be parsed as Python — a syntax error, an unrepaired notebook
