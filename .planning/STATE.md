@@ -6,7 +6,7 @@ current_phase: 11.1.1
 current_phase_name: detection-code-hardening-inserted
 status: executing
 stopped_at: Phase 11.1.1 re-scoped to an AST primary path (Option B) — 3 plans rewritten, design amended after a 4-blocker adversarial pass, execution not yet resumed
-last_updated: "2026-08-22T01:49:47.931Z"
+last_updated: "2026-08-22T03:34:20.253Z"
 last_activity: 2026-08-21
 last_activity_desc: Phase 11.1.1 execution started
 progress:
@@ -19,7 +19,7 @@ progress:
 
 # Project state
 
-**Status:** Executing Phase 11.1.1
+**Status:** Ready to execute
 **Progress:** [██████████████████░░] 56/63 plans (89%)  
 **Locked decisions:** DQ = profile runner + hermetic gates; Glyph = hermetic svg_sha256 only (no MCP dep); forbidden claims = universal pack + optional phase YAML; repro_lock = ARS-style honest-null (not byte-replay); decision replay = structured thresholds only; suppressions = ADR/SPEC authority required (unknown codes → exit 2)  
 **v2.0.0 locked decisions:** DSX-PAR-010 is a distinct code, DSX-EXP-060 untouched (M-01); no `inference.stopping_rule` — PAR-010/011 read the existing `design.peeking_policy` (M-02); PEEKING_POLICIES gains an uncontrolled-continuous-monitoring value (M-03); automated import test enforces the D-03a boundary from M1 (M-04); SELF-001 stays a convention, REVERSALS.md template seeded in M1 (M-05); `validity_frame` sub-block requiredness gated by `question_type` (M-06); existing `suppressions[]` is the pre-v2.0.0 grandfather path (M-07); D-05 citation enforcement automated via `gen-finding-catalogue.py` (M-08); `dependence.method_family_required` reuses `VARIANCE_ADJUSTMENTS` (M-09)
@@ -116,7 +116,7 @@ parity and visible-fallback criteria added).
 
 Phase: 11.1.1 (detection-code-hardening-inserted) — EXECUTING
 Plan: 1 of 5
-Status: Executing Phase 11.1.1
+Status: Ready to execute
 Last activity: 2026-08-21 — Phase 11.1.1 execution started
 
 ## Project Reference
