@@ -68,7 +68,12 @@ PREFIX_GROUPS = [
 # human noticing the allow-list needs updating. A single code that lives inside a
 # pre-existing family — where a family prefix would drag the whole legacy family
 # into enforcement — is named individually in `_D05_ALLOWLIST_CODES` instead.
-_D05_ALLOWLIST_PREFIXES = ("DSX-PAR-", "DSX-VAL-", "DSX-INT-", "DSX-PRE-")
+#
+# Phase 11 adds "DSX-ADM-" here: `dsx/frame/admissibility.py`'s two report.add
+# call sites (DSX-ADM-010, DSX-ADM-020) already carry `Citation:` and
+# `Structural criterion:` docstring lines and `# D-05:` test markers, so this
+# entry is what turns those from convention into an enforced build gate.
+_D05_ALLOWLIST_PREFIXES = ("DSX-PAR-", "DSX-VAL-", "DSX-INT-", "DSX-PRE-", "DSX-ADM-")
 
 # The individually-enumerated half of D-20's finite, visible boundary: exact
 # codes this milestone introduced inside a pre-existing family (DSX-SPEC-*,
@@ -339,6 +344,59 @@ def check_d05(
     return problems
 
 
+def check_families_citations(families_path: Path) -> list[str]:
+    """Build-time citation gate over ``references/families.yaml`` (D-23, D-24).
+
+    This is a sibling to ``check_d05`` above, not an extension of it.
+    ``check_d05`` operates exclusively on rows extracted by walking abstract
+    syntax trees for ``report.add(...)`` call sites and on docstrings
+    resolved from Python sources under a code root — it has no file-path
+    parameter for a data file and no awareness of any data format, and until
+    this function was written the script never inserted the repository root
+    onto the import path, so it could not import the loader at all. This
+    function supplies exactly that capability, scoped to the one data file
+    it needs. It reads the ontology through ``dsx.loader`` — the same reader
+    ``dsx/frame/admissibility.py`` uses at run time — and imports no YAML
+    library of its own, so the build-time gate and the run-time reader can
+    never disagree about what the file says.
+
+    Returns a list of problem strings, never raises and never prints —
+    ``main()`` owns all output, exactly as it does for ``check_d05``.
+    """
+    families_path = Path(families_path)
+
+    root_str = str(ROOT)
+    if root_str not in sys.path:
+        sys.path.insert(0, root_str)
+    from dsx.loader import load  # noqa: PLC0415 (import kept local, see docstring)
+
+    try:
+        data = load(families_path)
+    except Exception as exc:  # a missing/unparseable/structurally-wrong file
+        return [f"{families_path}: {exc}"]
+
+    problems: list[str] = []
+    for block_name, key_field in (
+        ("families", "id"),
+        ("assumption_vocabulary", "token"),
+        ("ranking_rules", "id"),
+    ):
+        entries = data.get(block_name)
+        if not isinstance(entries, list):
+            problems.append(f"{families_path}: '{block_name}' is missing or not a list")
+            continue
+        for entry in entries:
+            if not isinstance(entry, dict):
+                continue  # malformed list item — tolerated, not raised on (D-24)
+            ident = entry.get(key_field, "<unknown>")
+            citation = entry.get("citation")
+            if citation is None or (isinstance(citation, str) and not citation.strip()):
+                problems.append(
+                    f"{block_name} entry '{ident}' has a missing or blank citation"
+                )
+    return problems
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--write", action="store_true")
@@ -362,6 +420,11 @@ def main() -> int:
         for problem in problems:
             print(f"D-05: {problem}", file=sys.stderr)
         if problems:
+            exit_code = 1
+        citation_problems = check_families_citations(ROOT / "references" / "families.yaml")
+        for problem in citation_problems:
+            print(f"D-24: {problem}", file=sys.stderr)
+        if citation_problems:
             exit_code = 1
         if exit_code == 0:
             print("finding catalogue is current")
