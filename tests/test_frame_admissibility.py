@@ -726,5 +726,206 @@ class TestAdmissibleFamilies(_CacheClearingTestCase):
         )
 
 
+# ── Task 3: check() -- DSX-ADM-010 and DSX-ADM-020, one guard-set commit ────
+# (REQ-P11-03, REQ-P11-04, D-06, D-12, D-13, D-14, D-16, D-17, D-19, D-21)
+
+
+class TestCheck(_CacheClearingTestCase):
+    def test_returns_empty_report_when_applies_to_frame_is_false(self):
+        report = admissibility.check(load(GOOD_SPEC_PATH), applies_to_frame=False)
+        self.assertEqual(report.findings, [])
+        self.assertFalse(report.context.get("decisions"))
+
+    def test_returns_empty_report_for_non_mapping_spec(self):
+        for spec in (None, "not a spec", ["not", "a", "mapping"]):
+            with self.subTest(spec=spec):
+                report = admissibility.check(spec, applies_to_frame=True)
+                self.assertEqual(report.findings, [])
+
+    def test_good_fixture_emits_zero_findings_and_one_unescalated_decision(self):
+        report = admissibility.check(load(GOOD_SPEC_PATH), applies_to_frame=True)
+        self.assertEqual(report.findings, [])
+        decisions = report.context.get("decisions") or []
+        self.assertEqual(len(decisions), 1)
+        self.assertFalse(decisions[0]["escalate"])
+
+    def test_blank_estimand_type_emits_dsx_adm_020(self):
+        spec = {
+            "validity_frame": {
+                "estimand": {"type": ""},
+                "dependence": {"structure": "none"},
+            }
+        }
+        report = admissibility.check(spec, applies_to_frame=True)
+        self.assertEqual([f.code for f in report.findings], ["DSX-ADM-020"])
+        self.assertEqual(report.findings[0].severity.name, "CRITICAL")
+        self.assertIn("estimand", report.findings[0].where)
+
+    def test_blank_dependence_structure_emits_dsx_adm_020_naming_dependence_field(self):
+        spec = {
+            "validity_frame": {
+                "estimand": {"type": "difference_in_means"},
+                "dependence": {"structure": ""},
+            }
+        }
+        report = admissibility.check(spec, applies_to_frame=True)
+        self.assertEqual([f.code for f in report.findings], ["DSX-ADM-020"])
+        self.assertIn("dependence", report.findings[0].where)
+
+    def test_no_matching_family_emits_dsx_adm_020_naming_both_axis_values(self):
+        spec = {
+            "validity_frame": {
+                "estimand": {"type": "ratio_of_means"},
+                "dependence": {"structure": "hierarchical"},
+            }
+        }
+        report = admissibility.check(spec, applies_to_frame=True)
+        self.assertEqual([f.code for f in report.findings], ["DSX-ADM-020"])
+        self.assertIn("ratio_of_means", report.findings[0].detail)
+        self.assertIn("hierarchical", report.findings[0].detail)
+
+    def test_unresolved_declared_procedure_emits_dsx_adm_020_naming_the_label(self):
+        spec = {
+            "validity_frame": {
+                "estimand": {"type": "difference_in_means"},
+                "dependence": {"structure": "none"},
+            },
+            "inference": {"primary_procedure": "not_a_real_test"},
+        }
+        report = admissibility.check(spec, applies_to_frame=True)
+        self.assertEqual([f.code for f in report.findings], ["DSX-ADM-020"])
+        self.assertIn("not_a_real_test", report.findings[0].detail)
+
+    def test_outside_candidate_set_emits_dsx_adm_020_naming_family_and_axes(self):
+        spec = {
+            "validity_frame": {
+                "estimand": {"type": "difference_in_means"},
+                "dependence": {"structure": "none"},
+            },
+            "inference": {"primary_procedure": "fishers_exact"},
+        }
+        report = admissibility.check(spec, applies_to_frame=True)
+        self.assertEqual([f.code for f in report.findings], ["DSX-ADM-020"])
+        self.assertIn("fishers_exact", report.findings[0].detail)
+
+    def test_every_dsx_adm_020_path_escalates(self):
+        specs = [
+            {
+                "validity_frame": {
+                    "estimand": {"type": ""},
+                    "dependence": {"structure": "none"},
+                }
+            },
+            {
+                "validity_frame": {
+                    "estimand": {"type": "ratio_of_means"},
+                    "dependence": {"structure": "hierarchical"},
+                }
+            },
+            {
+                "validity_frame": {
+                    "estimand": {"type": "difference_in_means"},
+                    "dependence": {"structure": "none"},
+                },
+                "inference": {"primary_procedure": "not_a_real_test"},
+            },
+        ]
+        for spec in specs:
+            with self.subTest(spec=spec):
+                report = admissibility.check(spec, applies_to_frame=True)
+                decisions = report.context.get("decisions") or []
+                self.assertEqual(len(decisions), 1)
+                self.assertTrue(decisions[0]["escalate"])
+
+    # D-05: DSX-ADM-010
+    def test_students_t_under_independent_difference_in_means_emits_dsx_adm_010(self):
+        spec = {
+            "validity_frame": {
+                "estimand": {"type": "difference_in_means"},
+                "dependence": {"structure": "none"},
+            },
+            "inference": {"primary_procedure": "students_t"},
+        }
+        report = admissibility.check(spec, applies_to_frame=True)
+        self.assertEqual([f.code for f in report.findings], ["DSX-ADM-010"])
+        finding = report.findings[0]
+        self.assertEqual(finding.severity.name, "HIGH")
+        self.assertIn("welch_over_students", finding.detail)
+        self.assertIn("welch_t", finding.detail)
+        self.assertIn("welch_t", finding.remedy)
+        decisions = report.context.get("decisions") or []
+        self.assertEqual(len(decisions), 1)
+        self.assertFalse(decisions[0]["escalate"])
+
+    def test_cv1_declaration_emits_dsx_adm_010_stating_the_hedge_not_a_domination(self):
+        spec = {
+            "validity_frame": {
+                "estimand": {"type": "regression_coefficient"},
+                "dependence": {"structure": "clustered"},
+            },
+            "inference": {"primary_procedure": "linear_regression_cv1"},
+        }
+        report = admissibility.check(spec, applies_to_frame=True)
+        self.assertEqual([f.code for f in report.findings], ["DSX-ADM-010"])
+        detail = report.findings[0].detail.lower()
+        self.assertIn("reliability_hedged", detail)
+        self.assertNotIn("uniformly dominates", detail)
+        self.assertNotIn("uniform domination", detail)
+
+    def test_no_committed_spec_emits_dsx_adm_010(self):
+        import glob
+
+        specs = sorted(
+            glob.glob(str(ROOT / "examples" / "*-ANALYSIS-SPEC.yaml"))
+            + glob.glob(str(ROOT / "examples" / "known-bad" / "*-ANALYSIS-SPEC.yaml"))
+            + [str(ROOT / "templates" / "ANALYSIS-SPEC.yaml")]
+        )
+        hits = [
+            path
+            for path in specs
+            if any(
+                f.code == "DSX-ADM-010"
+                for f in admissibility.check(
+                    load(path), applies_to_frame=True
+                ).findings
+            )
+        ]
+        self.assertEqual(hits, [])
+
+    def test_clear_path_lists_ranked_but_not_top_ids_as_alternatives_rejected(self):
+        spec = {
+            "validity_frame": {
+                "estimand": {"type": "difference_in_proportions"},
+                "dependence": {"structure": "none"},
+            },
+            "inference": {"primary_procedure": "boschloo_exact"},
+        }
+        report = admissibility.check(spec, applies_to_frame=True)
+        self.assertEqual(report.findings, [])
+        decisions = report.context.get("decisions") or []
+        self.assertEqual(len(decisions), 1)
+        rejected = decisions[0]["alternatives_rejected"]
+        self.assertEqual(
+            rejected,
+            ["fishers_exact", "two_proportion_z", "two_proportion_z_always_valid"],
+        )
+
+    # D-05: DSX-ADM-020
+    def test_known_codes_contains_both_dsx_adm_codes(self):
+        from dsx.suppressions import known_codes
+
+        # known_codes() is a module-global cache; a prior import of
+        # dsx.suppressions in this same process may have cached it before
+        # this module's report.add(...) call sites existed on disk during
+        # earlier test runs in this file -- clear it so this assertion
+        # reflects the live tree, matching the module's own re-scan pattern.
+        import dsx.suppressions as suppressions
+
+        suppressions._KNOWN = None
+        codes = known_codes()
+        self.assertIn("DSX-ADM-010", codes)
+        self.assertIn("DSX-ADM-020", codes)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
