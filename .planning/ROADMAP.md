@@ -581,7 +581,7 @@ run a verification spike before writing any requirement on it.
      `families.yaml` entry declares a Bayesian inference method — the axis space is capped to
      v1's frequentist scope, with Bayesian admissibility left in the gated backlog.
 
-**Plans**: 4/8 plans executed
+**Plans**: 5/8 plans executed
 
 Plans:
 
@@ -595,7 +595,7 @@ Plans:
 - [x] 11-04-PLAN.md — `references/families.yaml`: 14 cited families, 19 cited assumption tokens,
       4 cited ranking rules, and the schema test that pins both loader paths
 
-- [ ] 11-05-PLAN.md — `dsx/frame/admissibility.py`: ontology loading that refuses rather than
+- [x] 11-05-PLAN.md — `dsx/frame/admissibility.py`: ontology loading that refuses rather than
       degrades, and exact-match alias resolution scoped to the candidate set
 
 - [ ] 11-06-PLAN.md — the ranking rule table, `admissible_families()`, and `DSX-ADM-010` /
@@ -978,7 +978,7 @@ cases where absence permitted a false pass" is a debate, not a count.
 | 8. Interference, triggering, stability (`DSX-INT-*`) | 10/10 | Complete | 2026-08-14 |
 | 9. Monitoring discipline, symmetric (`DSX-PAR-*`) | 7/7 | Complete | 2026-08-13 |
 | 10. Pre-registered inference plan (`DSX-PRE-*`) | 6/6 | In Progress|  |
-| 11. Frequentist admissibility adjudicator (`DSX-ADM-*`) | 4/8 | In Progress|  |
+| 11. Frequentist admissibility adjudicator (`DSX-ADM-*`) | 5/8 | In Progress|  |
 | 11.1 Generated-pipeline reality | 8/8 | Complete | 2026-08-21 |
 | 11.1.1 Detection-code hardening | 7/7 | Complete | 2026-08-22 |
 | 12. Calibration | 0/TBD | Not started | - |
