@@ -173,6 +173,13 @@ None.
 - The docstrings, `# D-05:` test markers, and `PREFIX_GROUPS` row this plan wrote are exactly what plan 11-08 needs to add `"DSX-ADM-"` to `_D05_ALLOWLIST_PREFIXES` and land green on its first run.
 - No blockers for plan 11-07.
 
+## Self-Check: PASSED
+
+- `dsx/frame/admissibility.py` — FOUND
+- `.planning/phases/11-frequentist-admissibility-adjudicator-dsx-adm/11-06-SUMMARY.md` — FOUND
+- `references/finding-codes.md` carries `DSX-ADM` — FOUND
+- Commits `fa6a757`, `e149759`, `777aeb6`, `3b50d30`, `3c6326b`, `f407495`, `7cae176` — all FOUND in `git log --oneline`
+
 ---
 *Phase: 11-frequentist-admissibility-adjudicator-dsx-adm*
 *Completed: 2026-08-22*
