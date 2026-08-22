@@ -5875,6 +5875,53 @@ class TestPhase11_1Code(unittest.TestCase):
             self.assertEqual(codes(report), set())
             self.assertTrue(any("NOT scanned" in line for line in report.passed_checks))
 
+    def test_non_dict_notebook_document_is_named_not_scanned_without_raising(self):
+        # GAP-3 (SC5): valid JSON, but the top-level document is not an
+        # object -- `nb.get("cells")` assumes it is. Covers a list document
+        # and a JSON `null` document, both reproduced raising
+        # AttributeError out of check() today.
+        from dsx.checks import code as code_mod
+
+        for content in ("[]", "null"):
+            with self.subTest(content=content):
+                with tempfile.TemporaryDirectory() as tmp:
+                    path = Path(tmp, "entry.ipynb")
+                    path.write_text(content, encoding="utf-8")
+                    self.assertIsNone(code_mod._read_source(path))
+
+                    entry = self._entrypoint(tmp, content, name="entry.ipynb")
+                    report = self._check(tmp, entry)
+                    self.assertEqual(report.findings, [])
+                    self.assertTrue(
+                        any("NOT scanned" in line for line in report.passed_checks)
+                    )
+
+    def test_non_dict_notebook_cell_is_named_not_scanned_without_raising(self):
+        # GAP-3 (SC5): the document is an object, but a cell inside `cells`
+        # is not -- `cell.get("cell_type")` assumes it is. Covers a cell
+        # entry that is a bare string, and a `cells` value that is an
+        # object rather than a list (so iterating it yields its keys,
+        # themselves not cell objects), both reproduced raising
+        # AttributeError out of check() today.
+        from dsx.checks import code as code_mod
+
+        for content in (
+            '{"cells": ["not-a-dict-cell"]}',
+            '{"cells": {"a": 1}}',
+        ):
+            with self.subTest(content=content):
+                with tempfile.TemporaryDirectory() as tmp:
+                    path = Path(tmp, "entry.ipynb")
+                    path.write_text(content, encoding="utf-8")
+                    self.assertIsNone(code_mod._read_source(path))
+
+                    entry = self._entrypoint(tmp, content, name="entry.ipynb")
+                    report = self._check(tmp, entry)
+                    self.assertEqual(report.findings, [])
+                    self.assertTrue(
+                        any("NOT scanned" in line for line in report.passed_checks)
+                    )
+
     def test_bom_notebook_entrypoint_takes_the_ast_path(self):
         # A BOM breaks json.loads exactly as it breaks ast.parse -- the
         # .ipynb read needs the same utf-8-sig fix the .py read already
