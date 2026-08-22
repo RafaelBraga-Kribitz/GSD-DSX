@@ -547,14 +547,19 @@ def check(spec: dict, phase_dir: "str | None" = None) -> Report:
     source = _read_source(path)
     if source is None:
         # _read_source returns None for an unresolvable OSError, an
-        # unsupported suffix, an unparseable notebook JSON document, or a
-        # notebook document that IS valid JSON but is not a cell-bearing
-        # object (Phase 11.1.1 plan 04, GAP-3) — it does not distinguish
-        # which, so this reason names the whole class.
+        # unsupported suffix, an unparseable or too-deeply-nested notebook
+        # JSON document, a notebook document that IS valid JSON but is not
+        # a cell-bearing object (Phase 11.1.1 plan 04, GAP-3), or a
+        # notebook document whose `cells` or a cell's `source` is not a
+        # shape the notebook format defines (Phase 11.1.1 plan 06, SC5) —
+        # it does not distinguish which, so this reason names the whole
+        # class.
         report.ok(
             "entrypoint NOT scanned — could not be read (unreadable, "
-            "unsupported suffix, invalid notebook JSON, or a notebook "
-            "document that is not a cell-bearing object) (no leak scan ran)"
+            "undecodable, unsupported suffix, invalid or too deeply "
+            "nested notebook JSON, or a notebook document whose cells or "
+            "cell sources are not the shapes the notebook format defines) "
+            "(no leak scan ran)"
         )
         return report
 
@@ -1099,7 +1104,20 @@ def _read_source(path: Path) -> str | None:
             # than scanning it. utf-8-sig decodes BOM-less UTF-8
             # identically and strips a leading BOM when one is present.
             nb = json.loads(path.read_text(encoding="utf-8-sig"))
-        except (OSError, json.JSONDecodeError):
+        except (OSError, json.JSONDecodeError, RecursionError, MemoryError):
+            # Phase 11.1.1 plan 06 (SC5): RecursionError and MemoryError
+            # are added alongside the pre-existing OSError/JSONDecodeError
+            # pair so the read step matches the exception tuple the parse
+            # step (_parse_source) already guards with. A JSON document
+            # nested past the interpreter's recursion limit raises
+            # RecursionError out of json.loads uncaught; a read large
+            # enough to exhaust memory can raise MemoryError the same way.
+            # Deliberately NOT widened for non-UTF-8 bytes here (that
+            # ValueError subclass caught by the .py branch above): a
+            # non-UTF-8 `.ipynb` already exits 2 with a clear message via
+            # dsx/cli.py's top-level `except ValueError` handler -- adding
+            # a local catch would convert that correct, loud failure into
+            # a silent exit-0 "NOT scanned" pass.
             return None
         # Phase 11.1.1 plan 04 (GAP-3, SC5). Valid JSON guarantees nothing
         # about SHAPE: `[]` and `null` are both valid JSON documents with
@@ -1112,8 +1130,22 @@ def _read_source(path: Path) -> str | None:
         # exit 2 means "the check could not run".
         if not isinstance(nb, dict):
             return None
+        # Phase 11.1.1 plan 06 (SC5): `cells` must itself be a list -- not
+        # merely truthy. A prior `nb.get("cells") or []` let a non-iterable
+        # truthy scalar (`5`, `true`) raise TypeError out of the loop below,
+        # and let a falsy non-list value (`{}`, `null`, an absent key) fall
+        # through to the empty-string return, printing the affirmative
+        # "entrypoint parsed with ast" pass line over a document nothing
+        # was read from -- the same silent pass the non-dict-cell guard
+        # above already forbids. An empty list IS a list, so a
+        # legitimately empty notebook (`{"cells": []}`) still scans as the
+        # empty string; that boundary is pinned by
+        # test_empty_cells_list_still_scans_as_an_empty_notebook.
+        cells = nb.get("cells")
+        if not isinstance(cells, list):
+            return None
         chunks: list[str] = []
-        for cell in nb.get("cells") or []:
+        for cell in cells:
             # A non-object cell is returned as None -- NOT skipped with
             # `continue` -- for two reasons, both measured while planning.
             # `continue` reads a cell like the bare string "x" as
@@ -1134,8 +1166,28 @@ def _read_source(path: Path) -> str | None:
                 # raw / unknown cell types are dropped entirely, exactly as
                 # before.
                 continue
-            src = cell.get("source") or ""
-            chunk = "".join(src) if isinstance(src, list) else str(src)
+            # Phase 11.1.1 plan 06 (SC5, closes code review CR-03): an
+            # explicit four-way shape test replaces the prior
+            # `cell.get("source") or ""` plus `"".join(src) if
+            # isinstance(src, list) else str(src)`. That prior form
+            # coerced a JSON object or number `source` into its Python
+            # str() rendering -- text the notebook does not contain -- and
+            # raised TypeError uncaught when a `source` list held any
+            # non-string element. Absent or null contributes the empty
+            # string; a string is used as-is; a list whose every element
+            # is a string is joined; anything else is not a notebook
+            # source shape and returns None.
+            src = cell.get("source")
+            if src is None:
+                chunk = ""
+            elif isinstance(src, str):
+                chunk = src
+            elif isinstance(src, list) and all(
+                isinstance(part, str) for part in src
+            ):
+                chunk = "".join(src)
+            else:
+                return None
             if is_markdown:
                 # Phase 11.1.1 plan 01 (Decision 2): markdown cells are
                 # blanked CHARACTER-WISE, not line-counted. The rejected
