@@ -119,14 +119,39 @@ firing. Everything you need to know is on disk.
 
   Write-Log "Starting headless firing (fresh context)..."
 
-  # --dangerously-skip-permissions is required: a headless run has no human to
-  # answer a permission prompt, so without it the firing stalls and does nothing.
-  & claude -p $prompt `
-      --permission-mode bypassPermissions `
-      --dangerously-skip-permissions 2>&1 |
-    Tee-Object -FilePath $Log -Append
+  # Claude writes advisory warnings to stderr before it does any work. Under
+  # Windows PowerShell 5.1 -- which is what the Scheduled Task runs -- `2>&1` turns
+  # each of those stderr lines into an ErrorRecord, and with
+  # $ErrorActionPreference = 'Stop' the very first one aborts the firing before
+  # Claude has done anything at all. PowerShell 7 does not behave this way, so a
+  # firing launched by hand from pwsh succeeded while every scheduled firing died.
+  # Two consecutive scheduled firings were lost to a benign "workspace has not been
+  # trusted" warning before this was found.
+  #
+  # A warning on a native command's stderr is not a script error. Relax the
+  # preference for the duration of this one call, and flatten whatever comes back
+  # to plain strings so the log stays readable either way.
+  $previousPreference = $ErrorActionPreference
+  $ErrorActionPreference = 'Continue'
+  $claudeExit = $null
+  try {
+    # --dangerously-skip-permissions is required: a headless run has no human to
+    # answer a permission prompt, so without it the firing stalls and does nothing.
+    & claude -p $prompt `
+        --permission-mode bypassPermissions `
+        --dangerously-skip-permissions 2>&1 |
+      ForEach-Object { $_.ToString() } |
+      Tee-Object -FilePath $Log -Append
+    $claudeExit = $LASTEXITCODE
+  }
+  finally {
+    $ErrorActionPreference = $previousPreference
+  }
 
-  Write-Log "Firing finished (exit code $LASTEXITCODE)."
+  Write-Log "Firing finished (exit code $claudeExit)."
+  if ($claudeExit -ne 0) {
+    Write-Log "WARNING: non-zero exit -- check the transcript above before trusting this firing."
+  }
 }
 catch {
   Write-Log "ERROR: $($_.Exception.Message)"
