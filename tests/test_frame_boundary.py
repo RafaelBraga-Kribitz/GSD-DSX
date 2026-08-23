@@ -333,5 +333,192 @@ class TestFrameParadigmReadBoundary(unittest.TestCase):
         self.assertEqual(_scan_source_for_paradigm_reads_ast(text), [])
 
 
+# ── D-18 / REQ-P11-02: no approximate-matching machinery in dsx/frame/admissibility ──
+#
+# Alias resolution happens only by equality after dsx.spec.normalize(), and by nothing
+# else. D-18 forbids distance, containment, prefix, or any other approximate match.
+# This scanner proves the prohibition is enforced in the source itself, not just by
+# prose and behavioural tests.
+
+
+def _scan_source_for_approx_matching(text: str) -> list[str]:
+    """Return one violation string per approximate-matching construct found in
+    ``text``. Detects difflib imports, attribute access to difflib, calls to
+    distance-matching functions (get_close_matches, SequenceMatcher, ratio,
+    quick_ratio, real_quick_ratio), and prefix/suffix matching via the
+    startswith/endswith string methods.
+
+    startswith/endswith are flagged unconditionally rather than only on a
+    resolution path: this scanner is pointed at dsx/frame/admissibility.py,
+    whose only permitted string operation on a declared label is equality after
+    normalize(), so a prefix or suffix test anywhere in it is a D-18 violation
+    by construction. The committed module calls neither.
+
+    Does NOT flag membership tests (the `in` operator), because the AST walker
+    cannot reliably distinguish a legitimate collection membership test
+    (`if alias in index:`) from a substring check (`if declared in alias:`)
+    without full dataflow analysis, and a scanner that cries wolf on the
+    module's own alias-index lookups would be deleted by the next maintainer.
+    That direction stays covered behaviourally by
+    TestResolveDeclaredProcedure.test_near_miss_variants_of_a_real_alias_are_unresolved,
+    whose near-miss inputs include a bare prefix of a real alias.
+
+    Returns ``[]`` when no violation is found. Each violation names the line
+    number and the offending construct; the caller prepends the file path.
+    """
+    violations: list[str] = []
+    tree = ast.parse(text)
+
+    # Forbidden function names and difflib access patterns
+    _FORBIDDEN_FUNCS = {
+        "get_close_matches", "SequenceMatcher", "ratio", "quick_ratio",
+        "real_quick_ratio"
+    }
+
+    # String methods that resolve by prefix/suffix rather than by equality
+    _PREFIX_MATCH_METHODS = {"startswith", "endswith"}
+
+    for node in ast.walk(tree):
+        # Detect: import difflib, from difflib import ...
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                if alias.name == "difflib" or alias.name.startswith("difflib."):
+                    violations.append(
+                        f"line {node.lineno}: imports {alias.name!r} "
+                        f"(difflib provides approximate matching)"
+                    )
+        elif isinstance(node, ast.ImportFrom):
+            if node.module == "difflib" or (
+                node.module is not None and node.module.startswith("difflib.")
+            ):
+                violations.append(
+                    f"line {node.lineno}: imports from {node.module!r} "
+                    f"(difflib provides approximate matching)"
+                )
+
+        # Detect: attribute access on difflib (e.g., difflib.SequenceMatcher)
+        elif isinstance(node, ast.Attribute):
+            if isinstance(node.value, ast.Name) and node.value.id == "difflib":
+                violations.append(
+                    f"line {node.lineno}: accesses {node.attr!r} on difflib "
+                    f"(difflib provides approximate matching)"
+                )
+
+        # Detect: calls to forbidden functions
+        elif isinstance(node, ast.Call):
+            if isinstance(node.func, ast.Name) and node.func.id in _FORBIDDEN_FUNCS:
+                violations.append(
+                    f"line {node.lineno}: calls {node.func.id!r} "
+                    f"(provides approximate matching)"
+                )
+            elif isinstance(node.func, ast.Attribute):
+                if node.func.attr in _FORBIDDEN_FUNCS:
+                    violations.append(
+                        f"line {node.lineno}: calls {node.func.attr!r} "
+                        f"(provides approximate matching)"
+                    )
+                elif node.func.attr in _PREFIX_MATCH_METHODS:
+                    violations.append(
+                        f"line {node.lineno}: calls {node.func.attr!r} "
+                        f"(prefix/suffix matching is not exact match)"
+                    )
+
+    return violations
+
+
+class TestFrameApproximateMatchingBoundary(unittest.TestCase):
+    """D-18 mechanical proof (REQ-P11-02): dsx/frame/admissibility.py contains
+    no approximate-matching machinery. Alias resolution is exact-match only,
+    after normalize(), never by distance, containment, prefix or any other
+    heuristic. The scanner below proves this prohibition is enforced in the
+    source itself, not just in behavioural tests."""
+
+    def test_real_admissibility_module_contains_no_approx_matching(self):
+        admissibility_path = FRAME_DIR / "admissibility.py"
+        self.assertTrue(
+            admissibility_path.exists(),
+            f"dsx/frame/admissibility.py not found at {admissibility_path}",
+        )
+        text = admissibility_path.read_text(encoding="utf-8")
+        violations = _scan_source_for_approx_matching(text)
+        self.assertEqual(violations, [], "\n".join(violations))
+
+    def test_scanner_fires_on_difflib_import(self):
+        source = "import difflib\n"
+        result = _scan_source_for_approx_matching(source)
+        self.assertTrue(result, f"expected a violation for: {source!r}")
+        self.assertIn("difflib", result[0])
+
+    def test_scanner_fires_on_difflib_from_import(self):
+        source = "from difflib import get_close_matches\n"
+        result = _scan_source_for_approx_matching(source)
+        self.assertTrue(result, f"expected a violation for: {source!r}")
+        self.assertIn("difflib", result[0])
+
+    def test_scanner_fires_on_get_close_matches_call(self):
+        source = "best = get_close_matches(declared, candidates, n=1, cutoff=0.6)\n"
+        result = _scan_source_for_approx_matching(source)
+        self.assertTrue(result, f"expected a violation for: {source!r}")
+        self.assertIn("get_close_matches", result[0])
+
+    def test_scanner_fires_on_sequence_matcher_similarity_ratio(self):
+        source = (
+            "import difflib\n"
+            "score = difflib.SequenceMatcher(None, declared, alias).ratio()\n"
+        )
+        result = _scan_source_for_approx_matching(source)
+        self.assertTrue(result, f"expected a violation for: {source!r}")
+        self.assertTrue(
+            any("SequenceMatcher" in violation for violation in result),
+            f"no violation named SequenceMatcher: {result!r}",
+        )
+
+    def test_scanner_fires_on_startswith_prefix_match(self):
+        source = (
+            "for alias in candidates:\n"
+            "    if alias.startswith(declared):\n"
+            "        return alias\n"
+        )
+        result = _scan_source_for_approx_matching(source)
+        self.assertTrue(result, f"expected a violation for: {source!r}")
+        self.assertIn("startswith", result[0])
+
+    def test_scanner_fires_on_endswith_suffix_match(self):
+        source = (
+            "for alias in candidates:\n"
+            "    if alias.endswith(declared):\n"
+            "        return alias\n"
+        )
+        result = _scan_source_for_approx_matching(source)
+        self.assertTrue(result, f"expected a violation for: {source!r}")
+        self.assertIn("endswith", result[0])
+
+    def test_scanner_permits_exact_equality_after_normalize(self):
+        source = (
+            "from dsx.spec import normalize\n"
+            "target = normalize(declared)\n"
+            "if target == existing:\n"
+            "    return True\n"
+        )
+        result = _scan_source_for_approx_matching(source)
+        self.assertEqual(result, [])
+
+    def test_scanner_permits_membership_test_against_dict_or_set_literal(self):
+        source = (
+            "if key in {\"a\", \"b\", \"c\"}:\n"
+            "    return True\n"
+        )
+        result = _scan_source_for_approx_matching(source)
+        self.assertEqual(result, [])
+
+    def test_scanner_permits_membership_test_against_clear_collection_name(self):
+        source = (
+            "if key in index:\n"
+            "    return True\n"
+        )
+        result = _scan_source_for_approx_matching(source)
+        self.assertEqual(result, [])
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
