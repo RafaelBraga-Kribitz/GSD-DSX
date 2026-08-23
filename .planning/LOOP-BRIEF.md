@@ -1,32 +1,78 @@
 # LOOP-BRIEF — v2.0.0 completion ceremony (autonomous)
 
-**Purpose:** This file is the standing contract for the `/loop` session that finishes
-milestone v2.0.0 (DSX Validity Frame). Re-read it at every wakeup. The work backlog
-lives in `LOOP-LEDGER.md`; items only a human can answer live in `HUMAN-QUEUE.md`.
+**Purpose:** This file is the standing contract for the **cloud routine** that
+finishes milestone v2.0.0 (DSX Validity Frame). The work backlog lives in
+`LOOP-LEDGER.md`; items only a human can answer live in `HUMAN-QUEUE.md`.
 
 **Hard deadline:** 2026-09-01 end of day (buffer day 2026-09-02).
 **Definition of done:** every item in LOOP-LEDGER.md checked; milestone audit re-run
 and `passed` (not gaps-accepted); `/gsd-complete-milestone` archived; branch pushed;
 HUMAN-QUEUE.md empty or every remaining item explicitly accepted by the human.
 
-## 1. One wakeup = one unit
+## 0. Execution model — READ THIS FIRST, every single firing
 
-Each wakeup: read this brief, read LOOP-LEDGER.md, pick the **first unblocked unit**
-in stage order, execute it **to completion** (including its gate), update the ledger,
-commit + push, then schedule the next wakeup. Never start a second heavy unit in the
-same wakeup. A unit is one ledger checkbox (one skill invocation or one bounded fix
+You are one firing of a **recurring cloud routine** (Claude Code cloud session,
+created via `/schedule`). **You start with zero memory of every prior firing.**
+There is no conversation history to recall, no earlier turn to refer back to, no
+"as I noted before." The only things that persist between firings are files
+committed to this git repository — principally this brief, `LOOP-LEDGER.md`,
+`HUMAN-QUEUE.md`, and GSD's own per-phase state files (`STATE.md`, `PLAN.md`,
+`*-SUMMARY.md`, etc.).
+
+This is deliberate, not a limitation to work around: it is the fix for the
+problem that running one continuous session across a 10-day ceremony degrades
+model performance. Do not try to defeat it — do not attempt to call
+`ScheduleWakeup`, `CronCreate`, or any session-persistence tool from inside a
+routine firing; those belong to interactive terminal sessions, not this one, and
+calling them here does nothing useful. Your job each firing is narrow: **read
+state from disk, do one bounded unit of work, write state back to disk, stop.**
+The next firing is guaranteed by the cloud scheduler, not by anything you do.
+
+**Every firing, in order, before touching any ledger item:**
+1. Read this file (`LOOP-BRIEF.md`) in full.
+2. Read `LOOP-LEDGER.md` in full — including the Log section, which is your only
+   memory of what happened in every prior firing.
+3. Read `HUMAN-QUEUE.md` in full — an item moved to "Answered" since your last
+   firing may unblock work.
+4. Run `git log --oneline -15` and `git status` to see what actually landed —
+   the ledger is a claim, the repo is the fact; if they disagree, trust the repo
+   and correct the ledger before proceeding.
+
+## 1. One firing = one unit
+
+Pick the **first unblocked unit** in stage order, execute it **to completion**
+(including its gate), update the ledger, commit + push, then **stop**. Do not
+start a second heavy unit in the same firing — let the scheduler bring the next
+one. A unit is one ledger checkbox (one skill invocation or one bounded fix
 batch), not a whole stage.
 
-## 2. Cadence and quota (Claude Pro Max 5x)
+**If a unit is too large to finish in one firing** (a long `gsd-execute-phase`
+run that is still going when you are running low on turn budget): do not force
+it to completion by cutting corners. Stop cleanly at a safe boundary, leave the
+ledger checkbox unchecked, add a one-line log entry noting exactly where you
+stopped and which GSD state file records the sub-progress (GSD's own
+`STATE.md`/`PLAN.md` tracking is resumable — that is what makes this safe), and
+push whatever is committed. The next firing will read that log line, see the
+GSD-native state is mid-phase, and resume the same unit rather than restarting
+it — it does not need you to have remembered anything, only to have written it
+down.
 
-- After completing a heavy unit: schedule wakeup in **1800s**.
-- After a light unit (doc fix, ledger bookkeeping): **900s**.
-- Rate-limit / 5-hour-window error: do NOT retry. Schedule **3600s noop** wakeups
-  until capacity returns. Log the pause in the ledger.
-- Waiting only on HUMAN-QUEUE answers: **3600s noop** wakeups; send one
-  PushNotification per day summarizing what is waiting.
-- Soft budget: at most ~2 phase-scale units per calendar day. The schedule in §7
-  has slack; do not burn the weekly quota trying to run ahead of it.
+## 2. Cadence
+
+Cadence is fixed by the cloud routine's cron schedule, not self-paced — there is
+no `ScheduleWakeup` available inside a routine firing. The routine fires every
+4 hours (6×/day). Most firings will do exactly one unit and stop; a firing that
+finds every remaining unit blocked on `HUMAN-QUEUE.md` should say so in the log
+and stop immediately rather than spin.
+
+- Rate-limit / usage-window error on any tool call: do not retry in a loop. Log
+  it plainly (`YYYY-MM-DDTHH:MMZ | <unit> | rate-limited, deferred | -`) and stop
+  the firing — the next scheduled firing will pick the same unit back up.
+- Soft budget: at most ~2 phase-scale units per calendar day even though the
+  cadence allows more firings — the schedule in §7 has slack; do not burn quota
+  running ahead of it. A firing that finds today's soft budget already spent
+  (check the Log for today's date) should log `budget reached for today, no-op`
+  and stop.
 
 ## 3. Model and effort routing
 
@@ -71,6 +117,17 @@ Escalate to HUMAN-QUEUE.md **only** when the item is one of:
 Numeric finding-code assignments (D-06, irreversible) are decided by persona round
 using "next free number in family, catalogue-consistent", recorded loudly as above —
 NOT escalated. The human may veto via the daily summary before the phase ships.
+
+**No one is watching this session in real time — never wait on `AskUserQuestion`
+or any interactive confirmation.** This is a headless cloud firing; a GSD skill
+that would normally pause for one (audit gaps/tech-debt routing,
+`gsd-cleanup`'s dry-run approval, etc.) must instead be driven with the safe
+default: continue past advisory/non-blocking prompts, but never past a prompt
+that exists because a quality gate actually failed — that case is a blocker
+(§5) or a HUMAN-QUEUE item (the four categories above), not a default-through.
+If a skill invocation truly cannot proceed without a live answer, treat it as a
+blocker for this unit: log it, leave the checkbox unchecked, and move to the
+next unblocked unit rather than stalling the firing.
 
 ## 5. Non-negotiable ground rules
 
@@ -126,13 +183,35 @@ daily summary and apply §5's re-scope rule rather than gate-skipping.
 
 ## 8. Reporting
 
-Every wakeup appends one ledger log line (UTC timestamp via `date`, unit, outcome,
-evidence pointer). Once per day send a PushNotification: stage, units done,
-persona decisions made, HUMAN-QUEUE items waiting, schedule risk, and the literal
-git state (branch, ahead-of-origin count, unpushed yes/no).
+The git-committed `LOOP-LEDGER.md` Log is the primary and durable reporting
+channel — it is the only thing guaranteed to survive between firings, so treat
+every log line as if it were the sole record a human will ever see of this
+firing. Format: `YYYY-MM-DDTHH:MMZ | unit | outcome | evidence pointer`.
+
+If a `PushNotification` tool is available in this session, use it once per
+UTC day (only on the first firing after 00:00Z, checked against the Log) to
+summarize: stage, units done, persona decisions made, HUMAN-QUEUE items
+waiting, schedule risk, and the literal git state (branch, ahead-of-origin
+count, unpushed yes/no). Do not depend on this — if the tool is absent, skip
+it silently and rely on the Log; the human can read `LOOP-LEDGER.md` directly
+or run `RemoteTrigger get_run_log` on this routine from an interactive session.
 
 ## 9. Stopping
 
-Stop the loop (ScheduleWakeup stop) when the Definition of Done at the top is met,
-or when every remaining unit is blocked on HUMAN-QUEUE — in that case send a final
-notification listing exactly what the human must answer to finish.
+There is no loop-control tool to call from inside a firing — the routine is
+managed from outside (the human, or an interactive session on their behalf),
+not by you. When the Definition of Done at the top is met:
+
+1. Do the final housekeeping (push everything, confirm nothing unpushed).
+2. Append a Log line: `... | MILESTONE COMPLETE — recommend disabling this routine | <link or note>`.
+3. If `PushNotification` is available, send one final summary.
+4. Stop. Every firing after this point should be a two-second no-op: read the
+   Log, see the completion line with no newer work below it, log
+   `... | already complete, no-op | -`, and stop — do not re-open finished
+   stages looking for more to do.
+
+If every remaining unit is blocked on `HUMAN-QUEUE.md` (not the Definition of
+Done, just genuinely stuck): log that plainly, send the notification if
+available, and stop the same way. The next firing checks `HUMAN-QUEUE.md`
+fresh — if it is still all-open, it does the same and stops again; this is a
+correct, low-cost holding pattern, not a bug.
