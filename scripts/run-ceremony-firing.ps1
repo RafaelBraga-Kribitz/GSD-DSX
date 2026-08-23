@@ -34,18 +34,37 @@ function Write-Log($msg) {
 }
 
 # --- Overlap guard -----------------------------------------------------------
-# A firing may legitimately run for a long time (a full gsd-execute-phase).
-# Treat a lock older than 4 hours as stale -- the scheduler's own interval.
+# A firing may legitimately run for a long time (a full gsd-execute-phase), so the
+# guard must tell "still working" apart from "died without cleaning up".
+#
+# Liveness is decided by process id, not by elapsed time. An interrupted firing
+# (Ctrl+C, machine sleep, task timeout) leaves the lock behind; a purely
+# time-based guard would then skip every firing until the age threshold passed,
+# silently costing a scheduled run. Observed for real on the first manual firing:
+# the work committed and pushed fine, but the wrapper never reached its cleanup.
+# The age check is kept only as a backstop for a recycled process id.
 if (Test-Path $Lock) {
+  $holder = (Get-Content $Lock -Raw -ErrorAction SilentlyContinue).Trim()
+  $holderPid = ($holder -split '\s+')[0] -as [int]
   $age = (Get-Date) - (Get-Item $Lock).LastWriteTime
-  if ($age.TotalHours -lt 4) {
-    Write-Log "SKIP: a firing started $([int]$age.TotalMinutes) min ago is still running. Exiting."
+
+  $alive = $false
+  if ($holderPid) {
+    $proc = Get-Process -Id $holderPid -ErrorAction SilentlyContinue
+    # A recycled id belonging to some unrelated program must not count as alive.
+    if ($proc -and $proc.Name -match '^(pwsh|powershell)$' -and $age.TotalHours -lt 4) {
+      $alive = $true
+    }
+  }
+
+  if ($alive) {
+    Write-Log "SKIP: firing (pid $holderPid) started $([int]$age.TotalMinutes) min ago is still running. Exiting."
     exit 0
   }
-  Write-Log "Stale lock ($([int]$age.TotalHours)h old) -- clearing and proceeding."
+  Write-Log "Clearing orphaned lock (pid $holderPid no longer running, $([int]$age.TotalMinutes) min old)."
   Remove-Item $Lock -Force
 }
-Set-Content -Path $Lock -Value $Stamp
+Set-Content -Path $Lock -Value "$PID $Stamp"
 
 try {
   Set-Location $Repo
