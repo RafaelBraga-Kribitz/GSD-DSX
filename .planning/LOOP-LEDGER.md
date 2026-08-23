@@ -4,10 +4,29 @@ Source of truth for the autonomous loop. One checkbox = one wakeup unit.
 Check a box ONLY with its gate evidence pasted in the log. Derived from
 `.planning/v2.0.0-MILESTONE-AUDIT.md` (2026-08-23, gaps_found, 49/75).
 
+## Reconciliation notes (repo is the fact; the ledger's audit source can be stale)
+
+- **2026-08-23T15:15Z (firing 1):** The milestone audit (this ledger's source)
+  claims at lines 213–224 that Phase 11.1.1 plans 06 and 07 are "written and
+  gate-passed but NOT YET EXECUTED." **The repo contradicts this: both are
+  executed and committed** — plan 06 (`745f4d4`, `53cd3ae`, `a6061a4`, `9931e53`),
+  plan 07 (`79329a1`, `25dee19`, `2e132d3`), followed by `4b8318a docs(phase-11.1.1):
+  complete phase execution` and `c9835fc ...evolve PROJECT.md after phase
+  completion`. `11.1.1-VERIFICATION.md` scores the phase `passed` 6/6 with SC5
+  re-verified live. The audit was misled by two pre-execution snapshots that were
+  never refreshed: the phase's `.continue-here.md` (still says "execution NOT
+  started" — the exact stale-handoff trap its own anti-pattern table names) and
+  `11.1.1-SECURITY.md` (`status: draft`, written before 06/07 ran). **Consequence
+  for the ledger:** S0-1 and S0-2 were already complete in the repo; verified
+  empirically this firing and checked off. The security *gate* is still genuinely
+  open (SECURITY.md register was never refreshed to close T-11.1.1-13(plan04) and
+  T-11.1.1-08's factual half, and WR-02/plan 08 is real remaining work) — that is
+  S0-3 and S0-4, not S0-1/S0-2. The first genuinely-unexecuted unit is **S0-3**.
+
 ## S0 — Hygiene and open gates
 
-- [ ] S0-1 Execute Phase 11.1.1 plan 06 (malformed-.ipynb traceback fix; already written and gate-passed). Gate: the seven malformed inputs exit as gate findings, not raw tracebacks; suite green.
-- [ ] S0-2 Execute Phase 11.1.1 plan 07 (README malformed-notebook claim correction; already written). Gate: README claim matches actual behaviour.
+- [x] S0-1 Execute Phase 11.1.1 plan 06 (malformed-.ipynb traceback fix; already written and gate-passed). Gate: the seven malformed inputs exit as gate findings, not raw tracebacks; suite green. → **ALREADY EXECUTED (repo fact); gate re-run and PASSED this firing.** Probe over 11 malformed shapes + 20000-deep JSON: every one returns `None` (controlled "NOT scanned" finding), none raised; `{"cells": []}` boundary control still scans. `bash scripts/check.sh` → "all checks passed", 1028 tests OK, gate contract + determinism green. Commits: `53cd3ae fix(11.1.1-06): guard every JSON shape the notebook read can meet`, `745f4d4`, `a6061a4`. See Reconciliation notes above.
+- [x] S0-2 Execute Phase 11.1.1 plan 07 (README malformed-notebook claim correction; already written). Gate: README claim matches actual behaviour. → **ALREADY EXECUTED (repo fact); gate re-checked this firing.** README.md lines 258–274 enumerate exactly the shapes the shipped `_read_source` guards (non-object doc, non-object cell, non-list/number/boolean `cells`, non-text source element, non-text/non-list source, too-deeply-nested) plus the empty-notebook boundary — one-to-one with the probe results. False generalisation removed (`grep -c "for example, the two characters" README.md` → 0); residual limits disclosed (`grep -c "not valid UTF-8" README.md` → 1). Commits: `79329a1`, `25dee19`, `2e132d3`.
 - [ ] S0-3 Write Phase 11.1.1 plan 08 (Option B from UAT: unscannable entrypoint must surface in `dsx check code` / `dsx explain`, not silently pass) via `/gsd-plan-phase 11.1.1 --gaps`, then execute it. Gate: unscannable entrypoint produces a visible finding + decision record.
 - [ ] S0-4 Re-run `/gsd-secure-phase 11.1.1`. Gate: SECURITY.md `verified`, threats_open 0 (T-11.1.1-06 redisposition to "accept" goes to HUMAN-QUEUE HQ-2). Human sign-off line → HQ-2.
 - [ ] S0-5 Run `/gsd-secure-phase 10` (never run; DECISIONS.jsonl became a gate input in Phase 10). Gate: 10-SECURITY.md exists, `verified` or threats queued.
@@ -55,3 +74,8 @@ Check a box ONLY with its gate evidence pasted in the log. Derived from
 ## Log
 
 (append one line per wakeup: `YYYY-MM-DDTHH:MMZ | unit | outcome | evidence`)
+
+2026-08-23T15:15Z | reconcile ledger vs repo | audit stale: plans 06/07 ALREADY executed+committed, phase VERIFICATION.md passed 6/6; audit misled by pre-exec `.continue-here.md` + `11.1.1-SECURITY.md` draft | Reconciliation note added to ledger head; commits 53cd3ae/2e132d3 etc.
+2026-08-23T15:15Z | S0-1 | DONE — gate re-run PASSED (already executed) | probe: 11 malformed shapes + 20000-deep JSON all → None/no-raise, `{"cells":[]}` still scans; `bash scripts/check.sh` all checks passed, 1028 tests OK
+2026-08-23T15:15Z | S0-2 | DONE — gate re-checked (already executed) | README.md:258–274 enumerates the 6 guarded shapes + empty-notebook boundary, matches probe 1:1; grep old-generalisation=0, "not valid UTF-8"=1
+2026-08-23T15:15Z | firing-stop | one unit complete (S0-1+S0-2 reconciled/closed); next unblocked = S0-3 (write+execute plan 08 for WR-02, heavy) — deferred to next firing per §1 | committed+pushed to gsd/v2.0.0-dsx-validity-frame
