@@ -1,8 +1,9 @@
 # LOOP-BRIEF — v2.0.0 completion ceremony (autonomous)
 
-**Purpose:** This file is the standing contract for the **cloud routine** that
-finishes milestone v2.0.0 (DSX Validity Frame). The work backlog lives in
-`LOOP-LEDGER.md`; items only a human can answer live in `HUMAN-QUEUE.md`.
+**Purpose:** This file is the standing contract for the **scheduled headless
+firings** that finish milestone v2.0.0 (DSX Validity Frame). The work backlog
+lives in `LOOP-LEDGER.md`; items only a human can answer live in
+`HUMAN-QUEUE.md`.
 
 **Hard deadline:** 2026-09-01 end of day (buffer day 2026-09-02).
 **Definition of done:** every item in LOOP-LEDGER.md checked; milestone audit re-run
@@ -11,22 +12,30 @@ HUMAN-QUEUE.md empty or every remaining item explicitly accepted by the human.
 
 ## 0. Execution model — READ THIS FIRST, every single firing
 
-You are one firing of a **recurring cloud routine** (Claude Code cloud session,
-created via `/schedule`). **You start with zero memory of every prior firing.**
-There is no conversation history to recall, no earlier turn to refer back to, no
-"as I noted before." The only things that persist between firings are files
-committed to this git repository — principally this brief, `LOOP-LEDGER.md`,
-`HUMAN-QUEUE.md`, and GSD's own per-phase state files (`STATE.md`, `PLAN.md`,
-`*-SUMMARY.md`, etc.).
+You are one firing of a **scheduled headless run** — a fresh `claude -p` process
+launched by `scripts/run-ceremony-firing.ps1` from a Windows Scheduled Task every
+four hours. **You start with zero memory of every prior firing.** There is no
+conversation history to recall, no earlier turn to refer back to, no "as I noted
+before." The only things that persist between firings are files committed to this
+git repository — principally this brief, `LOOP-LEDGER.md`, `HUMAN-QUEUE.md`, and
+GSD's own per-phase state files (`STATE.md`, `PLAN.md`, `*-SUMMARY.md`, etc.).
 
 This is deliberate, not a limitation to work around: it is the fix for the
 problem that running one continuous session across a 10-day ceremony degrades
-model performance. Do not try to defeat it — do not attempt to call
+model performance as the context window fills. A fresh process per unit means the
+context never accumulates in the first place — which is why this design does not
+need, and must not use, `/clear`. Do not try to defeat the isolation: do not call
 `ScheduleWakeup`, `CronCreate`, or any session-persistence tool from inside a
-routine firing; those belong to interactive terminal sessions, not this one, and
-calling them here does nothing useful. Your job each firing is narrow: **read
-state from disk, do one bounded unit of work, write state back to disk, stop.**
-The next firing is guaranteed by the cloud scheduler, not by anything you do.
+firing; those belong to interactive terminal sessions, not this one, and calling
+them here does nothing useful. Your job each firing is narrow: **read state from
+disk, do one bounded unit of work, write state back to disk, stop.** The next
+firing is guaranteed by the operating system's scheduler, not by anything you do.
+
+You are running on the operator's local machine, in their real working tree, with
+the full GSD framework installed at `~/.claude/` (71 `gsd-*` skills, `gsd-core/`,
+`gsd-tools.cjs`). That is why this runs locally rather than in a cloud sandbox —
+a fresh cloud checkout of this repository contains the DSX product code but not
+the GSD framework that drives the ceremony, so the skills would not resolve.
 
 **Every firing, in order, before touching any ledger item:**
 1. Read this file (`LOOP-BRIEF.md`) in full.
@@ -59,11 +68,17 @@ down.
 
 ## 2. Cadence
 
-Cadence is fixed by the cloud routine's cron schedule, not self-paced — there is
-no `ScheduleWakeup` available inside a routine firing. The routine fires every
-4 hours (6×/day). Most firings will do exactly one unit and stop; a firing that
-finds every remaining unit blocked on `HUMAN-QUEUE.md` should say so in the log
-and stop immediately rather than spin.
+Cadence is fixed by the Scheduled Task, not self-paced — there is no
+`ScheduleWakeup` available to a headless firing. The task fires every 4 hours
+(6×/day) **while the machine is awake**; firings missed to sleep or shutdown are
+simply skipped, and the next one picks up the same unit, so a missed window costs
+time but never correctness. Most firings do exactly one unit and stop; a firing
+that finds every remaining unit blocked on `HUMAN-QUEUE.md` should say so in the
+log and stop immediately rather than spin.
+
+A firing already in progress holds a lock file; a second firing that starts while
+it runs exits immediately without doing work. This is expected for long units
+(a full `gsd-execute-phase`) and is not an error.
 
 - Rate-limit / usage-window error on any tool call: do not retry in a loop. Log
   it plainly (`YYYY-MM-DDTHH:MMZ | <unit> | rate-limited, deferred | -`) and stop
@@ -193,17 +208,17 @@ UTC day (only on the first firing after 00:00Z, checked against the Log) to
 summarize: stage, units done, persona decisions made, HUMAN-QUEUE items
 waiting, schedule risk, and the literal git state (branch, ahead-of-origin
 count, unpushed yes/no). Do not depend on this — if the tool is absent, skip
-it silently and rely on the Log; the human can read `LOOP-LEDGER.md` directly
-or run `RemoteTrigger get_run_log` on this routine from an interactive session.
+it silently and rely on the Log; the human can read `LOOP-LEDGER.md` directly,
+or read the raw per-firing transcript under `.planning/loop-logs/`.
 
 ## 9. Stopping
 
-There is no loop-control tool to call from inside a firing — the routine is
-managed from outside (the human, or an interactive session on their behalf),
-not by you. When the Definition of Done at the top is met:
+There is no loop-control tool to call from inside a firing — the Scheduled Task is
+managed from outside (the human, or an interactive session on their behalf), not
+by you. When the Definition of Done at the top is met:
 
 1. Do the final housekeeping (push everything, confirm nothing unpushed).
-2. Append a Log line: `... | MILESTONE COMPLETE — recommend disabling this routine | <link or note>`.
+2. Append a Log line: `... | MILESTONE COMPLETE — stop the task with: Unregister-ScheduledTask -TaskName "GSD-DSX-v2-Ceremony" -Confirm:$false | <note>`.
 3. If `PushNotification` is available, send one final summary.
 4. Stop. Every firing after this point should be a two-second no-op: read the
    Log, see the completion line with no newer work below it, log

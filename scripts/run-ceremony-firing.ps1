@@ -1,0 +1,118 @@
+<#
+.SYNOPSIS
+  One firing of the v2.0.0 completion ceremony.
+
+.DESCRIPTION
+  Launches a FRESH headless Claude Code process against the repo. Each firing is a
+  brand-new process with an empty context window -- that is the whole point: it is
+  what stops a 10-day ceremony from degrading inside one ever-growing conversation.
+  All continuity lives in git-committed files (.planning/LOOP-BRIEF.md,
+  LOOP-LEDGER.md, HUMAN-QUEUE.md), never in conversation memory.
+
+  Registered as a Scheduled Task to fire every 4 hours. Safe to run by hand too.
+
+.NOTES
+  Overlap guard: a lock file prevents a second firing starting while one is running.
+  Logs: .planning/loop-logs/ (gitignored).
+#>
+
+$ErrorActionPreference = 'Stop'
+
+$Repo   = 'C:\Users\Benutzer1\Dev\AI\gsd-dsx'
+$Branch = 'gsd/v2.0.0-dsx-validity-frame'
+$LogDir = Join-Path $Repo '.planning\loop-logs'
+$Lock   = Join-Path $LogDir '.firing.lock'
+$Stamp  = (Get-Date).ToUniversalTime().ToString('yyyyMMdd-HHmmss')
+$Log    = Join-Path $LogDir "firing-$Stamp.log"
+
+if (-not (Test-Path $LogDir)) { New-Item -ItemType Directory -Path $LogDir -Force | Out-Null }
+
+function Write-Log($msg) {
+  $line = "[{0}Z] {1}" -f (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ss'), $msg
+  Write-Output $line
+  Add-Content -Path $Log -Value $line
+}
+
+# --- Overlap guard -----------------------------------------------------------
+# A firing may legitimately run for a long time (a full gsd-execute-phase).
+# Treat a lock older than 4 hours as stale -- the scheduler's own interval.
+if (Test-Path $Lock) {
+  $age = (Get-Date) - (Get-Item $Lock).LastWriteTime
+  if ($age.TotalHours -lt 4) {
+    Write-Log "SKIP: a firing started $([int]$age.TotalMinutes) min ago is still running. Exiting."
+    exit 0
+  }
+  Write-Log "Stale lock ($([int]$age.TotalHours)h old) -- clearing and proceeding."
+  Remove-Item $Lock -Force
+}
+Set-Content -Path $Lock -Value $Stamp
+
+try {
+  Set-Location $Repo
+
+  # --- Branch guard ----------------------------------------------------------
+  # Never force a checkout: this is the user's live working tree. If it is not on
+  # the ceremony branch, something unexpected is happening -- stop rather than guess.
+  $current = (git branch --show-current).Trim()
+  if ($current -ne $Branch) {
+    Write-Log "ABORT: expected branch '$Branch' but found '$current'. Not touching the working tree."
+    exit 1
+  }
+  Write-Log "Branch OK: $current"
+
+  git fetch origin --quiet
+  git merge --ff-only "origin/$Branch" 2>&1 | Out-String | ForEach-Object { if ($_.Trim()) { Write-Log $_.Trim() } }
+
+  # --- The firing prompt -----------------------------------------------------
+  # Deliberately short. LOOP-BRIEF.md is the real contract and is re-read every
+  # firing; duplicating its rules here would let the two drift apart.
+  $prompt = @'
+You are ONE firing of the recurring v2.0.0 completion ceremony for this repository.
+You are a fresh process with an EMPTY context window and NO memory of any previous
+firing. Everything you need to know is on disk.
+
+1. Read, in full and in this order: .planning/LOOP-BRIEF.md, then
+   .planning/LOOP-LEDGER.md, then .planning/HUMAN-QUEUE.md. LOOP-BRIEF.md is your
+   complete operating contract -- its Section 0 describes the execution model you
+   are inside of right now. Follow it exactly: cadence, model/effort routing,
+   the expert-persona decision protocol, the non-negotiable ground rules, the
+   stage plan, and the reporting rules all bind this firing.
+
+2. Reconcile claims against reality before trusting the ledger: run
+   `git log --oneline -15` and `git status`. The ledger is a claim; the repo is
+   the fact. If they disagree, correct the ledger first.
+
+3. Do exactly ONE unblocked unit from LOOP-LEDGER.md, to completion, including its
+   verifying gate. Paste real gate evidence into the ledger -- never check a box on
+   an unrun gate. Then append your Log line.
+
+4. Nobody is watching this run. Never wait for interactive input. If a step truly
+   cannot proceed without a human answer, record it per the brief (blocker or
+   HUMAN-QUEUE item), leave the checkbox unchecked, and move on.
+
+5. Commit and push to the ceremony branch. If the push fails, say so in the Log
+   line rather than claiming success.
+
+6. Stop after one unit. Do not start a second. The scheduler brings the next firing
+   in four hours -- you do not need to arrange it, and there is no scheduling tool
+   here for you to call.
+'@
+
+  Write-Log "Starting headless firing (fresh context)..."
+
+  # --dangerously-skip-permissions is required: a headless run has no human to
+  # answer a permission prompt, so without it the firing stalls and does nothing.
+  & claude -p $prompt `
+      --permission-mode bypassPermissions `
+      --dangerously-skip-permissions 2>&1 |
+    Tee-Object -FilePath $Log -Append
+
+  Write-Log "Firing finished (exit code $LASTEXITCODE)."
+}
+catch {
+  Write-Log "ERROR: $($_.Exception.Message)"
+  throw
+}
+finally {
+  if (Test-Path $Lock) { Remove-Item $Lock -Force }
+}

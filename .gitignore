@@ -5,3 +5,6 @@ __pycache__/
 .venv/
 *.egg-info/
 DECISIONS.jsonl
+
+# Autonomous ceremony firing logs (local, per-run transcripts)
+.planning/loop-logs/
