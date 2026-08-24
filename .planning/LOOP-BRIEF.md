@@ -47,13 +47,38 @@ the GSD framework that drives the ceremony, so the skills would not resolve.
    the ledger is a claim, the repo is the fact; if they disagree, trust the repo
    and correct the ledger before proceeding.
 
-## 1. One firing = one unit
+## 1. One firing = as many units as the context window can hold well
 
-Pick the **first unblocked unit** in stage order, execute it **to completion**
-(including its gate), update the ledger, commit + push, then **stop**. Do not
-start a second heavy unit in the same firing — let the scheduler bring the next
-one. A unit is one ledger checkbox (one skill invocation or one bounded fix
-batch), not a whole stage.
+Work units **back to back** until your context is close to full, then stop
+cleanly. Do not stop after one unit — a fresh firing costs a re-read of this
+brief, the ledger and the git log before it can do anything, and paying that
+overhead for a single unit wastes most of the run.
+
+For each unit: take the **first unblocked unit** in stage order, execute it **to
+completion** (including its gate), update the ledger, commit + push. Then, if
+context allows, immediately start the next one. A unit is one ledger checkbox
+(one skill invocation or one bounded fix batch), not a whole stage.
+
+**When to stop.** Stop at the first of these, whichever comes first:
+
+- The harness warns you that context is running low or that auto-compaction is
+  approaching (`context_guard_mode: warn` is enabled for this project). **Treat
+  the first such warning as your stop signal** — finish the unit you are on,
+  then stop. Do not keep going to squeeze in one more.
+- You judge, honestly, that your remaining context is not enough to finish the
+  next unit *and* its gate. Starting a unit you cannot finish well is worse than
+  leaving it for a firing that can.
+- Every remaining unit is blocked on `HUMAN-QUEUE.md`.
+
+Never let auto-compaction happen mid-unit and then carry on as if nothing
+changed. Compaction replaces what you actually read with a summary of it, and
+this project's gates depend on exact line numbers, exact test counts and exact
+citation text. A gate signed off from a summary is not a gate.
+
+**Before stopping, always:** commit and push, append your Log line(s), and — if
+you are stopping mid-unit rather than at a clean boundary — run
+`Skill(skill="gsd-pause-work")` to write a proper handoff, then reference that
+handoff file in your Log line so the next firing finds it immediately.
 
 **If a unit is too large to finish in one firing** (a long `gsd-execute-phase`
 run that is still going when you are running low on turn budget): do not force
@@ -68,26 +93,33 @@ down.
 
 ## 2. Cadence
 
-Cadence is fixed by the Scheduled Task, not self-paced — there is no
-`ScheduleWakeup` available to a headless firing. The task fires every 4 hours
-(6×/day) **while the machine is awake**; firings missed to sleep or shutdown are
-simply skipped, and the next one picks up the same unit, so a missed window costs
-time but never correctness. Most firings do exactly one unit and stop; a firing
-that finds every remaining unit blocked on `HUMAN-QUEUE.md` should say so in the
-log and stop immediately rather than spin.
+Cadence is set by the Scheduled Task, not self-paced — there is no
+`ScheduleWakeup` available to a headless firing. **The task polls every 15
+minutes.** That is not the work rhythm; it is a retry rhythm. A firing already in
+progress holds a lock file, so a poll that lands while one is running exits in
+about a second without doing anything. Work therefore runs effectively
+back-to-back: whenever the machine is free, the next poll picks the work up
+within a quarter of an hour instead of leaving hours on the floor.
 
-A firing already in progress holds a lock file; a second firing that starts while
-it runs exits immediately without doing work. This is expected for long units
-(a full `gsd-execute-phase`) and is not an error.
+This design is deliberate and was arrived at by measurement. On a 4-hour interval
+with one unit per firing, the machine worked 22 minutes out of every 240 — a 9%
+duty cycle — and 27 open units at that rate could not have finished inside the
+milestone deadline. Short polling plus multi-unit firings (§1) is what closes
+that gap. Do not "pace yourself" against some imagined budget: there is no daily
+unit cap, and there deliberately isn't one.
+
+Firings missed to sleep or shutdown are simply skipped; the next poll picks up
+the same work, so a missed window costs time but never correctness. A firing that
+finds every remaining unit blocked on `HUMAN-QUEUE.md` should say so in the log
+and stop immediately rather than spin.
 
 - Rate-limit / usage-window error on any tool call: do not retry in a loop. Log
   it plainly (`YYYY-MM-DDTHH:MMZ | <unit> | rate-limited, deferred | -`) and stop
-  the firing — the next scheduled firing will pick the same unit back up.
-- Soft budget: at most ~2 phase-scale units per calendar day even though the
-  cadence allows more firings — the schedule in §7 has slack; do not burn quota
-  running ahead of it. A firing that finds today's soft budget already spent
-  (check the Log for today's date) should log `budget reached for today, no-op`
-  and stop.
+  the firing. Polling every 15 minutes means the work resumes as soon as capacity
+  returns, with no intervention. **This is the only pacing mechanism.** Being
+  rate-limited occasionally is the expected, correct steady state for a run that
+  is using its capacity properly — it is not a fault and needs no report beyond
+  the Log line.
 
 ## 3. Model and effort routing
 

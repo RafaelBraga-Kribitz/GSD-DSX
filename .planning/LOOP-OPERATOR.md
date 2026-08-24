@@ -17,16 +17,24 @@ it is why no `/clear` is involved anywhere.
 ```powershell
 $argument = '-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "C:\Users\Benutzer1\Dev\AI\gsd-dsx\scripts\run-ceremony-firing.ps1"'
 $action   = New-ScheduledTaskAction -Execute "powershell.exe" -Argument $argument -WorkingDirectory "C:\Users\Benutzer1\Dev\AI\gsd-dsx"
-$trigger  = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(10) -RepetitionInterval (New-TimeSpan -Hours 4)
-$settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -ExecutionTimeLimit (New-TimeSpan -Hours 3) -MultipleInstances IgnoreNew -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
+$trigger  = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(1) -RepetitionInterval (New-TimeSpan -Minutes 15)
+$settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -ExecutionTimeLimit (New-TimeSpan -Hours 6) -MultipleInstances IgnoreNew -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
 Register-ScheduledTask -TaskName "GSD-DSX-v2-Ceremony" -Action $action -Trigger $trigger -Settings $settings -Description "One firing of the gsd-dsx v2.0.0 completion ceremony." -Force
 ```
 
-What each setting is doing, in plain terms: `StartWhenAvailable` runs a firing
-that was missed because the machine was asleep; `ExecutionTimeLimit` of 3 hours
-kills a runaway firing before the next one is due; `MultipleInstances IgnoreNew`
-means a firing that starts while another is still running is dropped rather than
-run in parallel (the script also keeps its own lock file as a second guard).
+**The 15-minute interval is a retry rhythm, not a work rhythm.** A poll that
+lands while a firing is already running exits in about a second, because of the
+lock file and `MultipleInstances IgnoreNew`. So polls are nearly free, and the
+effect is that work runs back-to-back instead of leaving the machine idle between
+widely spaced firings. Measured on the original 4-hour interval, the machine
+worked 22 minutes out of every 240 — a 9% duty cycle. This is the fix for that.
+
+What the other settings do: `StartWhenAvailable` runs a firing missed because the
+machine was asleep; `ExecutionTimeLimit` of 6 hours kills a genuinely runaway
+firing while still leaving room for a long phase execution; `MultipleInstances
+IgnoreNew` drops an overlapping start rather than running two in parallel (the
+script's own lock file is the second guard, and it checks whether the holding
+process is really alive so a crashed firing cannot block the queue).
 
 ## 2. Smoke-test it before trusting it (recommended)
 
