@@ -17,9 +17,9 @@ from pathlib import Path
 from ..findings import Report
 from ..pct_base import relative_percent_without_base
 from ..spec import (
-    CAUSAL_VERBS,
     IDENTIFICATION_STRATEGIES,
     as_number,
+    causal_verb_matches,
     get,
     is_blank,
     items,
@@ -105,7 +105,7 @@ def _check_causal_language(
     claim: dict, text: str, ctype: str, where: str, report: Report
 ) -> None:
     lowered = text.lower()
-    hits = [verb for verb in CAUSAL_VERBS if verb in lowered]
+    hits = causal_verb_matches(lowered)
     if not hits:
         return
     if ctype == "causal":

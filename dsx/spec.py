@@ -51,13 +51,101 @@ CLAIM_TYPES = {"descriptive", "association", "predictive", "causal", "prescripti
 
 # Verbs that assert causation. Used to catch a causal claim mislabelled as
 # association — the single most common analytical overreach.
-CAUSAL_VERBS = (
+#
+# Structural criterion: a claim's or decision rule's causal content is set by
+# communicative intent (is the sentence recommending an action believed to
+# change an outcome?), not by surface verb morphology (finite vs. gerund vs.
+# bare infinitive). Hernán, M. A. (2018), "The C-Word: Scientific Euphemisms
+# Do Not Improve Causal Inference From Observational Data", American Journal
+# of Public Health, 108(5):616-619, DOI 10.2105/AJPH.2018.304337. The exact
+# quotable sentence/page locator within this paper is unverified at time of
+# writing and is flagged for human confirmation (queued HQ-3, D-16); the
+# author/year/title/venue anchor itself is not in doubt and matches this
+# phase's D-05 provenance model.
+#
+# vocabulary_is_not_exhaustive: true — no published closed lexicon of
+# "causal action verbs" exists; closure here is this project's editorial
+# judgement, not anyone's published finding, and this file says so (the same
+# model 11-CONTEXT D-10 established for the assumption vocabulary).
+#
+# Two tiers (D-04), NOT an epistemic softener — HEDGE_TERMS (claims.py:30-34)
+# remains the sole epistemic softener:
+#   - CAUSAL_VERBS_ALWAYS_HIT: finite verbs plus gerunds — unambiguously
+#     verbal, fire on any \b-bounded occurrence regardless of context. A
+#     gerund reaches the MEDIUM path only through the pre-existing
+#     HEDGE_TERMS gate, exactly like any other verb hit here — it is never
+#     itself a softener.
+#   - CAUSAL_VERBS_PURPOSE_GATED: bare infinitives that double as nouns
+#     ("increase", "decrease", "reduce") — ambiguous out of context (compare
+#     "sales increase in Q4"), so they fire only inside a
+#     purpose/recommendation construction ("to reduce churn", "in order to
+#     increase..."), never as a bare substring.
+CAUSAL_VERBS_ALWAYS_HIT = (
     "causes", "caused", "causing", "drives", "drove", "driving", "leads to", "led to",
     "results in", "resulted in", "increases", "decreases", "improves", "improved",
-    "reduces", "reduced", "boosts", "boosted", "lifts", "lifted", "impact of",
-    "effect of", "because of", "due to", "thanks to", "responsible for",
-    "attributable to", "uplift from", "generates", "generated",
+    "improving", "reduces", "reduced", "reducing", "boosts", "boosted", "boosting",
+    "lifts", "lifted", "lifting", "impact of", "effect of", "because of", "due to",
+    "thanks to", "responsible for", "attributable to", "uplift from", "generates",
+    "generated", "generating", "increasing", "decreasing",
 )
+
+CAUSAL_VERBS_PURPOSE_GATED = ("reduce", "increase", "decrease")
+
+# Compatibility alias for any consumer still importing the flat name (grep at
+# plan 11.2-02 time found none outside dsx/checks/claims.py and
+# dsx/checks/coherence.py, both of which now call causal_verb_matches()
+# instead). Maps to the unambiguous always-hit tier only — the purpose-gated
+# tier is deliberately NOT flattened in here, since a naive `verb in lowered`
+# consumer of this alias would reintroduce the noun-homograph false positive
+# the two-tier split exists to prevent.
+CAUSAL_VERBS = CAUSAL_VERBS_ALWAYS_HIT
+
+# Purpose/recommendation markers that license a purpose-gated bare form.
+_PURPOSE_MARKERS = ("to", "in order to", "so as to", "aimed at", "designed to")
+
+# Bounded, single-level quantifier only (mirrors _FALSIFIER_NUMBER_RE,
+# spec.py:466-473, named threat T-7-03): a fixed-width window of at most 30
+# characters between the marker and the verb. No `.*` chains, no nested
+# quantifier groups.
+_PURPOSE_GATE_WINDOW = r"[\s\w]{0,30}?"
+
+_CAUSAL_VERBS_ALWAYS_HIT_RE: dict[str, re.Pattern[str]] = {
+    verb: re.compile(rf"\b{re.escape(verb)}\b") for verb in CAUSAL_VERBS_ALWAYS_HIT
+}
+
+_CAUSAL_VERBS_PURPOSE_GATE_RE: dict[str, re.Pattern[str]] = {
+    verb: re.compile(
+        rf"\b(?:{'|'.join(re.escape(m) for m in _PURPOSE_MARKERS)})\b"
+        rf"{_PURPOSE_GATE_WINDOW}\b{re.escape(verb)}\b"
+    )
+    for verb in CAUSAL_VERBS_PURPOSE_GATED
+}
+
+
+def causal_verb_matches(lowered: str) -> list[str]:
+    """Return every causal-verb lexicon member found in ``lowered`` text.
+
+    The single shared matcher for both consumers (dsx/checks/claims.py
+    ``_check_causal_language`` and dsx/checks/coherence.py
+    ``_check_decision_language``) so the two cannot drift (D-04). Always-hit
+    members (finite verbs + gerunds) fire on any \\b-bounded occurrence.
+    Purpose-gated members (bare infinitives / noun-homographs) fire only
+    when preceded, within a small bounded window, by a purpose/
+    recommendation marker — a false-positive-conservative context gate, not
+    an epistemic softener.
+    """
+    hits = [
+        verb
+        for verb in CAUSAL_VERBS_ALWAYS_HIT
+        if _CAUSAL_VERBS_ALWAYS_HIT_RE[verb].search(lowered)
+    ]
+    hits.extend(
+        verb
+        for verb in CAUSAL_VERBS_PURPOSE_GATED
+        if _CAUSAL_VERBS_PURPOSE_GATE_RE[verb].search(lowered)
+    )
+    return hits
+
 
 # Substrings that mark an estimand falsifier as discriminating — it names a concrete,
 # checkable observation that would prove the estimand wrong, not just a topic (D-05,

@@ -9,8 +9,8 @@ from __future__ import annotations
 
 from ..findings import Report
 from ..spec import (
-    CAUSAL_VERBS,
     as_number,
+    causal_verb_matches,
     get,
     is_blank,
     items,
@@ -89,7 +89,7 @@ def _check_decision_language(spec: dict, qtype: str, report: Report) -> None:
     if is_blank(rule):
         return
     lowered = rule.lower()
-    hits = [verb for verb in CAUSAL_VERBS if verb in lowered]
+    hits = causal_verb_matches(lowered)
     if hits:
         report.add(
             "DSX-COH-010",
