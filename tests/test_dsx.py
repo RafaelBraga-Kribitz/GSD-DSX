@@ -7313,29 +7313,93 @@ class TestPhase11_1Code(unittest.TestCase):
             any("no entrypoint declared" in line for line in report.passed_checks)
         )
 
-    def test_unscannable_entrypoint_also_produces_no_decision_record(self):
-        """Measured, not assumed, against 11.1.1-AST-DESIGN.md's blocker
-        B4/B6 table, which specifies a scan_path:not-scanned:<reason>
-        decision input for a declared entrypoint that cannot be scanned.
-        Measured against the shipped code: check() returns before any
-        record_decision call for an entrypoint that resolves but cannot
-        be read (unsupported suffix, unreadable, or invalid notebook
-        JSON) -- the SAME early-return shape as the blank-entrypoint case,
-        so no decision record of any kind is produced here, not one
-        carrying a not-scanned scan_path. Channel 1 (the report.ok pass
-        line) is the only channel that actually fires for this case;
-        channels 2-4 do not apply because no Finding and no DecisionRecord
-        are ever constructed on this path. Flagged here for the
-        end-of-phase human check as a possible gap between design and
-        ship, named in this plan's SUMMARY."""
+    def test_unscannable_entrypoint_now_produces_a_not_scanned_decision_record(self):
+        """WR-02 Option B, `source is None` branch: a declared entrypoint
+        that resolves but cannot be read (here an unsupported .txt suffix)
+        now produces exactly one not-scanned decision record, so
+        DECISIONS.jsonl carries the judgment and `dsx explain` can replay
+        it. No leak scan ran for this entrypoint; the record records only
+        that the entrypoint could not be scanned."""
         with tempfile.TemporaryDirectory() as tmp:
             entry = self._entrypoint(tmp, "model.fit(df)\n", name="entry.txt")
             report = self._check(tmp, entry)
             self.assertEqual(report.findings, [])
-            self.assertIsNone(report.context.get("decisions"))
             self.assertTrue(
                 any("NOT scanned" in line for line in report.passed_checks)
             )
+            decisions = report.context["decisions"]
+            self.assertEqual(len(decisions), 1)
+            inputs = decisions[0]["inputs"]
+            self.assertTrue(
+                any(i.startswith("scan_path:not-scanned:") for i in inputs)
+            )
+            self.assertTrue(any(i.startswith("entrypoint:") for i in inputs))
+            self.assertTrue(any(i.startswith("python:") for i in inputs))
+
+    def test_path_not_found_entrypoint_now_produces_a_not_scanned_decision_record(self):
+        """WR-02 Option B, `path is None` branch: an entrypoint declared
+        but resolving to no file on disk now produces exactly one
+        not-scanned decision record. The pass line names both `NOT
+        scanned` and `path not found`, pinning that this exercised the
+        path-not-found branch and not the could-not-be-read one. No leak
+        scan ran."""
+        with tempfile.TemporaryDirectory() as tmp:
+            report = self._check(tmp, "does_not_exist_on_disk.py")
+            self.assertEqual(report.findings, [])
+            self.assertTrue(
+                any(
+                    "NOT scanned" in line and "path not found" in line
+                    for line in report.passed_checks
+                )
+            )
+            decisions = report.context["decisions"]
+            self.assertEqual(len(decisions), 1)
+            inputs = decisions[0]["inputs"]
+            self.assertTrue(
+                any(i.startswith("scan_path:not-scanned:") for i in inputs)
+            )
+
+    def test_not_scanned_decision_record_replays_through_collect_from_report(self):
+        """WR-02 Option B, replay wiring: the not-scanned record survives
+        the exact path the gate uses to write DECISIONS.jsonl and that
+        `dsx explain` reads back -- merge() nests the code sub-report's
+        context under the check name, then collect_from_report flattens
+        the decisions out of it. Proven here rather than a shape that
+        stops at report.context."""
+        from dsx.findings import merge
+        from dsx.decisions import collect_from_report
+
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(tmp, "model.fit(df)\n", name="entry.txt")
+            report = self._check(tmp, entry)
+            merged = merge("gate", [report])
+            records = collect_from_report(merged)
+            self.assertTrue(records)
+            self.assertTrue(
+                any(
+                    any(
+                        i.startswith("scan_path:not-scanned:")
+                        for i in r["inputs"]
+                    )
+                    for r in records
+                )
+            )
+
+    def test_not_scanned_default_render_stays_bare_pass_line_option_c_unimplemented(self):
+        """Control: WR-02 Option C was NOT selected, so the default
+        non-verbose render of a not-scanned report stays byte-unchanged --
+        it shows the `code: PASS` line and does NOT surface `NOT scanned`
+        without `--verbose`. Passes against HEAD and must still pass after
+        the decision record is added, catching any accidental Option C
+        change."""
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(tmp, "model.fit(df)\n", name="entry.txt")
+            report = self._check(tmp, entry)
+            quiet = report.render(Severity.CRITICAL, verbose=False)
+            self.assertIn("code: PASS", quiet)
+            self.assertNotIn("NOT scanned", quiet)
+            loud = report.render(Severity.CRITICAL, verbose=True)
+            self.assertIn("NOT scanned", loud)
 
     def test_docstring_and_comment_mentioning_fit_both_stay_closed_on_the_parsed_path(
         self,
