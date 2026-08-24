@@ -449,14 +449,17 @@ def _check_peeking(design: dict, spec: dict, report: Report) -> None:
     looks = int(looks)
 
     if policy in ("", "fixed_horizon") and looks > 1:
-        inflated = inflation_from_peeking(looks, as_number(design.get("alpha")) or 0.05)
+        alpha = as_number(design.get("alpha"))
+        if alpha is None:
+            alpha = 0.05
+        inflated = inflation_from_peeking(looks, alpha)
         report.add(
             "DSX-EXP-060",
             "CRITICAL",
             f"{looks} interim looks were taken under a fixed-horizon design",
             detail=(
                 f"Repeatedly testing the same accumulating data inflates the true type-I error "
-                f"from {as_number(design.get('alpha')) or 0.05:.2f} to roughly {inflated:.2f}. "
+                f"from {alpha:.2f} to roughly {inflated:.2f}. "
                 "Any 'significant' reading here is not significant at the stated level."
             ),
             remedy=(

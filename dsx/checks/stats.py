@@ -140,7 +140,9 @@ def check(spec: dict) -> Report:
     report = Report(check="stats")
     results = section(spec, "results")
     tests = items(results, "tests")
-    alpha = as_number(get(spec, "design.alpha")) or 0.05
+    alpha = as_number(get(spec, "design.alpha"))
+    if alpha is None:
+        alpha = 0.05
 
     if not tests:
         analysis = section(spec, "analysis")

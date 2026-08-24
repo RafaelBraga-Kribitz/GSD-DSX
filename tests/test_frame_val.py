@@ -619,7 +619,12 @@ def _all_fixture_paths() -> "list[Path]":
 # ending guidance). A deliberate future change to dsx/checks/design.py must
 # update this constant in the same commit and say why in the commit message
 # — this test is what forces that, rather than letting a silent edit pass.
-_DESIGN_PY_SHA256 = "b7807c3480da7515b8019cf50ea815af88954bde1f51f67e887a147c7292604a"
+# Updated 2026-08-24 (S0-6a, milestone tech-debt): _check_peeking's alpha read
+# was `as_number(design.get("alpha")) or 0.05`, which collapsed a declared
+# design.alpha:0 into 0.05 (the falsy-`or` bug, 07-REVIEW WR-04). Fixed to
+# default only on a missing value; this is the sanctioned deliberate edit this
+# guard exists to force into the open, not a Phase-7 regression of REQ-P7-03.
+_DESIGN_PY_SHA256 = "2b367ba4081744edbb4609e3005dc0dec67d13184c5e012de28af137894ba885"
 
 
 def _design_py_hash() -> str:

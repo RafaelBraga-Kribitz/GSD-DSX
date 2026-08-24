@@ -222,7 +222,9 @@ def _check_monitoring_discipline(spec: dict, report: Report) -> None:
             continue  # at least one clearing declaration is non-blank
 
         if code == "DSX-PAR-010":
-            alpha = as_number(get(spec, "design.alpha")) or 0.05
+            alpha = as_number(get(spec, "design.alpha"))
+            if alpha is None:
+                alpha = 0.05
             five = inflation_from_peeking(5, alpha)
             twenty = inflation_from_peeking(20, alpha)
             report.add(
