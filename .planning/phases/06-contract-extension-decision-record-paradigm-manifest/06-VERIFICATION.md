@@ -37,8 +37,10 @@ human_verification:
 **Phase Goal:** The v2.0.0 contract surface exists and is trustworthy to read — `validity_frame:` and `inference:` parse correctly, decision records accumulate and render, the paradigm manifest is defined the moment `paradigm` becomes declarable, and D-05/D-03a are enforced mechanically before any check family exists to violate them.
 
 **Verified:** 2026-08-08T12:00:00Z
-**Status:** human_needed
+**Status:** passed
 **Re-verification:** Yes — after gap closure (plans 06-11, 06-12, 06-13 closing the prior BLOCKER and two WARNING findings)
+
+> **Status update (2026-08-10, reconciled 2026-08-24 loop S0-7 / audit GAP-PROC-04):** The four human-verification items listed below were executed and **all passed** in `06-UAT.md` (`status: complete`; total 4 / passed 4 / issues 0; human-validated 2026-08-10). The frontmatter `status:` has read `passed` since. This body header originally read `human_needed`, written at the 2026-08-08 verification when those items were still open; it is reconciled to `passed` here so the frontmatter and body agree. The "Human Verification Required" and "Gaps Summary" sections below keep their original 2026-08-08 wording as the historical record of what was deferred at verification time, each annotated with its resolution.
 
 ## Goal Achievement
 
@@ -148,6 +150,8 @@ Not applicable — no `scripts/*/tests/probe-*.sh` convention exists in this pro
 
 ### Human Verification Required
 
+> **Resolved 2026-08-10 (all 4 pass).** The four items below were run in `06-UAT.md` (`status: complete`, 4/4 pass, 0 issues). Item 4's locator gap (G-01, Deng Theorem 1) was corrected and machine-guarded before sign-off. The original 2026-08-08 wording of this section is retained below as the historical record; the phrase "no human has yet confirmed them" describes the state at verification time, now superseded.
+
 4 items — all deferred `<human-check>` blocks harvested from 06-04-PLAN.md and 06-08-PLAN.md (per the end-of-phase human-verification harvest convention). These blocks were executed as `auto` tasks; their own SUMMARYs recorded `human_judgment: true` rather than self-certifying, meaning no human has yet confirmed them. I read the underlying content directly during this verification (full text of `.planning/REVERSALS.md` and the Bayesian post-mortem) and found nothing that looks fabricated or structurally incomplete, but citation/provenance accuracy against a primary source and subjective prose-clarity judgment are exactly the class of check this project's own plans defer to a human rather than self-certify. See frontmatter `human_verification:` for full test/expected/why_human detail on each of the 4 items:
 
 1. `.planning/REVERSALS.md` D-14 template completeness and copyability (06-04 Task 3)
@@ -163,7 +167,7 @@ No gaps. The prior BLOCKER (truth 3b: a non-UTF-8 byte in `DECISIONS.jsonl` made
 
 Four WARNING-level and one INFO-level findings remain open, carried forward unchanged from the current `06-REVIEW.md` (which independently re-verified them as new findings from its own adversarial pass, separate from the two BLOCKERs and one WARNING that gap-closure plans 06-11/06-12/06-13 fixed): a Windows CRLF line-ending mismatch against the trail format's documented contract (functionally harmless, confirmed by re-running the full suite green on this platform), a paradigm-manifest INFO output that doesn't flag an unrecognized `inference.paradigm` value (mitigated by a separate HIGH-severity spec check that blocks verify/ship), a stale test-count comment in README, and a stale v1.5-era description in two package manifests. None of these affects any ROADMAP Success Criterion or REQ-P6-* satisfaction, and none rises to BLOCKER — this matches `06-REVIEW.md`'s own classification (0 critical, 4 warning, 1 info), independently re-confirmed live rather than trusted from the review's prose.
 
-Overall status is `human_needed` rather than `passed` solely because of the 4 harvested `<human-check>` items above — every mechanically-verifiable truth, artifact, key link, and requirement is confirmed working.
+Overall status at the 2026-08-08 verification was `human_needed` rather than `passed` solely because of the 4 harvested `<human-check>` items above — every mechanically-verifiable truth, artifact, key link, and requirement was confirmed working. **Those 4 items were subsequently resolved (all pass) by the completed `06-UAT.md` round on 2026-08-10, so the final status is `passed` — see the status-update banner near the top of this report.**
 
 ---
 

@@ -93,15 +93,16 @@ in either direction — they cannot justify a check and cannot excuse skipping o
 
 ## Phase 7 (M2a) — Validity frame checks (`DSX-VAL-*`)
 
-- [ ] REQ-P7-01 An estimand missing any of `quantity`, `population`, `contrast`, `time_window` or `falsifier` is blocked, and a falsifier that cannot discriminate any outcome is blocked
-- [ ] REQ-P7-02 An analysis unit finer than the assignment unit is blocked, with the design-effect consequence quantified in the finding via `DEFF = 1 + (m-1)·ICC` and a test asserting the published worked value
-- [ ] REQ-P7-03 `DSX-VAL-020` and the existing `DSX-EXP-021` do not both fire on the same defect; EXP-021 is unchanged and VAL-020 covers only the `observation` unit that EXP-021 structurally cannot see
-- [ ] REQ-P7-04 A declared dependence structure without a matching method family is blocked, using the `VARIANCE_ADJUSTMENTS` vocabulary
-- [ ] REQ-P7-05 `DSX-VAL-040` blocks weak identification declared with `constraint_source: none`, and `DSX-VAL-041` flags strong identification whose constraint carries parameter-scale information, both citing Gelman, Simpson & Betancourt (2017)
-- [ ] REQ-P7-06 A sampling frame that cannot represent the claim population is blocked, with known exclusions and selection risk declared
-- [ ] REQ-P7-07 A missingness mechanism inconsistent with the implied analysis method is blocked, against the Rubin MCAR/MAR/MNAR validity table
+- [x] REQ-P7-01 An estimand missing any of `quantity`, `population`, `contrast`, `time_window` or `falsifier` is blocked, and a falsifier that cannot discriminate any outcome is blocked
+- [x] REQ-P7-02 An analysis unit finer than the assignment unit is blocked, with the design-effect consequence quantified in the finding via `DEFF = 1 + (m-1)·ICC` and a test asserting the published worked value
+- [x] REQ-P7-03 `DSX-VAL-020` and the existing `DSX-EXP-021` do not both fire on the same defect; EXP-021 is unchanged and VAL-020 covers only the `observation` unit that EXP-021 structurally cannot see
+- [x] REQ-P7-04 A declared dependence structure without a matching method family is blocked, using the `VARIANCE_ADJUSTMENTS` vocabulary
+- [x] REQ-P7-05 `DSX-VAL-040` blocks weak identification declared with `constraint_source: none`, and `DSX-VAL-041` flags strong identification whose constraint carries parameter-scale information, both citing Gelman, Simpson & Betancourt (2017)
+- [x] REQ-P7-06 A sampling frame that cannot represent the claim population is blocked, with known exclusions and selection risk declared
+- [x] REQ-P7-07 A missingness mechanism inconsistent with the implied analysis method is blocked, against the Rubin MCAR/MAR/MNAR validity table
 - [ ] REQ-P7-08 A measurement construct with no operationalisation, or whose known gaps contradict the claim population, is blocked
-- [ ] REQ-P7-09 No `DSX-VAL-*` check reads `inference.paradigm` (D-11), asserted by test
+  > **Partial — deliberate D-06 scope decision, not a gap.** First clause (a blank measurement operationalisation is blocked, via `DSX-VAL-070`) is MET. Second clause (a measurement whose `known_gaps` contradict the claim population is blocked) is deliberately unadjudicated: `known_gaps` is read by no check in the phase (07-CONTEXT.md D-06). Scored PARTIAL, not MET, in 07-VERIFICATION.md (`status: passed`; 8/9 MET, 1/9 PARTIAL). Checkbox stays unchecked because the requirement text as worded asserts both clauses; traceability table reads `Partial`.
+- [x] REQ-P7-09 No `DSX-VAL-*` check reads `inference.paradigm` (D-11), asserted by test
 
 ## Phase 8 (M2b) — Interference, triggering, stability (`DSX-INT-*`)
 
@@ -142,14 +143,14 @@ in either direction — they cannot justify a check and cannot excuse skipping o
 
 ## Phase 11.1 (INSERTED) — Generated-pipeline reality
 
-- [ ] REQ-P11.1-01 Entrypoint scan fires on full-frame pandas cleaning idioms before the split (`.fillna(` with `.mean()`/`.median()`/`.mode()`, row filters with `.std()`/`.quantile(`) and on `.fit`/`.fit_transform` at/after the split whose first argument is not a training frame
-- [ ] REQ-P11.1-02 A statistical-test call whose argument list contains the declared model target fires — the marker no fit-scan can see
-- [ ] REQ-P11.1-03 Optional per-dataset cleaning declaration (column, method, fit_on); fitted outside training rows CRITICAL; contradiction with `model.preprocessing_fit_on: train_only` HIGH; absence of the block alone fires nothing
-- [ ] REQ-P11.1-04 `prediction_time_definition` checked unconditionally (no longer gated on the features list); undeclared positive rate under an imbalance-unsafe primary metric fires
-- [ ] REQ-P11.1-05 Result scores carry source + fold-to-fold spread; blank/unknown/best-fold source in a baseline comparison HIGH; margin below the fold spread advisory
-- [ ] REQ-P11.1-06 Selection ledger (candidates evaluated, configurations tried, selected_on) demanded when an algorithm is declared; test-set selection CRITICAL; same-fold selection without a nested protocol HIGH
-- [ ] REQ-P11.1-07 Known-bad corpus case “full-frame cleaning” (spec + post-mortem + entrypoint, modelled on the 2026-08-20 reproduction) with catch-attribution tags, blocked by the new checks
-- [ ] REQ-P11.1-08 Leakage-taxonomy ensemble sub-case (type 3, cross-ref from 7) + discretisation-is-information-loss note; ml-integrity-auditor gains the motivating-statistic question and the large-roster heuristic; fixtures/tests/catalogue current
+- [x] REQ-P11.1-01 Entrypoint scan fires on full-frame pandas cleaning idioms before the split (`.fillna(` with `.mean()`/`.median()`/`.mode()`, row filters with `.std()`/`.quantile(`) and on `.fit`/`.fit_transform` at/after the split whose first argument is not a training frame
+- [x] REQ-P11.1-02 A statistical-test call whose argument list contains the declared model target fires — the marker no fit-scan can see
+- [x] REQ-P11.1-03 Optional per-dataset cleaning declaration (column, method, fit_on); fitted outside training rows CRITICAL; contradiction with `model.preprocessing_fit_on: train_only` HIGH; absence of the block alone fires nothing
+- [x] REQ-P11.1-04 `prediction_time_definition` checked unconditionally (no longer gated on the features list); undeclared positive rate under an imbalance-unsafe primary metric fires
+- [x] REQ-P11.1-05 Result scores carry source + fold-to-fold spread; blank/unknown/best-fold source in a baseline comparison HIGH; margin below the fold spread advisory
+- [x] REQ-P11.1-06 Selection ledger (candidates evaluated, configurations tried, selected_on) demanded when an algorithm is declared; test-set selection CRITICAL; same-fold selection without a nested protocol HIGH
+- [x] REQ-P11.1-07 Known-bad corpus case “full-frame cleaning” (spec + post-mortem + entrypoint, modelled on the 2026-08-20 reproduction) with catch-attribution tags, blocked by the new checks
+- [x] REQ-P11.1-08 Leakage-taxonomy ensemble sub-case (type 3, cross-ref from 7) + discretisation-is-information-loss note; ml-integrity-auditor gains the motivating-statistic question and the large-roster heuristic; fixtures/tests/catalogue current
 
 ## Phase 11.2 (INSERTED) — Prescriptive claim layer
 
@@ -231,15 +232,15 @@ Every v2.0.0 requirement maps to exactly one phase. 75/75 mapped (53 original + 
 | REQ-P6-14 | Phase 6 | Complete |
 | REQ-P6-15 | Phase 6 | Complete |
 | REQ-P6-16 | Phase 6 | Complete |
-| REQ-P7-01 | Phase 7 | Pending |
-| REQ-P7-02 | Phase 7 | Pending |
-| REQ-P7-03 | Phase 7 | Pending |
-| REQ-P7-04 | Phase 7 | Pending |
-| REQ-P7-05 | Phase 7 | Pending |
-| REQ-P7-06 | Phase 7 | Pending |
-| REQ-P7-07 | Phase 7 | Pending |
-| REQ-P7-08 | Phase 7 | Pending |
-| REQ-P7-09 | Phase 7 | Pending |
+| REQ-P7-01 | Phase 7 | Complete |
+| REQ-P7-02 | Phase 7 | Complete |
+| REQ-P7-03 | Phase 7 | Complete |
+| REQ-P7-04 | Phase 7 | Complete |
+| REQ-P7-05 | Phase 7 | Complete |
+| REQ-P7-06 | Phase 7 | Complete |
+| REQ-P7-07 | Phase 7 | Complete |
+| REQ-P7-08 | Phase 7 | Partial |
+| REQ-P7-09 | Phase 7 | Complete |
 | REQ-P8-01 | Phase 8 | Complete |
 | REQ-P8-02 | Phase 8 | Complete |
 | REQ-P8-03 | Phase 8 | Complete |
@@ -264,13 +265,13 @@ Every v2.0.0 requirement maps to exactly one phase. 75/75 mapped (53 original + 
 | REQ-P11-05 | Phase 11 | Pending |
 | REQ-P11-06 | Phase 11 | Pending |
 | REQ-P11.1-01 | Phase 11.1 | Complete |
-| REQ-P11.1-02 | Phase 11.1 | Pending |
-| REQ-P11.1-03 | Phase 11.1 | Pending |
-| REQ-P11.1-04 | Phase 11.1 | Pending |
-| REQ-P11.1-05 | Phase 11.1 | Pending |
-| REQ-P11.1-06 | Phase 11.1 | Pending |
-| REQ-P11.1-07 | Phase 11.1 | Pending |
-| REQ-P11.1-08 | Phase 11.1 | Pending |
+| REQ-P11.1-02 | Phase 11.1 | Complete |
+| REQ-P11.1-03 | Phase 11.1 | Complete |
+| REQ-P11.1-04 | Phase 11.1 | Complete |
+| REQ-P11.1-05 | Phase 11.1 | Complete |
+| REQ-P11.1-06 | Phase 11.1 | Complete |
+| REQ-P11.1-07 | Phase 11.1 | Complete |
+| REQ-P11.1-08 | Phase 11.1 | Complete |
 | REQ-P11.2-01 | Phase 11.2 | Pending |
 | REQ-P11.2-02 | Phase 11.2 | Pending |
 | REQ-P11.2-03 | Phase 11.2 | Pending |

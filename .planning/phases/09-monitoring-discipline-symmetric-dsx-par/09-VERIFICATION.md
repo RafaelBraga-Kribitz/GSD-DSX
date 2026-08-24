@@ -30,8 +30,10 @@ escaped by retyping `paradigm`, and neither half is cheaper to satisfy dishonest
 Three checks, symmetric by construction — deliberately not "the Bayesian phase".
 
 **Verified:** 2026-08-13T15:00:00Z
-**Status:** human_needed
+**Status:** passed
 **Re-verification:** Yes — after gap closure (plans 09-06, 09-07)
+
+> **Status reconciled 2026-08-24 (loop S0-7 / audit GAP-PROC-04):** This header originally read `human_needed`. The single human-verification item (the `DSX-PAR-002` scope question) was resolved at UAT on 2026-08-13 — decision **accept the split**, recorded inline in the frontmatter (`result: pass`, `decided: 2026-08-13T15:25:00Z`) and in the Gaps Summary below ("Frontmatter status is now `passed`"). Header reconciled to `passed` so frontmatter and body agree.
 
 ## What changed since the prior report
 

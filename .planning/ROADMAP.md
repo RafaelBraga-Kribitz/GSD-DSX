@@ -977,8 +977,8 @@ cases where absence permitted a false pass" is a debate, not a count.
 | 7. Validity frame checks (`DSX-VAL-*`) | 8/8 | Complete | 2026-08-20 |
 | 8. Interference, triggering, stability (`DSX-INT-*`) | 10/10 | Complete | 2026-08-14 |
 | 9. Monitoring discipline, symmetric (`DSX-PAR-*`) | 7/7 | Complete | 2026-08-13 |
-| 10. Pre-registered inference plan (`DSX-PRE-*`) | 6/6 | In Progress|  |
-| 11. Frequentist admissibility adjudicator (`DSX-ADM-*`) | 8/8 | In Progress|  |
+| 10. Pre-registered inference plan (`DSX-PRE-*`) | 6/6 | Complete | 2026-08-20 |
+| 11. Frequentist admissibility adjudicator (`DSX-ADM-*`) | 8/8 | human_needed (UAT open, HQ-1) |  |
 | 11.1 Generated-pipeline reality | 8/8 | Complete | 2026-08-21 |
 | 11.1.1 Detection-code hardening | 7/7 | Complete | 2026-08-22 |
 | 12. Calibration | 0/TBD | Not started | - |
