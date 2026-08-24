@@ -547,6 +547,42 @@ def check(spec: dict, phase_dir: "str | None" = None) -> Report:
             f"entrypoint NOT scanned — entrypoint path not found: {entry!r} "
             "(no leak scan ran)"
         )
+        # Phase 11.1.1 plan 08 (WR-02, Option B): a declared entrypoint whose
+        # path does not resolve is a genuine judgment -- it could not be
+        # scanned -- so record it on the durable trail before returning. The
+        # scan_path reason mirrors this branch's report.ok line (path not
+        # found) so the trail and the pass line tell the same story. Built
+        # inline (scan_path_input/python_input are defined later, after this
+        # return); no leak scan ran, so no DSX-CODE verdict is recorded.
+        record_decision(
+            report,
+            DecisionRecord(
+                id="",
+                invocation_id="",
+                layer="deterministic",
+                choice=(
+                    "declared entrypoint NOT scanned: its path did not "
+                    "resolve to a file, so check() returned before any leak "
+                    "scan ran"
+                ),
+                inputs=[
+                    f"entrypoint:{entry}",
+                    "scan_path:not-scanned:entrypoint path not found",
+                    f"python:{sys.version_info.major}.{sys.version_info.minor}",
+                ],
+                rule=(
+                    "A declared entrypoint whose path does not resolve to a "
+                    "file on disk cannot be scanned; check() records that no "
+                    "leak scan ran and returns, reaching no DSX-CODE leak "
+                    "evaluation for this entrypoint."
+                ),
+                counterfactual=(
+                    "A declared entrypoint that resolved to a readable file "
+                    "would have been scanned instead of producing this "
+                    "not-scanned record."
+                ),
+            ),
+        )
         return report
 
     source = _read_source(path)
@@ -565,6 +601,43 @@ def check(spec: dict, phase_dir: "str | None" = None) -> Report:
             "nested notebook JSON, or a notebook document whose cells or "
             "cell sources are not the shapes the notebook format defines) "
             "(no leak scan ran)"
+        )
+        # Phase 11.1.1 plan 08 (WR-02, Option B): the entrypoint resolved but
+        # its source could not be read, so it could not be scanned -- record
+        # that judgment on the durable trail before returning. The scan_path
+        # reason mirrors this branch's report.ok line (could not be read),
+        # distinct from the path-not-found record above so a reader replaying
+        # the trail can tell the two apart. Built inline; no leak scan ran.
+        record_decision(
+            report,
+            DecisionRecord(
+                id="",
+                invocation_id="",
+                layer="deterministic",
+                choice=(
+                    "declared entrypoint NOT scanned: its path resolved but "
+                    "its source could not be read, so check() returned before "
+                    "any leak scan ran"
+                ),
+                inputs=[
+                    f"entrypoint:{entry}",
+                    "scan_path:not-scanned:source could not be read",
+                    f"python:{sys.version_info.major}.{sys.version_info.minor}",
+                ],
+                rule=(
+                    "A declared entrypoint that resolves but whose source "
+                    "cannot be read (unreadable, undecodable, unsupported "
+                    "suffix, or a notebook whose JSON or shape the reader "
+                    "cannot use) cannot be scanned; check() records that no "
+                    "leak scan ran and returns, reaching no DSX-CODE leak "
+                    "evaluation for this entrypoint."
+                ),
+                counterfactual=(
+                    "A declared entrypoint whose source could be read into a "
+                    "supported form would have been scanned instead of "
+                    "producing this not-scanned record."
+                ),
+            ),
         )
         return report
 
