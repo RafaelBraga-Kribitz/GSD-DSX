@@ -26,7 +26,7 @@ sys.path.insert(0, str(ROOT / "tests"))
 from _trail_seed import seed_plan_header  # noqa: E402
 from dsx import __version__  # noqa: E402
 from dsx import cli  # noqa: E402
-from dsx.decisions import InvocationHeader  # noqa: E402
+from dsx.decisions import AmendmentRecord, InvocationHeader  # noqa: E402
 from dsx.decisions import append as append_decision  # noqa: E402
 from dsx.decisions import decisions_path, frame_digest  # noqa: E402
 from dsx.findings import CheckError, Report, Severity  # noqa: E402
@@ -1032,18 +1032,20 @@ class TestGateRegistration(unittest.TestCase):
         reachable_checks: "set[str]" = set().union(*GATE_PROFILES.values())
         self.assertIn("prereg", reachable_checks)
 
-    def test_known_dsx_pre_codes_are_exactly_010_020_030(self):
+    def test_known_dsx_pre_codes_are_exactly_010_020_030_040_041(self):
         pre_codes = {c for c in known_codes() if c.startswith("DSX-PRE-")}
         self.assertEqual(
             pre_codes,
-            {"DSX-PRE-010", "DSX-PRE-020", "DSX-PRE-030"},
+            {"DSX-PRE-010", "DSX-PRE-020", "DSX-PRE-030", "DSX-PRE-040", "DSX-PRE-041"},
             "brief D-06 makes finding-code numbering irreversible; DSX-PRE-011 was "
             "deliberately left unspent for a case where the remedy for an unknown "
             "fact genuinely diverges from the remedy for an unresolvable rule "
             "(10-CONTEXT D-12) — getting the count of known DSX-PRE- codes wrong "
             "here is worse than getting the digits wrong, because a silent drift "
             "in the count would mean a future code shipped without a reader ever "
-            "confronting the numbering decision this test exists to pin.",
+            "confronting the numbering decision this test exists to pin. "
+            "REQ-P11.2-05 (D-06) adds DSX-PRE-040 and DSX-PRE-041 as a fresh "
+            "decade each, never renumbering the three Phase 10 codes.",
         )
 
     def test_every_dsx_pre_finding_this_module_can_emit_is_critical(self):
@@ -1100,6 +1102,223 @@ class TestGateRegistration(unittest.TestCase):
                 "verify/ship and still fail the known-bad corpus classifier, so "
                 "severity is not redundant with registration",
             )
+
+
+class TestSpecIdentityAndAmendmentLedger(unittest.TestCase):
+    """`_check_spec_identity` (`DSX-PRE-040`) and `_check_amendment_ledger`
+    (`DSX-PRE-041`) — REQ-P11.2-05. Every test isolates its own
+    `tempfile.TemporaryDirectory()` root (RESEARCH landmine f) — never the
+    shared `examples/known-bad/DECISIONS.jsonl`.
+    """
+
+    def _seed_plan(self, root, digest="seed-digest", spec_id=None):
+        append_decision(
+            decisions_path(root),
+            InvocationHeader(
+                invocation_id="INV-plan",
+                gate_point="plan",
+                dsx_version=__version__,
+                frame_digest=digest,
+                spec_id=spec_id,
+            ),
+        )
+
+    def _append_header(self, root, digest, spec_id, gate_point="verify", invocation_id="INV-x"):
+        append_decision(
+            decisions_path(root),
+            InvocationHeader(
+                invocation_id=invocation_id,
+                gate_point=gate_point,
+                dsx_version=__version__,
+                frame_digest=digest,
+                spec_id=spec_id,
+            ),
+        )
+
+    def _append_amendment(self, root, spec_id, prev_digest, new_digest, reason,
+                           invocation_id="INV-amend"):
+        append_decision(
+            decisions_path(root),
+            AmendmentRecord(
+                spec_id=spec_id,
+                invocation_id=invocation_id,
+                gate_point="verify",
+                dsx_version=__version__,
+                prev_frame_digest=prev_digest,
+                new_frame_digest=new_digest,
+                reason=reason,
+            ),
+        )
+
+    # D-05: DSX-PRE-040
+    def test_1_missing_spec_id_on_experiment_design_fires_at_verify_ship(self):
+        spec = {"design": {"kind": "experiment"}, "inference": {"declared_at": "post_data"}}
+        with tempfile.TemporaryDirectory() as root:
+            self._seed_plan(root)
+            report = prereg.check(spec, root, reconcile_trail=True)
+            findings = [f for f in report.findings if f.code == "DSX-PRE-040"]
+            self.assertEqual(len(findings), 1)
+            self.assertEqual(findings[0].severity, Severity.HIGH)
+
+    def test_2_missing_spec_id_on_prescriptive_question_fires(self):
+        spec = {"question_type": "prescriptive", "inference": {"declared_at": "post_data"}}
+        with tempfile.TemporaryDirectory() as root:
+            self._seed_plan(root)
+            report = prereg.check(spec, root, reconcile_trail=True)
+            findings = [f for f in report.findings if f.code == "DSX-PRE-040"]
+            self.assertEqual(len(findings), 1)
+
+    def test_3_present_spec_id_on_experiment_design_produces_no_finding(self):
+        spec = {
+            "design": {"kind": "experiment"},
+            "inference": {"declared_at": "post_data"},
+            "spec_id": "SPEC-1",
+        }
+        with tempfile.TemporaryDirectory() as root:
+            self._seed_plan(root)
+            report = prereg.check(spec, root, reconcile_trail=True)
+            findings = [f for f in report.findings if f.code == "DSX-PRE-040"]
+            self.assertEqual(findings, [])
+
+    def test_4_descriptive_non_experiment_spec_with_no_spec_id_produces_no_finding(self):
+        spec = {"question_type": "descriptive", "inference": {"declared_at": "post_data"}}
+        with tempfile.TemporaryDirectory() as root:
+            self._seed_plan(root)
+            report = prereg.check(spec, root, reconcile_trail=True)
+            findings = [f for f in report.findings if f.code == "DSX-PRE-040"]
+            self.assertEqual(findings, [])
+
+    def test_5_reconcile_false_never_fires_dsx_pre_040_even_with_no_spec_id(self):
+        spec = {"design": {"kind": "experiment"}}
+        report = prereg.check(spec, None, reconcile_trail=False)
+        findings = [f for f in report.findings if f.code == "DSX-PRE-040"]
+        self.assertEqual(findings, [])
+
+    # D-05: DSX-PRE-041
+    def test_6_two_distinct_digests_under_one_spec_id_no_amendment_fires(self):
+        spec = {"design": {"kind": "experiment"}, "spec_id": "SPEC-1"}
+        with tempfile.TemporaryDirectory() as root:
+            self._append_header(root, "digest-a", "SPEC-1", gate_point="plan", invocation_id="INV-plan")
+            self._append_header(root, "digest-b", "SPEC-1", gate_point="verify", invocation_id="INV-verify")
+            report = prereg.check(spec, root, reconcile_trail=True)
+            findings = [f for f in report.findings if f.code == "DSX-PRE-041"]
+            self.assertEqual(len(findings), 1)
+            self.assertEqual(findings[0].severity, Severity.HIGH)
+
+    def test_7_valid_clearing_amendment_record_clears(self):
+        spec = {"design": {"kind": "experiment"}, "spec_id": "SPEC-1"}
+        with tempfile.TemporaryDirectory() as root:
+            self._append_header(root, "digest-a", "SPEC-1", gate_point="plan", invocation_id="INV-plan")
+            self._append_header(root, "digest-b", "SPEC-1", gate_point="verify", invocation_id="INV-verify")
+            self._append_amendment(
+                root, "SPEC-1", "digest-a", "digest-b",
+                "narrowed the segment to non-bot signups",
+            )
+            report = prereg.check(spec, root, reconcile_trail=True)
+            findings = [f for f in report.findings if f.code == "DSX-PRE-041"]
+            self.assertEqual(findings, [])
+
+    def test_8_reason_updated_analysis_with_non_matching_digests_does_not_clear(self):
+        # The bar is is_placeholder_or_refusal plus real digest membership, not a
+        # phrase stoplist: "updated analysis" is not itself blank/placeholder/
+        # refusal, but pairing it with digests the trail never recorded still
+        # fails to clear.
+        spec = {"design": {"kind": "experiment"}, "spec_id": "SPEC-1"}
+        with tempfile.TemporaryDirectory() as root:
+            self._append_header(root, "digest-a", "SPEC-1", gate_point="plan", invocation_id="INV-plan")
+            self._append_header(root, "digest-b", "SPEC-1", gate_point="verify", invocation_id="INV-verify")
+            self._append_amendment(
+                root, "SPEC-1", "not-a-recorded-digest", "also-not-recorded",
+                "updated analysis",
+            )
+            report = prereg.check(spec, root, reconcile_trail=True)
+            findings = [f for f in report.findings if f.code == "DSX-PRE-041"]
+            self.assertEqual(len(findings), 1)
+
+    def test_9_blank_reason_with_matching_digests_does_not_clear(self):
+        spec = {"design": {"kind": "experiment"}, "spec_id": "SPEC-1"}
+        with tempfile.TemporaryDirectory() as root:
+            self._append_header(root, "digest-a", "SPEC-1", gate_point="plan", invocation_id="INV-plan")
+            self._append_header(root, "digest-b", "SPEC-1", gate_point="verify", invocation_id="INV-verify")
+            self._append_amendment(root, "SPEC-1", "digest-a", "digest-b", "")
+            report = prereg.check(spec, root, reconcile_trail=True)
+            findings = [f for f in report.findings if f.code == "DSX-PRE-041"]
+            self.assertEqual(len(findings), 1)
+
+    def test_10_renamed_spec_id_mid_trail_still_fires_the_identity_free_floor(self):
+        # The un-renameable backstop: SPEC-2's own identity-scoped group holds
+        # only one digest (so signal 1 alone would stay silent), but the floor
+        # counts every header in the root regardless of spec_id.
+        spec = {"design": {"kind": "experiment"}, "spec_id": "SPEC-2"}
+        with tempfile.TemporaryDirectory() as root:
+            self._append_header(root, "digest-a", "SPEC-1", gate_point="plan", invocation_id="INV-plan")
+            self._append_header(root, "digest-b", "SPEC-2", gate_point="verify", invocation_id="INV-verify")
+            report = prereg.check(spec, root, reconcile_trail=True)
+            findings = [f for f in report.findings if f.code == "DSX-PRE-041"]
+            self.assertEqual(len(findings), 1)
+
+    def test_11_single_recorded_digest_produces_no_finding(self):
+        spec = {"design": {"kind": "experiment"}, "spec_id": "SPEC-1"}
+        with tempfile.TemporaryDirectory() as root:
+            self._append_header(root, "digest-a", "SPEC-1", gate_point="plan", invocation_id="INV-plan")
+            report = prereg.check(spec, root, reconcile_trail=True)
+            findings = [f for f in report.findings if f.code == "DSX-PRE-041"]
+            self.assertEqual(findings, [])
+
+    def test_12_pre_data_stale_lock_and_uncleared_amendment_co_fire_pre_020_and_pre_041(self):
+        spec = {
+            "validity_frame": {"a": 1},
+            "inference": {"declared_at": "pre_data"},
+            "design": {"kind": "experiment"},
+            "spec_id": "SPEC-1",
+        }
+        with tempfile.TemporaryDirectory() as root:
+            self._append_header(root, "stale-digest", "SPEC-1", gate_point="plan", invocation_id="INV-plan")
+            self._append_header(root, "digest-b", "SPEC-1", gate_point="verify", invocation_id="INV-verify")
+            report = prereg.check(spec, root, reconcile_trail=True)
+            pre020 = [f for f in report.findings if f.code == "DSX-PRE-020"]
+            pre041 = [f for f in report.findings if f.code == "DSX-PRE-041"]
+            self.assertEqual(len(pre020), 1)
+            self.assertEqual(pre020[0].severity, Severity.CRITICAL)
+            self.assertEqual(len(pre041), 1)
+            self.assertEqual(pre041[0].severity, Severity.HIGH)
+
+    def test_13_decision_records_appended_for_both_new_codes(self):
+        spec = {
+            "design": {"kind": "experiment"}, "spec_id": "SPEC-1",
+            "inference": {"declared_at": "post_data"},
+        }
+        with tempfile.TemporaryDirectory() as root:
+            self._append_header(root, "digest-a", "SPEC-1", gate_point="plan", invocation_id="INV-plan")
+            self._append_header(root, "digest-b", "SPEC-1", gate_point="verify", invocation_id="INV-verify")
+            report = prereg.check(spec, root, reconcile_trail=True)
+            decisions = report.context.get("decisions") or []
+            pre040 = [d for d in decisions if d["choice"].startswith("DSX-PRE-040")]
+            pre041 = [d for d in decisions if d["choice"].startswith("DSX-PRE-041")]
+            self.assertEqual(len(pre040), 1)
+            self.assertTrue(pre040[0]["counterfactual"].strip())
+            self.assertEqual(len(pre041), 1)
+            self.assertTrue(pre041[0]["counterfactual"].strip())
+
+    def test_14_amendment_record_round_trips_through_the_real_trail_writer(self):
+        # dsx/cli.py::_write_decision_trail writes spec_id onto the header it
+        # constructs; this pins that the field the ledger reads is the field
+        # a real gate run would actually write.
+        with tempfile.TemporaryDirectory() as tmp:
+            spec = load(str(ROOT / "examples" / "good-ANALYSIS-SPEC.yaml"))
+            spec_dict = dict(spec)
+            spec_dict["spec_id"] = "SPEC-WRITER-TEST"
+            path = Path(tmp) / "ANALYSIS-SPEC.yaml"
+            path.write_text(json.dumps(spec_dict), encoding="utf-8")
+            out, err = io.StringIO(), io.StringIO()
+            with redirect_stdout(out), redirect_stderr(err):
+                cli.main(["gate", "plan", "--spec", str(path), "--phase-dir", tmp])
+            from dsx.decisions import read_all as _read_all
+
+            records = _read_all(decisions_path(tmp))
+            headers = [r for r in records if r.get("record_type") == "invocation"]
+            self.assertTrue(headers)
+            self.assertEqual(headers[0]["spec_id"], "SPEC-WRITER-TEST")
 
 
 class TestAdHocCommandScope(unittest.TestCase):

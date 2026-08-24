@@ -2282,11 +2282,32 @@ class TestCLI(unittest.TestCase):
             code = cli.main(argv)
         return code, out.getvalue(), err.getvalue()
 
+    def _isolated_examples_copy(self, tmp: str) -> Path:
+        """Copy ``examples/`` into ``tmp``, excluding ``DECISIONS.jsonl``
+        (REQ-P11.2-05, T-11.2-07): the committed trail already carries
+        several distinct historical ``frame_digest`` values, and
+        ``DSX-PRE-041``'s identity-free floor fires on any root recording
+        more than one. Callers that need ``--spec`` to resolve sibling
+        artifacts (DATA-PROFILE, figures, narrative, evidence) from its own
+        directory, with no ``--phase-dir`` given, still get that — the copy
+        preserves every file except the one whose presence would otherwise
+        make the floor fire on a spec that changed nothing of its own."""
+        import shutil
+
+        target = Path(tmp) / "examples"
+        shutil.copytree(
+            self.ROOT / "examples", target,
+            ignore=shutil.ignore_patterns("DECISIONS.jsonl"),
+        )
+        return target
+
     def test_good_fixture_passes_every_gate(self):
-        fixture = self.ROOT / "examples" / "good-ANALYSIS-SPEC.yaml"
-        for point in ("plan", "execute", "verify", "ship"):
-            code, _, err = self._run(["gate", point, "--spec", str(fixture)])
-            self.assertEqual(code, 0, f"gate {point} unexpectedly blocked:\n{err}")
+        with tempfile.TemporaryDirectory() as tmp:
+            examples = self._isolated_examples_copy(tmp)
+            fixture = examples / "good-ANALYSIS-SPEC.yaml"
+            for point in ("plan", "execute", "verify", "ship"):
+                code, _, err = self._run(["gate", point, "--spec", str(fixture)])
+                self.assertEqual(code, 0, f"gate {point} unexpectedly blocked:\n{err}")
 
     def test_bad_fixture_blocks_at_plan(self):
         fixture = self.ROOT / "examples" / "bad-ANALYSIS-SPEC.yaml"
@@ -2532,7 +2553,14 @@ class TestCLI(unittest.TestCase):
         from dsx.loader import load
 
         target = Path(tmp) / "examples"
-        shutil.copytree(self.ROOT / "examples", target)
+        # DECISIONS.jsonl excluded (REQ-P11.2-05, T-11.2-07): the committed
+        # trail already carries several distinct historical frame_digest
+        # values, and DSX-PRE-041's identity-free floor fires on any root
+        # recording more than one.
+        shutil.copytree(
+            self.ROOT / "examples", target,
+            ignore=shutil.ignore_patterns("DECISIONS.jsonl"),
+        )
         spec_path = target / "good-ANALYSIS-SPEC.yaml"
         spec = load(spec_path)
         spec.setdefault("inference", {})["paradigm"] = "bayesian"
@@ -2768,13 +2796,15 @@ class TestCLI(unittest.TestCase):
             self.assertFalse((Path(tmp) / "DECISIONS.jsonl").exists())
 
     def test_gate_every_point_still_exits_correctly_with_trail_write_added(self):
-        fixture = self.ROOT / "examples" / "good-ANALYSIS-SPEC.yaml"
-        for point in ("plan", "execute", "verify", "ship"):
-            code, _, err = self._run(["gate", point, "--spec", str(fixture)])
-            self.assertEqual(code, 0, f"gate {point} unexpectedly blocked:\n{err}")
-        bad = self.ROOT / "examples" / "bad-ANALYSIS-SPEC.yaml"
-        code, _, _ = self._run(["gate", "plan", "--spec", str(bad)])
-        self.assertEqual(code, 1)
+        with tempfile.TemporaryDirectory() as tmp:
+            examples = self._isolated_examples_copy(tmp)
+            fixture = examples / "good-ANALYSIS-SPEC.yaml"
+            for point in ("plan", "execute", "verify", "ship"):
+                code, _, err = self._run(["gate", point, "--spec", str(fixture)])
+                self.assertEqual(code, 0, f"gate {point} unexpectedly blocked:\n{err}")
+            bad = examples / "bad-ANALYSIS-SPEC.yaml"
+            code, _, _ = self._run(["gate", "plan", "--spec", str(bad)])
+            self.assertEqual(code, 1)
 
     def test_unwritable_trail_directory_does_not_change_exit_code(self):
         import shutil
@@ -4577,6 +4607,21 @@ _END_TO_END_VARIANT_TABLE = (
 
 class TestPhase11_1Code(unittest.TestCase):
     ROOT = Path(__file__).resolve().parent.parent
+
+    def _isolated_examples_copy(self, tmp: str) -> Path:
+        """Copy ``examples/`` into ``tmp``, excluding ``DECISIONS.jsonl``
+        (REQ-P11.2-05, T-11.2-07): the committed trail already carries
+        several distinct historical ``frame_digest`` values, and
+        ``DSX-PRE-041``'s identity-free floor fires on any root recording
+        more than one. Matches ``TestCLI``'s sibling helper."""
+        import shutil
+
+        target = Path(tmp) / "examples"
+        shutil.copytree(
+            self.ROOT / "examples", target,
+            ignore=shutil.ignore_patterns("DECISIONS.jsonl"),
+        )
+        return target
 
     def _entrypoint(self, tmp: str, text: str, name: str = "entry.py") -> str:
         Path(tmp, name).write_text(text, encoding="utf-8")
@@ -6540,12 +6585,14 @@ class TestPhase11_1Code(unittest.TestCase):
     def test_good_fixture_still_passes_all_four_gate_points(self):
         from dsx import cli
 
-        good = self.ROOT / "examples" / "good-ANALYSIS-SPEC.yaml"
-        for point in ("plan", "execute", "verify", "ship"):
-            out, err = io.StringIO(), io.StringIO()
-            with redirect_stdout(out), redirect_stderr(err):
-                code = cli.main(["gate", point, "--spec", str(good)])
-            self.assertEqual(code, 0, f"gate {point} unexpectedly blocked:\n{err.getvalue()}")
+        with tempfile.TemporaryDirectory() as tmp:
+            examples = self._isolated_examples_copy(tmp)
+            good = examples / "good-ANALYSIS-SPEC.yaml"
+            for point in ("plan", "execute", "verify", "ship"):
+                out, err = io.StringIO(), io.StringIO()
+                with redirect_stdout(out), redirect_stderr(err):
+                    code = cli.main(["gate", point, "--spec", str(good)])
+                self.assertEqual(code, 0, f"gate {point} unexpectedly blocked:\n{err.getvalue()}")
 
     def test_bad_fixture_still_blocks_at_execute(self):
         from dsx import cli
@@ -6883,13 +6930,15 @@ class TestPhase11_1Code(unittest.TestCase):
             ("bad-ANALYSIS-SPEC.yaml", "execute", 1),
             ("bad-ANALYSIS-SPEC.yaml", "ship", 1),
         ]
-        for spec_name, point, expected in cases:
-            with self.subTest(spec=spec_name, point=point):
-                spec_path = self.ROOT / "examples" / spec_name
-                out, err = io.StringIO(), io.StringIO()
-                with redirect_stdout(out), redirect_stderr(err):
-                    code = cli.main(["gate", point, "--spec", str(spec_path)])
-                self.assertEqual(code, expected)
+        with tempfile.TemporaryDirectory() as tmp:
+            examples = self._isolated_examples_copy(tmp)
+            for spec_name, point, expected in cases:
+                with self.subTest(spec=spec_name, point=point):
+                    spec_path = examples / spec_name
+                    out, err = io.StringIO(), io.StringIO()
+                    with redirect_stdout(out), redirect_stderr(err):
+                        code = cli.main(["gate", point, "--spec", str(spec_path)])
+                    self.assertEqual(code, expected)
 
     # -- Task 5: performance -- the new mechanism measured, the one -------
     # -- already-over-budget quadratic fixed, the one retained pattern ----
@@ -7545,7 +7594,14 @@ class TestAdmissibilityGateRegistration(unittest.TestCase):
         from dsx.loader import load
 
         target = Path(tmp) / "examples"
-        shutil.copytree(self.ROOT / "examples", target)
+        # DECISIONS.jsonl excluded (REQ-P11.2-05, T-11.2-07): the committed
+        # trail already carries several distinct historical frame_digest
+        # values, and DSX-PRE-041's identity-free floor fires on any root
+        # recording more than one.
+        shutil.copytree(
+            self.ROOT / "examples", target,
+            ignore=shutil.ignore_patterns("DECISIONS.jsonl"),
+        )
         spec_path = target / "good-ANALYSIS-SPEC.yaml"
         spec = load(spec_path)
         mutate(spec)
@@ -7848,14 +7904,26 @@ class TestAdmissibilityCorpusRegression(unittest.TestCase):
                 self.assertEqual(adm, [])
 
     def test_good_fixture_draws_no_finding_and_exits_zero_at_all_four_gates(self):
-        fixture = self.ROOT / "examples" / "good-ANALYSIS-SPEC.yaml"
-        for point in ("plan", "execute", "verify", "ship"):
-            with self.subTest(point=point):
-                code, out, err = self._run(["gate", point, "--spec", str(fixture), "--json"])
-                self.assertEqual(code, 0, err)
-                payload = json.loads(out)
-                adm = [f for f in payload["findings"] if f["code"].startswith("DSX-ADM-")]
-                self.assertEqual(adm, [])
+        import shutil
+
+        with tempfile.TemporaryDirectory() as tmp:
+            target = Path(tmp) / "examples"
+            # DECISIONS.jsonl excluded (REQ-P11.2-05, T-11.2-07): the
+            # committed trail already carries several distinct historical
+            # frame_digest values, and DSX-PRE-041's identity-free floor
+            # fires on any root recording more than one.
+            shutil.copytree(
+                self.ROOT / "examples", target,
+                ignore=shutil.ignore_patterns("DECISIONS.jsonl"),
+            )
+            fixture = target / "good-ANALYSIS-SPEC.yaml"
+            for point in ("plan", "execute", "verify", "ship"):
+                with self.subTest(point=point):
+                    code, out, err = self._run(["gate", point, "--spec", str(fixture), "--json"])
+                    self.assertEqual(code, 0, err)
+                    payload = json.loads(out)
+                    adm = [f for f in payload["findings"] if f["code"].startswith("DSX-ADM-")]
+                    self.assertEqual(adm, [])
 
     def test_template_draws_no_finding_and_exits_zero_at_gate_plan(self):
         template = self.ROOT / "templates" / "ANALYSIS-SPEC.yaml"
