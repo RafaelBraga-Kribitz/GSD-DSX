@@ -113,7 +113,13 @@ def append(path: "str | Path", record: "DecisionRecord | InvocationHeader") -> N
     the reader (read_all) skips an unparseable tail line rather than failing
     the file."""
     line = json.dumps(record.to_dict(), sort_keys=True)
-    with Path(path).open("a", encoding="utf-8") as fh:
+    # newline="\n" pins the D-19 byte contract (one JSON object per line ending
+    # in a single \n). Default text mode translates \n -> \r\n on Windows, and
+    # Phase 10 made DECISIONS.jsonl a content-locked gate input (byte
+    # comparison), so trail fidelity now has to hold byte-for-byte across
+    # platforms — read_all()'s splitlines() tolerated \r\n on the read side, but
+    # the write must still honour the documented single-\n contract.
+    with Path(path).open("a", encoding="utf-8", newline="\n") as fh:
         fh.write(line + "\n")
         fh.flush()
         os.fsync(fh.fileno())

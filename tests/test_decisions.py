@@ -193,6 +193,26 @@ class TestDecisions(unittest.TestCase):
             d.append(p2, rec)
             self.assertEqual(p1.read_text(encoding="utf-8"), p2.read_text(encoding="utf-8"))
 
+    def test_append_writes_lf_only_no_crlf(self):
+        # D-19 byte contract: one record per line ending in a single \n. Default
+        # text mode translates \n -> \r\n on Windows, which would break the
+        # Phase-10 content-locked byte comparison of DECISIONS.jsonl; append()
+        # pins newline="\n" so the trail is byte-identical across platforms.
+        with tempfile.TemporaryDirectory() as tmp:
+            p = Path(tmp) / "DECISIONS.jsonl"
+            for i in range(1, 3):
+                d.append(
+                    p,
+                    d.DecisionRecord(
+                        id=f"DEC-{i:03d}", invocation_id="INV-0001",
+                        layer="deterministic", choice=f"c{i}",
+                    ),
+                )
+            data = p.read_bytes()
+            self.assertNotIn(b"\r", data)  # no CR at all, hence no \r\n
+            self.assertTrue(data.endswith(b"\n"))
+            self.assertEqual(data.count(b"\n"), 2)  # exactly one \n per record
+
     # ── Task 2: invocation identity, frame digest, path resolution, report collection ──
 
     def test_next_invocation_id_missing_file_returns_inv_0001(self):
