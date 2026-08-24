@@ -2923,7 +2923,10 @@ class TestDecisionTrailCLI(unittest.TestCase):
             header = next(r for r in payload if r["record_type"] == "invocation")
             self.assertEqual(
                 set(header),
-                {"invocation_id", "gate_point", "dsx_version", "frame_digest", "record_type"},
+                {
+                    "invocation_id", "gate_point", "dsx_version", "frame_digest",
+                    "spec_id", "record_type",
+                },
             )
             decisions = [r for r in payload if r["record_type"] == "decision"]
             self.assertTrue(decisions)

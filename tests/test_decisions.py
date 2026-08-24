@@ -294,6 +294,73 @@ class TestDecisions(unittest.TestCase):
         merged = merge("spec", [r1])
         self.assertEqual(d.collect_from_report(merged), [])
 
+    # ── REQ-P11.2-05: spec_id on the header, AmendmentRecord ─────────────────
+
+    def test_invocation_header_round_trips_with_spec_id_present(self):
+        hdr = d.InvocationHeader(
+            invocation_id="INV-0001", gate_point="plan", dsx_version="2.0.0",
+            frame_digest="x", spec_id="SPEC-abc",
+        )
+        out = hdr.to_dict()
+        self.assertEqual(out["record_type"], "invocation")
+        self.assertEqual(out["spec_id"], "SPEC-abc")
+
+    def test_invocation_header_with_no_spec_id_defaults_to_none(self):
+        hdr = d.InvocationHeader(
+            invocation_id="INV-0001", gate_point="plan", dsx_version="2.0.0",
+            frame_digest="x",
+        )
+        self.assertIsNone(hdr.spec_id)
+        self.assertIsNone(hdr.to_dict()["spec_id"])
+
+    def test_every_existing_construction_site_still_constructs_with_no_spec_id(self):
+        # Landmine (d): a no-default spec_id or one inserted before frame_digest
+        # would break every one of the 9 existing call sites at construction
+        # time. This is the unit-level pin of that guard.
+        hdr = d.InvocationHeader(
+            invocation_id="INV-0001", gate_point="verify", dsx_version="x",
+            frame_digest="y",
+        )
+        self.assertEqual(hdr.gate_point, "verify")
+
+    def test_amendment_record_to_dict_has_all_seven_fields_and_record_type(self):
+        rec = d.AmendmentRecord(
+            spec_id="S", invocation_id="INV-0002", gate_point="verify",
+            dsx_version="2.0.0", prev_frame_digest="p", new_frame_digest="n",
+            reason="narrowed the segment to non-bot signups",
+        )
+        out = rec.to_dict()
+        self.assertEqual(out["record_type"], "amendment")
+        for name in (
+            "spec_id", "invocation_id", "gate_point", "dsx_version",
+            "prev_frame_digest", "new_frame_digest", "reason",
+        ):
+            self.assertIn(name, out)
+
+    def test_record_types_is_exactly_invocation_decision_amendment(self):
+        self.assertEqual(d.RECORD_TYPES, {"invocation", "decision", "amendment"})
+
+    def test_frame_digest_is_byte_identical_with_and_without_top_level_spec_id(self):
+        # D-08: spec_id is top-level ONLY, never inside validity_frame/inference —
+        # frame_digest must be provably unaffected by its presence or absence.
+        with_id = {"validity_frame": {"a": 1}, "inference": {"x": 2}, "spec_id": "S"}
+        without_id = {"validity_frame": {"a": 1}, "inference": {"x": 2}}
+        self.assertEqual(d.frame_digest(with_id), d.frame_digest(without_id))
+
+    def test_amendment_record_can_be_appended_and_read_back(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            p = Path(tmp) / "DECISIONS.jsonl"
+            rec = d.AmendmentRecord(
+                spec_id="S", invocation_id="INV-0002", gate_point="verify",
+                dsx_version="2.0.0", prev_frame_digest="p", new_frame_digest="n",
+                reason="narrowed the segment to non-bot signups",
+            )
+            d.append(p, rec)
+            records = d.read_all(p)
+            self.assertEqual(len(records), 1)
+            self.assertEqual(records[0]["record_type"], "amendment")
+            self.assertEqual(records[0]["reason"], "narrowed the segment to non-bot signups")
+
 
 if __name__ == "__main__":
     unittest.main()
