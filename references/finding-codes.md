@@ -13,7 +13,7 @@ a suppression or a reference in a review stays valid across versions.
 **Gate thresholds.** `plan` and `execute` block at CRITICAL; `verify` and
 `ship` block at HIGH.
 
-**Total: 245 codes.**
+**Total: 247 codes.**
 
 ## Contract structure — `DSX-SPEC-*`
 
@@ -404,6 +404,8 @@ The declared fallback rule resolved against the declared observed facts, the pla
 | `DSX-PRE-010` | CRITICAL | Declared fallback rule does not resolve to a branch |
 | `DSX-PRE-020` | CRITICAL | Declared pre-data plan is not the plan recorded at gate plan |
 | `DSX-PRE-030` | CRITICAL | Executed procedure differs from the declared branch |
+| `DSX-PRE-040` | HIGH | Prescriptive/experiment spec declares no top-level spec_id |
+| `DSX-PRE-041` | HIGH | Uncleared amendment: more than one distinct frame content recorded for this spec with no clearing record |
 
 ## Frequentist admissibility — `DSX-ADM-*`
 

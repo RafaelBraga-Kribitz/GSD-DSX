@@ -25,7 +25,15 @@ from dataclasses import dataclass
 
 from ..decisions import DecisionRecord, decisions_path, frame_digest, read_all
 from ..findings import CheckError, Report
-from ..spec import PREREG_FACTS, as_number, get, is_blank, items, normalize
+from ..spec import (
+    PREREG_FACTS,
+    as_number,
+    get,
+    is_blank,
+    is_placeholder_or_refusal,
+    items,
+    normalize,
+)
 
 _ARROW = "->"
 
@@ -620,6 +628,325 @@ def _check_content_lock(spec: dict, root: "str | None", report: Report) -> None:
     )
 
 
+def _spec_id_required(spec: dict) -> bool:
+    """True when ``spec`` is one of the two kinds D-08 requires a top-level
+    ``spec_id`` for: a prescriptive question, or an experiment design.
+
+    Reads ``question_type`` and ``design.kind`` through ``normalize()``, the
+    same closed-vocabulary comparison every other membership test in this
+    module goes through, rather than a raw equality — so ``Prescriptive`` and
+    ``prescriptive`` are not two different answers.
+    """
+    question_type = spec.get("question_type")
+    design = spec.get("design")
+    design_kind = design.get("kind") if isinstance(design, dict) else None
+    return normalize(question_type) == "prescriptive" or normalize(design_kind) == "experiment"
+
+
+def _check_spec_identity(spec: dict, report: Report) -> None:
+    """Emit ``DSX-PRE-040`` when a prescriptive or experiment spec declares no
+    top-level ``spec_id`` (REQ-P11.2-05, D-08).
+
+    Today the content lock (``DSX-PRE-020``) clears with no finding on a
+    ``post_data``/blank ``declared_at`` spec whose frame was shopped after
+    results — Phase 10 deliberately left ``InvocationHeader`` with no spec
+    identity (``prereg.py:532-538`` before this plan) to avoid cross-spec
+    false positives on a shared trail root. This function is the fail-closed
+    half of re-solving that gap: absence of a declared identity blocks rather
+    than passing silently (D-08 fail-closed, T-11.2-05 mitigate) — a spec
+    with no identity cannot later be checked, by ``_check_amendment_ledger``,
+    for a post-results amendment, so a missing identity is itself the defect.
+
+    Applicable only to a spec ``_spec_id_required`` calls prescriptive or an
+    experiment; a descriptive question over a non-experiment design has
+    nothing this function checks, and returns before computing or emitting
+    anything — matching ``_check_procedure_reconciliation``'s early-return
+    idiom for "not this function's concern" rather than "clear".
+
+    ``spec_id`` is read top-level only, never through a dotted-path helper
+    into ``validity_frame:``/``inference:`` — it must never enter
+    ``frame_digest``'s inputs (D-08; proved by
+    ``tests/test_decisions.py::test_frame_digest_is_byte_identical_with_and_without_top_level_spec_id``).
+
+    Citation: Simmons, J. P., Nelson, L. D. and Simonsohn, U. (2011),
+    "False-Positive Psychology", Psychological Science volume 22 issue 11
+    pages 1359-1366, DOI 10.1177/0956797611417632, page 1365, "General
+    Discussion" — the same researcher-degrees-of-freedom concern
+    ``_check_procedure_reconciliation`` already cites, applied here to the
+    identity a spec must declare before its plan can be checked for a
+    post-results amendment at all. Secondary citation, same locator flags as
+    ``_check_rule_resolves``: Gelman, A. and Loken, E. (2014), "The
+    Statistical Crisis in Science", American Scientist 102(6):460-465, page
+    460, unnumbered section "How to Test a Hypothesis" (no numbered
+    sections, tables or theorems in the article, so page plus unnumbered
+    heading is the most precise locator that exists). Both citations carry
+    the D-16 unverified-locator flag pending a human D-05 read (HQ-3) before
+    ship.
+    Structural criterion: the signal is the structural presence or absence of
+    a declared top-level ``spec_id`` on a spec this function's applicability
+    test selects — no threshold, effect size or statistic is computed
+    anywhere on this path (brief D-02).
+    """
+    if not _spec_id_required(spec):
+        return
+
+    spec_id = spec.get("spec_id")
+    fired = is_blank(spec_id)
+
+    if fired:
+        report.add(
+            "DSX-PRE-040",
+            "HIGH",
+            "Prescriptive/experiment spec declares no top-level spec_id",
+            detail=(
+                "question_type normalizes to prescriptive, or design.kind "
+                "normalizes to experiment, either of which requires a declared "
+                "spec identity for amendment tracking — but the top-level "
+                "spec_id field is blank."
+            ),
+            remedy=(
+                "Declare a stable, human-meaningful top-level spec_id — outside "
+                "validity_frame:/inference:, so it never enters frame_digest. "
+                "Fail-closed by design (D-08): absence blocks rather than "
+                "passing silently, because a spec with no declared identity "
+                "cannot later be checked for a post-results amendment."
+            ),
+            where="spec.spec_id",
+        )
+
+    report.context.setdefault("decisions", []).append(
+        DecisionRecord(
+            id="",
+            invocation_id="",
+            layer="deterministic",
+            choice=f"DSX-PRE-040 {'fired' if fired else 'clear'}: spec_id={spec_id!r}",
+            inputs=["spec_id", "question_type", "design.kind"],
+            rule=(
+                "DSX-PRE-040 fires when question_type normalizes to "
+                "prescriptive or design.kind normalizes to experiment, and "
+                "the top-level spec_id is blank."
+            ),
+            citation=(
+                "Simmons, Nelson & Simonsohn (2011), page 1365; Gelman & "
+                "Loken (2014), page 460"
+            ),
+            counterfactual=(
+                "Declaring a top-level spec_id would have cleared DSX-PRE-040."
+                if fired
+                else "Leaving spec_id blank on a prescriptive/experiment spec "
+                "would have fired DSX-PRE-040."
+            ),
+        ).to_dict()
+    )
+
+
+def _clearing_amendment_exists(records: "list[dict]", header_digests: "set[str]") -> bool:
+    """True when ``records`` holds a usable clearing ``amendment`` record.
+
+    "Usable" mirrors ``_has_grandfather_suppression``'s bar for its own
+    bypass: a structural check on FORM, never on truth (D-12, T-11.2-06). A
+    record clears the ledger when its ``reason`` passes
+    ``is_placeholder_or_refusal`` — i.e. is judged NOT blank, NOT an
+    angle-bracket placeholder and NOT a bare refusal token, so it reads as a
+    real, present explanation — AND it names the two frame digests it
+    reconciles, ``prev_frame_digest`` and ``new_frame_digest``, both of which
+    must themselves be digests this trail actually recorded on an invocation
+    header (``header_digests``). A reason that merely looks substantive
+    (e.g. "updated analysis") but is paired with digests the trail never
+    recorded does not clear — the bar is the structural
+    ``is_placeholder_or_refusal`` test plus real digest membership, never a
+    stoplist of specific phrases judged plausible or vague by a human reader.
+    """
+    for record in records:
+        if not isinstance(record, dict):
+            continue
+        if record.get("record_type") != "amendment":
+            continue
+        reason = record.get("reason")
+        if is_placeholder_or_refusal(reason):
+            continue
+        prev_digest = record.get("prev_frame_digest")
+        new_digest = record.get("new_frame_digest")
+        if not prev_digest or not new_digest:
+            continue
+        if prev_digest in header_digests and new_digest in header_digests:
+            return True
+    return False
+
+
+def _check_amendment_ledger(spec: dict, root: "str | None", report: Report) -> None:
+    """Emit ``DSX-PRE-041`` when more than one distinct ``frame_digest`` is
+    recorded in the decision trail with no clearing amendment record
+    (REQ-P11.2-05, D-09, D-10, D-12).
+
+    Two independent signals, either of which can fire this code — the
+    counter is not redundant with ``DSX-PRE-020``: that check gates on
+    ``inference.declared_at`` normalising to ``pre_data`` and stays silent on
+    a ``post_data``/blank claim (D-10 legal-and-silent); this function does
+    NOT gate on ``declared_at`` at all, so it is the only ``DSX-PRE-*`` check
+    that can catch a plan shopped after results on an honest ``post_data``
+    declaration. A ``pre_data`` spec with a stale plan-lock and an uncleared
+    amendment can fire both ``DSX-PRE-020`` (CRITICAL) and ``DSX-PRE-041``
+    (HIGH) together — redundant, not mutually exclusive.
+
+    1. **Identity-scoped signal (D-09):** every recorded ``invocation``
+       header's ``spec_id`` field, grouped, then counted for distinct
+       ``frame_digest`` values under the current spec's own ``spec_id``.
+    2. **Identity-free floor (D-09, T-11.2-07):** distinct ``frame_digest``
+       values over EVERY recorded invocation header in the root, regardless
+       of ``spec_id`` — the un-renameable backstop: renaming ``spec_id``
+       mid-trail defeats signal 1 (a fresh identity starts a fresh group) but
+       cannot defeat signal 2, because it counts every header the root ever
+       recorded. This is a deliberate, accepted residual (D-12): it re-opens
+       the Phase-10 cross-spec false positive on a trail root shared by more
+       than one distinct spec (multiple specs' own, unrelated digests read as
+       amendments) — the deliberate cost of a backstop nothing can rename
+       away from. Tests isolate per-spec ``tempfile.TemporaryDirectory()``
+       roots (RESEARCH landmine f) so this floor never fires on an unrelated
+       fixture's own trail.
+
+    Neither signal computes or emits anything by itself when it is the only
+    one present or absent — both are folded into one boolean, ``signal``,
+    before a single ``DSX-PRE-041`` finding (never two) is considered.
+    Returns before appending a decision record when neither signal is
+    present, mirroring ``_check_procedure_reconciliation``'s early-return
+    idiom for "not applicable" rather than "clear".
+
+    Known residual limits, named in the remedy rather than papered over
+    (D-12, T-11.2-04, T-11.2-06, T-11.2-07): the trail is a plain, unsigned,
+    local file either the operator or the gate itself can reset or
+    selectively edit; ``read_all`` is a tolerant reader (an undecodable byte
+    or an unparseable line is skipped, not fatal), so selective deletion is
+    invisible; the clearing ``reason`` is checkable for form, never truth;
+    and the identity-free floor is a real, accepted cross-spec false-positive
+    surface on a shared root. This is a committed-trail honesty signal, not a
+    tamper-proof control (brief D-01 forbids a signing dependency).
+
+    Citation: Simmons, J. P., Nelson, L. D. and Simonsohn, U. (2011),
+    "False-Positive Psychology", Psychological Science volume 22 issue 11
+    pages 1359-1366, DOI 10.1177/0956797611417632, page 1365, "General
+    Discussion" — undisclosed researcher degrees of freedom, of which an
+    unrecorded post-results plan amendment is one; Gelman, A. and Loken, E.
+    (2014), "The Statistical Crisis in Science", American Scientist
+    102(6):460-465, page 460, unnumbered section "How to Test a Hypothesis";
+    Wagenmakers, E.-J., Wetzels, R., Borsboom, D., van der Maas, H. L. J. and
+    Kievit, R. A. (2012), "An Agenda for Purely Confirmatory Research",
+    Perspectives on Psychological Science volume 7 issue 6 pages 632-638,
+    DOI 10.1177/1745691612463078 — the firing half's three anchors. The
+    clearing half only: Nosek, B. A., Ebersole, C. R., DeHaven, A. C. and
+    Mellor, D. T. (2018), "The preregistration revolution", PNAS volume 115
+    issue 11 pages 2600-2606, DOI 10.1073/pnas.1708274114, section
+    "Preregistration in Practice" — deviations from a preregistered plan are
+    common and do not necessarily rule out effective prediction testing; this
+    citation never anchors the firing half (10-CONTEXT D-14: it argues
+    declared deviations stay legal, the wrong support for blocking an
+    undeclared one). All four citations carry the D-16 unverified-locator
+    flag pending a human D-05 read (HQ-3) before ship.
+    Structural criterion: the signal is structural presence or absence of a
+    discriminating identity (more than one distinct frame_digest recorded)
+    and of a clearing record naming both ends of the change — no threshold,
+    effect size or statistic is computed anywhere on this path (brief D-02).
+    """
+    if root is None:
+        return
+
+    records = read_all(decisions_path(root))
+
+    header_digests: "set[str]" = set()
+    by_spec_id: "dict[str, set[str]]" = {}
+    for record in records:
+        if not isinstance(record, dict):
+            continue
+        if record.get("record_type") != "invocation":
+            continue
+        digest = record.get("frame_digest")
+        if not digest:
+            continue
+        header_digests.add(digest)
+        record_spec_id = record.get("spec_id")
+        if record_spec_id:
+            by_spec_id.setdefault(record_spec_id, set()).add(digest)
+
+    spec_id = spec.get("spec_id")
+    identity_scoped = by_spec_id.get(spec_id, set()) if spec_id else set()
+    identity_free_count = len(header_digests)
+
+    signal = len(identity_scoped) > 1 or identity_free_count > 1
+    if not signal:
+        return
+
+    cleared = _clearing_amendment_exists(records, header_digests)
+    fired = not cleared
+
+    if fired:
+        report.add(
+            "DSX-PRE-041",
+            "HIGH",
+            "Uncleared amendment: more than one distinct frame content recorded "
+            "for this spec with no clearing record",
+            detail=(
+                f"{len(identity_scoped)} distinct frame_digest(s) recorded under "
+                f"spec_id {spec_id!r}; {identity_free_count} distinct "
+                "frame_digest(s) recorded across the whole trail root — either "
+                "signal alone means the locked plan changed after an earlier "
+                "invocation was recorded, and no amendment record reconciles "
+                "the change."
+            ),
+            remedy=(
+                "Append a record_type: amendment entry naming the exact "
+                "prev_frame_digest and new_frame_digest being reconciled, "
+                "both of which must already be recorded on an invocation "
+                "header, and a reason that is not blank, an angle-bracket "
+                "placeholder or a refusal token. This is a committed-trail "
+                "honesty signal, not a tamper-proof control: the trail is a "
+                "plain, unsigned, local file either party can edit, the "
+                "clearing reason is checkable for form and not truth, and a "
+                "trail root shared by more than one spec can trip the "
+                "identity-free floor as a false positive — isolate one "
+                "trail root per spec to avoid it. The counter's unique value "
+                "is the post_data/blank declared_at gap DSX-PRE-020 leaves "
+                "silent; the two codes can legitimately co-fire on the same "
+                "pre_data spec."
+            ),
+            where="spec.spec_id",
+        )
+
+    report.context.setdefault("decisions", []).append(
+        DecisionRecord(
+            id="",
+            invocation_id="",
+            layer="deterministic",
+            choice=(
+                f"DSX-PRE-041 {'fired' if fired else 'clear'}: "
+                f"{len(identity_scoped)} distinct digest(s) under spec_id "
+                f"{spec_id!r}, {identity_free_count} distinct digest(s) "
+                "trail-wide"
+            ),
+            inputs=["spec_id"],
+            rule=(
+                "DSX-PRE-041 fires when more than one distinct frame_digest is "
+                "recorded under the current spec_id, or over the whole trail "
+                "root (the identity-free floor), with no clearing amendment "
+                "record naming both digests and a non-placeholder reason."
+            ),
+            citation=(
+                "Simmons, Nelson & Simonsohn (2011), page 1365; Gelman & "
+                "Loken (2014), page 460; Wagenmakers et al. (2012); clearing "
+                "half only: Nosek et al. (2018), section Preregistration in "
+                "Practice"
+            ),
+            counterfactual=(
+                "A clearing amendment record naming both reconciled digests, "
+                "with a non-placeholder reason, would have cleared "
+                "DSX-PRE-041."
+                if fired
+                else "More than one distinct frame_digest with no clearing "
+                "record would have fired DSX-PRE-041."
+            ),
+        ).to_dict()
+    )
+
+
 def check(spec: dict, root: "str | None" = None, *, reconcile_trail: bool = False) -> Report:
     """Emit the pre-registered inference plan findings (``DSX-PRE-*``).
 
@@ -646,5 +973,7 @@ def check(spec: dict, root: "str | None" = None, *, reconcile_trail: bool = Fals
 
     if reconcile_trail:
         _check_content_lock(spec, root, report)
+        _check_spec_identity(spec, report)
+        _check_amendment_ledger(spec, root, report)
 
     return report

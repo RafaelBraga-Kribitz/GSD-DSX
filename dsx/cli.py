@@ -376,6 +376,7 @@ def _write_decision_trail(
                 gate_point=point,
                 dsx_version=__version__,
                 frame_digest=frame_digest(spec),
+                spec_id=spec.get("spec_id"),
             ),
         )
         for n, raw in enumerate(collect_from_report(report), start=1):
