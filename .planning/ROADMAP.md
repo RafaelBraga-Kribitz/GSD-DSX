@@ -875,7 +875,7 @@ discipline (candidate: Nosek et al. 2018) settled at discuss under D-05.
   5. Unread scaffold fields are quarantined in a clearly marked documentation-only template
      block, and the storyteller prompt points only at fields a gate actually reads.
 
-**Plans:** 1/8 plans executed
+**Plans:** 3/8 plans executed
 
 Plans:
 
@@ -885,8 +885,8 @@ Plans:
 
 **Wave 2** *(independent checks, parallel — blocked on Wave 1)*
 
-- [ ] 11.2-02-PLAN.md — REQ-03: two-tier causal-verb widening (bare-infinitive purpose gate + gerunds), shared matcher, Hernán 2018 umbrella provenance (reuses DSX-CLM-010/011, DSX-COH-010)
-- [ ] 11.2-03-PLAN.md — REQ-05: top-level `spec_id`, `AmendmentRecord`, `DSX-PRE-040` (fail-closed) + `DSX-PRE-041` (amendment counter + identity-free floor), writer wired, spec_id prophylaxis on eight experiment fixtures
+- [x] 11.2-02-PLAN.md — REQ-03: two-tier causal-verb widening (bare-infinitive purpose gate + gerunds), shared matcher, Hernán 2018 umbrella provenance (reuses DSX-CLM-010/011, DSX-COH-010)
+- [x] 11.2-03-PLAN.md — REQ-05: top-level `spec_id`, `AmendmentRecord`, `DSX-PRE-040` (fail-closed) + `DSX-PRE-041` (amendment counter + identity-free floor), writer wired, spec_id prophylaxis on eight experiment fixtures
 
 **Wave 3** *(checks that read prescriptive / extend Wave 2 files — blocked on Wave 2)*
 

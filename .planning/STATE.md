@@ -5,22 +5,22 @@ milestone_name: DSX Validity Frame
 current_phase: 11.2
 current_phase_name: prescriptive-claim-layer
 status: executing
-stopped_at: Phase 11.2 planned (8 plans / 4 waves; plan-checker PASSED — S1-2)
-last_updated: "2026-08-24T11:46:04.675Z"
+stopped_at: Phase 11.2 Wave 2 executed (plans 02+03; plans 01-03 of 8 done; gate green — S1-3 in progress)
+last_updated: "2026-08-24T15:00:00.000Z"
 last_activity: 2026-08-24
-last_activity_desc: Phase 11.2 execution started
+last_activity_desc: Phase 11.2 Wave 2 executed (plans 02, 03)
 progress:
   total_phases: 10
   completed_phases: 8
   total_plans: 76
-  completed_plans: 68
-  percent: 80
+  completed_plans: 71
+  percent: 93
 ---
 
 # Project state
 
 **Status:** Executing Phase 11.2
-**Progress:** [██████████████████░░] 56/63 plans (89%)  
+**Progress:** [███████████████████░] 59/63 plans (94%)  
 **Locked decisions:** DQ = profile runner + hermetic gates; Glyph = hermetic svg_sha256 only (no MCP dep); forbidden claims = universal pack + optional phase YAML; repro_lock = ARS-style honest-null (not byte-replay); decision replay = structured thresholds only; suppressions = ADR/SPEC authority required (unknown codes → exit 2)  
 **v2.0.0 locked decisions:** DSX-PAR-010 is a distinct code, DSX-EXP-060 untouched (M-01); no `inference.stopping_rule` — PAR-010/011 read the existing `design.peeking_policy` (M-02); PEEKING_POLICIES gains an uncontrolled-continuous-monitoring value (M-03); automated import test enforces the D-03a boundary from M1 (M-04); SELF-001 stays a convention, REVERSALS.md template seeded in M1 (M-05); `validity_frame` sub-block requiredness gated by `question_type` (M-06); existing `suppressions[]` is the pre-v2.0.0 grandfather path (M-07); D-05 citation enforcement automated via `gen-finding-catalogue.py` (M-08); `dependence.method_family_required` reuses `VARIANCE_ADJUSTMENTS` (M-09)
 
@@ -115,9 +115,9 @@ parity and visible-fallback criteria added).
 ## Current Position
 
 Phase: 11.2 (prescriptive-claim-layer) — EXECUTING
-Plan: 1 of 8
-Status: Executing Phase 11.2
-Last activity: 2026-08-24 — Phase 11.2 execution started
+Plan: 3 of 8
+Status: Executing Phase 11.2 — Waves 1-2 done (plans 01, 02, 03); Wave 3 next (plans 05, 06, 07)
+Last activity: 2026-08-24 — Phase 11.2 Wave 2 executed (plans 02, 03)
 
 ## Project Reference
 
@@ -128,9 +128,9 @@ See: .planning/PROJECT.md (updated 2026-08-13)
 
 ## Session
 
-**Last session:** 2026-08-24T11:30:00.000Z
-**Stopped at:** Phase 11.2 planned — 8 plans / 4 waves, plan-checker PASSED (S1-2). Next: S1-3 execute.
-**Resume file:** .planning/phases/11.2-prescriptive-claim-layer/11.2-01-PLAN.md
+**Last session:** 2026-08-24T15:00:00.000Z
+**Stopped at:** Phase 11.2 S1-3 in progress — Waves 1-2 executed (plans 01, 02, 03), full suite 1084 OK, check.sh all checks passed, catalogue current. Next: S1-3 Wave 3 = plans 05, 06, 07 (blocked on Wave 2, now unblocked).
+**Resume file:** .planning/phases/11.2-prescriptive-claim-layer/11.2-05-PLAN.md
 
 Phase 10 context was re-verified 2026-08-14 (assumptions mode). Six unexecuted plans (`10-01` … `10-06`) already exist; this refresh did not rewrite them. Phase 8's blocking gap is in `08-VERIFICATION.md` (out-of-vocabulary `interference.risk` bypass).
 
