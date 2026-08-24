@@ -199,6 +199,46 @@ status, but the phase is NOT human-approved until you answer both:
 Answer e.g. `HQ-2: (a) approved, (b) accept confirmed` — the loop will write your
 verdict into `11.1.1-SECURITY.md` and check this item off.
 
+### HQ-3 — Phase 11.2 discuss: D-05 citation reads for the prescriptive claim layer (opened 2026-08-24)
+
+**Non-blocking.** The loop keeps building Phase 11.2; these reads are needed before 11.2 *ships*
+(verify/ship), not before it plans/executes. A fuller evidence pack (verbatim quotes side-by-side
+with each claimed locator) will be assembled the way HQ-1 was, once the checks land in code. This
+item records the citation *selections* the 2026-08-24 persona round made so you can start reading.
+
+Project rule D-05 requires **you** to read the primary source; the persona round prepared the
+evidence, it did not sign. Three reads:
+
+1. **Causal-verb widening (REQ-P11.2-03) — Hernán, M.A. (2018), "The C-Word: Scientific Euphemisms
+   Do Not Improve Causal Inference From Observational Data," *American Journal of Public Health*
+   108(5):616-619, DOI 10.2105/AJPH.2018.304337.** Confirm the paper states that a claim's causal
+   content is set by intent, not verb form (euphemistic/nominalised verbs face the same
+   identification standard) — the `Structural criterion:` for flagging bare/gerund action forms.
+   Confirm the exact quotable sentence + page.
+
+2. **Prescriptive severity (REQ-P11.2-02) — companion needed.** Hernán 2018 covers *language
+   honesty*, not the *decision-theoretic severity of recommending an action*. Approve one of:
+   **Manski, Law of Decreasing Credibility** (already in the Phase 11 citation spine) or
+   **Hernán & Robins, *Causal Inference: What If*, Ch.1** — for "an intervention requires
+   identification, not merely an association."
+
+3. **Amendment discipline (REQ-P11.2-05) — RE-ANCHOR AWAY FROM Nosek.** The ROADMAP's candidate
+   **Nosek et al. 2018 "The preregistration revolution," *PNAS* 115(11):2600-2606** is the **wrong
+   anchor for the FIRING half** — Phase 10's `10-CONTEXT.md` D-14 already uses Nosek to argue
+   *declared deviations are legal*, so citing it to fire HIGH on amendments would cite the paper
+   against its own thesis. The persona round re-anchored the firing half to **Simmons, Nelson &
+   Simonsohn 2011** (researcher degrees of freedom; published reference value **60.7%** false-positive
+   rate, Table 1 p.1361), **Gelman & Loken 2014** (garden of forking paths; already the Phase-10
+   anchor), and **Wagenmakers et al. 2012** ("the data may be used only once" — the temporal
+   criterion). **Nosek 2018 is retained only for the CLEARING half** (a declared amendment stays
+   legal). Please confirm this re-anchor, or veto it.
+
+Optional: approve **Levin 1993** (lexical causatives) as the verb-classification companion, or accept
+Hernán 2018 alone as the structural criterion for D-05.
+
+Answer e.g. `HQ-3: cite1 pass, cite2 use Manski, cite3 re-anchor accepted, Levin optional-skip` — or
+raise any item. The loop records your verdict when it assembles the 11.2 UAT.
+
 ## Will be added by the loop when reached
 
 - End-of-phase UAT rounds for Phases 11.2, 11.3, 12 (batched, with evidence packs).
