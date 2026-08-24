@@ -875,7 +875,34 @@ discipline (candidate: Nosek et al. 2018) settled at discuss under D-05.
   5. Unread scaffold fields are quarantined in a clearly marked documentation-only template
      block, and the storyteller prompt points only at fields a gate actually reads.
 
-**Plans**: TBD
+**Plans:** 8 plans
+
+Plans:
+
+**Wave 1** *(vocabulary precondition — D-02, single slice, blocks everything below)*
+
+- [ ] 11.2-01-PLAN.md — REQ-01: `prescriptive` in CLAIM_TYPES + CLAIM_STRENGTH rank 4, both stale "four claim types" remedy strings, ladder-skip closed (reuses DSX-COH-001)
+
+**Wave 2** *(independent checks, parallel — blocked on Wave 1)*
+
+- [ ] 11.2-02-PLAN.md — REQ-03: two-tier causal-verb widening (bare-infinitive purpose gate + gerunds), shared matcher, Hernán 2018 umbrella provenance (reuses DSX-CLM-010/011, DSX-COH-010)
+- [ ] 11.2-03-PLAN.md — REQ-05: top-level `spec_id`, `AmendmentRecord`, `DSX-PRE-040` (fail-closed) + `DSX-PRE-041` (amendment counter + identity-free floor), writer wired, spec_id prophylaxis on eight experiment fixtures
+- [ ] 11.2-04-PLAN.md — REQ-07: scaffold-field quarantine (reversible/deadline → documentation-only block), revisit_when/spec_id template fields, five-type comment, storyteller/narrate repoint, grep invariant
+
+**Wave 3** *(checks that read prescriptive / extend Wave 2 files — blocked on Wave 2)*
+
+- [ ] 11.2-05-PLAN.md — REQ-02: prescriptive identification parity via the widened `_check_causal_support` ctype gate (reuses DSX-CLM-020 CRITICAL / DSX-CLM-021 HIGH, no hedge exemption)
+- [ ] 11.2-06-PLAN.md — REQ-04: `revisit_when_is_discriminating` sibling predicate + bounded window regex, `_check_revisit_completeness` firing `DSX-COH-040` CRITICAL, revisit_when prophylaxis + DSX-VAL-011 regression
+- [ ] 11.2-07-PLAN.md — REQ-06: `dsx explain` self-reported-fields section (escalate untouched, frame_digest stays computed, returns-0 pure reader)
+
+**Wave 4** *(corpus-green gate — MUST run last, D-06)*
+
+- [ ] 11.2-08-PLAN.md — REQ-03 corpus green: flagship "offer bundled incentives to reduce churn" fixture + post-mortem + catch-attribution, golden-file finding-set equality over every `examples/**`, noun negative case, README known-limits (D-12/D-15), full corpus + `scripts/check.sh` green
+
+**Code assignments (D-06, locked at plan 2026-08-24; human-veto window via the daily summary):**
+`DSX-COH-040` CRITICAL (new decade — revisit_when completeness), `DSX-PRE-040` HIGH (missing required
+`spec_id`), `DSX-PRE-041` HIGH (uncleared amendment). Net-new code count is 3; REQ-01 reuses
+`DSX-COH-001`, REQ-02 reuses `DSX-CLM-020/021`, REQ-03 reuses `DSX-CLM-010/011`+`DSX-COH-010`.
 
 ### Phase 11.3: Reporting completeness and missing-data discipline (INSERTED)
 
