@@ -887,7 +887,6 @@ Plans:
 
 - [ ] 11.2-02-PLAN.md — REQ-03: two-tier causal-verb widening (bare-infinitive purpose gate + gerunds), shared matcher, Hernán 2018 umbrella provenance (reuses DSX-CLM-010/011, DSX-COH-010)
 - [ ] 11.2-03-PLAN.md — REQ-05: top-level `spec_id`, `AmendmentRecord`, `DSX-PRE-040` (fail-closed) + `DSX-PRE-041` (amendment counter + identity-free floor), writer wired, spec_id prophylaxis on eight experiment fixtures
-- [ ] 11.2-04-PLAN.md — REQ-07: scaffold-field quarantine (reversible/deadline → documentation-only block), revisit_when/spec_id template fields, five-type comment, storyteller/narrate repoint, grep invariant
 
 **Wave 3** *(checks that read prescriptive / extend Wave 2 files — blocked on Wave 2)*
 
@@ -895,9 +894,10 @@ Plans:
 - [ ] 11.2-06-PLAN.md — REQ-04: `revisit_when_is_discriminating` sibling predicate + bounded window regex, `_check_revisit_completeness` firing `DSX-COH-040` CRITICAL, revisit_when prophylaxis + DSX-VAL-011 regression
 - [ ] 11.2-07-PLAN.md — REQ-06: `dsx explain` self-reported-fields section (escalate untouched, frame_digest stays computed, returns-0 pure reader)
 
-**Wave 4** *(corpus-green gate — MUST run last, D-06)*
+**Wave 4** *(corpus-green gate — MUST run last, D-06; plus the doc-hygiene slice 11.2-04, scheduled after its reader codes 03/06)*
 
 - [ ] 11.2-08-PLAN.md — REQ-03 corpus green: flagship "offer bundled incentives to reduce churn" fixture + post-mortem + catch-attribution, golden-file finding-set equality over every `examples/**`, noun negative case, README known-limits (D-12/D-15), full corpus + `scripts/check.sh` green
+- [ ] 11.2-04-PLAN.md — REQ-07: scaffold-field quarantine (reversible/deadline → documentation-only block), revisit_when/spec_id template fields, five-type comment, storyteller/narrate repoint, grep invariant — MOVED to Wave 4 (its "gate-read" template labels for revisit_when/spec_id must land after DSX-PRE-040/DSX-COH-040 exist; depends_on [01,03,06])
 
 **Code assignments (D-06, locked at plan 2026-08-24; human-veto window via the daily summary):**
 `DSX-COH-040` CRITICAL (new decade — revisit_when completeness), `DSX-PRE-040` HIGH (missing required
