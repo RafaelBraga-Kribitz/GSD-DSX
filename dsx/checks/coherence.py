@@ -33,6 +33,7 @@ CLAIM_STRENGTH = {
     "association": 1,
     "predictive": 2,
     "causal": 3,
+    "prescriptive": 4,
 }
 
 

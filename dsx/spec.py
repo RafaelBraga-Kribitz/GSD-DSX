@@ -47,7 +47,7 @@ IDENTIFICATION_STRATEGIES = {
     "none": {"strength": "none", "needs": []},
 }
 
-CLAIM_TYPES = {"descriptive", "association", "predictive", "causal"}
+CLAIM_TYPES = {"descriptive", "association", "predictive", "causal", "prescriptive"}
 
 # Verbs that assert causation. Used to catch a causal claim mislabelled as
 # association — the single most common analytical overreach.
@@ -837,7 +837,10 @@ def _validate_claims_shape(spec: dict, report: Report) -> None:
                 "HIGH",
                 f"Claim {index} has no type",
                 detail="Allowed: " + ", ".join(sorted(CLAIM_TYPES)),
-                remedy="Label every claim descriptive, association, predictive or causal.",
+                remedy=(
+                    "Label every claim descriptive, association, predictive, "
+                    "causal or prescriptive."
+                ),
                 where=where,
             )
         elif ctype not in CLAIM_TYPES:
@@ -846,7 +849,10 @@ def _validate_claims_shape(spec: dict, report: Report) -> None:
                 "HIGH",
                 f"Claim {index} has unrecognised type {claim.get('type')!r}",
                 detail="Allowed: " + ", ".join(sorted(CLAIM_TYPES)),
-                remedy="Use one of the four claim types.",
+                remedy=(
+                    "Use one of the five claim types: descriptive, association, "
+                    "predictive, causal or prescriptive."
+                ),
                 where=where,
             )
     report.ok(f"{len(claims)} claim(s) declared")
