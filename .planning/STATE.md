@@ -2,24 +2,24 @@
 gsd_state_version: 1.0
 milestone: v2.0.0
 milestone_name: DSX Validity Frame
-current_phase: 11
-current_phase_name: frequentist-admissibility-adjudicator-dsx-adm
+current_phase: 11.2
+current_phase_name: prescriptive-claim-layer
 status: executing
 stopped_at: Phase 11.2 planned (8 plans / 4 waves; plan-checker PASSED — S1-2)
-last_updated: "2026-08-24T11:30:00.000Z"
-last_activity: 2026-08-22
-last_activity_desc: Phase 11 execution started
+last_updated: "2026-08-24T11:46:04.675Z"
+last_activity: 2026-08-24
+last_activity_desc: Phase 11.2 execution started
 progress:
   total_phases: 10
   completed_phases: 8
-  total_plans: 68
+  total_plans: 76
   completed_plans: 68
   percent: 80
 ---
 
 # Project state
 
-**Status:** Executing Phase 11
+**Status:** Executing Phase 11.2
 **Progress:** [██████████████████░░] 56/63 plans (89%)  
 **Locked decisions:** DQ = profile runner + hermetic gates; Glyph = hermetic svg_sha256 only (no MCP dep); forbidden claims = universal pack + optional phase YAML; repro_lock = ARS-style honest-null (not byte-replay); decision replay = structured thresholds only; suppressions = ADR/SPEC authority required (unknown codes → exit 2)  
 **v2.0.0 locked decisions:** DSX-PAR-010 is a distinct code, DSX-EXP-060 untouched (M-01); no `inference.stopping_rule` — PAR-010/011 read the existing `design.peeking_policy` (M-02); PEEKING_POLICIES gains an uncontrolled-continuous-monitoring value (M-03); automated import test enforces the D-03a boundary from M1 (M-04); SELF-001 stays a convention, REVERSALS.md template seeded in M1 (M-05); `validity_frame` sub-block requiredness gated by `question_type` (M-06); existing `suppressions[]` is the pre-v2.0.0 grandfather path (M-07); D-05 citation enforcement automated via `gen-finding-catalogue.py` (M-08); `dependence.method_family_required` reuses `VARIANCE_ADJUSTMENTS` (M-09)
@@ -114,17 +114,17 @@ parity and visible-fallback criteria added).
 
 ## Current Position
 
-Phase: 11 (frequentist-admissibility-adjudicator-dsx-adm) — EXECUTING
+Phase: 11.2 (prescriptive-claim-layer) — EXECUTING
 Plan: 1 of 8
-Status: Executing Phase 11
-Last activity: 2026-08-22 — Phase 11 execution started
+Status: Executing Phase 11.2
+Last activity: 2026-08-24 — Phase 11.2 execution started
 
 ## Project Reference
 
 See: .planning/PROJECT.md (updated 2026-08-13)
 
 **Core value:** Gate analytical work on validity before the data is touched.
-**Current focus:** Phase 11 — frequentist-admissibility-adjudicator-dsx-adm
+**Current focus:** Phase 11.2 — prescriptive-claim-layer
 
 ## Session
 

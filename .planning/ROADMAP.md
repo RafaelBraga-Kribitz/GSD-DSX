@@ -875,13 +875,13 @@ discipline (candidate: Nosek et al. 2018) settled at discuss under D-05.
   5. Unread scaffold fields are quarantined in a clearly marked documentation-only template
      block, and the storyteller prompt points only at fields a gate actually reads.
 
-**Plans:** 8 plans
+**Plans:** 1/8 plans executed
 
 Plans:
 
 **Wave 1** *(vocabulary precondition — D-02, single slice, blocks everything below)*
 
-- [ ] 11.2-01-PLAN.md — REQ-01: `prescriptive` in CLAIM_TYPES + CLAIM_STRENGTH rank 4, both stale "four claim types" remedy strings, ladder-skip closed (reuses DSX-COH-001)
+- [x] 11.2-01-PLAN.md — REQ-01: `prescriptive` in CLAIM_TYPES + CLAIM_STRENGTH rank 4, both stale "four claim types" remedy strings, ladder-skip closed (reuses DSX-COH-001)
 
 **Wave 2** *(independent checks, parallel — blocked on Wave 1)*
 
