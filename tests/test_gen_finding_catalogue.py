@@ -667,6 +667,25 @@ _CANONICAL_DECLARATIONS = {
         ("HIGH", f"inference.paradigm ({_PH}) is declared with no paradigm_justification"),
         ("HIGH", "inference.paradigm is not declared under an uncontrolled continuous design"),
     },
+    # Phase 11.2-05 (D-03): DSX-CLM-020/021 now fire from two literal report.add
+    # sites each — one causal, one prescriptive — reusing the identical codes and
+    # severities so relabelling causal→prescriptive buys zero severity arbitrage.
+    # The text is parameterised on claim type; the severity is unchanged.
+    "DSX-CLM-020": {
+        ("CRITICAL", "Causal claim with no identification strategy behind it"),
+        (
+            "CRITICAL",
+            "Prescriptive claim recommends an intervention with no identification "
+            "strategy behind it",
+        ),
+    },
+    "DSX-CLM-021": {
+        ("HIGH", f"Unhedged causal claim resting on a weak strategy ('{_PH}')"),
+        (
+            "HIGH",
+            f"Prescriptive claim recommends an intervention on a weak strategy ('{_PH}')",
+        ),
+    },
 }
 
 

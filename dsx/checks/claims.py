@@ -144,29 +144,81 @@ def _check_causal_language(
 def _check_causal_support(
     claim: dict, ctype: str, strategy: str, strength: str, where: str, report: Report
 ) -> None:
-    if ctype != "causal":
+    # Superset gate (D-03): a prescriptive claim recommends an intervention, so it
+    # asserts an effect AND that acting on it is warranted — it is held to the same
+    # identification standard as a causal claim, reusing DSX-CLM-020/021 with no new
+    # code. Causal's path is unchanged (strict superset, RESEARCH landmine c).
+    if ctype not in {"causal", "prescriptive"}:
         return
+    is_prescriptive = ctype == "prescriptive"
+    # Read the claim-layer identification, never validity_frame.identification.strength
+    # (D-11: a claim-layer check must not condition on the frame layer).
     claim_strategy = normalize(claim.get("identification", "")) or strategy
     if not claim_strategy or claim_strategy == "none":
-        report.add(
-            "DSX-CLM-020",
-            "CRITICAL",
-            "Causal claim with no identification strategy behind it",
-            detail=(
-                f"“{str(claim.get('text', ''))[:160]}” asserts an effect, but neither the claim "
-                "nor the design declares how confounding is ruled out."
-            ),
-            remedy=(
-                "Declare design.identification, or downgrade the claim to an association."
-            ),
-            where=where,
-        )
+        # Two literal report.add sites (not a variable title) so the finding
+        # catalogue generator's extract() keeps DSX-CLM-020 documented — mirroring
+        # the existing divergent-text codes (e.g. DSX-COH-030). The message is
+        # parameterised on claim type; the CRITICAL severity is identical.
+        if is_prescriptive:
+            report.add(
+                "DSX-CLM-020",
+                "CRITICAL",
+                "Prescriptive claim recommends an intervention with no identification strategy behind it",
+                detail=(
+                    f"“{str(claim.get('text', ''))[:160]}” recommends acting on an effect, but "
+                    "neither the claim nor the design declares how confounding is ruled out. A "
+                    "recommendation is an intervention, which needs identification — not merely "
+                    "an association."
+                ),
+                remedy=(
+                    "Declare design.identification behind the recommended intervention, or "
+                    "downgrade the claim to an association."
+                ),
+                where=where,
+            )
+        else:
+            report.add(
+                "DSX-CLM-020",
+                "CRITICAL",
+                "Causal claim with no identification strategy behind it",
+                detail=(
+                    f"“{str(claim.get('text', ''))[:160]}” asserts an effect, but neither the "
+                    "claim nor the design declares how confounding is ruled out."
+                ),
+                remedy=(
+                    "Declare design.identification, or downgrade the claim to an association."
+                ),
+                where=where,
+            )
         return
 
     claim_strength = IDENTIFICATION_STRATEGIES.get(claim_strategy, {}).get("strength", "none")
     if claim_strength == "weak":
         lowered = str(claim.get("text", "")).lower()
-        if not any(term in lowered for term in HEDGE_TERMS):
+        hedged = any(term in lowered for term in HEDGE_TERMS)
+        # A causal claim's hedging routes it out of DSX-CLM-021; a prescriptive claim's
+        # hedging does NOT — a recommendation is an action commitment, not a probabilistic
+        # statement (D-03, no hedge exemption for prescriptive). Two literal report.add
+        # sites keep DSX-CLM-021 documented in the finding catalogue.
+        remedy = (
+            "Add the conditional explicitly: 'conditional on the observed covariates, "
+            "we estimate…', and cite the sensitivity analysis."
+        )
+        if is_prescriptive:
+            report.add(
+                "DSX-CLM-021",
+                "HIGH",
+                f"Prescriptive claim recommends an intervention on a weak strategy ('{claim_strategy}')",
+                detail=(
+                    "Matching and regression adjustment identify effects only if every "
+                    "confounder is measured — an assumption no dataset can confirm. "
+                    "Recommending an intervention on that basis commits to an action, so a "
+                    "hedge does not soften it."
+                ),
+                remedy=remedy,
+                where=where,
+            )
+        elif not hedged:
             report.add(
                 "DSX-CLM-021",
                 "HIGH",
@@ -176,14 +228,11 @@ def _check_causal_support(
                     "confounder is measured — an assumption no dataset can confirm. Stating the "
                     "conclusion flatly hides that dependence."
                 ),
-                remedy=(
-                    "Add the conditional explicitly: 'conditional on the observed covariates, "
-                    "we estimate…', and cite the sensitivity analysis."
-                ),
+                remedy=remedy,
                 where=where,
             )
     else:
-        report.ok(f"causal claim supported by '{claim_strategy}' ({claim_strength})")
+        report.ok(f"{ctype} claim supported by '{claim_strategy}' ({claim_strength})")
 
 
 def _check_evidence_pointer(
