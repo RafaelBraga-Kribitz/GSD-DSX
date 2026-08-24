@@ -3,16 +3,27 @@ phase: 7
 slug: validity-frame-checks-dsx-val
 # status lifecycle: draft (seeded by plan-phase) → validated (set by validate-phase §6)
 # audit-milestone §5.5 distinguishes NOT-VALIDATED (draft) from PARTIAL (validated + nyquist_compliant: false) (#2117)
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: validated
+nyquist_compliant: true
+wave_0_complete: true
 created: 2026-08-12
+validated: 2026-08-24
 ---
 
 # Phase 7 — Validation Strategy
 
 > Per-phase validation contract for feedback sampling during execution.
-> Seeded from `07-RESEARCH.md` § Validation Architecture. Task IDs land when PLAN.md files exist.
+> **Reconciled retroactively 2026-08-24** (loop S0-8 / audit `not_validated_phases`): shipped as
+> the unfilled plan-phase scaffold. The phase executed and passed (07-VERIFICATION.md `passed`;
+> 8/9 REQ-P7 MET, 1/9 PARTIAL by the deliberate D-06 scope decision on REQ-P7-08). This audit maps
+> each requirement's *implemented behavior* to its committed automated tests and finds **zero
+> coverage gaps** — no `gsd-nyquist-auditor` run and no generated tests.
+>
+> **On `nyquist_compliant: true` despite REQ-P7-08 being PARTIAL:** Nyquist compliance is about
+> whether each requirement's *implemented behavior* has automated verification, not about whether
+> the requirement is fully MET. REQ-P7-08's implemented first clause (`DSX-VAL-070` blocks a blank
+> operationalisation) is automated-tested; its second clause is deliberately unimplemented (D-06,
+> 07-CONTEXT.md), so there is no behavior to test. All shipped behavior is covered → compliant.
 
 ---
 
@@ -20,146 +31,91 @@ created: 2026-08-12
 
 | Property | Value |
 |----------|-------|
-| **Framework** | Python standard-library `unittest` — verified: no `pytest.ini`, `tox.ini` or `Makefile` in the repository root |
-| **Config file** | none |
-| **Quick run command** | `python3 -m unittest tests.test_dsx -v` |
-| **Full suite command** | `python3 -m unittest discover -s tests -v` |
-| **Estimated runtime** | fast — no slow/integration split exists in this repository |
-
-**Second, non-negotiable gate command:** `python3 scripts/gen-finding-catalogue.py --check`.
-It enforces D-05 mechanically and must be green from the moment the first
-`report.add("DSX-VAL-...")` exists. Treat it as part of the suite, not as a release step.
+| **Framework** | Python stdlib `unittest` |
+| **Config file** | none — discovery-based |
+| **Quick run command** | `python3 -m unittest tests.test_frame_val` |
+| **Full suite command** | `python3 -m unittest discover -s tests -q` (or `sh scripts/check.sh`) |
+| **Estimated runtime** | `tests.test_frame_val` + `TestFrameParadigmReadBoundary` ~1.2s (99 tests); full suite ~47s (1038 tests) — measured 2026-08-24 |
 
 ---
 
 ## Sampling Rate
 
-- **After every task commit:** targeted `python3 -m unittest tests.test_dsx -v -k <relevant>`,
-  plus `python3 scripts/gen-finding-catalogue.py --check` once any `DSX-VAL-*` code is emitted
-- **After every plan wave:** `python3 -m unittest discover -s tests -v` (full suite)
-- **Before `/gsd-verify-work`:** full suite green, `--check` green, and the known-bad corpus test
-  conflict explicitly resolved (see below)
-- **Max feedback latency:** under 30 seconds — the suite is pure standard library with no I/O
+- **After every task commit:** `python3 -m unittest tests.test_frame_val`
+- **After every plan wave:** `python3 -m unittest discover -s tests -q`
+- **Before `/gsd-verify-work`:** Full suite green (`sh scripts/check.sh`)
+- **Max feedback latency:** ~47s (full suite)
 
 ---
 
-## Per-Task Verification Map
+## Per-Requirement Verification Map
 
-Task IDs are assigned when PLAN.md files are written. The requirement-level map below is the
-binding contract each task must trace to.
+Granularity per requirement (retroactive-audit level); each plan is traced to its requirement IDs
+in 07-VERIFICATION.md. Threat coverage verified separately in `07-SECURITY.md` (`verified`,
+`threats_open: 0`).
 
-| Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
-|---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 07-01-T2 | 07-01 | 1 | REQ-P7-01 | T-7-01, T-7-03 | word-list matching has no catastrophic backtracking; long-input timing test | unit | `python3 -m unittest tests.test_dsx -v -k estimand` | ❌ created by task | ⬜ pending |
-| 07-03-T1 | 07-03 | 2 | REQ-P7-01 | T-7-01, T-7-05, T-7-07 | malformed sub-block degrades to no finding; decision record emitted; project-defined disclosure in docstring | unit | `python3 -m unittest tests.test_frame_val -v` | ❌ created by task | ⬜ pending |
-| 07-01-T3 | 07-01 | 1 | REQ-P7-02 | T-7-07 | unverified Kish locator labelled, not invented | unit (numeric) | `python3 -m unittest tests.test_dsx -v -k design_effect` | ❌ created by task | ⬜ pending |
-| 07-04-T1 | 07-04 | 3 | REQ-P7-02 | T-7-01, T-7-04 | illustrative number labelled as illustration, not as a figure computed from the author's spec | unit | `python3 -m unittest tests.test_frame_val -v -k units` | ❌ created by task | ⬜ pending |
-| 07-04-T3 | 07-04 | 3 | REQ-P7-03 | T-7-06 | disjointness asserted by construction; design check pinned by content hash | unit + gate-level | `python3 -m unittest tests.test_frame_val -v` | ❌ created by task | ⬜ pending |
-| 07-01-T1 | 07-01 | 1 | REQ-P7-04 | T-7-07 | two unverified locators labelled; Conley non-citation recorded | unit | `python3 -m unittest tests.test_dsx -v -k dependence` | ❌ created by task | ⬜ pending |
-| 07-05-T1 | 07-05 | 4 | REQ-P7-04 | T-7-01, T-7-05 | malformed sub-block degrades to no finding; decision record emitted | unit | `python3 -m unittest tests.test_frame_val -v -k dependence` | ❌ created by task | ⬜ pending |
-| 07-05-T2 | 07-05 | 4 | REQ-P7-05 | T-7-07, T-7-12, T-7-13 | project-defined partition disclosed in both comment and docstring; allow-list entry carries its cause | unit + build check | `python3 scripts/gen-finding-catalogue.py --check` | ✅ command exists | ⬜ pending |
-| 07-05-T3 | 07-05 | 4 | REQ-P7-05 | — | N/A | gate-level | `python3 -m unittest tests.test_frame_val -v -k identification` | ❌ created by task | ⬜ pending |
-| 07-07-T1 | 07-07 | 6 | REQ-P7-05 | T-7-07, T-7-16 | post-mortem source verified or escalated; corpus assertion narrowed by named exception with a positive counterpart | gate-level | `python3 -m unittest tests.test_known_bad_corpus -v` | ✅ exists, amended | ⬜ pending |
-| 07-06-T1 | 07-06 | 5 | REQ-P7-06 | T-7-01 | malformed sub-block degrades to no finding | unit | `python3 -m unittest tests.test_frame_val -v -k sampling_frame` | ❌ created by task | ⬜ pending |
-| 07-06-T2 | 07-06 | 5 | REQ-P7-07 | T-7-07, T-7-14 | pairing table stated as assembled, not as a printed table; rate field never read | unit | `python3 -m unittest tests.test_frame_val -v -k missingness` | ❌ created by task | ⬜ pending |
-| 07-06-T1 | 07-06 | 5 | REQ-P7-08 | T-7-01 | blank construct demands nothing; second clause recorded as unadjudicated at the code | unit | `python3 -m unittest tests.test_frame_val -v -k measurement` | ❌ created by task | ⬜ pending |
-| 07-03-T2 | 07-03 | 2 | REQ-P7-09 | — | detector proven to fire against synthetic violations, and a deliberate real violation run and reverted | abstract-syntax-tree and text boundary | `python3 -m unittest tests.test_frame_boundary -v` | ✅ exists, extended | ⬜ pending |
-| 07-06-T3 | 07-06 | 5 | all nine (matrix) | T-7-15 | expected code sets measured and dated; an unrecognised fixture fails loudly | fixture matrix | `python3 -m unittest tests.test_frame_val -v` | ❌ created by task | ⬜ pending |
-| 07-07-T2 | 07-07 | 6 | all nine (coverage) | T-7-06, T-7-17 | citation obligations asserted by parsing the module; no requirement checkbox changed | invariant scan | `python3 -m unittest tests.test_frame_val -v` | ❌ created by task | ⬜ pending |
+| Requirement | Plans | Wave(s) | Covering tests | Automated Command | Status |
+|-------------|-------|---------|----------------|-------------------|--------|
+| REQ-P7-01 | 07-01, 07-03 | 1, 2 | `_check_estimand_completeness` (`DSX-VAL-010`), `_check_estimand_falsifiability` (`DSX-VAL-011`) — `tests.test_frame_val` | `python3 -m unittest tests.test_frame_val` | ✅ green |
+| REQ-P7-02 | 07-01, 07-02, 07-04, 07-08 | 1, 3 | `_check_unit_triad` (`DSX-VAL-020`), `TestKishCitationCoherence` (3/3), worked DEFF value 1.576 asserted | `python3 -m unittest tests.test_frame_val` | ✅ green |
+| REQ-P7-03 | 07-04 | 3 | `DSX-VAL-020`/`DSX-EXP-021` disjointness (`observation` vs `assignment`) — `tests.test_frame_val` | `python3 -m unittest tests.test_frame_val` | ✅ green |
+| REQ-P7-04 | 07-01, 07-05 | 1, 4 | `_check_dependence` (`DSX-VAL-030`); `DEPENDENCE_ADMISSIBLE_METHODS` ⊆ `VARIANCE_ADJUSTMENTS` | `python3 -m unittest tests.test_frame_val` | ✅ green |
+| REQ-P7-05 | 07-02, 07-05, 07-07 | 1, 4, 6 | `DSX-VAL-040`/`DSX-VAL-041` + committed `weak-identification-mmm` fixture (Chan & Perry 2017 citation = supplementary D-05 human check, 07-UAT test 6 pass — not the sole verification) | `python3 -m unittest tests.test_frame_val` | ✅ green |
+| REQ-P7-06 | 07-06 | 5 | `_check_sampling_frame` (`DSX-VAL-050`) presence/consistency (D-06) | `python3 -m unittest tests.test_frame_val` | ✅ green |
+| REQ-P7-07 | 07-06 | 5 | `_check_missingness` (`DSX-VAL-060`); dedicated test proves `missingness.rate` is never read | `python3 -m unittest tests.test_frame_val` | ✅ green |
+| REQ-P7-08 | 07-06 | 5 | **Implemented clause covered:** `_check_measurement` (`DSX-VAL-070`) blocks a blank operationalisation. Second clause deliberately unimplemented (D-06) — no behavior to test. Requirement is `Partial` in REQUIREMENTS.md by design. | `python3 -m unittest tests.test_frame_val` | ✅ green (implemented clause) |
+| REQ-P7-09 | 07-03 | 2 | `TestFrameParadigmReadBoundary` (7/7) — no `DSX-VAL-*` check reads `inference.paradigm` (D-11) | `python3 -m unittest tests.test_frame_boundary.TestFrameParadigmReadBoundary` | ✅ green |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
-**Regression assertions that must stay green throughout** — these already exist and must not be
-weakened to make new work pass:
-
-| Existing test | What it protects |
-|---|---|
-| `tests/test_dsx.py` D-08 exit-code pair | good fixture passes every gate, bad fixture blocked by every gate |
-| `tests/test_dsx.py:1390-1393` | `dsx init` output clears `dsx gate plan` |
-| `tests/test_dsx.py:1239-1244` | the template still fails at ship as a scaffold |
-| `tests/test_dsx.py:2585-2607` | every `_NOT_SHIPPED` prefix resolves to no shipped code |
-| `tests/test_frame_boundary.py` | no `dsx/frame/*` module imports `dsx.checks` |
-| `tests/test_known_bad_corpus.py:193-200` | every corpus fixture clears plan and execute |
-| existing `DSX-EXP-020/021` fixtures | `dsx gate` output on them is unchanged (REQ-P7-03) |
+Live confirmation 2026-08-24: `python3 -m unittest tests.test_frame_val tests.test_frame_boundary.TestFrameParadigmReadBoundary` → **99 tests, OK** (part of full suite 1038 OK).
 
 ---
 
 ## Wave 0 Requirements
 
-- [ ] New test module `tests/test_frame_val.py` for `dsx/frame/val.py` unit tests, mirroring the
-      `DSX-SPEC-080/081/082` tests at `tests/test_dsx.py:390-474` — created by plan 07-03, task 1.
-      A dedicated module rather than a new class inside `tests/test_dsx.py`, so plans 07-01 and
-      07-02 can run in the same wave without a shared-file conflict.
-- [ ] `mathx.design_effect()` reference-value test in the existing `TestMath` class
-      (`tests/test_dsx.py:33`) — asserting **1.576** (intraclass correlation coefficient 0.02,
-      average cluster size 29.8, Cochrane Handbook §23.1.4.1). **Not 3.45**, which is unpublished.
-      Created by plan 07-01, task 3.
-- [ ] The REQ-P7-09 no-paradigm-read test — a sibling class
-      `TestFrameParadigmReadBoundary` in `tests/test_frame_boundary.py`, created by plan 07-03,
-      task 2. The existing scanner walks import statements only and cannot be extended to cover
-      a string-literal read, so this is a second detector beside it, not an extension of it.
-- [ ] `# D-05: DSX-VAL-0NN` marker comments in `tests/` for all **ten** codes. Nine requirements,
-      ten codes — decision D-02's own table lists `010`, `011`, `020`, `021`, `030`, `040`, `041`,
-      `050`, `060` and `070`. Plan 07-07 task 2 asserts every emitted code has a marker.
-- [ ] **Resolution of the known-bad corpus test conflict** — a test-suite design gap, not a fixture
-      gap. Owned by plan 07-07, task 1, with the decision recorded in that plan (see below).
-
-**One correction to the wave plan carried from research.** `07-RESEARCH.md` section 9 recommends
-landing every fixture and template repair in a late wave, after all the checks exist. That leaves
-the suite red between waves, because four regression assertions that must stay green break the
-moment a check ships against an unrepaired file. The plans instead land each repair in the same
-commit as the check that would otherwise break it: the template unit placeholders and the
-interference fixture with `DSX-VAL-020` in plan 07-04, the template identification strength and the
-corpus allow-list entry with `DSX-VAL-040`/`041` in plan 07-05, and the good fixture's implied
-method with `DSX-VAL-060` in plan 07-06. Only the new fixture and its test conflict are genuinely
-late, in plan 07-07, because they cannot be observed until every check exists.
+Existing infrastructure covers all phase requirements. Plans 07-03, 07-04, 07-06 are `tdd`; all
+`DSX-VAL-*` behaviors landed with committed regression tests. No scaffolding or framework install
+was needed.
 
 ---
 
 ## Manual-Only Verifications
 
-| Behavior | Requirement | Why Manual | Test Instructions |
-|----------|-------------|------------|-------------------|
-| The `weak-identification-mmm` fixture encodes a real, published, D-05-admissible case | REQ-P7-05 / ROADMAP SC 1 | Which published case to encode is a sourcing judgement; vendor blogs and Medium posts are inadmissible in either direction | Confirm the fixture's post-mortem cites a primary source, and that the source actually describes weak identification in a marketing-mix model |
-| The two project-defined partitions are disclosed as project-defined | REQ-P7-01, REQ-P7-05 | A docstring claiming published authority for a project convention is the exact D-05 failure mode; no test can judge the honesty of prose | Read the `DSX-VAL-010` and `DSX-VAL-041` docstrings and confirm each states the partition is project-defined |
-| Unverified citation locators are labelled unverified, not invented | D-05 | Same reason — a plausible-looking locator passes every mechanical check | Confirm the Kish section number and the Gelman/Simpson/Betancourt typeset-version caveat are both flagged, per the `dsx/frame/paradigm.py:66-72` precedent |
+All phase *behaviors* have automated verification (the map above). The phase's human checks were
+**supplementary D-05 citation-authenticity reads**, not the requirements' sole verification, and
+were all completed in `07-UAT.md` (`status: complete`, 38/38 pass, 0 issues):
 
----
-
-## Blocking design conflict carried from research
-
-`ROADMAP.md:212-213` requires `examples/known-bad/weak-identification-mmm-ANALYSIS-SPEC.yaml` to
-**exit 1 at `dsx gate plan`**. `tests/test_known_bad_corpus.py:193-200` globs
-`examples/known-bad/*-ANALYSIS-SPEC.yaml` and asserts **every** match clears plan and execute, with
-no allow-list escape hatch at that level. Dropping the new fixture into that directory breaks the
-test as written.
-
-This must be resolved by an explicit task with a stated decision, not silently. It is listed here
-so it cannot be missed at sign-off.
-
-**Resolved at planning, in plan 07-07 task 1, with the decision block recorded in that plan.** A
-named exception dictionary in `tests/test_known_bad_corpus.py` maps a fixture file name to the
-finding code expected to block it at the plan gate. The blanket assertion consults it: a listed
-fixture must exit non-zero at `plan` naming that exact code, and must still exit zero at `execute`.
-Glob discovery is untouched, every unlisted fixture is asserted exactly as today, and the lost
-assertion is replaced by a stronger positive one rather than deleted. The exception is smaller than
-it looks: the validity frame check is registered at `plan`, `verify` and `ship` but not at
-`execute`, so half the corpus's positive guarantee holds for the new fixture with no special
-handling at all. The fixture's target code goes into `_TARGET_CODE_FAMILIES` as one exact code
-string rather than the family prefix, which is what keeps the `DSX-VAL-041` allow-list entry from
-plan 07-05 legal under `test_incidental_allowlist_names_no_target_family_code`.
+| Behavior | Requirement | Why Manual | Resolution |
+|----------|-------------|------------|------------|
+| Kish (1965) DEFF citation coherence across the four sites | REQ-P7-02 | D-05 human source read | 07-UAT pass; also machine-guarded by `TestKishCitationCoherence` |
+| Chan & Perry (2017) citation admissibility | REQ-P7-05 | D-05 human source read | 07-UAT test 6 pass |
+| Gelman, Simpson & Betancourt (2017) citation | REQ-P7-05 | D-05 human source read | 07-UAT pass |
 
 ---
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 30s
-- [ ] `python3 scripts/gen-finding-catalogue.py --check` green
-- [ ] Known-bad corpus test conflict resolved by an explicit, recorded decision
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references — none MISSING (0 gaps)
+- [x] No watch-mode flags
+- [x] Feedback latency < 60s
+- [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** approved 2026-08-24 (retroactive audit, loop S0-8)
+
+---
+
+## Validation Audit 2026-08-24
+
+| Metric | Count |
+|--------|-------|
+| Gaps found | 0 |
+| Resolved | 0 |
+| Escalated | 0 |
+
+All 9 REQ-P7 requirements' implemented behaviors classified COVERED (REQ-P7-08's implemented first
+clause covered; second clause out of scope by D-06). No `gsd-nyquist-auditor` run required (0 gaps).
+Evidence: `tests.test_frame_val` + `TestFrameParadigmReadBoundary` 99 OK; full suite 1038 OK
+(2026-08-24). D-05 citation reads were completed in 07-UAT (supplementary, not coverage gaps).

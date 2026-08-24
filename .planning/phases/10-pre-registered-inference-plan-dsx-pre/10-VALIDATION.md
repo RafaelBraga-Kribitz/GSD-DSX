@@ -3,17 +3,20 @@ phase: 10
 slug: pre-registered-inference-plan-dsx-pre
 # status lifecycle: draft (seeded by plan-phase) → validated (set by validate-phase §6)
 # audit-milestone §5.5 distinguishes NOT-VALIDATED (draft) from PARTIAL (validated + nyquist_compliant: false) (#2117)
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: validated
+nyquist_compliant: true
+wave_0_complete: true
 created: 2026-08-13
+validated: 2026-08-24
 ---
 
 # Phase 10 — Validation Strategy
 
 > Per-phase validation contract for feedback sampling during execution.
-> Seeded from `10-RESEARCH.md` §"Validation Architecture". The planner fills the
-> per-task map once plans exist.
+> **Reconciled retroactively 2026-08-24** (loop S0-8 / audit `not_validated_phases`): shipped as
+> the unfilled plan-phase scaffold. The phase executed and passed (10-VERIFICATION.md `passed`
+> 5/5, all 4 REQ-P10 SATISFIED). This audit maps each requirement to its committed automated
+> tests and finds **zero coverage gaps** — no `gsd-nyquist-auditor` run and no generated tests.
 
 ---
 
@@ -21,88 +24,78 @@ created: 2026-08-13
 
 | Property | Value |
 |----------|-------|
-| **Framework** | Python stdlib `unittest` — no third-party runner. Verified during research: no `pytest.ini`, `conftest.py`, `pyproject.toml` or `[tool.pytest]` exists |
-| **Config file** | none — `scripts/check.sh:7` runs `python3 -m unittest discover -s tests -q` |
-| **Quick run command** | `python -m unittest tests.test_frame_prereg -v` |
-| **Full suite command** | `python -m unittest discover -s tests -q` (or `scripts/check.sh`, which also regenerates and checks the finding catalogue) |
-| **Estimated runtime** | ~5 seconds quick, ~60 seconds full suite |
+| **Framework** | Python stdlib `unittest` |
+| **Config file** | none — discovery-based |
+| **Quick run command** | `python3 -m unittest tests.test_frame_prereg` |
+| **Full suite command** | `python3 -m unittest discover -s tests -q` (or `sh scripts/check.sh`) |
+| **Estimated runtime** | `tests.test_frame_prereg` ~1s (90 tests); full suite ~47s (1038 tests) — measured 2026-08-24 |
 
 ---
 
 ## Sampling Rate
 
-- **After every task commit:** Run `python -m unittest tests.test_frame_prereg -v`
-- **After every plan wave:** Run `python -m unittest discover -s tests -q` — this is the only
-  thing that catches the harness blast radius against `tests/test_known_bad_corpus.py` and
-  `tests/test_dsx.py`
-- **Before `/gsd-verify-work`:** `scripts/check.sh` green, which also re-runs the good/bad fixture
-  gate-contract loop where the decision-trail ordering assumption is exercised for real
-- **Max feedback latency:** 60 seconds
+- **After every task commit:** `python3 -m unittest tests.test_frame_prereg`
+- **After every plan wave:** `python3 -m unittest discover -s tests -q`
+- **Before `/gsd-verify-work`:** Full suite green (`sh scripts/check.sh`)
+- **Max feedback latency:** ~47s (full suite)
 
 ---
 
-## Per-Task Verification Map
+## Per-Requirement Verification Map
 
-Filled by the planner once PLAN.md files exist. The requirement-to-test mapping below is the
-contract each task's `<verify>` block must satisfy.
+Granularity per requirement (retroactive-audit level); each plan is traced to its requirement IDs
+in 10-VERIFICATION.md. Threat coverage verified separately in `10-SECURITY.md` (`verified`,
+`threats_open: 0`).
 
-| Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
-|---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 10-01 T1 | 10-01 | 1 | REQ-P10-01 | T-10-03 | Closed fact registry; every member proved populated in the fixture that reaches verify | unit | `python -m unittest tests.test_frame_prereg.TestFactRegistry -v` | ❌ W0 | ⬜ pending |
-| 10-01 T2 | 10-01 | 1 | REQ-P10-01 | T-10-02 | Unparseable rule raises `CheckError` → exit 2, never 0; anchored regex, no unguarded `.group()` | unit | `python -m unittest tests.test_frame_prereg.TestFallbackRuleParsing -v` | ❌ W0 | ⬜ pending |
-| 10-01 T3 | 10-01 | 1 | REQ-P10-01 | T-10-03 | Rule resolves to exactly one branch or to a named reason; never reads `inference.paradigm` | unit | `python -m unittest tests.test_frame_prereg.TestBranchResolution -v` | ❌ W0 | ⬜ pending |
-| 10-02 T1 | 10-02 | 2 | REQ-P10-01 | T-10-03, T-10-06 | `DSX-PRE-010` at CRITICAL with an enforced citation; all five D-13 guards green in the same commit | unit + script | `python -m unittest tests.test_frame_prereg.TestRuleResolutionFindings -v`; `python scripts/gen-finding-catalogue.py --check` | ❌ W0 | ⬜ pending |
-| 10-02 T2 | 10-02 | 2 | REQ-P10-03, REQ-P10-04 | T-10-07 | Executed procedure differs from selected branch → CRITICAL, both branch labels in `detail`; fires symmetrically regardless of which substitute is more conservative | unit | `python -m unittest tests.test_frame_prereg.TestProcedureReconciliation tests.test_frame_prereg.TestNoMeritConsultation -v` | ❌ W0 | ⬜ pending |
-| 10-02 T3 | 10-02 | 2 | REQ-P10-03 | T-10-08 | Every malformed shape degrades to an empty report, never a traceback; paradigm independence proved behaviourally | unit | `python -m unittest tests.test_frame_prereg.TestMalformedShapesDegradeGracefully tests.test_frame_prereg.TestParadigmIndependence -v` | ❌ W0 | ⬜ pending |
-| 10-03 T1 | 10-03 | 3 | REQ-P10-02 | T-10-09, T-10-10 | Missing plan-time header → exit 2 with `suppressions[]` and its authority requirement named; corrupt trail degrades to the same path | unit | `python -m unittest tests.test_frame_prereg.TestMissingPlanHeader -v` | ❌ W0 | ⬜ pending |
-| 10-03 T2 | 10-03 | 3 | REQ-P10-02 | T-10-01, T-10-04 | `pre_data` claim absent from every recorded plan digest → CRITICAL; `post_data` silent; membership rule removes cross-spec false positives | unit | `python -m unittest tests.test_frame_prereg.TestContentLockReconciliation -v` | ❌ W0 | ⬜ pending |
-| 10-04 T1 | 10-04 | 4 | REQ-P10-02, REQ-P10-03 | T-10-11, T-10-12, T-10-13 | Registration and the `_gate_findings` repair land together; no existing assertion weakened | integration | `python -m unittest discover -s tests -q`; `sh scripts/check.sh` | ✅ needs modification | ⬜ pending |
-| 10-04 T2 | 10-04 | 4 | REQ-P10-03 | — | `prereg` present at verify/ship, absent from plan/execute; every `DSX-PRE-*` code reachable from a profile; all three at CRITICAL | unit | `python -m unittest tests.test_frame_prereg.TestGateRegistration -v` | ❌ W0 | ⬜ pending |
-| 10-04 T3 | 10-04 | 4 | REQ-P10-02 | T-10-10 | Trail reconciliation scoped to a real gate invocation; `dsx check`/`dsx audit` are not stopped by a missing header, `dsx gate verify`/`ship` still are | unit + integration | `python -m unittest tests.test_frame_prereg.TestAdHocCommandScope -v` | ❌ W0 | ⬜ pending |
-| 10-05 T1 | 10-05 | 5 | REQ-P10-03, REQ-P10-04 | T-10-14, T-10-15 | Committed fixture with a strictly more conservative substitute; post-mortem cites only verified sources at verified locators | integration | `python -m unittest tests.test_known_bad_corpus -v` | ❌ W0 | ⬜ pending |
-| 10-05 T2 | 10-05 | 5 | REQ-P10-03, REQ-P10-04 | T-10-13 | Per-gate-point corpus registration plus a dedicated verify/ship test; no `DSX-PRE-*` in the incidental allow-list | integration | `python -m unittest tests.test_known_bad_corpus -v`; `sh scripts/check.sh` | ✅ needs modification | ⬜ pending |
-| 10-06 T1 | 10-06 | 5 | REQ-P10-02 | T-10-16 | README names `declared_at`, the `analysis.test` plan-time caveat, the gate-ordering limit and the missing-lock exit 2 | doc | `python -m unittest tests.test_dsx -q` | ✅ | ⬜ pending |
-| 10-06 T2 | 10-06 | 5 | REQ-P10-02 | T-10-14, T-10-17 | Every documented limit pinned by assertion; registry-to-documentation link is live, not duplicated; the two locator flags cannot be removed silently | unit + doc-content assertion | `python -m unittest tests.test_frame_prereg.TestDocumentedLimits -v` | ❌ W0 | ⬜ pending |
-| 10-06 T3 | 10-06 | 5 | REQ-P10-02 | T-10-14 | `brief.md` §7 carries the Gelman & Loken anchor with both locator warnings; STATE.md records the shipped codes and the two settled decisions | doc | `python -m unittest discover -s tests -q` | ✅ | ⬜ pending |
+| Requirement | Plans | Wave(s) | Covering tests | Automated Command | Status |
+|-------------|-------|---------|----------------|-------------------|--------|
+| REQ-P10-01 | 10-01, 10-02 | 1, 2 | `TestFallbackRuleParsing`, `TestBranchResolution`, `TestRuleResolutionFindings`, `TestFactNameCaseNormalization` (unparseable rule → exit 2; decidable branch) | `python3 -m unittest tests.test_frame_prereg` | ✅ green |
+| REQ-P10-02 | 10-03, 10-06 | 3, 5 | `TestDocumentedLimits`, `TestContentLockReconciliation`, `TestMissingPlanHeader` (declared_at provenance + documented limits + grandfather route, CR-01 fix) | `python3 -m unittest tests.test_frame_prereg` | ✅ green |
+| REQ-P10-03 | 10-02, 10-04, 10-05 | 2, 4, 5 | `TestProcedureReconciliation` (executed-vs-declared mismatch blocks, both branches named; `DSX-PRE-030`) | `python3 -m unittest tests.test_frame_prereg` | ✅ green |
+| REQ-P10-04 | 10-02, 10-05 | 2, 5 | `TestNoMeritConsultation` (switch after seeing data blocks even when substitute is more conservative; proven by committed `post-hoc-procedure-switch` fixture) | `python3 -m unittest tests.test_frame_prereg` | ✅ green |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
+
+Live confirmation 2026-08-24: `python3 -m unittest tests.test_frame_prereg` → **90 tests, OK**
+(part of full suite 1038 OK).
 
 ---
 
 ## Wave 0 Requirements
 
-- [ ] `tests/test_frame_prereg.py` — new file covering REQ-P10-01 … REQ-P10-04 plus the
-      registration/reachability pair, modelled on `tests/test_frame_interference.py`
-- [ ] `examples/known-bad/<slug>-ANALYSIS-SPEC.yaml` and its matching `-POSTMORTEM.md` (D-16), with
-      `_TARGET_DEFECT_CODES["<slug>"] = {"verify": "DSX-PRE-030"}` and an
-      `_EXPECTED_CAUGHT_DEFECTS["<slug>"]` entry
-- [ ] A dedicated positive test in `tests/test_known_bad_corpus.py` for the new fixture's
-      verify/ship behaviour — the generic corpus test does not cover non-`plan`/`execute` points
-- [ ] **A fix to `tests/test_known_bad_corpus.py::_gate_findings()`** so verify/ship calls do not
-      spuriously exit 2 for every existing fixture once `prereg` is registered. **Not optional** —
-      without it the full suite goes red for reasons unrelated to any fixture's own defect, and the
-      failure surfaces as a JSON decode error rather than a legible assertion
-- [ ] Framework install: none — stdlib `unittest` is already the house framework
+Existing infrastructure covers all phase requirements. Plans 10-01, 10-02, 10-04, 10-05 are `tdd`
+or delivered committed regression tests; no scaffolding, fixtures, or framework install were needed.
 
 ---
 
 ## Manual-Only Verifications
 
-| Behavior | Requirement | Why Manual | Test Instructions |
-|----------|-------------|------------|-------------------|
-| The `declared_at` limit is stated honestly in the README rather than presented as a guarantee | REQ-P10-02 | A substring assertion proves the sentence exists, not that it reads as an honest limit to a human | Read `README.md` "## Known limits" and confirm the `declared_at` sentence names the self-declaration as unverifiable without implying the gate detects a lie |
-| The `DSX-PRE-030` remedy explains why a better substituted procedure still blocks | REQ-P10-04 | Legibility to an operator under time pressure is a judgement, not a string match | Read the emitted finding on the new known-bad fixture and confirm an operator would not read the gate as broken |
-| The citation locator flags are preserved, not "tidied" into confident locators | D-14 | Requires knowing the three flags exist and why | Confirm the docstring still says the article carries no numbered sections/tables/theorems and that φ comes from the 2013 working paper |
+All phase behaviors have automated verification. 10-VERIFICATION.md recorded "Human Verification
+Required: None"; both design-time accepts (T-10-01, T-10-SC) are security-register items in
+`10-SECURITY.md`, not behaviors lacking a test.
 
 ---
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 60s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references — none MISSING (0 gaps)
+- [x] No watch-mode flags
+- [x] Feedback latency < 60s
+- [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** approved 2026-08-24 (retroactive audit, loop S0-8)
+
+---
+
+## Validation Audit 2026-08-24
+
+| Metric | Count |
+|--------|-------|
+| Gaps found | 0 |
+| Resolved | 0 |
+| Escalated | 0 |
+
+All 4 REQ-P10 requirements classified COVERED. No `gsd-nyquist-auditor` run required (0 gaps).
+Evidence: `tests.test_frame_prereg` 90 OK; full suite 1038 OK (2026-08-24).
