@@ -629,5 +629,79 @@ def f(report):
         self.assertEqual(result.returncode, 0, result.stderr)
 
 
+# ── Task 3: canonical-declaration pin for codes emitted with divergent text from
+#    more than one report.add() site (v2.0.0 milestone audit GAP-PROC-05) ───────
+#
+# These five codes each fire from multiple report.add() sites with a different
+# (severity, title). collect() warns ("declared twice with different text") but
+# does not block, and only the last-seen row lands in the rendered catalogue — so
+# an edit to one site that diverges from its siblings, or a new site with new
+# text, passes silently today. This pins the exact declaration set the
+# generator's own extract() sees for each, and pins the membership of the
+# divergent set itself, so the next code that starts diverging (Phases 11.2/11.3
+# add more codes to the same catalogue) fails here and forces a conscious
+# dedupe-or-pin decision rather than drifting unnoticed.
+
+_PH = "<…>"  # what extract() renders any f-string interpolation as
+
+_CANONICAL_DECLARATIONS = {
+    "DSX-SPEC-070": {
+        ("HIGH", "suppression entry is not a mapping"),
+        ("HIGH", "suppression is missing code"),
+        ("HIGH", f"suppression of {_PH} is missing reason"),
+        ("HIGH", f"suppression of {_PH} is missing authority"),
+    },
+    "DSX-VAL-021": {
+        ("HIGH", "validity frame assignment unit disagrees with design randomization unit"),
+        ("HIGH", "validity frame analysis unit disagrees with design analysis unit"),
+    },
+    "DSX-VAL-060": {
+        ("HIGH", "missingness mechanism paired with a method it does not license"),
+        ("CRITICAL", "missingness mechanism paired with a method it does not license"),
+    },
+    "DSX-COH-030": {
+        ("CRITICAL", "Causal/prescriptive question has an empty assumptions list"),
+        ("HIGH", "Causal/prescriptive question has an empty assumptions list"),
+    },
+    "DSX-PAR-002": {
+        ("HIGH", f"inference.paradigm ({_PH}) is declared with no paradigm_justification"),
+        ("HIGH", "inference.paradigm is not declared under an uncontrolled continuous design"),
+    },
+}
+
+
+class TestCanonicalDeclarations(unittest.TestCase):
+    """Pin the divergent-text finding codes (milestone audit GAP-PROC-05)."""
+
+    @staticmethod
+    def _declarations_by_code() -> "dict[str, set]":
+        by_code: "dict[str, set]" = {}
+        for source in sorted((_ROOT / "dsx").rglob("*.py")):
+            for code, severity, title in g.extract(source):
+                by_code.setdefault(code, set()).add((severity, title))
+        return by_code
+
+    def test_each_known_divergent_code_has_its_pinned_declarations(self):
+        by_code = self._declarations_by_code()
+        for code, expected in _CANONICAL_DECLARATIONS.items():
+            self.assertEqual(
+                by_code.get(code, set()),
+                expected,
+                f"{code} declaration set drifted from its pin — if this change is "
+                "deliberate, update _CANONICAL_DECLARATIONS and say why in the commit",
+            )
+
+    def test_divergent_code_set_is_exactly_the_pinned_five(self):
+        by_code = self._declarations_by_code()
+        divergent = {code for code, decls in by_code.items() if len(decls) > 1}
+        self.assertEqual(
+            divergent,
+            set(_CANONICAL_DECLARATIONS),
+            "the set of finding codes emitted with divergent (severity, title) "
+            "changed — a new code started diverging or a pinned one converged; "
+            "dedupe it or add it to _CANONICAL_DECLARATIONS deliberately",
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
