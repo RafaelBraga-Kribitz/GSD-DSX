@@ -8,6 +8,7 @@ spec_version: 1
 title: "Why is churn up?"
 owner: "someone"
 created: "2026-06-01"
+spec_id: "bad-churn-investigation"  # REQ-P11.2-05, D-08: top-level only.
 
 question_type: causal          # causal question, observational data, no strategy
 

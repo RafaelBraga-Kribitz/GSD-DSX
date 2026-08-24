@@ -47,6 +47,7 @@
 
 spec_version: 1
 title: "Does a weakly informative prior keep the false-positive rate controlled while a Bayesian A/B test is monitored continuously?"
+spec_id: "bayesian-continuous-monitoring"  # REQ-P11.2-05, D-08: top-level only.
 owner: "experimentation-platform"
 created: "2026-04-10"
 

@@ -35,6 +35,7 @@
 
 spec_version: 1
 title: "Does a personalized retention outreach reduce churn among customers flagged by a churn-risk model, compared across five candidate campaign designs?"
+spec_id: "full-frame-cleaning"  # REQ-P11.2-05, D-08: top-level only.
 owner: "retention-analytics"
 created: "2026-07-01"
 

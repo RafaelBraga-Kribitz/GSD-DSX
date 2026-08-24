@@ -20,6 +20,7 @@
 
 spec_version: 1
 title: "Does the in-product upsell prompt raise revenue per eligible session, when only part of the eligible population ever reaches the prompt?"
+spec_id: "triggering-dilution"  # REQ-P11.2-05, D-08: top-level only.
 owner: "growth-monetization"
 created: "2026-04-20"
 

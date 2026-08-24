@@ -19,6 +19,7 @@
 
 spec_version: 1
 title: "Does raising bid caps for the high-intent audience raise signups, when treatment and control draw from one shared daily ad budget?"
+spec_id: "interference-shared-budget"  # REQ-P11.2-05, D-08: top-level only.
 owner: "growth-marketing"
 created: "2026-04-01"
 

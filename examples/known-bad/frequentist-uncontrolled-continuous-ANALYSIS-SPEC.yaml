@@ -29,6 +29,7 @@
 
 spec_version: 1
 title: "Does the new checkout flow reduce cart abandonment, monitored continuously without a sequential correction?"
+spec_id: "frequentist-uncontrolled-continuous"  # REQ-P11.2-05, D-08: top-level only.
 owner: "ecommerce-analytics"
 created: "2026-04-01"
 

@@ -6,6 +6,8 @@ spec_version: 1
 title: "Does the onboarding checklist raise 7-day activation?"
 owner: "r.braga"
 created: "2026-06-01"
+spec_id: "good-onboarding-activation"  # REQ-P11.2-05, D-08: top-level only, never inside
+                                        # validity_frame:/inference:, so frame_digest is unchanged.
 
 question_type: causal
 

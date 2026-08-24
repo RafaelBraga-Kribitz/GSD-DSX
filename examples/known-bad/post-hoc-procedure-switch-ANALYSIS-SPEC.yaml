@@ -44,6 +44,7 @@
 
 spec_version: 1
 title: "Does adding a trust badge to the checkout page raise completed-order rate, compared across five candidate badge designs?"
+spec_id: "post-hoc-procedure-switch"  # REQ-P11.2-05, D-08: top-level only.
 owner: "conversion-analytics"
 created: "2026-07-01"
 
