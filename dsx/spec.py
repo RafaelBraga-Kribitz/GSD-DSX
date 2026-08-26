@@ -692,19 +692,51 @@ def _has_window_token(text: str) -> bool:
     return any(token in lowered for token in _WINDOW_RECURRING_TOKENS)
 
 
+def _strip_window_tokens(text: str) -> str:
+    """Remove every time-anchor span from ``text``: the duration and
+    date/deadline regexes and the recurring-checkpoint substrings, using the
+    exact same patterns ``_has_window_token`` recognises so detection and
+    stripping cannot diverge.
+
+    Used only by ``revisit_when_is_discriminating`` so the discriminating
+    metric/threshold test runs on what is LEFT once the time anchor is removed.
+    Without it the anchor's own digits (the year "2026", the duration count
+    "30") satisfy ``falsifier_is_discriminating``'s numeric branch, and a bare
+    "revisit at the 2026-Q4 review" clears a check whose contract demands a
+    named metric AND a threshold AND a time anchor as three separate things
+    (WR-02, 11.2 code review, §4 persona round).
+    """
+    lowered = str(text).lower()
+    lowered = _WINDOW_DURATION_RE.sub(" ", lowered)
+    lowered = _WINDOW_DATE_RE.sub(" ", lowered)
+    for token in _WINDOW_RECURRING_TOKENS:
+        lowered = lowered.replace(token, " ")
+    return lowered
+
+
 def revisit_when_is_discriminating(value: Any) -> bool:
-    """True when ``value`` both names a discriminating condition (reuses
-    ``falsifier_is_discriminating``'s core comparison/numeric test) AND carries a
-    time anchor — a duration, date/deadline, or time-anchored recurring event.
+    """True when ``value`` carries a time anchor — a duration, date/deadline, or
+    time-anchored recurring event — AND names a discriminating condition (a
+    comparison predicate or numeric threshold) in the text that REMAINS once the
+    time anchor is stripped out.
 
     A NEW sibling, not an extension of ``falsifier_is_discriminating`` itself: its two
     estimand callers (val.py:236, val.py:637) validate a logical falsifier with no
     time anchor, and the ``good`` fixture's estimand falsifier (good-ANALYSIS-SPEC.yaml,
     the ``validity_frame.estimand.falsifier`` field) carries none — extending the
     shared predicate would regress DSX-VAL-011 on that fixture (D-07, RESEARCH
-    landmine b). ``falsifier_is_discriminating`` is called unchanged, never mutated.
+    landmine b). ``falsifier_is_discriminating`` is called unchanged, never mutated;
+    the residual test lives here so the estimand path is provably untouched.
+
+    Known limit (WR-02): a threshold expressed in the same lexical shape as a
+    window — e.g. an SLA "within 30 days" as the metric itself — is stripped
+    with the anchor and reads as non-discriminating. This is genuinely ambiguous
+    ("revisit in 30 days" is indistinguishable) and does not occur in the corpus;
+    DSX-COH-040's remedy models the discriminating form with a comparison word.
     """
-    return falsifier_is_discriminating(value) and _has_window_token(str(value))
+    return _has_window_token(str(value)) and falsifier_is_discriminating(
+        _strip_window_tokens(value)
+    )
 
 
 # ── Structural validation ────────────────────────────────────────────────────

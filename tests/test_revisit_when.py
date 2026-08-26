@@ -55,8 +55,26 @@ class TestRevisitWhenIsDiscriminating(unittest.TestCase):
     def test_duration_window_is_accepted(self):
         self.assertTrue(revisit_when_is_discriminating("churn above 5% for 8 weeks"))
 
-    def test_bare_duration_reassessment_is_accepted(self):
-        self.assertTrue(revisit_when_is_discriminating("reassess in 30 days"))
+    def test_metric_with_recurring_review_is_accepted(self):
+        """A metric+threshold anchored to a digit-free recurring checkpoint is
+        accepted — the residual after stripping "quarterly review" still carries
+        the comparison, so a real condition + a time anchor passes (WR-02)."""
+        self.assertTrue(
+            revisit_when_is_discriminating(
+                "activation_rate below +1.0pp at the next quarterly review"
+            )
+        )
+
+    def test_bare_duration_reassessment_without_metric_is_rejected(self):
+        """WR-02 (11.2 code review, §4 persona round): "reassess in 30 days"
+        carries a time anchor but NO metric/threshold — the "30" is the
+        duration's own count, not a discriminating value. It must be rejected,
+        consistent with DSX-COH-040's contract ("a named metric, a threshold,
+        AND a time anchor") and with the digit-free recurring-token path
+        ("at the next quarterly review"), which was already rejected. This
+        inverts the former test_bare_duration_reassessment_is_accepted, whose
+        pass depended on the window's own digit masquerading as a threshold."""
+        self.assertFalse(revisit_when_is_discriminating("reassess in 30 days"))
 
     def test_date_deadline_window_is_accepted(self):
         self.assertTrue(
