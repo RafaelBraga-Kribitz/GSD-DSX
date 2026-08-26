@@ -194,6 +194,46 @@ _TARGET_DEFECT_CODES: "dict[str, dict[str, str | frozenset[str]]]" = {
         "execute": frozenset({"DSX-CODE-020", "DSX-CODE-021", "DSX-CODE-030"}),
         "ship": "DSX-ML-090",
     },
+    # Plan 11.2-08 (REQ-P11.2-03): the flagship "offer bundled incentives to
+    # reduce churn" fixture — a prescriptive claim smuggled under a descriptive
+    # question. Its four catches split cleanly across gate points by which check
+    # family is registered where (dsx/cli.py::GATE_PROFILES):
+    #
+    #   - "plan" -> {DSX-COH-001, DSX-COH-010}: `coherence` is registered at
+    #     plan (and verify/ship). DSX-COH-001 fires because claims[0].type
+    #     `prescriptive` (strength 4) exceeds question_type `descriptive`
+    #     (strength 0); DSX-COH-010 fires because the decision rule carries the
+    #     purpose-gated causal verb `reduce` under a descriptive question. Both
+    #     are CRITICAL, so this is the point-scoped guarantee the generic
+    #     critical-threshold test consumes.
+    #   - "verify"/"ship" -> {DSX-CLM-011, DSX-CLM-020}: `claims` is registered
+    #     at verify and ship only, never plan or execute. DSX-CLM-011 fires
+    #     because a non-causal-typed claim uses the causal verb `reduce`
+    #     unhedged; DSX-CLM-020 because a prescriptive claim recommends an
+    #     intervention with no identification strategy behind it. These two keys
+    #     are consulted only by _own_target_codes (which flattens every point's
+    #     value regardless of key name) for the ship-completeness test — the
+    #     same dict-collision-avoidance device weak-identification-mmm's
+    #     "verify" key and full-frame-cleaning's "ship" key already use, not a
+    #     claim these codes fire ONLY at verify/ship. DSX-COH-001/DSX-COH-010
+    #     also fire at verify/ship (coherence is registered there too) and are
+    #     recognised as this fixture's own codes via the "plan" key above.
+    #   - NO "execute" entry: `coherence` and `claims` are both absent from the
+    #     execute gate profile, so the fixture exits 0 there and must default to
+    #     the clears-cleanly branch.
+    #
+    # Measured 2026-08-26 against a fresh tempfile.TemporaryDirectory() per gate
+    # point (never the shared examples/known-bad/DECISIONS.jsonl — RESEARCH
+    # landmine f). Deliberately NOT added to _EXPECTED_CAUGHT_DEFECTS with codes:
+    # that map contributes its whole set at BOTH plan and execute, and these
+    # coherence codes fire at plan but not execute, so an entry there would
+    # wrongly demand DSX-COH-001/010 at execute too. Its _EXPECTED_CAUGHT_DEFECTS
+    # entry is an empty frozenset() (below), for the key-parity test only.
+    "prescriptive-churn-recommendation": {
+        "plan": frozenset({"DSX-COH-001", "DSX-COH-010"}),
+        "verify": frozenset({"DSX-CLM-011", "DSX-CLM-020"}),
+        "ship": frozenset({"DSX-CLM-011", "DSX-CLM-020"}),
+    },
 }
 
 
@@ -355,6 +395,18 @@ _EXPECTED_CAUGHT_DEFECTS: "dict[str, frozenset[str]]" = {
     # "execute", plus DSX-ML-090 recorded under the "ship" key) lives entirely
     # in _TARGET_DEFECT_CODES above, the point-scoped shape.
     "full-frame-cleaning": frozenset(),
+    # Plan 11.2-08: empty by design, not omission — for the same reason as
+    # post-hoc-procedure-switch and full-frame-cleaning above. This map's
+    # frozenset applies at every point in _CRITICAL_THRESHOLD_POINTS ("plan",
+    # "execute"), but the flagship's own catches are DSX-COH-001/DSX-COH-010 at
+    # plan (which fire at plan but NOT execute — `coherence` is absent from the
+    # execute gate profile) and DSX-CLM-011/DSX-CLM-020 at verify/ship (`claims`
+    # is registered at verify/ship only). None of the four fires at both
+    # critical-threshold points, so there is nothing this both-points map could
+    # correctly claim. The fixture's real, point-scoped catches live entirely in
+    # _TARGET_DEFECT_CODES above. The key is required here solely so
+    # test_expected_caught_defects_keys_match_the_corpus_on_disk stays green.
+    "prescriptive-churn-recommendation": frozenset(),
 }
 
 
