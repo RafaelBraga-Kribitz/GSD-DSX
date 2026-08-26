@@ -5,15 +5,15 @@ milestone_name: DSX Validity Frame
 current_phase: 11.2
 current_phase_name: prescriptive-claim-layer
 status: executing
-stopped_at: Phase 11.2 Wave 3 COMPLETE (plans 01-03+05-07 of 8 done; suite 1124 OK, check.sh green — S1-3 in progress); Wave 4 next (plans 08, 04)
-last_updated: "2026-08-26T20:45:00.000Z"
+stopped_at: Phase 11.2 Wave 4 COMPLETE — all 8 plans executed (04 doc-hygiene + 08 corpus-green closing gate); suite 1139 OK, check.sh all checks passed, catalogue current. S1-3 (execute all plans) DONE; next = S1-4 (code review + verify).
+last_updated: "2026-08-26T21:49:00.000Z"
 last_activity: 2026-08-26
-last_activity_desc: Phase 11.2 Wave 3 remainder executed (plans 06, 07) + independently gated
+last_activity_desc: Phase 11.2 Wave 4 executed (plans 04, 08) + independently gated — S1-3 complete (all 8 plans)
 progress:
   total_phases: 10
   completed_phases: 8
   total_plans: 76
-  completed_plans: 74
+  completed_plans: 76
   percent: 97
 ---
 
@@ -114,10 +114,10 @@ parity and visible-fallback criteria added).
 
 ## Current Position
 
-Phase: 11.2 (prescriptive-claim-layer) — EXECUTING
-Plan: 6 of 8
-Status: Executing Phase 11.2 — Waves 1-3 done (plans 01, 02, 03, 05, 06, 07); Wave 4 next (plans 08, 04)
-Last activity: 2026-08-26 — Phase 11.2 Wave 3 remainder executed (plans 06, 07), suite 1124 OK, check.sh green
+Phase: 11.2 (prescriptive-claim-layer) — EXECUTING (all plans executed; not yet verified)
+Plan: 8 of 8
+Status: Phase 11.2 S1-3 COMPLETE — all 8 plans executed (Waves 1-4: 01, 02, 03, 05, 06, 07, then 04 + 08). Next = S1-4 code review + verify.
+Last activity: 2026-08-26 — Phase 11.2 Wave 4 executed (plans 04, 08), suite 1139 OK, check.sh all checks passed
 
 ## Project Reference
 
@@ -128,9 +128,9 @@ See: .planning/PROJECT.md (updated 2026-08-13)
 
 ## Session
 
-**Last session:** 2026-08-26T20:45:00.000Z
-**Stopped at:** Phase 11.2 S1-3 in progress — Waves 1-3 executed (plans 01, 02, 03, 05, 06, 07), full suite 1124 OK, check.sh all checks passed, catalogue current, DSX-COH-040 wired + dsx-explain self-reported section shipped. Next: S1-3 Wave 4 = plans 08 (corpus-green gate, MUST run last) then 04 (doc-hygiene). Wave 4's plan 08 is the flagship "reduce churn" fixture + golden-file corpus equality — heavy, deserves fresh context.
-**Resume file:** .planning/phases/11.2-prescriptive-claim-layer/11.2-08-PLAN.md
+**Last session:** 2026-08-26T21:49:00.000Z
+**Stopped at:** Phase 11.2 S1-3 COMPLETE — all 8 plans executed. Wave 4 (this firing): plan 04 (scaffold-field quarantine in template: reversible/deadline → documentation-only block, revisit_when + spec_id gate-read fields, five-type comment, storyteller/narrate repoint, grep invariant) then plan 08 (flagship "reduce churn" known-bad fixture + POSTMORTEM + point-scoped catch-attribution, golden-file finding-set equality over every examples/**, noun negative case, README D-15/D-12 named limits). Full suite 1139 OK, check.sh all checks passed, catalogue current, findings.py untouched (Option C unimplemented). Next: S1-4 = code review + auto-fix; verification passed (human items → HUMAN-QUEUE).
+**Resume file:** S1-4 (code review) — no per-plan resume file; run /gsd-code-review 11.2 or the S1-4 ledger unit.
 
 Phase 10 context was re-verified 2026-08-14 (assumptions mode). Six unexecuted plans (`10-01` … `10-06`) already exist; this refresh did not rewrite them. Phase 8's blocking gap is in `08-VERIFICATION.md` (out-of-vocabulary `interference.risk` bypass).
 

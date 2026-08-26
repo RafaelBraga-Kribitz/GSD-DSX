@@ -896,8 +896,8 @@ Plans:
 
 **Wave 4** *(corpus-green gate — MUST run last, D-06; plus the doc-hygiene slice 11.2-04, scheduled after its reader codes 03/06)*
 
-- [ ] 11.2-08-PLAN.md — REQ-03 corpus green: flagship "offer bundled incentives to reduce churn" fixture + post-mortem + catch-attribution, golden-file finding-set equality over every `examples/**`, noun negative case, README known-limits (D-12/D-15), full corpus + `scripts/check.sh` green
-- [ ] 11.2-04-PLAN.md — REQ-07: scaffold-field quarantine (reversible/deadline → documentation-only block), revisit_when/spec_id template fields, five-type comment, storyteller/narrate repoint, grep invariant — MOVED to Wave 4 (its "gate-read" template labels for revisit_when/spec_id must land after DSX-PRE-040/DSX-COH-040 exist; depends_on [01,03,06])
+- [x] 11.2-08-PLAN.md — REQ-03 corpus green: flagship "offer bundled incentives to reduce churn" fixture + post-mortem + catch-attribution, golden-file finding-set equality over every `examples/**`, noun negative case, README known-limits (D-12/D-15), full corpus + `scripts/check.sh` green
+- [x] 11.2-04-PLAN.md — REQ-07: scaffold-field quarantine (reversible/deadline → documentation-only block), revisit_when/spec_id template fields, five-type comment, storyteller/narrate repoint, grep invariant — MOVED to Wave 4 (its "gate-read" template labels for revisit_when/spec_id must land after DSX-PRE-040/DSX-COH-040 exist; depends_on [01,03,06])
 
 **Code assignments (D-06, locked at plan 2026-08-24; human-veto window via the daily summary):**
 `DSX-COH-040` CRITICAL (new decade — revisit_when completeness), `DSX-PRE-040` HIGH (missing required
