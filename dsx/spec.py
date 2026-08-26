@@ -589,6 +589,56 @@ def falsifier_is_discriminating(value: Any) -> bool:
     return bool(_FALSIFIER_NUMBER_RE.search(str(value)))
 
 
+# A bare number-of-units duration ("30 days", "8 weeks", "next quarter" is handled by
+# the recurring-token set below since it carries no digit). Bounded, non-nested
+# quantifiers only (mirrors _FALSIFIER_NUMBER_RE above, threat T-11.2-08 / T-7-03):
+# no `.*` chains.
+_WINDOW_DURATION_RE = re.compile(
+    r"\b\d+\s*(?:day|days|week|weeks|month|months|quarter|quarters|year|years)\b"
+)
+
+# A date/deadline: an ISO calendar date (2026-07-15) or a fiscal-quarter date
+# (2026-Q4 / 2026-q4). Bounded, non-nested quantifiers only.
+_WINDOW_DATE_RE = re.compile(r"\b\d{4}-(?:\d{2}-\d{2}|q[1-4])\b", re.IGNORECASE)
+
+# Named recurring checkpoints that anchor a re-visit in time without carrying a
+# digit (e.g. "at the next quarterly review"). Substring match, same idiom as
+# FALSIFIER_DISCRIMINATORS above — not a regex, so no backtracking surface at all.
+_WINDOW_RECURRING_TOKENS = (
+    "quarterly review", "annual review", "monthly review", "weekly review",
+    "next review", "review cycle",
+)
+
+
+def _has_window_token(text: str) -> bool:
+    """True when ``text`` carries a time anchor: a duration ("8 weeks"), a
+    date/deadline (an ISO date or a fiscal-quarter date like "2026-Q4"), or a named
+    recurring checkpoint ("quarterly review"). Bounded, non-nested quantifiers only
+    (mirrors ``_FALSIFIER_NUMBER_RE``, threat T-11.2-08 / T-7-03) — no `.*` chains.
+    """
+    lowered = str(text).lower()
+    if _WINDOW_DURATION_RE.search(lowered):
+        return True
+    if _WINDOW_DATE_RE.search(lowered):
+        return True
+    return any(token in lowered for token in _WINDOW_RECURRING_TOKENS)
+
+
+def revisit_when_is_discriminating(value: Any) -> bool:
+    """True when ``value`` both names a discriminating condition (reuses
+    ``falsifier_is_discriminating``'s core comparison/numeric test) AND carries a
+    time anchor — a duration, date/deadline, or time-anchored recurring event.
+
+    A NEW sibling, not an extension of ``falsifier_is_discriminating`` itself: its two
+    estimand callers (val.py:236, val.py:637) validate a logical falsifier with no
+    time anchor, and the ``good`` fixture's estimand falsifier (good-ANALYSIS-SPEC.yaml,
+    the ``validity_frame.estimand.falsifier`` field) carries none — extending the
+    shared predicate would regress DSX-VAL-011 on that fixture (D-07, RESEARCH
+    landmine b). ``falsifier_is_discriminating`` is called unchanged, never mutated.
+    """
+    return falsifier_is_discriminating(value) and _has_window_token(str(value))
+
+
 # ── Structural validation ────────────────────────────────────────────────────
 
 REQUIRED_TOP_LEVEL = ("spec_version", "title", "question_type", "decision")
