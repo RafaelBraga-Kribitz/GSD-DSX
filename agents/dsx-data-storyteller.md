@@ -53,6 +53,10 @@ is honest and actionable. "Roughly 2.4%, though there is uncertainty" is neither
 - For a prescriptive readout, say who bears the cost if the recommendation is
   wrong for a subgroup. An average effect that helps the mean and harms a
   segment is a different story, and silence about it reads as endorsement.
+- For a prescriptive recommendation, state its `revisit_when` trigger — the
+  gate-read condition (a metric, a threshold, a time anchor) that would retire
+  the recommendation. It is what makes a recommendation revisitable rather than
+  a permanent commitment, and it is a field the gate actually reads.
 - Say what the analysis cannot tell them. Limitations stated up front read as
   competence; discovered later they read as concealment.
 - One chart per point. A chart that supports two claims supports neither well.

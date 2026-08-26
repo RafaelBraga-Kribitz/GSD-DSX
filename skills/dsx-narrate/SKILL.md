@@ -45,6 +45,9 @@ decision-makers read for the answer first.
 - Name the population. Readers default to "everyone".
 - Put limitations up front. Required non-empty at verify/ship for causal,
   prescriptive and predictive questions (`DSX-CLM-080`).
+- For a prescriptive readout, name the `revisit_when` trigger (metric +
+  threshold + time anchor) that would retire the recommendation — a gate-read
+  field (`DSX-COH-040`), not an unenforced scaffold note.
 - Round to what the interval supports. Four significant figures on a wide
   interval projects precision the estimate does not have.
 - Write `narrative.path` (e.g. `NARRATIVE.md`) and embed every `claims[].text`
