@@ -193,6 +193,52 @@ class TestCausalVerbTiers(unittest.TestCase):
         clm011 = [f for f in report.findings if f.code == "DSX-CLM-011"]
         self.assertEqual(len(clm011), 1, f"got codes={codes(report)}")
 
+    # ── WR-01 (11.2 code review, §4 persona round) ────────────────────────
+    # _check_causal_language now exempts prescriptive (not just causal). A
+    # prescriptive claim is a recommendation and is licensed to name an effect;
+    # its SUPPORT is enforced by _check_causal_support (DSX-CLM-020/021), so
+    # firing DSX-CLM-011 ("retype as causal") on it double-coded one fact with a
+    # strength-downgrade remedy. These pin both the fix and the preserved catch.
+
+    def test_wr01_well_identified_prescriptive_fires_no_causal_codes(self):
+        """A prescriptive claim that declares a strong identification strategy
+        is good work — it must fire NEITHER DSX-CLM-011 (prescriptive is
+        licensed to use causal language) NOR DSX-CLM-020/021 (its identification
+        clears _check_causal_support). Before WR-01 it wrongly fired DSX-CLM-011
+        CRITICAL telling it to downgrade to causal."""
+        spec = {
+            "claims": [{
+                "text": "offer bundled incentives to reduce churn",
+                "type": "prescriptive",
+                "identification": "randomized_experiment",
+                "evidence": "n/a",
+            }],
+            "design": {},
+            "results": {},
+        }
+        report = claims.check(spec)
+        self.assertNotIn("DSX-CLM-011", codes(report))
+        self.assertNotIn("DSX-CLM-020", codes(report))
+        self.assertNotIn("DSX-CLM-021", codes(report))
+
+    def test_wr01_unidentified_prescriptive_still_fires_clm020_not_clm011(self):
+        """An un-identified prescriptive claim still blocks — DSX-CLM-020
+        CRITICAL (a recommendation with no identification) — but no longer
+        double-codes it with DSX-CLM-011. This is the flagship fixture's catch,
+        preserved by the correct code."""
+        spec = {
+            "claims": [{
+                "text": "offer bundled incentives to reduce churn",
+                "type": "prescriptive",
+                "evidence": "n/a",
+            }],
+            "design": {},
+            "results": {},
+        }
+        report = claims.check(spec)
+        self.assertIn("DSX-CLM-020", codes(report))
+        self.assertNotIn("DSX-CLM-011", codes(report))
+
 
 if __name__ == "__main__":
     unittest.main()

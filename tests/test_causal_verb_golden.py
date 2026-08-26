@@ -72,8 +72,13 @@ _CAUSAL_VERB_CODES = frozenset({"DSX-CLM-010", "DSX-CLM-011", "DSX-COH-010"})
 # plan-time header seeded first. This is the pinned post-widening reality: the
 # only fixture carrying a causal-verb code
 # (``prescriptive-churn-recommendation``) is this phase's own flagship, whose
-# DSX-CLM-011/DSX-COH-010 are the catch it exists to demonstrate; every other
-# fixture's set is exactly what it was before the widening.
+# DSX-COH-010 (a causal decision-rule under a descriptive question) plus
+# DSX-CLM-020 (a prescriptive claim with no identification) are the catch it
+# exists to demonstrate. DSX-CLM-011 no longer fires on the prescriptive claim:
+# WR-01 (11.2 code review, §4 persona round) exempted prescriptive from
+# _check_causal_language because it double-coded the DSX-CLM-020 fact and gave a
+# strength-downgrade remedy. The flagship still blocks (CLM-020/COH-001/COH-010
+# all CRITICAL); every other fixture's set is exactly what it was before.
 _GOLDEN_SHIP_FINDINGS: "dict[str, frozenset[str]]" = {
     "examples/bad-ANALYSIS-SPEC.yaml": frozenset({
         "DSX-ADM-020", "DSX-CAU-010", "DSX-CLM-020", "DSX-CLM-030", "DSX-CLM-033",
@@ -115,7 +120,7 @@ _GOLDEN_SHIP_FINDINGS: "dict[str, frozenset[str]]" = {
         "DSX-REP-030", "DSX-STA-041",
     }),
     "examples/known-bad/prescriptive-churn-recommendation-ANALYSIS-SPEC.yaml": frozenset({
-        "DSX-CLM-011", "DSX-CLM-020", "DSX-CLM-031", "DSX-COH-001", "DSX-COH-010",
+        "DSX-CLM-020", "DSX-CLM-031", "DSX-COH-001", "DSX-COH-010",
         "DSX-MET-040", "DSX-NAR-001", "DSX-REP-030",
     }),
     "examples/known-bad/triggering-dilution-ANALYSIS-SPEC.yaml": frozenset({

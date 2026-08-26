@@ -108,7 +108,15 @@ def _check_causal_language(
     hits = causal_verb_matches(lowered)
     if not hits:
         return
-    if ctype == "causal":
+    # A causal claim is licensed to name an effect, and so is a prescriptive one
+    # (a recommendation IS an intervention on an effect) — for both, the causal
+    # *language* is not the defect; the *support* is, and _check_causal_support
+    # already enforces it via DSX-CLM-020 (no identification) / DSX-CLM-021 (weak).
+    # Firing DSX-CLM-011 on a prescriptive claim double-codes one fact (D-04) and
+    # its remedy ("retype as causal") counsels a strength DOWNGRADE
+    # (prescriptive=4 > causal=3) — incoherent for a well-identified recommendation
+    # (WR-01, 11.2 code review, §4 persona round).
+    if ctype in {"causal", "prescriptive"}:
         return
     hedged = any(term in lowered for term in HEDGE_TERMS)
     if hedged and ctype == "association":

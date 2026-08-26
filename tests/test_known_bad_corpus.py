@@ -206,18 +206,21 @@ _TARGET_DEFECT_CODES: "dict[str, dict[str, str | frozenset[str]]]" = {
     #     purpose-gated causal verb `reduce` under a descriptive question. Both
     #     are CRITICAL, so this is the point-scoped guarantee the generic
     #     critical-threshold test consumes.
-    #   - "verify"/"ship" -> {DSX-CLM-011, DSX-CLM-020}: `claims` is registered
-    #     at verify and ship only, never plan or execute. DSX-CLM-011 fires
-    #     because a non-causal-typed claim uses the causal verb `reduce`
-    #     unhedged; DSX-CLM-020 because a prescriptive claim recommends an
-    #     intervention with no identification strategy behind it. These two keys
-    #     are consulted only by _own_target_codes (which flattens every point's
-    #     value regardless of key name) for the ship-completeness test — the
-    #     same dict-collision-avoidance device weak-identification-mmm's
-    #     "verify" key and full-frame-cleaning's "ship" key already use, not a
-    #     claim these codes fire ONLY at verify/ship. DSX-COH-001/DSX-COH-010
-    #     also fire at verify/ship (coherence is registered there too) and are
-    #     recognised as this fixture's own codes via the "plan" key above.
+    #   - "verify"/"ship" -> {DSX-CLM-020}: `claims` is registered at verify and
+    #     ship only, never plan or execute. DSX-CLM-020 fires because a
+    #     prescriptive claim recommends an intervention with no identification
+    #     strategy behind it. (Before WR-01 this set also listed DSX-CLM-011, but
+    #     _check_causal_language now exempts prescriptive — DSX-CLM-011 there
+    #     double-coded the DSX-CLM-020 fact with a strength-downgrade remedy;
+    #     11.2 code review, §4 persona round. The flagship still blocks on
+    #     DSX-CLM-020 CRITICAL.) This key is consulted only by _own_target_codes
+    #     (which flattens every point's value regardless of key name) for the
+    #     ship-completeness test — the same dict-collision-avoidance device
+    #     weak-identification-mmm's "verify" key and full-frame-cleaning's "ship"
+    #     key already use, not a claim these codes fire ONLY at verify/ship.
+    #     DSX-COH-001/DSX-COH-010 also fire at verify/ship (coherence is
+    #     registered there too) and are recognised as this fixture's own codes
+    #     via the "plan" key above.
     #   - NO "execute" entry: `coherence` and `claims` are both absent from the
     #     execute gate profile, so the fixture exits 0 there and must default to
     #     the clears-cleanly branch.
@@ -231,8 +234,8 @@ _TARGET_DEFECT_CODES: "dict[str, dict[str, str | frozenset[str]]]" = {
     # entry is an empty frozenset() (below), for the key-parity test only.
     "prescriptive-churn-recommendation": {
         "plan": frozenset({"DSX-COH-001", "DSX-COH-010"}),
-        "verify": frozenset({"DSX-CLM-011", "DSX-CLM-020"}),
-        "ship": frozenset({"DSX-CLM-011", "DSX-CLM-020"}),
+        "verify": frozenset({"DSX-CLM-020"}),
+        "ship": frozenset({"DSX-CLM-020"}),
     },
 }
 
