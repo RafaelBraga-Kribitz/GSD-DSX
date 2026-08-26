@@ -15,6 +15,10 @@ spec_version: 1
 title: "<one line: the decision this analysis exists to support>"
 owner: "<analyst>"
 created: "<YYYY-MM-DD>"
+# spec_id is GATE-READ (DSX-PRE-040): required for prescriptive questions and
+# experiment designs. It is the stable, human-meaningful amendment-counter
+# identity that ties this spec to its DECISIONS.jsonl trail across revisions.
+spec_id: "<stable-human-id, e.g. activation-nudge-2026q3>"
 
 # ── What kind of question is this? ───────────────────────────────────────────
 # descriptive  — what happened (no inference beyond the sample)
@@ -34,8 +38,13 @@ decision:
     not just the direction.>
   action_if_null: "<what happens when no effect is detected>"
   minimum_practical_effect: null   # smallest effect that would change the decision
-  reversible: true
-  deadline: "<YYYY-MM-DD or null>"
+  # revisit_when is GATE-READ (DSX-COH-040): the re-open trigger evaluated at
+  # verify/ship for prescriptive questions and experiment designs. It must name a
+  # metric, a threshold, and a time anchor. It is DISTINCT from `deadline` in the
+  # documentation-only block below — `deadline` is a decide-by date that no gate
+  # reads, whereas `revisit_when` is the condition that reopens an already-made
+  # recommendation and IS enforced. Do not conflate the two temporal fields.
+  revisit_when: "activation_rate below +1.0pp at the 2026-Q4 review"
   # Structured replay — evaluated against results.tests at verify/ship (not NLP).
   # Required at ship when design.kind=experiment (or causal/prescriptive) with tests.
   # replay:
@@ -45,6 +54,16 @@ decision:
   #   # effect_min: null
   #   on_pass: rollout
   #   on_fail: hold
+
+  # ── Documentation-only — NOT gate-read ─────────────────────────────────────
+  # The two fields below are recorded for human readers only. NO dsx check reads
+  # them (grep-confirmed): setting `reversible` or `deadline` buys NO enforcement.
+  # They are kept, not deleted, because operator specs carry them as decision
+  # context — but do not mistake them for gate-enforced fields. `deadline` (a
+  # decide-by date) is in particular NOT the gate-read `revisit_when` above (a
+  # re-open trigger). See D-14 / REQ-P11.2-07.
+  reversible: true
+  deadline: "<YYYY-MM-DD or null>"
 
 # ── Metrics ──────────────────────────────────────────────────────────────────
 # One name, one definition. Ratios must declare both numerator and denominator —
@@ -270,7 +289,7 @@ narrative:
 # holds it to the evidence declared above.
 claims:
   - text: "<the claim exactly as it will appear>"
-    type: descriptive              # descriptive | association | predictive | causal
+    type: descriptive              # descriptive | association | predictive | causal | prescriptive
     evidence: "RESULTS.md#anchor"
     population: "<who this applies to>"
     # ci: [lower, upper]
