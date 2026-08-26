@@ -37,6 +37,7 @@ decision:
   minimum_practical_effect: 0.005
   reversible: true
   deadline: "2026-05-20"
+  revisit_when: "revenue_per_eligible_session lift below +$0.005 at the 2026-Q2 review"
 
 metrics:
   - name: revenue_per_eligible_session

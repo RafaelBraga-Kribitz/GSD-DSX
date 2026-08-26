@@ -21,6 +21,7 @@ decision:
   minimum_practical_effect: 0.02
   reversible: true
   deadline: "2026-07-15"
+  revisit_when: "activation_rate 95% CI lower bound below +1.0pp at the 2026-Q4 review"
   replay:
     metric: activation_rate
     ci_lower_min: 0.01

@@ -20,12 +20,18 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+from pathlib import Path as _Path
+
 from dsx.checks import coherence  # noqa: E402
 from dsx.findings import Report, Severity  # noqa: E402
+from dsx.frame import val  # noqa: E402
+from dsx.loader import load  # noqa: E402
 from dsx.spec import (  # noqa: E402
     falsifier_is_discriminating,
     revisit_when_is_discriminating,
 )
+
+_GOOD_FIXTURE_PATH = _Path(__file__).resolve().parent.parent / "examples" / "good-ANALYSIS-SPEC.yaml"
 
 # The good fixture's own estimand falsifier (examples/good-ANALYSIS-SPEC.yaml, the
 # validity_frame.estimand.falsifier field) — quoted verbatim, windowless, so the
@@ -190,6 +196,34 @@ class TestRevisitCompleteness(unittest.TestCase):
             _spec(question_type="descriptive", decision={}, design={})
         )
         self.assertNotIn("DSX-COH-040", codes(report))
+
+
+# ── Task 3: fixture prophylaxis + the DSX-VAL-011-unchanged regression ───────
+
+
+class TestGoodFixtureProphylaxis(unittest.TestCase):
+    """The good fixture's own revisit_when is discriminating and window-anchored,
+    it clears coherence.check(), and the estimand falsifier's DSX-VAL-011 firing
+    set is unperturbed by the sibling predicate (D-07, RESEARCH landmine b)."""
+
+    def test_good_fixture_revisit_when_is_discriminating(self):
+        spec = load(_GOOD_FIXTURE_PATH)
+        revisit_when = spec.get("decision", {}).get("revisit_when")
+        self.assertTrue(revisit_when_is_discriminating(revisit_when))
+
+    def test_good_fixture_draws_no_coh040(self):
+        spec = load(_GOOD_FIXTURE_PATH)
+        report = coherence.check(spec)
+        self.assertNotIn("DSX-COH-040", codes(report))
+
+    def test_good_fixture_val_011_firing_set_is_unchanged(self):
+        """Regression: the good fixture's estimand falsifier still does not
+        fire DSX-VAL-011 — proving falsifier_is_discriminating was not
+        perturbed by adding the sibling predicate or the fixture's new
+        revisit_when field."""
+        spec = load(_GOOD_FIXTURE_PATH)
+        report = val.check(spec)
+        self.assertNotIn("DSX-VAL-011", codes(report))
 
 
 if __name__ == "__main__":

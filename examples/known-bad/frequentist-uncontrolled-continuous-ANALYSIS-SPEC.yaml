@@ -44,6 +44,7 @@ decision:
   minimum_practical_effect: 0.01
   reversible: true
   deadline: "2026-04-20"
+  revisit_when: "abandonment_rate reduction below +1.0pp at the 2026-Q2 review"
 
 metrics:
   - name: abandonment_rate

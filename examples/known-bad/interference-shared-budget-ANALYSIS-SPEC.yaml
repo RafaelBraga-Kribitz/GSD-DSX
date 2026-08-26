@@ -35,6 +35,7 @@ decision:
   minimum_practical_effect: 0.005
   reversible: true
   deadline: "2026-05-01"
+  revisit_when: "signup_rate lift below +0.5pp at the 2026-Q2 review"
 
 metrics:
   - name: signup_rate

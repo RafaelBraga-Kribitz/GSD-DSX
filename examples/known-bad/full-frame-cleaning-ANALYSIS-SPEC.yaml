@@ -52,6 +52,7 @@ decision:
   minimum_practical_effect: 0.02
   reversible: true
   deadline: "2026-08-15"
+  revisit_when: "churn_rate reduction below +1.0pp at the 2026-Q4 review"
 
 metrics:
   - name: churn_rate

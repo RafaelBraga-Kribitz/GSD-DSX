@@ -17,6 +17,7 @@ decision:
   action_if_null: "TBD"          # placeholder — reframes nulls
   # decision_rule missing      -> any result can be rationalised after the fact
   # minimum_practical_effect missing while kind=experiment below → DSX-COH-020
+  revisit_when: "churn_rate above 5% for 8 weeks"  # not this fixture's target defect
   replay:
     metric: churn_rate
     ci_lower_min: 0.05            # CI missing / thresholds fail → DEC-020

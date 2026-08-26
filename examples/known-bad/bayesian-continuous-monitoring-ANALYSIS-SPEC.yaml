@@ -62,6 +62,7 @@ decision:
   minimum_practical_effect: 0.01
   reversible: true
   deadline: "2026-05-10"
+  revisit_when: "conversion_rate posterior P(treatment > control) below 0.95 at the 2026-Q2 review"
 
 metrics:
   - name: conversion_rate
