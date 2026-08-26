@@ -260,10 +260,28 @@ class TestRiskMitigationMap(unittest.TestCase):
 
 
 class TestNeedsCausalBlock(unittest.TestCase):
+    # Plan 11.2-08 (REQ-P11.2-03): the flagship prescriptive-churn-recommendation
+    # fixture is the first known-bad fixture that is deliberately NOT causal — it
+    # encodes a prescriptive CLAIM smuggled under a `descriptive` question with an
+    # `observational` design, so needs_causal_block is legitimately False for it
+    # (that is the whole point of the fixture — keeping the question descriptive is
+    # what makes the prescriptive claim the sole overreach). It is excluded from the
+    # needs_causal_block-True sweep below by slug rather than silently, so a future
+    # causal known-bad fixture that regressed to False still fails loudly.
+    _NON_CAUSAL_KNOWN_BAD = {"prescriptive-churn-recommendation-ANALYSIS-SPEC.yaml"}
+
     def test_needs_causal_block_true_for_known_bad_and_canonical_fixtures(self):
         known_bad = sorted((ROOT / "examples" / "known-bad").glob("*-ANALYSIS-SPEC.yaml"))
         self.assertTrue(known_bad, "no known-bad fixtures found")
         for path in known_bad:
+            if path.name in self._NON_CAUSAL_KNOWN_BAD:
+                with self.subTest(fixture=path.name):
+                    self.assertFalse(
+                        needs_causal_block(load(path)),
+                        f"{path.name} is listed as a deliberately non-causal known-bad "
+                        "fixture but needs_causal_block returned True",
+                    )
+                continue
             with self.subTest(fixture=path.name):
                 spec = load(path)
                 self.assertTrue(

@@ -1239,6 +1239,15 @@ _EXPECTED_VAL_CODES: "dict[str, set[str]]" = {
     # of post-hoc-procedure-switch's own (renamed session -> customer), so no
     # DSX-VAL-* code fires here either.
     "full-frame-cleaning-ANALYSIS-SPEC.yaml": set(),
+    # Measured 2026-08-26 (plan 11.2-08) against the fixture as committed in this
+    # plan: loaded via dsx.loader.load(), ran dsx.frame.val.check(spec), recorded
+    # {f.code for f in report.findings} — the empty set. This fixture's encoded
+    # defect is a prescriptive claim under a descriptive question (DSX-COH-001,
+    # DSX-COH-010, DSX-CLM-011, DSX-CLM-020, Phase 11.2); it declares only the six
+    # always-required validity_frame sub-blocks (no identification/interference/
+    # triggering/stability, which are not required for a descriptive/observational
+    # spec), and every one it declares is clean, so no DSX-VAL-* code fires.
+    "prescriptive-churn-recommendation-ANALYSIS-SPEC.yaml": set(),
 }
 
 
