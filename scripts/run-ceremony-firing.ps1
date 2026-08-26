@@ -9,7 +9,10 @@
   All continuity lives in git-committed files (.planning/LOOP-BRIEF.md,
   LOOP-LEDGER.md, HUMAN-QUEUE.md), never in conversation memory.
 
-  Registered as a Scheduled Task to fire every 4 hours. Safe to run by hand too.
+  Registered as a Scheduled Task polling every 15 minutes -- a retry rhythm, not a
+  work rhythm: the lock file makes an overlapping poll exit in about a second, so
+  work runs effectively back-to-back whenever the machine is free. Safe to run by
+  hand too.
 
 .NOTES
   Overlap guard: a lock file prevents a second firing starting while one is running.
@@ -80,7 +83,36 @@ try {
   Write-Log "Branch OK: $current"
 
   git fetch origin --quiet
-  git merge --ff-only "origin/$Branch" 2>&1 | Out-String | ForEach-Object { if ($_.Trim()) { Write-Log $_.Trim() } }
+
+  # --- Sync guard --------------------------------------------------------------
+  # A plain --ff-only merge throws on ANY divergence and $ErrorActionPreference =
+  # 'Stop' turns that into an immediate script abort -- before Claude ever runs.
+  # Observed for real: another tool (Cursor Agent) committed on a stale local
+  # checkout and force-pushed, discarding this branch's already-pushed commits
+  # from origin. Every 15-minute firing after that died at this exact line for
+  # 15 hours straight (62 consecutive failures) doing zero work, because a true
+  # fast-forward was permanently impossible until a human intervened.
+  #
+  # Try the fast path first; if it's not a fast-forward, attempt a real merge
+  # (safe when the two sides touch disjoint files, which is the common case for
+  # a ledger/HUMAN-QUEUE write colliding with unrelated code/test commits). Only
+  # a genuine content conflict is left for a human -- and it fails LOUD, leaving
+  # the tree in a clean, non-conflicted state, not silently retried forever.
+  $ffOutput = git merge --ff-only "origin/$Branch" 2>&1 | Out-String
+  if ($LASTEXITCODE -ne 0) {
+    Write-Log "Fast-forward not possible, attempting an auto-merge: $($ffOutput.Trim())"
+    $mergeMsg = "merge: reconcile with origin (auto, fast-forward was not possible)`n`nAutomated by run-ceremony-firing.ps1's sync guard."
+    $mergeOutput = git merge "origin/$Branch" -m $mergeMsg 2>&1 | Out-String
+    if ($LASTEXITCODE -ne 0) {
+      git merge --abort 2>&1 | Out-Null
+      Write-Log "ABORT: real merge conflict with origin/$Branch -- a human must resolve this by hand. Merge aborted, tree left clean. Details: $($mergeOutput.Trim())"
+      exit 1
+    }
+    Write-Log "Auto-merge succeeded (disjoint changes): $($mergeOutput.Trim())"
+    git push 2>&1 | Out-String | ForEach-Object { if ($_.Trim()) { Write-Log $_.Trim() } }
+  } else {
+    if ($ffOutput.Trim()) { Write-Log $ffOutput.Trim() }
+  }
 
   # --- The firing prompt -----------------------------------------------------
   # Deliberately short. LOOP-BRIEF.md is the real contract and is re-read every
