@@ -31,6 +31,17 @@ here): CR-01 purpose-gate denylist; WR-01 exempting prescriptive from DSX-CLM-01
 metric/threshold separate from the time anchor (inverted the bare-duration test).
 See 11.2-REVIEW.md "Resolution" for full rationale.
 
+**Phase 11.2 security sign-off (added 2026-08-26, S1-5).** `/gsd-secure-phase 11.2`
+ran State B and reached `status: verified`, `threats_open: 0` (14/14 threats closed —
+`gsd-security-auditor` opus verdict SECURED, orchestrator independently re-gated: 4
+HIGH blockers re-verified by grep + 332 targeted tests OK + full suite 1147 OK). The
+technical gate is closed; per brief §4 category 4 the **human phase security sign-off
+line** on `11.2-SECURITY.md` is owed here before ship (non-blocking for S1-5/downstream).
+Also in this window: the four ACCEPT dispositions AR-11.2-04/-06/-07/-SC (design-time
+D-12 residuals decided in the S1-1 persona round, not fresh redispositions). See
+`11.2-SECURITY.md` "Accepted Risks Log" + "Sign-Off". Answer e.g.
+`HQ-4 security: approved` (or veto any specific item).
+
 ## Will be added by the loop when reached
 
 - End-of-phase UAT rounds for Phases 11.2, 11.3, 12 (batched, with evidence packs).
