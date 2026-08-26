@@ -100,8 +100,44 @@ CAUSAL_VERBS_PURPOSE_GATED = ("reduce", "increase", "decrease")
 # the two-tier split exists to prevent.
 CAUSAL_VERBS = CAUSAL_VERBS_ALWAYS_HIT
 
-# Purpose/recommendation markers that license a purpose-gated bare form.
-_PURPOSE_MARKERS = ("to", "in order to", "so as to", "aimed at", "designed to")
+# Multiword purpose/recommendation markers that license a purpose-gated bare
+# form. Unlike a bare "to" (handled separately below) these never introduce a
+# raising/control complement, so they license the verb unconditionally.
+_PURPOSE_MARKERS_MULTIWORD = ("in order to", "so as to", "aimed at", "designed to")
+
+# Governing heads whose bare-infinitive "to <verb>" complement expresses
+# tendency, aspect, failure or capacity — a raising/control infinitive, NOT a
+# purpose adjunct (CR-01, 11.2 code review, §4 persona round). When one sits
+# immediately before a bare "to <verb>", the purpose gate stays shut, so
+# ordinary descriptive prose no longer fires DSX-CLM-011/DSX-COH-010:
+# "usage tends to increase", "the pilot failed to reduce", "customers were
+# quick to increase" are descriptions, not recommendations. Purpose "to"
+# instead follows a noun object ("incentives to reduce churn"), a goal verb,
+# or opens the clause ("To reduce churn, ...").
+# INVARIANT — never add (a) a goal/intent head (aim, seek, intend, want, wish,
+# plan, hope, propose, mean, strive, aspire) or (b) an achievement head that
+# asserts the effect occurred (manage, prove, ensure, help): those license a
+# genuine causal/purpose reading and denying them would open a false negative.
+# The residual error therefore leans false-negative, the accepted direction at
+# this CRITICAL blocking gate (Statistician vote); an omitted catenative leaks
+# only a rare residual false positive, never a missed genuine recommendation.
+_NON_PURPOSE_TO_PRECEDERS = frozenset({
+    # tendency / aspect / state — a trend or phase, not a recommended effect
+    "tend", "tends", "tended", "seem", "seems", "seemed",
+    "appear", "appears", "appeared", "begin", "begins", "began", "begun",
+    "start", "starts", "started", "continue", "continues", "continued",
+    "cease", "ceases", "ceased", "remain", "remains", "remained",
+    "happen", "happens", "happened", "used", "going", "about",
+    # failure / resistance — the effect was not achieved
+    "fail", "fails", "failed", "decline", "declines", "declined",
+    "refuse", "refuses", "refused", "neglect", "neglects", "neglected",
+    "struggle", "struggles", "struggled", "hesitate", "hesitates", "hesitated",
+    # modal ability / propensity (raising adjectives) — capacity, not actuality
+    "able", "unable", "likely", "unlikely", "apt", "prone", "bound",
+    "ready", "willing", "reluctant", "eager", "keen", "hesitant",
+    "quick", "quicker", "slow", "slower", "fast", "faster",
+    "easy", "hard", "difficult", "impossible", "possible",
+})
 
 # Bounded, single-level quantifier only (mirrors _FALSIFIER_NUMBER_RE,
 # spec.py:466-473, named threat T-7-03): a fixed-width window of at most 30
@@ -113,13 +149,39 @@ _CAUSAL_VERBS_ALWAYS_HIT_RE: dict[str, re.Pattern[str]] = {
     verb: re.compile(rf"\b{re.escape(verb)}\b") for verb in CAUSAL_VERBS_ALWAYS_HIT
 }
 
-_CAUSAL_VERBS_PURPOSE_GATE_RE: dict[str, re.Pattern[str]] = {
+# Multiword marker + bounded window + bare verb — fires unconditionally.
+_CAUSAL_VERBS_MULTIWORD_GATE_RE: dict[str, re.Pattern[str]] = {
     verb: re.compile(
-        rf"\b(?:{'|'.join(re.escape(m) for m in _PURPOSE_MARKERS)})\b"
+        rf"\b(?:{'|'.join(re.escape(m) for m in _PURPOSE_MARKERS_MULTIWORD)})\b"
         rf"{_PURPOSE_GATE_WINDOW}\b{re.escape(verb)}\b"
     )
     for verb in CAUSAL_VERBS_PURPOSE_GATED
 }
+
+# Bare "to" + bounded window + bare verb. Each occurrence is validated against
+# its governing head (see _bare_to_is_purpose) before it counts as a hit.
+_CAUSAL_VERBS_BARE_TO_RE: dict[str, re.Pattern[str]] = {
+    verb: re.compile(rf"\bto\b{_PURPOSE_GATE_WINDOW}\b{re.escape(verb)}\b")
+    for verb in CAUSAL_VERBS_PURPOSE_GATED
+}
+
+
+def _bare_to_is_purpose(prefix: str) -> bool:
+    """True when a bare "to" at the end of ``prefix`` reads as a purpose marker
+    rather than a raising/control complement.
+
+    Clause-initial "to" (no governing head) is a purpose adjunct. Otherwise the
+    governing head must not be a ``_NON_PURPOSE_TO_PRECEDERS`` catenative or
+    raising adjective. A trailing ``-ly`` adverb or a ``not``/``never`` negator
+    is skipped first, so "failed repeatedly to reduce" and "chose not to
+    reduce" resolve to their real head ("failed"/"chose").
+    """
+    words = re.findall(r"[a-z]+", prefix)
+    while words and (words[-1] in {"not", "never"} or words[-1].endswith("ly")):
+        words.pop()
+    if not words:
+        return True
+    return words[-1] not in _NON_PURPOSE_TO_PRECEDERS
 
 
 def causal_verb_matches(lowered: str) -> list[str]:
@@ -139,11 +201,17 @@ def causal_verb_matches(lowered: str) -> list[str]:
         for verb in CAUSAL_VERBS_ALWAYS_HIT
         if _CAUSAL_VERBS_ALWAYS_HIT_RE[verb].search(lowered)
     ]
-    hits.extend(
-        verb
-        for verb in CAUSAL_VERBS_PURPOSE_GATED
-        if _CAUSAL_VERBS_PURPOSE_GATE_RE[verb].search(lowered)
-    )
+    for verb in CAUSAL_VERBS_PURPOSE_GATED:
+        if _CAUSAL_VERBS_MULTIWORD_GATE_RE[verb].search(lowered):
+            hits.append(verb)
+            continue
+        # A bare "to <verb>" fires only when its governing head reads as
+        # purpose, not as a raising/control complement (CR-01).
+        if any(
+            _bare_to_is_purpose(lowered[: m.start()])
+            for m in _CAUSAL_VERBS_BARE_TO_RE[verb].finditer(lowered)
+        ):
+            hits.append(verb)
     return hits
 
 

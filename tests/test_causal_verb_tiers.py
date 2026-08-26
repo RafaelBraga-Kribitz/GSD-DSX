@@ -145,6 +145,54 @@ class TestCausalVerbTiers(unittest.TestCase):
         self.assertNotIn("DSX-CLM-010", codes(report))
         self.assertNotIn("DSX-CLM-011", codes(report))
 
+    # ── CR-01 (11.2 code review, §4 persona round) ────────────────────────
+    # The bare "to" purpose marker used to fire on every infinitive, so
+    # ordinary descriptive prose ("tends to increase", "failed to reduce")
+    # wrongly blocked at DSX-CLM-011 CRITICAL. The purpose gate now stays shut
+    # when "to" follows a raising/control head (_NON_PURPOSE_TO_PRECEDERS),
+    # and still fires when "to" follows a noun object, a goal/achievement verb,
+    # or opens the clause. These pin both directions so the fix cannot regress.
+
+    def test_cr01_tendency_preceder_produces_no_findings(self):
+        """'usage tends to increase after onboarding' (association) is a
+        description, not a recommendation — the raising head 'tends' shuts the
+        purpose gate, so no causal-verb finding fires."""
+        report = claims.check(_claims_spec("usage tends to increase after onboarding", "association"))
+        self.assertNotIn("DSX-CLM-010", codes(report))
+        self.assertNotIn("DSX-CLM-011", codes(report))
+
+    def test_cr01_failure_preceder_produces_no_findings(self):
+        """'the pilot failed to reduce error rate' (descriptive) asserts the
+        effect did NOT happen — 'failed to reduce' must not fire."""
+        report = claims.check(_claims_spec("the pilot failed to reduce error rate", "descriptive"))
+        self.assertNotIn("DSX-CLM-010", codes(report))
+        self.assertNotIn("DSX-CLM-011", codes(report))
+
+    def test_cr01_adjective_preceder_produces_no_findings(self):
+        """'customers were quick to increase spend' (association): the raising
+        adjective 'quick' shuts the gate — it describes propensity, not a
+        recommended effect."""
+        report = claims.check(_claims_spec("customers were quick to increase spend", "association"))
+        self.assertNotIn("DSX-CLM-010", codes(report))
+        self.assertNotIn("DSX-CLM-011", codes(report))
+
+    def test_cr01_clause_initial_to_still_fires(self):
+        """A clause-initial 'to reduce churn' (association) is a purpose
+        adjunct with no governing head, so DSX-CLM-011 still fires CRITICAL."""
+        report = claims.check(_claims_spec("To reduce churn, offer bundled incentives", "association"))
+        clm011 = [f for f in report.findings if f.code == "DSX-CLM-011"]
+        self.assertEqual(len(clm011), 1, f"got codes={codes(report)}")
+        self.assertEqual(clm011[0].severity, Severity.CRITICAL)
+
+    def test_cr01_achievement_preceder_still_fires(self):
+        """'we managed to reduce churn by 10%' (association): 'managed to'
+        asserts the effect occurred, so it is a genuine causal claim and must
+        still fire DSX-CLM-011 — the denylist deliberately excludes achievement
+        heads to avoid a false negative."""
+        report = claims.check(_claims_spec("we managed to reduce churn by 10 percent", "association"))
+        clm011 = [f for f in report.findings if f.code == "DSX-CLM-011"]
+        self.assertEqual(len(clm011), 1, f"got codes={codes(report)}")
+
 
 if __name__ == "__main__":
     unittest.main()
