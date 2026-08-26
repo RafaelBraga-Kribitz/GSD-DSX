@@ -79,6 +79,31 @@ paid-media budgets. The check set is weighted accordingly.
 required from plan (the `plan` gate point, at CRITICAL severity), so existing
 specs without it begin to block — a breaking contract change.
 
+## Queued Milestone: v2.1 Analytic Surface
+
+**Status:** Queued. Not started. Does not reopen Phases 7–12.
+
+**Goal:** Close the operator-surface gaps that Claude Code data-science packs
+cover with playbooks — cohort/funnel/root-cause skills, knowledge compounding,
+CUPED as a declared variance adjustment, a CSV-first start, file-first scripts,
+and off-gate re-run verification — without turning DSX into a prompt pack and
+without computing statistics on the gate path.
+
+**Why after v2.0.0:** Brief §3 ranks risk reduction first. The comparison packs
+do not gate shared-budget interference, triggering dilution, or Bayesian
+continuous monitoring. Folding their playbooks into Phases 7–12 would delay
+that work. Entry condition is Phase 12 closed (`brief.md` §6.5). Skill-only
+drafts may begin after Phase 6; they do not gate v2.0.0.
+
+**Target features:** Phases 13–16 in `.planning/ROADMAP.md`. Requirements
+REQ-P13-* … REQ-P16-* in `.planning/REQUIREMENTS.md` under **Queued**, outside
+the 53/53 v2.0.0 map. Comparison evidence: `.planning/research/SURFACE.md`.
+
+**Anti-features (explicitly not queued):** Docker as a required runtime; MLflow
+or Great Expectations on the gate path; notebooks as the shipped artifact;
+Shapiro–Wilk auto-switch; SEM/HLM/IRT; bundled education datasets; a batch
+path that skips the plan gate.
+
 ## Requirements
 
 ### Validated
@@ -92,6 +117,8 @@ specs without it begin to block — a breaking contract change.
 ### Active
 
 See `.planning/REQUIREMENTS.md` for the v2.0.0 requirement set (REQ-P6-* … REQ-P12-*).
+Queued v2.1 requirements (REQ-P13-* … REQ-P16-*) are recorded there under
+**Queued — Milestone v2.1** and are not Active until Phase 12 closes.
 
 ### Out of Scope
 
@@ -102,6 +129,7 @@ See `.planning/REQUIREMENTS.md` for the v2.0.0 requirement set (REQ-P6-* … REQ
 - Survival, time-series and spatial estimation *methods* — temporal/spatial dependence are declared types; the methods are out
 - Reading a data warehouse from a gate — breaks the determinism doctrine
 - A catalogue of every named statistical test — families, not tests
+- Operator-surface playbooks, CUPED, compounding, reproduce-skill — **queued as v2.1** after Phase 12, not this milestone. Not a rejection. See Queued Milestone above.
 
 ## Context
 
@@ -116,8 +144,13 @@ See `.planning/REQUIREMENTS.md` for the v2.0.0 requirement set (REQ-P6-* … REQ
   - `DSX-EXP-020/021` already reconciles `randomization_unit` vs `analysis_unit`.
   - `PEEKING_POLICIES` in `dsx/spec.py` already covers the stopping-rule concept.
   - `VARIANCE_ADJUSTMENTS` overlaps the proposed `dependence.method_family_required`.
+    On 2026-08-26 the set is `{cluster_robust, delta_method, bootstrap_cluster,
+    mixed_effects}` — CUPED is absent; adding it is queued Phase 15, not a v2.0.0
+    vocabulary change.
   - `dsx explain` and `dsx stats` do not exist yet — new subcommands.
   - No `dsx/frame/` package; `references/families.yaml` absent (correct until M4).
+  - Analytic-surface comparison against five Claude Code packs: `.planning/research/SURFACE.md`
+    (2026-08-26). That file does not authorise finding codes.
 
 ## Constraints
 
@@ -167,6 +200,10 @@ cheap, structured and repeatable, so it actually happens. To be stated in the RE
 
 This document evolves at phase transitions and milestone boundaries.
 
+**Queued work is not a phase transition.** Adding v2.1 Analytic Surface to the
+roadmap (2026-08-26) does not move v2.0.0 requirements, does not close Phase 6,
+and does not authorise implementation of Phases 13–16 until Phase 12 closes.
+
 **After each phase transition** (via `/gsd-transition`):
 1. Requirements invalidated? → Move to Out of Scope with reason
 2. Requirements validated? → Move to Validated with phase reference
@@ -181,4 +218,5 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-08-07 after starting milestone v2.0.0 DSX Validity Frame*
+*Last updated: 2026-08-26 — queued milestone v2.1 Analytic Surface after v2.0.0;
+current milestone remains v2.0.0 DSX Validity Frame*

@@ -1,6 +1,7 @@
 # Requirements
 
 **Current milestone:** v2.0.0 DSX Validity Frame (Phases 6–12) — see below.
+**Queued:** v2.1 Analytic Surface (Phases 13–16) — queued after Phase 12; not in the 53-requirement map.
 **Shipped:** v1.1.0–v1.5.0 (Phases 1–5).
 
 ---
@@ -161,6 +162,7 @@ in either direction — they cannot justify a check and cannot excuse skipping o
 | Reading a data warehouse from a gate | Breaks the determinism doctrine |
 | A catalogue of every named statistical test | Families, not tests |
 | `dsx quiz` fading mode | Entry condition: M5 ships |
+| Operator-surface playbooks, CUPED vocabulary, compounding, reproduce-skill (v2.1) | **Not rejected.** Queued as Phases 13–16 after Phase 12; see the Queued section below. Do not treat this row as an out-of-scope decision. |
 
 ## Open items — resolve at phase discuss, do not decide silently
 
@@ -247,4 +249,96 @@ See `.planning/ROADMAP.md` for each phase's goal, success criteria, dependencies
 ordering constraints.
 
 ---
+
+# Queued — Milestone v2.1 Analytic Surface
+
+**Defined:** 2026-08-26
+**Status:** Queued. Not Pending-in-v2.0.0. Not counted in the 53/53 map above.
+**Entry condition (D-13):** Phase 12 closed. See `brief.md` §6.5.
+**Research:** `.planning/research/SURFACE.md`. Comparison-repo READMEs are not D-05 sources.
+**Does not reopen:** Phases 6–12, D-01…D-14.
+
+Skill-only files (Phases 13–14) may be drafted after Phase 6. They do not gate
+v2.0.0 and they invent no finding codes. Phase 15 is the only v2.1 phase that
+extends the catalogue, and every new code is still subject to D-05.
+
+## Phase 13 (queued) — Task playbooks that fill the spec (skill-only)
+
+- [ ] REQ-P13-01 Skills `dsx-cohort`, `dsx-funnel`, `dsx-root-cause` and `dsx-segment` exist, are registered in `capabilities/dsx/capability.json`, and each fills the relevant `ANALYSIS-SPEC.yaml` fields pointing at existing gates (metric semantics, multiplicity, chart matrix)
+- [ ] REQ-P13-02 `dsx-explore-data` writes a hypothesis register that maps into `assumptions[]` and/or `results.tests`
+- [ ] REQ-P13-03 `dsx-narrate` uses an explicit What / So What / Now What shape in the narrative deliverable
+- [ ] REQ-P13-04 `dsx-scope-analysis` routes lookup → ceremony Tier 0, ad-hoc → Tier 1, full pipeline → Tier 2, matching `docs/gsd-tiers.md`
+- [ ] REQ-P13-05 The executor fragment prefers `scripts/*.py` over a notebook as `reproducibility.entrypoint`
+- [ ] REQ-P13-06 No new `DSX-*` finding codes ship in this phase — asserted by a catalogue diff against the Phase 12 catalogue
+
+## Phase 14 (queued) — Compounding and data onboarding
+
+- [ ] REQ-P14-01 `docs/dsx/learnings/` holds dated YAML-frontmatter files; the plan-pre path searches them before framing
+- [ ] REQ-P14-02 A `DATA-DICTIONARY.md` is produced next to `DATA-PROFILE.yaml`
+- [ ] REQ-P14-03 When `dsx.domain` is `research`, the narrate skill offers an optional AI-assistance disclosure block (GUIDE-LLM as a template, not a third-party dependency); marketing-domain default unchanged
+- [ ] REQ-P14-04 Slash-command aliases exist for the DSX skills so a CSV-first conversation does not require knowing GSD phase names, without a `data_storage/` special folder
+- [ ] REQ-P14-05 Either a file-drop hook runs `dsx profile`, or the operating guide documents that GSD Core exposes no overlay hooks and the skip is the accepted satisfaction
+- [ ] REQ-P14-06 No new blocking finding codes ship in this phase
+
+## Phase 15 (queued) — CUPED and BI declaration checks (new codes, D-05)
+
+- [ ] REQ-P15-01 `VARIANCE_ADJUSTMENTS` gains `cuped`; `dsx vocab` dumps it; the pre-existing four members still round-trip
+- [ ] REQ-P15-02 A spec declaring CUPED with a post-treatment covariate is blocked; pre-experiment covariates pass; docstring cites Deng, Xu, Kohavi and Walker (2013), WSDM, naming the exact formulation, plus a test against a published worked value — the Unified playbook snippet is not the citation
+- [ ] REQ-P15-03 `ANALYSIS-SPEC.yaml` accepts thin fields for cohort grain and funnel steps; the extended good fixture still passes every gate at every threshold (D-08)
+- [ ] REQ-P15-04 Survivorship-bias and changing-denominator defects each block their own bad fixture; every new code carries a D-05 citation; a code without a citation does not ship and remains in `brief.md` §6.5
+- [ ] REQ-P15-05 A research-domain optional APA table template exists; marketing-domain ship still requires narrative + sealed figure + claim evidence
+- [ ] REQ-P15-06 No skill or gate auto-switches a test on Shapiro–Wilk — asserted against `references/test-selection.md`'s order (independence, then variance, then normality)
+- [ ] REQ-P15-07 `scripts/gen-finding-catalogue.py --check` exits 0 on the new codes; both canonical fixtures still satisfy D-08
+
+## Phase 16 (queued) — Re-run verification (off the gate path)
+
+- [ ] REQ-P16-01 Skill `dsx-reproduce` re-runs `reproducibility.entrypoint`, compares declared `results.tests` to a fresh run, and writes `REPRO-REPORT.md`
+- [ ] REQ-P16-02 `dsx gate` at verify/ship checks that `REPRO-REPORT.md` exists (when the skill is in use) and that named numbers overlap `results.tests`; it does not import pandas, scipy, or the entrypoint
+- [ ] REQ-P16-03 Remaining Phase 12 corpus cases carry a `protocol_adherence` field so skipped-skill failures are countable; this extends REQ-P12-02 and does not replace catch rate or false-positive rate
+- [ ] REQ-P16-04 A test asserts no `dsx/checks/` or `dsx/frame/` module executes the analysis entrypoint
+
+## Traceability — queued v2.1 (not in the 53)
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| REQ-P13-01 | Phase 13 | Queued |
+| REQ-P13-02 | Phase 13 | Queued |
+| REQ-P13-03 | Phase 13 | Queued |
+| REQ-P13-04 | Phase 13 | Queued |
+| REQ-P13-05 | Phase 13 | Queued |
+| REQ-P13-06 | Phase 13 | Queued |
+| REQ-P14-01 | Phase 14 | Queued |
+| REQ-P14-02 | Phase 14 | Queued |
+| REQ-P14-03 | Phase 14 | Queued |
+| REQ-P14-04 | Phase 14 | Queued |
+| REQ-P14-05 | Phase 14 | Queued |
+| REQ-P14-06 | Phase 14 | Queued |
+| REQ-P15-01 | Phase 15 | Queued |
+| REQ-P15-02 | Phase 15 | Queued |
+| REQ-P15-03 | Phase 15 | Queued |
+| REQ-P15-04 | Phase 15 | Queued |
+| REQ-P15-05 | Phase 15 | Queued |
+| REQ-P15-06 | Phase 15 | Queued |
+| REQ-P15-07 | Phase 15 | Queued |
+| REQ-P16-01 | Phase 16 | Queued |
+| REQ-P16-02 | Phase 16 | Queued |
+| REQ-P16-03 | Phase 16 | Queued |
+| REQ-P16-04 | Phase 16 | Queued |
+
+### Coverage summary — queued v2.1
+
+| Phase | Milestone | Requirements | Count |
+|-------|-----------|--------------|-------|
+| 13 | Task playbooks that fill the spec | REQ-P13-01 … REQ-P13-06 | 6 |
+| 14 | Compounding and data onboarding | REQ-P14-01 … REQ-P14-06 | 6 |
+| 15 | CUPED and BI declaration checks | REQ-P15-01 … REQ-P15-07 | 7 |
+| 16 | Re-run verification (off the gate path) | REQ-P16-01 … REQ-P16-04 | 4 |
+| **Queued total** | v2.1 Analytic Surface | | **23** |
+
+v2.0.0 remains 53/53. Queued v2.1 is 23 requirements in a separate map. Do not add these 23 into the v2.0.0 total.
+
+See `.planning/ROADMAP.md` (Queued milestone section) for goals, success criteria and dependencies.
+
+---
 *v2.0.0 requirements defined: 2026-08-07*
+*v2.1 Analytic Surface queued: 2026-08-26*
