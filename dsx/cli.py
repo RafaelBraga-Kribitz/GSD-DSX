@@ -17,7 +17,7 @@ import argparse
 import json
 import sys
 from pathlib import Path
-from typing import Callable
+from typing import Any, Callable
 
 from . import __version__
 from .checks import (
@@ -581,6 +581,7 @@ def cmd_explain(args: argparse.Namespace) -> int:
     contract a structural property of ``cmd_explain`` rather than an
     enumeration of the failure modes someone happened to test.
     """
+    path: "Path | None" = None
     try:
         path = find_spec(args.spec, args.phase_dir)
         root = args.phase_dir or str(path.parent)
@@ -590,6 +591,19 @@ def cmd_explain(args: argparse.Namespace) -> int:
     try:
         records = read_all(decisions_path(root))
         not_found_message = None
+
+        # The self-reported (taken-on-trust) section (D-13) is fed from this
+        # same spec load, guarded exactly like `root` above: a spec that
+        # cannot be found or parsed yields `spec_data = None`, and
+        # `_render_decision_trail` renders no self-reported section rather
+        # than raising — the returns-0-by-construction contract is
+        # unaffected by whether the spec is readable.
+        spec_data: "dict | None" = None
+        if path is not None:
+            try:
+                spec_data = load(path)
+            except Exception:
+                spec_data = None
 
         if args.invocation:
             selected = [r for r in records if r.get("invocation_id") == args.invocation]
@@ -611,7 +625,7 @@ def cmd_explain(args: argparse.Namespace) -> int:
         elif not_found_message:
             print(not_found_message)
         else:
-            print(_render_decision_trail(selected))
+            print(_render_decision_trail(selected, spec_data))
     except Exception as exc:
         print("dsx: no readable decision trail was found", file=sys.stdout)
         if args.verbose:
@@ -619,11 +633,53 @@ def cmd_explain(args: argparse.Namespace) -> int:
     return 0
 
 
-def _render_decision_trail(records: "list[dict]") -> str:
+def _self_reported_fields(spec: "dict") -> "list[tuple[str, Any]]":
+    """The compared-but-never-computed field set (D-13, T-11.2-11): every
+    declared spec value the gate compares against but never itself computes
+    -- ``validity_frame.*`` and ``inference.*`` in full (including
+    ``inference.declared_at``), plus ``analysis.test`` alone. The rest of the
+    ``analysis:`` block (``outcome_type``, ``n_per_group``, etc.) is derived
+    from the data by the analyst's own tooling, not a declared trust input,
+    so it is deliberately excluded.
+
+    ``frame_digest`` is COMPUTED (lives on the invocation header, not the
+    spec) and is never a candidate here by construction -- there is no path
+    by which this function could emit it."""
+    fields: "list[tuple[str, Any]]" = []
+
+    def _flatten(prefix: str, value: Any) -> None:
+        if isinstance(value, dict):
+            for key, sub in value.items():
+                _flatten(f"{prefix}.{key}", sub)
+        elif isinstance(value, list):
+            fields.append((prefix, ", ".join(str(v) for v in value) if value else "[]"))
+        else:
+            fields.append((prefix, value))
+
+    for top in ("validity_frame", "inference"):
+        block = spec.get(top)
+        if isinstance(block, dict):
+            _flatten(top, block)
+
+    analysis = spec.get("analysis")
+    if isinstance(analysis, dict) and "test" in analysis:
+        fields.append(("analysis.test", analysis["test"]))
+
+    return fields
+
+
+def _render_decision_trail(records: "list[dict]", spec: "dict | None" = None) -> str:
     """Human-readable text: the invocation header line, then one block per
-    decision record. ``counterfactual`` is rendered prominently, not as a
-    footnote — 'what would have to be different for me to choose otherwise'
-    is the rule the record teaches, not just the instance it recorded."""
+    decision record, then (D-13) a separately-labelled self-reported section
+    listing every declared value the gate compared but never computed.
+    ``counterfactual`` is rendered prominently, not as a footnote — 'what
+    would have to be different for me to choose otherwise' is the rule the
+    record teaches, not just the instance it recorded.
+
+    ``frame_digest`` stays only in the computed header line above — it is
+    never passed into ``_self_reported_fields`` and never appears in the
+    self-reported block. Labelling a computed value "taken on trust" would be
+    the exact honesty inversion this project exists to prevent (T-11.2-11)."""
     if not records:
         return "no decision trail was found."
 
@@ -647,6 +703,14 @@ def _render_decision_trail(records: "list[dict]") -> str:
             lines.append(f"  citation:       {record['citation']}")
         if record.get("counterfactual"):
             lines.append(f"  counterfactual: {record['counterfactual']}")
+
+    if spec:
+        trust_fields = _self_reported_fields(spec)
+        if trust_fields:
+            lines.append("")
+            lines.append("self-reported (taken on trust, not verified by dsx):")
+            for field_path, value in trust_fields:
+                lines.append(f"  {field_path}: {value}")
 
     return "\n".join(lines) if lines else "no decision trail was found."
 
