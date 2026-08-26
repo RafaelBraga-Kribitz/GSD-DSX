@@ -1,8 +1,9 @@
 # Roadmap
 
 **Current milestone:** v2.0.0 DSX Validity Frame — Phases 6–12
+**Queued:** v2.1 Analytic Surface — Phases 13–16 (opens when Phase 12 closes; see below)
 **Shipped:** v1.1.0–v1.5.0 — Phases 1–5
-**Granularity:** standard (phase structure fixed by `brief.md` §6; the seven milestones map 1:1 onto phases)
+**Granularity:** standard (v2.0.0 phase structure fixed by `brief.md` §6; the seven v2.0.0 milestones map 1:1 onto Phases 6–12. Phases 13–16 are a follow-on milestone, not a rewrite of those seven.)
 
 ## Phases
 
@@ -18,6 +19,13 @@
 - [ ] **Phase 10: Pre-registered inference plan (`DSX-PRE-*`)** - fallback-rule DSL, `declared_at` provenance, declared-vs-executed branch reconciliation (M3)
 - [ ] **Phase 11: Frequentist admissibility adjudicator (`DSX-ADM-*`)** - `references/families.yaml`, ranked admissible set, `no_admissible_procedure` escalation (M4)
 - [ ] **Phase 12: Calibration** - full known-bad corpus, measured catch rate and FPR, `dsx stats --paradigm`, backlog re-evaluation (M5)
+
+Queued after v2.0.0 (do not start as v2.0.0 work; entry condition is Phase 12 closed):
+
+- [ ] **Phase 13: Task playbooks that fill the spec** - cohort / funnel / root-cause / segment skills, hypothesis register, What/So What/Now What, engagement-mode routing, scripts-over-notebooks (skill-only; no new `DSX-*` codes)
+- [ ] **Phase 14: Compounding and data onboarding** - `docs/dsx/learnings/`, `DATA-DICTIONARY.md`, optional AI-assistance disclosure, slash aliases, file-drop hook or documented skip (skill-only; no new blocking codes)
+- [ ] **Phase 15: CUPED and BI declaration checks** - `cuped` in `VARIANCE_ADJUSTMENTS`, pre-experiment covariate gate, cohort-grain / funnel-step fields, optional research-domain APA template (new codes; D-05)
+- [ ] **Phase 16: Re-run verification (off the gate path)** - `dsx-reproduce` → `REPRO-REPORT.md`; gate checks presence and number overlap; `protocol_adherence` corpus tags
 
 ---
 
@@ -460,6 +468,123 @@ cases where absence permitted a false pass" is a debate, not a count.
 
 ---
 
+## Queued milestone — v2.1 Analytic Surface (Phases 13–16)
+
+**Status:** Queued. Not started. Not part of the v2.0.0 53-requirement map.
+**Entry condition (D-13):** Phase 12 closed. Recorded in `brief.md` §6.5.
+**Research:** `.planning/research/SURFACE.md` (2026-08-26). Comparison-repo READMEs are not D-05 sources.
+**Does not reopen:** Phases 7–12, D-01…D-14, the v2.0.0 finding-code families.
+
+Skill-only files that invent no new finding codes (Phases 13–14) may be *drafted* after Phase 6 in parallel. They do not gate v2.0.0. Vocabulary members and new `DSX-*` codes (Phase 15) wait for Phase 12.
+
+Every Phase 15 check that ships is still subject to **D-05**: a primary-source citation naming the exact formulation, and a test against a published reference value (or a named structural criterion). If velocity pressure arrives, cut checks, never this.
+
+### Phase 13: Task playbooks that fill the spec (skill-only)
+
+**Goal**: Steal the Unified Framework's *what to do* for marketing work — cohort, funnel, root-cause, segmentation — as skills that fill `ANALYSIS-SPEC.yaml`, not as notebooks. EDA produces a hypothesis register. Narrative uses What / So What / Now What. Scope-analysis routes three engagement modes onto the ceremony tiers already in `docs/gsd-tiers.md`. The executor prefers `scripts/*.py` over a notebook as the entrypoint.
+
+**Depends on**: Phase 12 to *open* the milestone. Drafting may begin after Phase 6.
+**Blocks**: nothing in v2.0.0. Soft-blocks Phase 15's cohort/funnel spec fields — those fields should have a skill that fills them.
+
+**Requirements**: REQ-P13-01, REQ-P13-02, REQ-P13-03, REQ-P13-04, REQ-P13-05, REQ-P13-06
+
+**Ordering constraints**: REQ-P13-06 (no new finding codes) is the scope bound for the whole phase. A skill that "needs" a new code is a Phase 15 item, not a Phase 13 exception.
+
+**Success Criteria** (what must be TRUE):
+
+  1. Skills `dsx-cohort`, `dsx-funnel`, `dsx-root-cause` and `dsx-segment` exist, are registered in `capabilities/dsx/capability.json`, and each writes the relevant `ANALYSIS-SPEC.yaml` fields, pointing at existing gates (metric semantics, multiplicity, chart matrix) rather than inventing parallel advice.
+
+  2. `dsx-explore-data` writes a hypothesis register that maps into `assumptions[]` and/or `results.tests`.
+
+  3. `dsx-narrate` requires an explicit What / So What / Now What shape in the narrative deliverable.
+
+  4. `dsx-scope-analysis` routes lookup → ceremony Tier 0, ad-hoc → Tier 1, full pipeline → Tier 2, matching `docs/gsd-tiers.md`.
+
+  5. The executor fragment prefers `scripts/*.py` over a notebook as `reproducibility.entrypoint`.
+
+  6. The finding catalogue after this phase contains no new `DSX-*` prefixes and no new codes relative to the Phase 12 catalogue — asserted by a catalogue diff, not by review.
+
+**Plans**: TBD (not opened until Phase 12 closes)
+
+### Phase 14: Compounding and data onboarding
+
+**Goal**: Steal the Data Science Plugin's compounding loop and DAAF's data-onboarding skill. Later sessions search dated learnings before framing. A portable `DATA-DICTIONARY.md` sits next to `DATA-PROFILE.yaml`. Research-domain narratives may disclose AI assistance. A CSV-first conversation can start without knowing GSD phase names.
+
+**Depends on**: Phase 12 to open. Soft-depends on Phase 13 for slash aliases covering the new task skills as well as the original eight.
+**Blocks**: nothing in v2.0.0.
+
+**Requirements**: REQ-P14-01, REQ-P14-02, REQ-P14-03, REQ-P14-04, REQ-P14-05, REQ-P14-06
+
+**Ordering constraints**: REQ-P14-05 is conditional — if GSD Core exposes no overlay hooks, the requirement is satisfied by a documented skip in the operating guide, not by inventing a hook channel.
+
+**Success Criteria** (what must be TRUE):
+
+  1. `docs/dsx/learnings/` holds dated YAML-frontmatter files. The plan-pre path searches them before framing, the same loop as the plugin's `/ds:plan`.
+
+  2. A `DATA-DICTIONARY.md` is produced next to `DATA-PROFILE.yaml` so later sessions do not re-guess grain and join keys.
+
+  3. When `dsx.domain` is `research`, the narrate skill offers an optional AI-assistance disclosure block (GUIDE-LLM as a template, not a third-party dependency). Marketing-domain default remains unchanged.
+
+  4. Slash-command aliases exist for the DSX skills so a CSV-first conversation has a start as simple as Claude Data Analysis, without a `data_storage/` special folder.
+
+  5. Either a file-drop hook runs `dsx profile`, or the operating guide documents that GSD Core exposes no overlay hooks and the skip is the accepted satisfaction of REQ-P14-05.
+
+  6. No new blocking finding codes ship in this phase.
+
+**Plans**: TBD (not opened until Phase 12 closes)
+
+### Phase 15: CUPED and BI declaration checks (new codes, D-05)
+
+**Goal**: The only v2.1 phase that extends the gate catalogue. CUPED becomes a closed-vocabulary member with a pre-experiment covariate check. Thin spec fields for cohort grain and funnel steps catch survivorship and changing denominators as findings. Research-domain work may use an APA table template; marketing-domain stays with narrative + sealed figure + claim evidence. Shapiro–Wilk auto-switch is forbidden.
+
+**Depends on**: Phase 12 (hard — D-13). Soft-depends on Phase 13 so the new fields have a skill that fills them. Does **not** wait on Phase 11's `families.yaml` — `cuped` is added to the existing `VARIANCE_ADJUSTMENTS` set in `dsx/spec.py`, not as a parallel vocabulary (same reasoning as M-09).
+**Blocks**: nothing in v2.0.0.
+
+**Requirements**: REQ-P15-01, REQ-P15-02, REQ-P15-03, REQ-P15-04, REQ-P15-05, REQ-P15-06, REQ-P15-07
+
+**Ordering constraints**: REQ-P15-01 before REQ-P15-02 (`cuped` must be a legal vocabulary member before a check can require it). REQ-P15-06 (no Shapiro–Wilk auto-switch) is a negative assertion tested against skills and gate code. A cohort or funnel finding whose D-05 citation is not in hand at implement time is left in `brief.md` §6.5 rather than invented.
+
+**Success Criteria** (what must be TRUE):
+
+  1. `VARIANCE_ADJUSTMENTS` includes `cuped` and `dsx vocab` dumps it. The pre-existing four members (`cluster_robust`, `delta_method`, `bootstrap_cluster`, `mixed_effects`) still round-trip. D-08 fixtures are extended, not replaced.
+
+  2. A spec declaring CUPED with a post-treatment covariate exits `1` at `dsx gate plan`. A spec declaring pre-experiment covariates passes that check. The finding docstring cites Deng, Xu, Kohavi and Walker (2013), WSDM, naming the exact formulation, plus a test against a published worked value. The Unified playbook snippet is not the citation.
+
+  3. `ANALYSIS-SPEC.yaml` accepts thin fields for cohort grain and funnel steps, and the extended good fixture still passes every gate at every threshold.
+
+  4. Survivorship-bias and changing-denominator defects each block their own bad fixture, every new code carrying a D-05 citation. A code without a citation does not ship.
+
+  5. A research-domain optional APA table template exists. Marketing-domain ship still requires narrative + sealed figure + claim evidence. No skill or gate auto-switches a test on Shapiro–Wilk — asserted by test against `references/test-selection.md`'s order (independence, then variance, then normality).
+
+  6. `scripts/gen-finding-catalogue.py --check` exits 0 on the new codes, and both canonical fixtures still satisfy D-08.
+
+**Plans**: TBD (not opened until Phase 12 closes)
+
+### Phase 16: Re-run verification (off the gate path)
+
+**Goal**: Steal DAAF's "reproduced" verdict without putting pandas on the gate. A skill re-runs `reproducibility.entrypoint` and writes `REPRO-REPORT.md`. The gate checks that the report exists and that named numbers overlap. Phase 12 corpus tags gain `protocol_adherence` so "the agent skipped the skill" is countable. Catch rate and false-positive rate remain the calibration numbers.
+
+**Depends on**: Phase 12 (hard — extends calibration tags; the reproduce skill itself does not need the harness, but the tag schema must not fork).
+**Blocks**: nothing in v2.0.0.
+
+**Requirements**: REQ-P16-01, REQ-P16-02, REQ-P16-03, REQ-P16-04
+
+**Ordering constraints**: REQ-P16-02 must not execute analysis code on the gate path (D-01/D-02). If a future contributor "simplifies" by calling the entrypoint from `dsx gate`, the phase is failed, not done.
+
+**Success Criteria** (what must be TRUE):
+
+  1. Skill `dsx-reproduce` re-runs `reproducibility.entrypoint`, compares declared `results.tests` to a fresh run, and writes `REPRO-REPORT.md`.
+
+  2. `dsx gate` at verify/ship checks that `REPRO-REPORT.md` exists (when the skill is in use) and that named numbers overlap `results.tests`. It does not import pandas, scipy, or the entrypoint. A missing interpreter on a reproduce *skill* run is not a gate exit `1`.
+
+  3. Phase 12 corpus cases that remain after v2.0.0 carry a `protocol_adherence` field so skipped-skill failures are countable. This extends REQ-P12-02; it does not replace catch rate or false-positive rate.
+
+  4. A test asserts no `dsx/checks/` or `dsx/frame/` module executes the analysis entrypoint.
+
+**Plans**: TBD (not opened until Phase 12 closes)
+
+---
+
 ## Progress
 
 | Phase | Plans Complete | Status | Completed |
@@ -477,6 +602,15 @@ cases where absence permitted a false pass" is a debate, not a count.
 | 11. Frequentist admissibility adjudicator (`DSX-ADM-*`) | 0/TBD | Not started | - |
 | 12. Calibration | 0/TBD | Not started | - |
 
+Queued (v2.1 Analytic Surface — not v2.0.0 work):
+
+| Phase | Plans Complete | Status | Completed |
+|-------|----------------|--------|-----------|
+| 13. Task playbooks that fill the spec | 0/TBD | Queued | opens after Phase 12 |
+| 14. Compounding and data onboarding | 0/TBD | Queued | opens after Phase 12 |
+| 15. CUPED and BI declaration checks | 0/TBD | Queued | opens after Phase 12 |
+| 16. Re-run verification (off the gate path) | 0/TBD | Queued | opens after Phase 12 |
+
 ## Dependency graph — v2.0.0
 
 ```
@@ -487,17 +621,30 @@ Phase 6 (M1) ──┬──> Phase 7 (M2a) ──┬──> Phase 10 (M3, soft)
                └──> Phase 9 (M2c) ─────────────────────────────┘
 ```
 
-- Phase 6 is the only true single point every other phase depends on.
+- Phase 6 is the only true single point every other v2.0.0 phase depends on.
 - Phases 7, 8 and 9 are mutually independent and could be parallelised; they are listed in
   the brief's order, which is catastrophe-prevention value per unit of work.
 
 - Phase 10 is soft-sequenced after Phase 7 (fallback-rule DSL semantics).
 - Phase 11 hard-depends on Phase 7 (dependence taxonomy).
-- Phase 12 is terminal by construction.
+- Phase 12 is terminal **for v2.0.0** by construction.
+
+Queued v2.1 hangs off Phase 12 and does not feed back into it:
+
+```
+Phase 12 (M5) ──> Phase 13 ──> Phase 14
+                      │
+                      └──> Phase 15 (soft: fields those skills fill)
+Phase 12 (M5) ──> Phase 16 (extends corpus tags; does not replace calibration numbers)
+```
+
+Skill-only drafts for Phases 13–14 may begin after Phase 6; they still do not gate v2.0.0.
 
 ## Coverage
 
 All 53 v2.0.0 requirements map to exactly one phase. No orphans, no duplicates.
+Queued v2.1 requirements (REQ-P13-* … REQ-P16-*) are **not** in this 53. They live in
+`.planning/REQUIREMENTS.md` under **Queued — Milestone v2.1** so this table stays true.
 
 | Phase | Requirements | Count |
 |-------|--------------|-------|

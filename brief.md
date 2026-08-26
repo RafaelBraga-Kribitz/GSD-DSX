@@ -373,11 +373,29 @@ estimate about future workload, including the operator's own.
 | Convergence declarations (`DSX-PAR-030`) | Frequentist estimation convergence: mixed-model non-convergence, separation in logistic models. **Not written.** | Same, at least two cases |
 | Bayesian procedure admissibility (`DSX-ADM-*`, second axis) | The frequentist ontology (M4) | M4 ships, **and** `dsx stats --paradigm` shows Bayesian frames above 15% of the operator's history |
 | `dsx quiz` fading mode | n/a, not a check | M5 ships. Weekly, on a sample of past decisions, never inline. |
+| **v2.1 Analytic Surface** (Phases 13–16 as a milestone) | n/a, not a paradigm-specific check | **Phase 12 (M5) closed.** Does not reopen Phases 7–12. Comparison recorded in `.planning/research/SURFACE.md` (2026-08-26); README claims from those repos are not D-05 sources. |
+| Task playbooks: `dsx-cohort`, `dsx-funnel`, `dsx-root-cause`, `dsx-segment`; EDA hypothesis register; What / So What / Now What narrative; engagement-mode routing onto ceremony tiers; executor preference for `scripts/*.py` | n/a, skill-only — **no new `DSX-*` codes** | Phase 12 closed. Skill-only files may be *drafted* after Phase 6 in parallel; they do not gate v2.0.0 and they do not add finding codes. |
+| Compounding (`docs/dsx/learnings/`), portable `DATA-DICTIONARY.md`, optional AI-assistance disclosure when `dsx.domain` is `research`, slash-command aliases, file-drop hook → `dsx profile` (or a documented skip if GSD Core exposes no overlay hooks) | n/a, skill-only — **no new blocking codes** | Phase 12 closed. Same draft-after-Phase-6 rule as the row above. |
+| CUPED as a `VARIANCE_ADJUSTMENTS` member plus a check that CUPED covariates are declared pre-experiment (post-treatment covariate blocks) | n/a — variance reduction is paradigm-independent (D-11) | Phase 12 closed, **and** Deng, Xu, Kohavi and Walker (2013), *Improving the Sensitivity of Online Controlled Experiments by Utilizing Pre-Experiment Data*, WSDM '13, is cited in the check docstring naming the exact formulation, with a test against a published worked value. The Unified Framework playbook snippet is not an admissible citation. |
+| Cohort-grain and funnel-step fields on `ANALYSIS-SPEC.yaml`, with survivorship-bias and changing-denominator findings | n/a | Phase 12 closed, **and** each new code carries its own D-05 citation at implement time. A code whose citation is not in hand stays in this table rather than shipping on a plausible-sounding rule. |
+| `dsx-reproduce` skill writing `REPRO-REPORT.md`; gate checks the report exists and named numbers overlap; Phase 12 corpus tags gain `protocol_adherence` | n/a | Phase 12 closed. The skill may execute the entrypoint; the **gate path must not** (D-01/D-02). Does not replace catch rate / false-positive rate. |
 
 Note what D-12a does here: prior sensitivity is deferred **not** because Bayesian work is
 speculative, but because its frequentist mirror does not exist yet, so shipping it alone would
 violate D-12. That is a structural reason, not a forecast. It also means the cheapest route to
 promoting these items is writing the missing counterparts, which is honest work either way.
+
+The v2.1 rows are operator-surface work, not a silent rewrite of M2–M5. Brief §3 still
+ranks risk reduction first. Opening v2.1 before Phase 12 has a measured catch rate would
+trade the interference and paradigm-symmetry checks — which none of the comparison packs
+gate — for playbooks those packs already ship as markdown. Skill-only drafts after Phase 6
+are allowed; finding codes and vocabulary members are not.
+
+**Explicitly not entering this backlog** (anti-features from the 2026-08-26 comparison;
+see SURFACE.md §4): Docker as a required runtime; MLflow or Great Expectations on the
+gate path; Jupyter notebooks as the shipped artifact; auto-running Shapiro–Wilk and
+silently switching the test; SEM / HLM / IRT or any second catalogue of named tests;
+bundled education datasets; a `/batch-analysis` path that skips the plan gate.
 
 ### Reversal record REV-001 (D-14)
 
@@ -446,7 +464,11 @@ R-hat" (convergence diagnostics and thresholds). Gelman et al. (2020), "Bayesian
 Simpson and Betancourt (2017), "The Prior Can Often Only Be Understood in the Context of the
 Likelihood" (why prior strength is meaningless without identification, the source for
 `DSX-VAL-040/041`). Deng, Lu and Chen (2016), "Continuous Monitoring of A/B Tests without
-Pain" (error rates under optional stopping, the source for `DSX-PAR-011`).
+Pain" (error rates under optional stopping, the source for `DSX-PAR-011`). Deng, Xu,
+Kohavi and Walker (2013), "Improving the Sensitivity of Online Controlled Experiments by
+Utilizing Pre-Experiment Data," *WSDM '13* (CUPED; D-05 candidate for the queued v2.1
+variance-adjustment member — confirm the exact formulation and a published worked value
+from the paper before the check ships; comparison-repo playbooks are not a source).
 
 ---
 
