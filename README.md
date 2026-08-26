@@ -455,6 +455,56 @@ vocabulary respected, every cross-field check satisfied — and still false,
 because nothing in the frame's shape can verify that "difference in 7-day
 activation rate" was the right question to ask in the first place.
 
+### The verbless recommendation is not caught
+
+The coherence and claim checks catch a recommendation two ways: by its
+**type** (a claim typed `prescriptive` under a `descriptive` question breaches
+the type ceiling, `DSX-COH-001`) and by its **verb** (a causal verb such as
+`reduce` in a claim or a decision rule under a descriptive question,
+`DSX-CLM-011` / `DSX-COH-010`, via the purpose-gated causal-verb lexicon). A
+recommendation that evades **both** is not caught. Type an intervention as
+`descriptive` rather than `prescriptive`, and phrase it with no causal verb —
+"offer bundled incentives", "prioritise segment Y", "the optimal action is X" —
+and the type ceiling sees a descriptive claim under a descriptive question, the
+identification check (`DSX-CLM-020`, which fires only on a claim typed
+`prescriptive` or `causal`) sees nothing to hold to an identification standard,
+and the causal-verb widening finds no verb to match. The recommendation ships
+unflagged.
+
+This is a **named, deferred limit**, not something the current checks catch.
+Nothing here recognises an imperative by its *mood* — the grammatical fact that
+"offer bundled incentives" is a command. Closing it would take an imperative
+lexicon (a check that reads the recommendation's mood rather than its declared
+type or its verbs), which is a future phase. Until then, the honest statement is
+that a recommendation mis-typed as descriptive and phrased without a causal verb
+is a hole the gate does not close.
+
+### What the amendment counter does not enforce
+
+`dsx explain` surfaces how many times a specification's `validity_frame:` or
+`inference:` blocks changed across recorded gate runs — an amendment counter
+drawn from the decision trail. Four things about it are limits, stated as what
+is **not** checked rather than as anything the gate enforces:
+
+- **It is not tamper-proof.** `DECISIONS.jsonl` is a plain, unsigned, local text
+  file read tolerantly (a malformed line is skipped, not fatal). The counter is
+  a committed-trail honesty signal — it records what the trail happens to hold —
+  not a control that would survive someone editing or truncating the file. It
+  detects drift; it does not prevent it.
+- **It is blind outside two blocks.** The digest it counts changes to covers
+  only `validity_frame:` and `inference:`. An amendment to any other part of the
+  specification — the decision rule, the metrics, the claims — moves nothing in
+  the counter and is invisible to it.
+- **The identity-free floor re-opens a cross-spec false positive.** Recorded
+  invocation headers carry no specification identity, so a decision trail shared
+  by more than one specification under a single root mixes their headers. On a
+  shared root the counter cannot tell one specification's amendments from
+  another's, and an unrelated specification's edits can read as this one's.
+- **The reason is checked for form, not truth.** Where an amendment reason is
+  required, the gate checks that a non-blank reason is present, not that it is
+  accurate. A plausible-looking reason that misdescribes why the frame changed
+  clears the same bar as an honest one.
+
 ### Concurrent `dsx gate` invocations are not supported
 
 Run `dsx gate` points against one analysis directory sequentially, not in
