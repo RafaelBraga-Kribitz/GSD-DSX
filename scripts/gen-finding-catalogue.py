@@ -122,12 +122,21 @@ _D05_ALLOWLIST_PREFIXES = ("DSX-PAR-", "DSX-VAL-", "DSX-INT-", "DSX-PRE-", "DSX-
 # Unlike the DSX-ML-* entries above, all three live in a brand-new function,
 # `_check_selection_ledger`, that this plan wrote from scratch — there is no
 # legacy sibling code sharing the function to carry forward uncited.
+#
+# Phase 11.2 (REQ-P11.2-04) adds DSX-COH-040 here: `DSX-COH-*` is a
+# pre-existing family (v1.0.0) with no `_D05_ALLOWLIST_PREFIXES` entry and
+# five legacy codes (001, 010, 020, 030, 031) carrying no `Citation:`/
+# `Structural criterion:` docstring line and no `# D-05:` test marker.
+# DSX-COH-040 lives in a brand-new function, `_check_revisit_completeness`,
+# that this plan wrote from scratch — naming it individually here obligates
+# only the new code, not the family's four legacy siblings.
 _D05_ALLOWLIST_CODES = frozenset(
     {
         "DSX-SPEC-080", "DSX-SPEC-081", "DSX-SPEC-082", "DSX-SPEC-085", "DSX-SPEC-086",
         "DSX-CODE-020", "DSX-CODE-021", "DSX-CODE-030", "DSX-CODE-031",
         "DSX-ML-023", "DSX-ML-024", "DSX-ML-043", "DSX-ML-052", "DSX-ML-053",
         "DSX-ML-090", "DSX-ML-091", "DSX-ML-092",
+        "DSX-COH-040",
     }
 )
 
