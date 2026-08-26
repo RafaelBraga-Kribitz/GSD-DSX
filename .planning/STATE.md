@@ -5,10 +5,10 @@ milestone_name: DSX Validity Frame
 current_phase: 11.2
 current_phase_name: prescriptive-claim-layer
 status: executing
-stopped_at: Phase 11.2 Wave 4 COMPLETE — all 8 plans executed (04 doc-hygiene + 08 corpus-green closing gate); suite 1139 OK, check.sh all checks passed, catalogue current. S1-3 (execute all plans) DONE; next = S1-4 (code review + verify).
-last_updated: "2026-08-26T21:49:00.000Z"
+stopped_at: S1-4 COMPLETE — code review (opus/deep) + 3 fixes via §4 persona round (CR-01/WR-01/WR-02) + phase verification TECHNICALLY PASSED (11.2-VERIFICATION.md: 5/5 SC, 7/7 REQ, 0 gaps, 0 behavior_unverified; status human_needed only for the 4 D-05 reads → HQ-4). Suite 1147 OK, check.sh all checks passed. Next = S1-5 (secure-phase 11.2 + validate-phase 11.2).
+last_updated: "2026-08-26T22:49:00.000Z"
 last_activity: 2026-08-26
-last_activity_desc: Phase 11.2 Wave 4 executed (plans 04, 08) + independently gated — S1-3 complete (all 8 plans)
+last_activity_desc: S1-4 done — 11.2 code review + CR-01/WR-01/WR-02 fixes + verification technically passed (D-05 reads → HQ-4)
 progress:
   total_phases: 10
   completed_phases: 8
@@ -114,10 +114,10 @@ parity and visible-fallback criteria added).
 
 ## Current Position
 
-Phase: 11.2 (prescriptive-claim-layer) — EXECUTING (all plans executed; not yet verified)
+Phase: 11.2 (prescriptive-claim-layer) — EXECUTING (all plans executed; reviewed + technically verified; secure/validate remain)
 Plan: 8 of 8
-Status: Phase 11.2 S1-3 COMPLETE — all 8 plans executed (Waves 1-4: 01, 02, 03, 05, 06, 07, then 04 + 08). Next = S1-4 code review + verify.
-Last activity: 2026-08-26 — Phase 11.2 Wave 4 executed (plans 04, 08), suite 1139 OK, check.sh all checks passed
+Status: Phase 11.2 S1-4 COMPLETE — code review + CR-01/WR-01/WR-02 fixes + verification technically passed (5/5 SC, 0 gaps; D-05 reads → HQ-4). Next = S1-5 secure-phase + validate-phase.
+Last activity: 2026-08-26 — S1-4 code review + fixes + verify, suite 1147 OK, check.sh all checks passed
 
 ## Project Reference
 

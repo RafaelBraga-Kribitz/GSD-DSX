@@ -7,7 +7,29 @@ and checks the item off here.
 
 ## Open
 
-(none currently — HQ-1, HQ-2 and HQ-3 are all answered; see below)
+### HQ-4 — Phase 11.2 formal D-05 UAT round: four primary-source citation reads (added 2026-08-26, S1-4)
+
+Phase 11.2's technical verification **passed** (11.2-VERIFICATION.md: 5/5 ROADMAP
+success criteria, 7/7 requirements, 0 gaps, 0 behavior_unverified). Status is
+`human_needed` **solely** because of the D-05 primary-source reads below — the
+citation *selections* were already approved in HQ-3 (answered), but the verbatim
+quote-at-locator read (the project's D-05 bar) is a human check owed before 11.2
+*ships*. **Non-blocking for S1-5** (secure-phase + validate-phase run on the
+technically-verified phase); it blocks only the phase's formal UAT/ship sign-off,
+drained at S4-2. Evidence packs will be assembled the way HQ-1's were.
+
+| # | Read | Anchors requirement | Expected |
+|---|------|--------------------|----------|
+| 1 | Hernán, M.A. (2018) "The C-Word," *AJPH* 108(5):616-619 — exact quotable sentence + page for the causal-verb / prescriptive-language structural criterion. | REQ-P11.2-03 / -02 | Locator matches; D-16 unverified-locator flag cleared. |
+| 2 | Simmons, Nelson & Simonsohn (2011) p.1361/1365; Gelman & Loken (2014); Wagenmakers et al. (2012) support the DSX-PRE-040/041 **firing** half; Nosek et al. (2018) supports the **clearing** half ONLY (must not anchor the firing half — 10-CONTEXT D-14). | REQ-P11.2-05 | Firing/clearing anchors each confirmed; flags cleared. |
+| 3 | The structural-criterion citation for DSX-COH-040 (revisit_when completeness) and the prescriptive-severity companion for REQ-P11.2-02 (Manski, per HQ-3). | REQ-P11.2-04 / -02 | Both confirmed or replaced; flags cleared. |
+| 4 | Veto window: the D-06 codes minted this phase (DSX-COH-040 CRITICAL, DSX-PRE-040 HIGH, DSX-PRE-041 HIGH) and the REQ-P11.2-02 severity amendment (flat HIGH → CRITICAL-none/HIGH-weak). | D-06 / D-03 | No veto raised; the irreversible decisions stand. |
+
+Also for the veto window (loud §4 persona decisions from S1-4 code review, vetoable
+here): CR-01 purpose-gate denylist; WR-01 exempting prescriptive from DSX-CLM-011
+(flagship golden re-baselined, still blocks on DSX-CLM-020); WR-02 requiring a
+metric/threshold separate from the time anchor (inverted the bare-duration test).
+See 11.2-REVIEW.md "Resolution" for full rationale.
 
 ## Will be added by the loop when reached
 
