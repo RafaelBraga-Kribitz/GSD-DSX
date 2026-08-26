@@ -890,9 +890,9 @@ Plans:
 
 **Wave 3** *(checks that read prescriptive / extend Wave 2 files — blocked on Wave 2)*
 
-- [ ] 11.2-05-PLAN.md — REQ-02: prescriptive identification parity via the widened `_check_causal_support` ctype gate (reuses DSX-CLM-020 CRITICAL / DSX-CLM-021 HIGH, no hedge exemption)
-- [ ] 11.2-06-PLAN.md — REQ-04: `revisit_when_is_discriminating` sibling predicate + bounded window regex, `_check_revisit_completeness` firing `DSX-COH-040` CRITICAL, revisit_when prophylaxis + DSX-VAL-011 regression
-- [ ] 11.2-07-PLAN.md — REQ-06: `dsx explain` self-reported-fields section (escalate untouched, frame_digest stays computed, returns-0 pure reader)
+- [x] 11.2-05-PLAN.md — REQ-02: prescriptive identification parity via the widened `_check_causal_support` ctype gate (reuses DSX-CLM-020 CRITICAL / DSX-CLM-021 HIGH, no hedge exemption)
+- [x] 11.2-06-PLAN.md — REQ-04: `revisit_when_is_discriminating` sibling predicate + bounded window regex, `_check_revisit_completeness` firing `DSX-COH-040` CRITICAL, revisit_when prophylaxis + DSX-VAL-011 regression
+- [x] 11.2-07-PLAN.md — REQ-06: `dsx explain` self-reported-fields section (escalate untouched, frame_digest stays computed, returns-0 pure reader)
 
 **Wave 4** *(corpus-green gate — MUST run last, D-06; plus the doc-hygiene slice 11.2-04, scheduled after its reader codes 03/06)*
 
