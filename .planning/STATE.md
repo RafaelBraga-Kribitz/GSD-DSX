@@ -5,16 +5,16 @@ milestone_name: DSX Validity Frame
 current_phase: 11.2
 current_phase_name: prescriptive-claim-layer
 status: executing
-stopped_at: Phase 11.2 Wave 2 executed (plans 02+03; plans 01-03 of 8 done; gate green — S1-3 in progress)
-last_updated: "2026-08-24T15:00:00.000Z"
-last_activity: 2026-08-24
-last_activity_desc: Phase 11.2 Wave 2 executed (plans 02, 03)
+stopped_at: Phase 11.2 Wave 3 in progress (plans 01-03+05 of 8 done — plan 05 reconciled from repo 2026-08-26; plans 06+07 next; gate green — S1-3 in progress)
+last_updated: "2026-08-26T20:22:00.000Z"
+last_activity: 2026-08-26
+last_activity_desc: Phase 11.2 Wave 3 reconcile (plan 05 executed by an unlogged prior firing; picking up plans 06, 07)
 progress:
   total_phases: 10
   completed_phases: 8
   total_plans: 76
-  completed_plans: 71
-  percent: 93
+  completed_plans: 72
+  percent: 95
 ---
 
 # Project state
@@ -115,9 +115,9 @@ parity and visible-fallback criteria added).
 ## Current Position
 
 Phase: 11.2 (prescriptive-claim-layer) — EXECUTING
-Plan: 3 of 8
-Status: Executing Phase 11.2 — Waves 1-2 done (plans 01, 02, 03); Wave 3 next (plans 05, 06, 07)
-Last activity: 2026-08-24 — Phase 11.2 Wave 2 executed (plans 02, 03)
+Plan: 4 of 8
+Status: Executing Phase 11.2 — Waves 1-2 done + plan 05 (of Wave 3) done (plans 01, 02, 03, 05); Wave 3 remainder next (plans 06, 07)
+Last activity: 2026-08-26 — Phase 11.2 Wave 3 reconcile: plan 05 done (unlogged prior firing), picking up plans 06, 07
 
 ## Project Reference
 

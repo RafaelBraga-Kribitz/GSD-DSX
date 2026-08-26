@@ -38,6 +38,24 @@ Check a box ONLY with its gate evidence pasted in the log. Derived from
   resumes at **Wave 3** (plans 05, 06, 07). S1-3's checkbox stays `[ ]` until all
   8 plans + the phase gate land.
 
+- **2026-08-26T20:22Z (S1-3 Wave 3 firing):** The ledger's last Log line (2026-08-24T15:00Z)
+  closed S1-3 Wave 2 (plans 02, 03) at commit `340bcfb` and said "Next = Wave 3 (plans 05,
+  06, 07)". **The repo is ahead of both the ledger and STATE.md by an unlogged wave-3 plan
+  plus the whole HUMAN-QUEUE drain.** Seven commits sit past `340bcfb`:
+  `0405e47`→`58ed8f2`→`9c4fee9` executed **plan 11.2-05** (RED/GREEN/SUMMARY) — `11.2-05-SUMMARY.md`
+  records `status: complete`, suite 1090; and `0783165`→`5651609`→`0554c1d` recorded the
+  **HQ-1/HQ-2/HQ-3 operator verdicts** (all three now `Answered` in HUMAN-QUEUE.md, dated
+  2026-08-26), reconciled against a Cursor Agent's parallel HQ-1 write via merge `5651609`;
+  `b07683d` is a loop self-heal script fix. Neither the ledger Log nor STATE.md
+  (`stopped_at` still "Plan: 3 of 8", "Wave 3 next (plans 05, 06, 07)") was refreshed for
+  plan 05. **Reconciled this firing:** independently re-ran the baseline gate BEFORE touching
+  anything — full suite `Ran 1090 tests ... OK`, `bash scripts/check.sh` → `all checks
+  passed` (catalogue current, gate contract + determinism green) — so plan 05 is genuinely
+  green on origin. **Actual position: plans 01, 02, 03, 05 done (4 of 8); Wave 3 remainder =
+  plans 06, 07; then Wave 4 = plans 08, 04.** All three HQ items are now closed, so nothing
+  in S1 is human-blocked. This firing continues S1-3 by executing the **Wave 3 remainder
+  (plans 06, 07)**; STATE.md refreshed to 4/8 as part of this reconcile.
+
 ## S0 — Hygiene and open gates
 
 - [x] S0-1 Execute Phase 11.1.1 plan 06 (malformed-.ipynb traceback fix; already written and gate-passed). Gate: the seven malformed inputs exit as gate findings, not raw tracebacks; suite green. → **ALREADY EXECUTED (repo fact); gate re-run and PASSED this firing.** Probe over 11 malformed shapes + 20000-deep JSON: every one returns `None` (controlled "NOT scanned" finding), none raised; `{"cells": []}` boundary control still scans. `bash scripts/check.sh` → "all checks passed", 1028 tests OK, gate contract + determinism green. Commits: `53cd3ae fix(11.1.1-06): guard every JSON shape the notebook read can meet`, `745f4d4`, `a6061a4`. See Reconciliation notes above.
