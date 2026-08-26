@@ -20,6 +20,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+from dsx.checks import coherence  # noqa: E402
+from dsx.findings import Report, Severity  # noqa: E402
 from dsx.spec import (  # noqa: E402
     falsifier_is_discriminating,
     revisit_when_is_discriminating,
@@ -88,6 +90,106 @@ class TestRevisitWhenIsDiscriminating(unittest.TestCase):
         falsifier_is_discriminating — proving the sibling predicate did not
         alter the shared function's behaviour on the real accepted value."""
         self.assertTrue(falsifier_is_discriminating(_GOOD_ESTIMAND_FALSIFIER))
+
+
+# ── DSX-COH-040: _check_revisit_completeness ─────────────────────────────────
+
+
+def codes(report: Report) -> set[str]:
+    return {f.code for f in report.findings}
+
+
+def _spec(**overrides: object) -> dict:
+    base: dict = {
+        "question_type": "causal",
+        "decision": {},
+        "design": {},
+    }
+    base.update(overrides)
+    return base
+
+
+class TestRevisitCompleteness(unittest.TestCase):
+    """DSX-COH-040: one code, both triggers (D-07)."""
+
+    # D-05: DSX-COH-040
+    def test_prescriptive_question_blank_revisit_when_fires_coh040(self):
+        report = coherence.check(
+            _spec(question_type="prescriptive", decision={}, design={})
+        )
+        coh040 = [f for f in report.findings if f.code == "DSX-COH-040"]
+        self.assertEqual(len(coh040), 1)
+        self.assertEqual(coh040[0].severity, Severity.CRITICAL)
+        self.assertEqual(coh040[0].where, "spec.decision.revisit_when")
+
+    def test_experiment_design_blank_revisit_when_fires_coh040(self):
+        report = coherence.check(
+            _spec(
+                question_type="causal",
+                decision={},
+                design={"kind": "experiment"},
+            )
+        )
+        self.assertIn("DSX-COH-040", codes(report))
+
+    def test_both_triggers_true_fires_exactly_one_coh040(self):
+        report = coherence.check(
+            _spec(
+                question_type="prescriptive",
+                decision={},
+                design={"kind": "experiment"},
+            )
+        )
+        coh040 = [f for f in report.findings if f.code == "DSX-COH-040"]
+        self.assertEqual(len(coh040), 1)
+
+    def test_non_discriminating_revisit_when_under_prescriptive_fires_coh040(self):
+        report = coherence.check(
+            _spec(
+                question_type="prescriptive",
+                decision={"revisit_when": "when the market changes"},
+                design={},
+            )
+        )
+        self.assertIn("DSX-COH-040", codes(report))
+
+    def test_valid_windowed_revisit_when_produces_no_coh040(self):
+        report = coherence.check(
+            _spec(
+                question_type="prescriptive",
+                decision={
+                    "revisit_when": "activation_rate below +1.0pp at the 2026-Q4 review"
+                },
+                design={},
+            )
+        )
+        self.assertNotIn("DSX-COH-040", codes(report))
+
+    def test_placeholder_revisit_when_fires_coh040(self):
+        report = coherence.check(
+            _spec(
+                question_type="prescriptive",
+                decision={"revisit_when": "<the condition for revisiting this>"},
+                design={},
+            )
+        )
+        self.assertIn("DSX-COH-040", codes(report))
+
+    def test_refusal_token_revisit_when_fires_coh040(self):
+        report = coherence.check(
+            _spec(
+                question_type="prescriptive",
+                decision={"revisit_when": "tbd"},
+                design={},
+            )
+        )
+        self.assertIn("DSX-COH-040", codes(report))
+
+    def test_descriptive_non_experiment_spec_with_no_revisit_when_does_not_fire(self):
+        report = coherence.check(
+            _spec(question_type="descriptive", decision={}, design={})
+        )
+        self.assertNotIn("DSX-COH-040", codes(report))
 
 
 if __name__ == "__main__":
