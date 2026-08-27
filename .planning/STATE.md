@@ -5,16 +5,16 @@ milestone_name: DSX Validity Frame
 current_phase: 12
 current_phase_name: calibration
 status: executing
-stopped_at: Phase 12 S3-5 CLOSED — secure + validate remainder green (2026-08-27T22:47Z). `/gsd-secure-phase 12` State B → `12-SECURITY.md` `status: verified`, threats_open 0 (15 threats: 14 mitigate CLOSED + T-12-SC accept; gsd-security-auditor opus SECURED, orchestrator independently re-gated HIGH blockers T-12-03/-03b/-08/-12/-06 first-hand). `/gsd-validate-phase 12` State A → `12-VALIDATION.md` `status: validated`, `nyquist_compliant: true`, 0 gaps, 5/5 REQ-P12 COVERED (no nyquist-auditor). Combined gate: 52 requirement tests OK, full suite 1221 OK, check.sh all passed, catalogue 256 (D-18). Human security sign-off + AR-12-SC → HQ-6 (non-blocking). Phase 12 (terminal) technically COMPLETE; S3 CLOSED. Next unblocked = S4-1 (`/gsd-audit-uat` cross-phase sweep).
-last_updated: "2026-08-27T22:47:00.000Z"
+stopped_at: "S4-3 /gsd-extract-learnings DONE for the ceremony's 3 delivered phases (2026-08-27T23:34Z). Wrote 11.2-/11.3-/12-LEARNINGS.md via 3 parallel sonnet extractors, each independently verified (§5): frontmatter counts == actual ### item counts (11.2 7/7/6/6, 11.3 7/6/6/5, 12 7/7/7/6), all 4 categories present, every item Source-attributed, missing_artifacts:UAT.md confirmed absent, sample content matches artifacts. No tracked file modified by the extractors. Pre-ceremony phases 6–11.1.1 have no LEARNINGS.md — flagged for S4-4 to adjudicate any milestone-wide backfill (bounded follow-up). Next: S4-2 drain HUMAN-QUEUE (blocked on operator — HQ-4/5/6 open, ⚠Z under HQ-1); S4-4/5/6 transitively blocked."
+last_updated: "2026-08-27T23:34:45.803Z"
 last_activity: 2026-08-27
-last_activity_desc: S3-5 remainder — /gsd-secure-phase 12 (State B, SECURED threats_open 0, 15-threat register, opus auditor + independent HIGH-blocker re-gate §5) + /gsd-validate-phase 12 (State A, validated / nyquist_compliant true, 0 gaps 5/5 COVERED). Phase 12 technically complete; S3 closed; next = S4-1 close-out sweep
 progress:
   total_phases: 11
   completed_phases: 10
   total_plans: 89
   completed_plans: 89
   percent: 95
+last_activity_desc: S4-3 /gsd-extract-learnings — wrote 11.2-/11.3-/12-LEARNINGS.md (3 ceremony phases) via parallel extractors, each independently verified (counts match, 4 categories, Source-attributed). Pre-ceremony phases 6–11.1.1 have no LEARNINGS.md (flagged for S4-4). Next = S4-2 drain (blocked on operator)
 ---
 
 # Project state
@@ -117,7 +117,7 @@ parity and visible-fallback criteria added).
 Phase: 12 (calibration, terminal) — EXECUTING. S3-1 (discuss) + S3-2 (plan, 7 plans/5 waves) closed. S3-3 (execute) CLOSED: all 7 plans (12-01..07) executed + gated across 5 waves.
 Plan: 7 of 7 (Waves 1-5 of 5) — S3-3 CLOSED
 Status: S3-3 Wave 5 (plan 12-07) executed + gated by the orchestrator directly (docs-only closing plan, the gate IS the plan) — §6.5 backlog re-evaluated against the measured evidence (carry 8, remove 1): item 6 (ratio-metric dilution) removed as structurally unevaluable and relocated verbatim into a new "Removed / permanently out of scope (D-14)" subsection with its three pinned substrings intact (pin test green, unmodified); per-item dispositions cite the measured (miss-rate 1.0, FPR 0.0) headline (12-05), the empty operator paradigm split (12-02, item 4 NOT auto-promoted), and the friction column (12-06). REV-002 filed in .planning/REVERSALS.md as an honest reclassification surviving SELF-001. Suite 1219 OK, catalogue 256 (D-18, zero minted), check.sh all checks passed. Next unblocked = S3-4 (catch-rate/FPR readout + Statistician adversarial review at high effort).
-Last activity: 2026-08-27 — S3-3 Wave 5 (plan 12-07) executed + gated; CLOSES S3-3; suite 1219 OK, catalogue 256, check.sh all checks passed
+Last activity: 2026-08-27 — S4-3 /gsd-extract-learnings: 11.2-/11.3-/12-LEARNINGS.md written + independently verified (3 ceremony phases); pre-ceremony 6–11.1.1 flagged for S4-4
 
 ## Project Reference
 
