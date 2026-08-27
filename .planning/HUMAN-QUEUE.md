@@ -42,6 +42,35 @@ D-12 residuals decided in the S1-1 persona round, not fresh redispositions). See
 `11.2-SECURITY.md` "Accepted Risks Log" + "Sign-Off". Answer e.g.
 `HQ-4 security: approved` (or veto any specific item).
 
+### HQ-5 — Phase 11.3 D-05 citation reads + D-06 code veto window (added 2026-08-27, S2-4)
+
+Phase 11.3's technical verification **passed** (`11.3-VERIFICATION.md`: 7/7 requirements
+satisfied, 0 gaps, 0 behavior_unverified — every truth backed by a named passing test).
+Code review is `resolved` (`11.3-REVIEW.md`: 1 fixed WR-03, 3 by-design, 2 deferred to
+Phase-12 backlog, 0 open). Status is `human_needed` **solely** for the two D-05
+primary-source reads below (verbatim quote-at-locator — the project's D-05 bar) plus the
+D-06 veto window. **Non-blocking for S2-5** (secure-phase + validate-phase run on the
+technically-verified phase); it blocks only the phase's formal UAT/ship sign-off, drained
+at S4-2. Evidence packs will be assembled the way HQ-1's were.
+
+| # | Read | Anchors requirement | Expected |
+|---|------|--------------------|----------|
+| 1 | Rubin, D.B. (1987) *Multiple Imputation for Nonresponse in Surveys* §3.1 — the total-variance formula `T = W̄ + (1+1/m)·B` that anchors the DSX-VAL-060 single-imputation-under-MAR **CRITICAL** branch (`dsx/frame/val.py`). This is the phase's OWN new citation, NOT the reused White & Carlin one on the existing HIGH branch. | REQ-P11.3-03 | Locator matches; the CRITICAL branch's provenance is confirmed. |
+| 2 | Simmons, Nelson & Simonsohn (2011) "False-Positive Psychology" — data exclusion as a researcher degree of freedom, anchoring DSX-VAL-080 (exclusion rule without justification, `dsx/frame/val.py`). The exact requirement-number / table locator is honestly flagged **UNVERIFIED** in-code (D-05 discipline). | REQ-P11.3-04 | Locator confirmed or replaced; the unverified-locator flag cleared. |
+
+**D-06 veto window (loud §4 decisions from S2-1 discuss, vetoable here).** The 8 net-new
+finding codes minted this phase — `DSX-EXP-053` HIGH, `DSX-STA-012` MEDIUM, `DSX-VAL-080`
+HIGH, `DSX-SPEC-083` HIGH, and the new `DSX-CRV-010` HIGH / `DSX-CRV-011` MEDIUM /
+`DSX-CRV-012` HIGH / `DSX-CRV-013` MEDIUM family — are D-06 irreversible. Also in this
+window: the missingness-rate-reconciliation **DEFER** decision (D-07), the `DSX-CRV-*`-not-
+`DSX-FIG-*` family choice (D-12/D-14 Gate-D circularity), and the S2-4 code-review
+dispositions routed to the Phase-12 backlog as governed entry conditions (WR-01 numeric
+`N/10` catch-rate hole; IN-01 chart-review corpus discoverability; the IN-02 absent-key
+yardstick question) — none is a fresh re-scope; each is loud and vetoable. DSX-CRV-* needs
+no external judgement citation (the schema file is its own structural criterion). Answer
+e.g. `HQ-5: cite1 pass, cite2 pass, codes accepted` (or veto any specific item). The Phase
+11.3 security sign-off line will be appended here at S2-5.
+
 ## Will be added by the loop when reached
 
 - End-of-phase UAT rounds for Phases 11.2, 11.3, 12 (batched, with evidence packs).
