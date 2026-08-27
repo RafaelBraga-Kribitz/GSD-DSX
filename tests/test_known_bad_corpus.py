@@ -642,6 +642,30 @@ class TestKnownBadCorpus(unittest.TestCase):
             f"no slug names a Bayesian continuous-monitoring case: {sorted(spec_slugs)}",
         )
 
+    def test_corpus_includes_full_coverage_classes(self):
+        """Phase 12 D-01: "full size" is falsifiable by *class present*, not by an
+        arbitrary count. The corpus must carry at least one case in each of the
+        three coverage classes named in REQ-P12-01 — a retracted paper with a
+        published post-mortem, a documented p-hacking / garden-of-forking-paths
+        case, and one of the operator's own prior analyses whose answer is now
+        known. Asserted by class-presence over glob-discovered slugs (never a
+        hardcoded slug list, never a target count), exactly like the interference
+        / Bayesian-continuous predicate above.
+        """
+        spec_slugs = _slugs(f"*{SPEC_SUFFIX}", SPEC_SUFFIX)
+        self.assertTrue(
+            any("retract" in slug for slug in spec_slugs),
+            f"no slug names a retracted-paper case: {sorted(spec_slugs)}",
+        )
+        self.assertTrue(
+            any(("p-hack" in slug or "phack" in slug) for slug in spec_slugs),
+            f"no slug names a documented p-hacking case: {sorted(spec_slugs)}",
+        )
+        self.assertTrue(
+            any("operator-known" in slug for slug in spec_slugs),
+            f"no slug names an operator-known-answer case: {sorted(spec_slugs)}",
+        )
+
     def test_every_spec_loads_without_raising(self):
         specs = self._spec_paths()
         self.assertTrue(specs, "no known-bad specs found to load")
