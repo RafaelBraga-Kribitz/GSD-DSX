@@ -1027,7 +1027,15 @@ cases where absence permitted a false pass" is a debate, not a count.
      measured corpus, and any item whose condition cannot be evaluated is removed from §6.5
      rather than carried — with a D-14 reversal record where a removal reverses a prior decision.
 
-**Plans**: TBD
+**Plans**: 7 plans across 5 waves (planned 2026-08-27, S3-2; plan-checker PASSED at opus — 0 blockers; 18/18 CONTEXT decisions + 5/5 REQ covered; ZERO finding codes minted, catalogue stays 256). Wave graph `{01,02} → {03,04} → 05 → 06 → 07`:
+
+- **12-01** (wave 1, deps []) — REQ-P12-01/-02: extend the known-bad corpus across three coverage classes (retracted-paper+postmortem, p-hacking, operator-known-answer) and author each miss/promotion case's `<slug>-ATTRIBUTION.yaml` sidecar in the SAME change (D-02 source-before-count; class-presence coverage predicate).
+- **12-02** (wave 1, deps []) — REQ-P12-04: `dsx stats --paradigm` — a pure always-return-0 reader (`cmd_stats` on the `cmd_explain` template), multi-file `.planning/` aggregation with `--root`, distinct-`frame_digest` dedup, hard-exclude of the polluted known-bad `DECISIONS.jsonl` (negative-source assertion).
+- **12-03** (wave 2, deps [12-01]) — REQ-P12-02: sidecar validation — closed catalogue∪backlog union sibling-integrity + live falsifiability across all four gate points (hypothetical code ⇒ miss).
+- **12-04** (wave 2, deps [12-01]) — REQ-P12-03: good-side control corpus (≥10 clean specs, paradigms × outcome shapes) with the fresh-tempdir noise trap resolved, for a real FPR denominator; golden-file entries landed in lockstep.
+- **12-05** (wave 3, deps [12-03, 12-04]) — REQ-P12-03: stratified catch rate + FPR with independent PRESENT/ABSENT denominators, floored ABSENT partition, `(miss-rate, FPR)` headline, easy-catch invariance.
+- **12-06** (wave 4, deps [12-05]) — REQ-P12-02: friction column RAW + NET with three guards (synthetic arithmetic, live-source, incidental→own relabel closure) + the catalogue-invariant (256) test.
+- **12-07** (wave 5, deps [12-02, 12-05, 12-06]) — REQ-P12-05: §6.5 re-evaluation (carry 8, remove 1), item-6 relocation with pinned substrings intact, REV-002 surviving SELF-001, corpus-green closing gate.
 
 ---
 

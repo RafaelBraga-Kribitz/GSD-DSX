@@ -674,11 +674,14 @@ pass/fail status, corpus counts, and pollution percentages elsewhere in this doc
 directly verified against the live tree and tagged `[VERIFIED: ...]` at point of use, not
 `[ASSUMED]`.
 
-## Open Questions
+## Open Questions (RESOLVED at plan time — S3-2)
+
+> All three resolved during Phase-12 planning; resolutions recorded inline below and carried into the plan set. None endangers the phase goal.
 
 1. **Should `examples/known-bad/DECISIONS.jsonl` and `examples/DECISIONS.jsonl`'s unbounded
    growth (13,129 and 75,379 lines respectively today) be addressed in Phase 12, or left as a
    standing known issue?**
+   - **RESOLVED:** Out of scope for Phase 12 (none of REQ-P12-01..05 touch it; D-13's hard-exclude fully protects `dsx stats --paradigm` regardless of file size; D-18 forbids minting detection code). Carried as a one-line ship note, not a requirement.
    - What we know: D-13's hard-exclude fully protects `dsx stats --paradigm`'s correctness
      regardless of how large these files grow. Nothing currently caps, rotates, or gitignores
      them.
@@ -695,6 +698,7 @@ directly verified against the live tree and tagged `[VERIFIED: ...]` at point of
    readings, and it materially affects whether `dsx stats --paradigm` is useful outside a
    `.planning/`-organized project. Recommend surfacing this explicitly at plan time rather than
    silently picking one reading.
+   - **RESOLVED:** Plan 12-02 makes the root a configurable `--root` flag defaulting to `.planning/`, so the D-13 exclusion holds by default while the reader stays usable elsewhere. Surfaced explicitly, not silently picked.
 
 3. **What is the exact target list of new REQ-P12-01 corpus cases (which retracted papers, which
    documented p-hacking cases, which of the operator's own prior work)?** D-02 (source-before-
@@ -703,6 +707,7 @@ directly verified against the live tree and tagged `[VERIFIED: ...]` at point of
    research does not attempt to source candidate cases — that sourcing work is explicitly the
    planner/executor's task, gated by the coverage predicates (≥1 retracted-paper+postmortem, ≥1
    p-hacking, ≥1 operator-known-answer), not a fixed list this research should pre-select.
+   - **RESOLVED:** Left deliberately unfixed per D-02 (source-before-count). Plan 12-01 enforces coverage by a class-presence predicate, not a hardcoded slug list; each new case carries a D-05 primary-source read owed at the Phase-12 UAT/ship round (pre-registered, non-blocking).
 
 ## Environment Availability
 
