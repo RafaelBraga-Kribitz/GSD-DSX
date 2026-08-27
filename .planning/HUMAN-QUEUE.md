@@ -128,6 +128,30 @@ fresh redisposition. See `12-SECURITY.md` "Accepted Risks Log" + "Sign-Off". `/g
 also ran (State A) → `status: validated`, `nyquist_compliant: true`, 0 gaps, 5/5 requirements COVERED
 (no nyquist-auditor needed). Answer e.g. `HQ-6 security: approved` (or veto any specific item).
 
+### S4-1 cross-phase UAT sweep result (added 2026-08-27, S4-1)
+
+The `/gsd-audit-uat` sweep ran across all 11 phases. **No un-queued residue found** — every
+outstanding UAT/verification item is already tracked: Phase 11 → HQ-1 (Answered), Phase 11.2 →
+HQ-4, Phase 11.3 → HQ-5, Phase 12 → HQ-6. Phases 06/07/08/09/10/11.1/11.1.1 are all
+`passed`/`complete` (zero residue). Two things surfaced that the S4-2 drain / S4-4 audit must not lose:
+
+1. **⚠Z Zimmerman follow-up (under HQ-1, still OPEN despite HQ-1 being "Answered").** The operator
+   accepted HQ-1 Check 1 as *partial* and flagged ⚠Z (Zimmerman 2004 cited to *J. Gen. Psychology*
+   131(2):142-160 for `no_variance_pretesting` in `references/families.yaml`; likely-correct source is
+   *Br. J. Math. Stat. Psychol.* 57(1):173-181) for manual research. `11-UAT.md` still shows
+   `status: testing`, `blocked: 1`, Check 1 `[blocked]`, and REQ-P11-01 stays **partial** until it is
+   resolved. A D-05 primary-source read + a `families.yaml` citation-fix unit (families #6/#7/#8 +
+   `ranking_rules`) are owed before v2.0.0 ships. **Drain this at S4-2** (do not let its home in the
+   Answered section hide it).
+2. **Tooling caveat — the automated `/gsd-audit-uat` under-reports.** The CLI returned a FALSE "All
+   Clear" (`total_files:0`) because the `gsd-verifier` template writes the section as
+   `### Human Verification Required` (level-3) while `gsd-core/bin/lib/uat.cjs::parseVerificationItems`
+   only recognizes a level-2 `## Human Verification` heading. The milestone filter is fine (passes all
+   16 phases, verified). The human items in 11.2/11.3/12-VERIFICATION.md are therefore invisible to the
+   automated sweep — the manual cross-phase read above is authoritative. **At S4-4 do not accept a CLI
+   "all clear" as evidence of no outstanding UAT.** (Framework-internal defect, not repo code; recorded,
+   not patched.)
+
 ## Will be added by the loop when reached
 
 - End-of-phase UAT rounds for Phases 11.2, 11.3, 12 (batched, with evidence packs).
