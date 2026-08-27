@@ -974,7 +974,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3)*
 
-- [ ] 11.3-05-PLAN.md — REQ-06: new dsx/checks/chart_review.py with DSX-CRV-010/011/012/013, the
+- [x] 11.3-05-PLAN.md — REQ-06: new dsx/checks/chart_review.py with DSX-CRV-010/011/012/013, the
       four-registry wiring, the D-14 schema Gate-proxy edit, fixtures + the D-13 forbidden-input
       boundary test (wave 4)
 

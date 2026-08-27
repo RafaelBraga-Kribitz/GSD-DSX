@@ -5,16 +5,16 @@ milestone_name: DSX Validity Frame
 current_phase: 11.3
 current_phase_name: reporting-completeness
 status: executing
-stopped_at: Phase 11.3 S2-3 IN PROGRESS — Waves 1-3 done (plans 01, 02, 03, 04). Wave 3 (plan 04, REQ-P11.3-04 validity_frame.exclusions) executed + independently gated this firing — DSX-VAL-080 HIGH (new presence-guarded _check_exclusions, own Simmons 2011 citation, applied_before_split RECORD-ONLY D-10) + DSX-SPEC-083 HIGH (closed-key guard scoped to exclusions ONLY, legacy inference tolerance untouched D-09), catalogue 250→252; content lock covers the sub-block via the existing frame_digest (no new machinery, DSX-PRE-020 regression proven); suite 1176 OK, check.sh all checks passed, findings.py/checks/ untouched. Wave 4 next = plan 05 (REQ-P11.3-06 new dsx/checks/chart_review.py + DSX-CRV-010/011/012/013 family + cli.py wiring, depends_on [04]). Resume file = 11.3-05-PLAN.md.
-last_updated: "2026-08-27T06:43:00.000Z"
+stopped_at: Phase 11.3 S2-3 IN PROGRESS — Waves 1-4 done (plans 01, 02, 03, 04, 05). Wave 4 (plan 05, REQ-P11.3-06 chart-review conformance) CLOSED this firing — RED+GREEN were committed unpushed by a prior firing that died mid-Task-3 (cli.py wiring + D-14 schema edit left uncommitted); this firing verified green, committed Task 3, wrote SUMMARY, pushed. New module dsx/checks/chart_review.py mints DSX-CRV-010 HIGH (schema tag) / DSX-CRV-011 MEDIUM (X/10 scale) / DSX-CRV-012 HIGH (terminal sentinel) / DSX-CRV-013 MEDIUM (untokenised finding line), reading structure only (D-13 boundary tested), degrading to empty on missing/undecodable (D-01); dual-registry PREFIX_GROUPS + _D05_ALLOWLIST_PREFIXES; DSX-CRV routed as report-acceptance precondition NOT into Gate-D DSX-FIG-* wildcard (D-14/D-12); wired into GATE_PROFILES verify+ship only; catalogue 252→256; suite 1194 OK, check.sh all checks passed (gate contract good/bad/missing green), findings.py untouched. Wave 5 next = plan 06 (REQ-P11.3-07 corpus-green, MUST run LAST per D-06, depends_on [01-05]). Resume file = 11.3-06-PLAN.md.
+last_updated: "2026-08-27T07:15:00.000Z"
 last_activity: 2026-08-27
-last_activity_desc: S2-3 execute 11.3 Wave 3 (plan 04) — DSX-VAL-080 HIGH exclusion-without-justification (_check_exclusions, Simmons 2011) + DSX-SPEC-083 HIGH closed-key guard on validity_frame.exclusions; gsd-executor (sonnet) + independent orchestrator re-gate; catalogue 250→252; suite 1176 OK
+last_activity_desc: S2-3 execute 11.3 Wave 4 (plan 05) — DSX-CRV-010/011/012/013 chart-review conformance family + new dsx/checks/chart_review.py + cli.py verify/ship wiring + D-14 schema report-acceptance precondition; recovered a prior firing's mid-Task-3 death (RED/GREEN unpushed, Task 3 uncommitted); independent orchestrator re-gate; catalogue 252→256; suite 1194 OK
 progress:
   total_phases: 10
   completed_phases: 9
   total_plans: 82
-  completed_plans: 80
-  percent: 92
+  completed_plans: 81
+  percent: 93
 ---
 
 # Project state
@@ -128,9 +128,9 @@ See: .planning/PROJECT.md (updated 2026-08-13)
 
 ## Session
 
-**Last session:** 2026-08-27T01:52:07.378Z
-**Stopped at:** Phase 11.3 context gathered (assumptions mode + persona round); S2-1 complete
-**Resume file:** .planning/phases/11.3-reporting-completeness/11.3-CONTEXT.md
+**Last session:** 2026-08-27T07:15:00.000Z
+**Stopped at:** Phase 11.3 S2-3 Wave 4 (plan 05, chart-review conformance / DSX-CRV family) executed + independently gated; recovered a prior firing's mid-Task-3 death (unpushed RED/GREEN + uncommitted Task 3). Waves 1-4 done (plans 01-05); Wave 5 = plan 06 (corpus-green, LAST) next.
+**Resume file:** .planning/phases/11.3-reporting-completeness/11.3-06-PLAN.md
 
 Phase 10 context was re-verified 2026-08-14 (assumptions mode). Six unexecuted plans (`10-01` … `10-06`) already exist; this refresh did not rewrite them. Phase 8's blocking gap is in `08-VERIFICATION.md` (out-of-vocabulary `interference.risk` bypass).
 
