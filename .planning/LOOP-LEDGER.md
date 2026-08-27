@@ -78,6 +78,23 @@ Check a box ONLY with its gate evidence pasted in the log. Derived from
   wrote the SUMMARY, updated tracking, and pushed the whole run. **Actual position: plans 01-05 done
   (5 of 6); Wave 5 remainder = plan 06 (REQ-P11.3-07 corpus-green, MUST run LAST per D-06).**
 
+- **2026-08-27T~14:30Z (S3-3 Wave 2 firing):** The ledger's last Log line (2026-08-27T13:20Z)
+  closed S3-3 Wave 1 (plans 01+02) at commit `eaecc41` and said "Next = Wave 2 (plans 03, 04)".
+  **The repo is ahead of the ledger by a fully-executed plan 12-03: a prior firing executed both its
+  tasks (RED sibling-integrity `458dfad`, live-falsifiability `219f4c4`, SUMMARY `752518b`) but DIED
+  before logging or pushing — those three commits sat on the branch UNPUSHED (3 ahead of origin).**
+  `12-03-SUMMARY.md` records `status: complete`, self-check PASSED, both new tests + all 33 module
+  tests green, test-only (only `tests/test_known_bad_corpus.py` touched, `dsx/` and catalogue
+  untouched — D-18 held). **Reconciled this firing:** independently re-ran the baseline gate BEFORE
+  trusting anything — `bash scripts/check.sh` → `all checks passed` (full suite `Ran 1207 tests ...
+  OK` = 1205 Wave-1 baseline + 2 new 12-03 tests; catalogue current **256**; capability manifest
+  conformant; gate contract good/bad/missing; determinism) — so plan 12-03 is genuinely green on the
+  branch. Pushed the three commits so the dead firing's work is safe on origin (`53f6970..752518b`).
+  **Actual position: Wave 1 (01,02) done+logged+pushed; Wave 2 plan 03 done+gated+now-pushed (this
+  reconcile); Wave 2 remainder = plan 04.** This firing continues S3-3 by executing the **Wave 2
+  remainder (plan 12-04)** — the good-side control corpus (≥10 clean specs) for a real FPR
+  denominator. S3-3's checkbox stays `[ ]` (7-plan/5-wave unit; after this firing, Waves 1–2 done).
+
 ## S0 — Hygiene and open gates
 
 - [x] S0-1 Execute Phase 11.1.1 plan 06 (malformed-.ipynb traceback fix; already written and gate-passed). Gate: the seven malformed inputs exit as gate findings, not raw tracebacks; suite green. → **ALREADY EXECUTED (repo fact); gate re-run and PASSED this firing.** Probe over 11 malformed shapes + 20000-deep JSON: every one returns `None` (controlled "NOT scanned" finding), none raised; `{"cells": []}` boundary control still scans. `bash scripts/check.sh` → "all checks passed", 1028 tests OK, gate contract + determinism green. Commits: `53cd3ae fix(11.1.1-06): guard every JSON shape the notebook read can meet`, `745f4d4`, `a6061a4`. See Reconciliation notes above.
