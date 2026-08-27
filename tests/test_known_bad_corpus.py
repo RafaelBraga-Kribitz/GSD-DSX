@@ -675,25 +675,33 @@ _ABSENT_PARTITION_FLOOR = 3
 def _false_positive_findings(
     findings: list[dict], noise_codes: "dict[str, str] | set[str]"
 ) -> "set[str]":
-    # RED (naive, plan 12-05 task 1): counts EVERY CRITICAL/HIGH blocking finding as a
-    # false positive, including the documented tempdir-noise codes — the spuriously
-    # high FPR the plan's RED step describes. GREEN subtracts `noise_codes`.
+    """A control spec's real false-positive codes: its CRITICAL/HIGH blocking findings
+    minus the documented tempdir-noise codes (each of which names a file-path `where`,
+    not a statistical-validity concept — RESEARCH Pitfall 1, D-04). Takes the findings
+    list and the noise allowlist as parameters so a synthetic proof exercises the
+    exclusion without the filesystem or the gate — the module's two-proofs discipline
+    (see `TestClassifyTargetDefectHelper`). `noise_codes` may be a set or a
+    code->reason mapping; membership (`in`) reads the codes either way."""
     return {
         f["code"]
         for f in findings
         if f.get("severity") in ("CRITICAL", "HIGH")
+        and f["code"] not in noise_codes
     }
 
 
 def _headline(
     present: "tuple[int, int]", absent: "tuple[int, int]", fpr: "tuple[int, int]"
 ) -> "tuple[float, float]":
-    # RED (naive, plan 12-05 task 2): folds the PRESENT partition into the miss-rate,
-    # so adding an already-caught target-PRESENT case moves the headline. GREEN makes
-    # the miss-rate depend on the ABSENT partition alone (D-10 invariance).
-    miss_num = present[0] + absent[0]
-    miss_den = present[1] + absent[1]
-    miss_rate = miss_num / miss_den if miss_den else 0.0
+    """The headline pair (miss-rate, FPR) (D-10). miss-rate is the ABSENT partition's
+    rate alone (`absent` = (misses, denominator)); FPR is the good-control-corpus rate
+    (`fpr` = (false-positive specs, control-spec count)). `present` = (caught,
+    denominator) is accepted for signature symmetry but MUST NOT influence the output:
+    that is exactly what makes adding an already-caught target-PRESENT case
+    mathematically incapable of moving the headline. Each rate floors to 0.0 on an
+    empty denominator rather than raising — but the caller floors the ABSENT partition
+    (`_ABSENT_PARTITION_FLOOR`) so a real run never reports over an empty miss set."""
+    miss_rate = absent[0] / absent[1] if absent[1] else 0.0
     fp_rate = fpr[0] / fpr[1] if fpr[1] else 0.0
     return (miss_rate, fp_rate)
 
