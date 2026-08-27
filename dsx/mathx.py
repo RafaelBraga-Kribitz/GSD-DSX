@@ -289,17 +289,30 @@ def cohens_d(mean1: float, mean2: float, sd1: float, sd2: float, n1: int, n2: in
     return (mean2 - mean1) / math.sqrt(pooled_var)
 
 
+# The effect-size kinds interpret_effect knows how to band. Hoisted to module
+# level as the single source of truth so dsx/checks/stats.py's membership guard
+# (DSX-STA-012) tests the same frozenset interpret_effect dispatches on, and the
+# recognised set on the two sides cannot drift.
+EFFECT_SIZE_KINDS = frozenset({"d", "h", "r"})
+
+
 def interpret_effect(kind: str, value: float) -> str:
-    """Conventional magnitude label. Deliberately conservative wording."""
+    """Conventional magnitude label. Deliberately conservative wording.
+
+    The recognised set is the module-level EFFECT_SIZE_KINDS, so the caller-side
+    membership guard and this dispatch share one source of truth and cannot drift.
+    """
     v = abs(value)
     table = {
         "d": ((0.2, "negligible"), (0.5, "small"), (0.8, "medium")),
         "h": ((0.2, "negligible"), (0.5, "small"), (0.8, "medium")),
         "r": ((0.1, "negligible"), (0.3, "small"), (0.5, "medium")),
     }
-    bands = table.get(kind)
-    if bands is None:
-        raise ValueError(f"unknown effect kind {kind!r}; expected one of {sorted(table)}")
+    if kind not in EFFECT_SIZE_KINDS:
+        raise ValueError(
+            f"unknown effect kind {kind!r}; expected one of {sorted(EFFECT_SIZE_KINDS)}"
+        )
+    bands = table[kind]
     for threshold, label in bands:
         if v < threshold:
             return label

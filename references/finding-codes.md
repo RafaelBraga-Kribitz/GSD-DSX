@@ -13,7 +13,7 @@ a suppression or a reference in a review stays valid across versions.
 **Gate thresholds.** `plan` and `execute` block at CRITICAL; `verify` and
 `ship` block at HIGH.
 
-**Total: 249 codes.**
+**Total: 250 codes.**
 
 ## Contract structure — `DSX-SPEC-*`
 
@@ -111,6 +111,7 @@ Test selection, assumptions, and the reporting contract.
 | `DSX-STA-007` | HIGH | '<…>' is not significant (p=<…>) but its CI excludes the null |
 | `DSX-STA-010` | HIGH | '<…>' is statistically significant but below the practical threshold |
 | `DSX-STA-011` | MEDIUM | '<…>' is significant with a negligible effect size (<…>=<…>) |
+| `DSX-STA-012` | MEDIUM | '<…>' declares an unrecognised effect_size_kind (<…>) |
 | `DSX-STA-020` | HIGH | '<…>' interprets p=<…> as evidence of no effect |
 | `DSX-STA-021` | HIGH | '<…>' declares equivalence_bound=<…> but CI/TOST do not prove it |
 | `DSX-STA-030` | MEDIUM | Multiplicity correction could not be applied |
