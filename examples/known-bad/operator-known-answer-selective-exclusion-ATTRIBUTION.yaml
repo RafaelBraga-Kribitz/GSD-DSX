@@ -1,0 +1,22 @@
+# Catch-attribution sidecar (Phase 12 D-06/D-07, REQ-P12-02).
+#
+# Machine-countable catch-attribution for the paired
+# operator-known-answer-selective-exclusion fixture. Lives OUTSIDE the
+# ANALYSIS-SPEC (D-06) so it cannot perturb frame_digest (placement precedent
+# 11.2 D-08 / dsx/decisions.py:99-121 — NOT 11.3 D-08). No DSX-* code is minted
+# (D-18): absent_code REFERENCES an existing shipped catalogue code.
+#
+# Schema (D-07): absent_code (required), promotes_backlog_item (required),
+# rationale? (optional), kind? (optional, default "miss").
+
+absent_code: DSX-VAL-080
+promotes_backlog_item: "6.5-item-1-prior-justification-and-sensitivity"
+kind: miss
+rationale: >
+  The selective exclusion and the weighting choice are not declared, so the
+  shipped exclusion-justification catch DSX-VAL-080 (exclusion rule declared
+  without a justification) has no declared exclusion to fire on. Catching it needs
+  §6.5 item 1's currently-unwritten frequentist specification-sensitivity mirror —
+  does the conclusion survive putting the dropped observations back and averaging
+  the other way — so this case counts toward item 1's "cases where absence
+  permitted a false pass".

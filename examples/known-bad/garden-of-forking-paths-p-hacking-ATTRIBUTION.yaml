@@ -1,0 +1,25 @@
+# Catch-attribution sidecar (Phase 12 D-06/D-07, REQ-P12-02).
+#
+# This file carries the machine-countable catch-attribution for the paired
+# garden-of-forking-paths-p-hacking fixture. It lives OUTSIDE the ANALYSIS-SPEC on
+# purpose (D-06): the tag is a known-bad-fixture concept ("the code that would have
+# caught this miss"), not part of the shipped spec contract a real analyst writes,
+# and keeping it out of the spec's validity_frame/inference subtree means it cannot
+# perturb frame_digest or trip DSX-PRE-020 (placement precedent 11.2 D-08 /
+# dsx/decisions.py:99-121 — NOT 11.3 D-08, which is the opposite, digest-covered,
+# decision).
+#
+# Schema (D-07): absent_code (required), promotes_backlog_item (required),
+# rationale? (optional), kind? (optional, default "miss"). No DSX-* code is minted
+# here (D-18): absent_code REFERENCES an existing shipped catalogue code.
+
+absent_code: DSX-EXP-051
+promotes_backlog_item: "6.5-item-1-prior-justification-and-sensitivity"
+kind: miss
+rationale: >
+  The undisclosed specification search is reported as a single comparison, so the
+  shipped undisclosed-multiplicity catch DSX-EXP-051 has no signal to fire on
+  (comparisons_looked_at equals the reported test count). Catching it needs §6.5
+  item 1's currently-unwritten frequentist specification-sensitivity mirror — does
+  the conclusion survive alternative model specifications — so this case counts
+  toward item 1's "cases where absence permitted a false pass".

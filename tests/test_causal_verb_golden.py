@@ -115,6 +115,29 @@ _GOLDEN_SHIP_FINDINGS: "dict[str, frozenset[str]]" = {
         "DSX-CLM-031", "DSX-CODE-020", "DSX-CODE-021", "DSX-CODE-030", "DSX-COH-031",
         "DSX-EXP-051", "DSX-MET-040", "DSX-ML-090", "DSX-NAR-001",
     }),
+    # Phase 12-01 (REQ-P12-01/02, D-01/D-02): three coverage-class MISS fixtures.
+    # Each set measured 2026-08-27 against a fresh tempfile.TemporaryDirectory()
+    # per fixture with a plan-time header seeded, via _ship_findings above — never
+    # guessed. Each fixture encodes a defect a declaration-only gate cannot catch
+    # (undisclosed forking / data fabrication / undisclosed selective exclusion),
+    # so every code below is a shared corpus-completeness incidental gap
+    # (_INCIDENTAL_GAP_CODES in tests/test_known_bad_corpus.py), not the encoded
+    # miss; the miss's absent-code attribution lives in each fixture's
+    # <slug>-ATTRIBUTION.yaml sidecar (D-06/D-07).
+    "examples/known-bad/garden-of-forking-paths-p-hacking-ANALYSIS-SPEC.yaml": frozenset({
+        "DSX-CLM-031", "DSX-COH-031", "DSX-DEC-001", "DSX-MET-040", "DSX-NAR-001",
+        "DSX-REP-030", "DSX-REP-050",
+    }),
+    "examples/known-bad/retracted-fabricated-field-experiment-ANALYSIS-SPEC.yaml": frozenset({
+        "DSX-CLM-031", "DSX-COH-031", "DSX-DEC-001", "DSX-MET-040", "DSX-NAR-001",
+        "DSX-REP-030", "DSX-REP-050",
+    }),
+    # question_type: descriptive, so no decision.replay requirement (no DSX-DEC-001)
+    # and no unchecked-assumption gap (no DSX-COH-031) fire; the measured set is
+    # correspondingly smaller.
+    "examples/known-bad/operator-known-answer-selective-exclusion-ANALYSIS-SPEC.yaml": frozenset({
+        "DSX-CLM-031", "DSX-MET-040", "DSX-NAR-001", "DSX-REP-030", "DSX-REP-050",
+    }),
     "examples/known-bad/interference-shared-budget-ANALYSIS-SPEC.yaml": frozenset({
         "DSX-CLM-031", "DSX-COH-031", "DSX-INT-010", "DSX-MET-040", "DSX-NAR-001",
         "DSX-REP-030",
