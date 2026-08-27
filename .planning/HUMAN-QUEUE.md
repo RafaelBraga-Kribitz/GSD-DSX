@@ -68,8 +68,19 @@ dispositions routed to the Phase-12 backlog as governed entry conditions (WR-01 
 `N/10` catch-rate hole; IN-01 chart-review corpus discoverability; the IN-02 absent-key
 yardstick question) — none is a fresh re-scope; each is loud and vetoable. DSX-CRV-* needs
 no external judgement citation (the schema file is its own structural criterion). Answer
-e.g. `HQ-5: cite1 pass, cite2 pass, codes accepted` (or veto any specific item). The Phase
-11.3 security sign-off line will be appended here at S2-5.
+e.g. `HQ-5: cite1 pass, cite2 pass, codes accepted` (or veto any specific item).
+
+**Phase 11.3 security sign-off (added 2026-08-27, S2-5).** `/gsd-secure-phase 11.3` ran
+State B and reached `status: verified`, `threats_open: 0` (16/16 threats closed —
+`gsd-security-auditor` opus verdict SECURED, orchestrator independently re-gated: 5 HIGH
+blockers T-11.3-04/-08/-09/-11/-12 re-verified by grep + 267 targeted tests OK + full suite
+`Ran 1199 tests … OK` + `bash scripts/check.sh` all checks passed). The technical gate is
+closed; per brief §4 category 4 the **human phase security sign-off line** on
+`11.3-SECURITY.md` is owed here before ship (non-blocking for S2-5/downstream). Also in this
+window: the two ACCEPT dispositions AR-11.3-02 (set-like-string family reads as empty → fires
+more not less) and AR-11.3-SC (stdlib-only, no supply-chain surface) — both design-time
+plan-decided residuals, not fresh redispositions. See `11.3-SECURITY.md` "Accepted Risks Log"
++ "Sign-Off". Answer e.g. `HQ-5 security: approved` (or veto any specific item).
 
 ## Will be added by the loop when reached
 

@@ -5,10 +5,10 @@ milestone_name: DSX Validity Frame
 current_phase: 11.3
 current_phase_name: reporting-completeness
 status: executing
-stopped_at: Phase 11.3 S2-4 DONE — code review (gsd-code-reviewer opus/deep, 0 critical/3 warning/3 info) + one licensed production fix + verification technically PASSED. §4 persona round (dsx-statistician + dsx-analysis-architect, opus, unanimous) settled dispositions: WR-03 FIX-NOW, everything else BY-DESIGN or DEFERRED to Phase-12 backlog. WR-03 fix (commit 0ffbddf) hardened DSX-EXP-053's naming set-difference against non-scalar multiplicity.family / test metric / non-dict test entry — an uncaught TypeError/AttributeError gate-path traceback → controlled finding; count-based fire untouched (verdict-neutral); +3 regression tests + IN-02 asymmetry-pin (2 tests) + _DESIGN_PY_SHA256 relock. 11.3-VERIFICATION.md: status human_needed (technically PASSED — human_needed SOLELY for the 2 D-05 reads + D-06 veto → HQ-5), score 7/7 requirements, 0 gaps, 0 behavior_unverified, each truth backed by a named passing test. bash scripts/check.sh → all checks passed (suite Ran 1199 tests OK = 1194+5; catalogue current 256; gate contract good/bad/missing; determinism). dsx/findings.py untouched. Next unblocked = S2-5 (/gsd-secure-phase 11.3 verified + /gsd-validate-phase 11.3 compliant). Resume file = 11.3-reporting-completeness phase dir.
-last_updated: "2026-08-27T08:12:00.000Z"
+stopped_at: Phase 11.3 S2-5 DONE — secure-phase + validate-phase BOTH green; Phase 11.3 now technically COMPLETE (verified + secured + validated). Secure-phase (State B): 16-threat register from the 6 plans' <threat_model> blocks (register_authored_at_plan_time true, ASVS L1, block_on high); gsd-security-auditor (opus) verdict SECURED 16/16 CLOSED, threats_open 0; orchestrator independently re-gated all 5 HIGH blockers (T-11.3-04/-08/-09/-11/-12) by grep + 267 targeted tests OK. 11.3-SECURITY.md written (status verified); human sign-off line + AR-11.3-02/-SC veto window → HQ-5 (brief §4 cat-4, non-blocking). Validate-phase (State A): 0 gaps, 7/7 requirements COVERED, nyquist auditor NOT spawned (skip-to-§6); 9 named requirement tests re-run verbosely → Ran 9 OK; 2 D-05 citation reads (Rubin 1987 §3.1, Simmons 2011) Manual-Only (HQ-5), not coverage gaps. 11.3-VALIDATION.md finalized (validated, nyquist_compliant true, wave_0_complete true). Full corpus bash scripts/check.sh → all checks passed (Ran 1199 tests OK, catalogue 256, gate contract good/bad/missing, determinism). dsx/findings.py untouched. Next unblocked = S3-1 (Phase 12 discuss — Statistician-led persona round on corpus composition + catch-attribution tagging → CONTEXT.md). Resume = ROADMAP Phase 12 / LOOP-LEDGER S3.
+last_updated: "2026-08-27T08:40:00.000Z"
 last_activity: 2026-08-27
-last_activity_desc: S2-4 Phase 11.3 code review + WR-03 fix + verification technically passed (7/7 reqs, 0 gaps, 0 behavior_unverified); suite 1199 OK, check.sh all checks passed; D-05/D-06 human items → HQ-5 (non-blocking)
+last_activity_desc: S2-5 Phase 11.3 secure-phase (SECURED 16/16, threats_open 0) + validate-phase (nyquist_compliant, 0 gaps, 7/7 COVERED); suite 1199 OK, check.sh all checks passed; Phase 11.3 technically complete; D-05/D-06 human items → HQ-5 (non-blocking). Next = S3-1 (Phase 12 discuss).
 progress:
   total_phases: 10
   completed_phases: 9
@@ -114,10 +114,10 @@ parity and visible-fallback criteria added).
 
 ## Current Position
 
-Phase: 11.3 (reporting-completeness) — EXECUTING (all 6 plans executed; reviewed + technically verified; secure/validate remain)
+Phase: 11.3 (reporting-completeness) — TECHNICALLY COMPLETE (all 6 plans executed; reviewed + verified + secured + validated). Next phase to start: 12 (calibration, terminal) at S3-1.
 Plan: 6 of 6
-Status: Phase 11.3 S2-4 COMPLETE — code review (opus/deep) + WR-03 fix (§4 persona round) + verification technically passed (7/7 reqs, 0 gaps, 0 behavior_unverified; D-05 reads + D-06 veto → HQ-5). Next = S2-5 secure-phase + validate-phase.
-Last activity: 2026-08-27 — S2-4 code review + WR-03 fix + verify, suite 1199 OK, check.sh all checks passed
+Status: Phase 11.3 S2-5 COMPLETE — secure-phase SECURED (16/16 threats, threats_open 0) + validate-phase nyquist_compliant (0 gaps, 7/7 COVERED). Phase 11.3 fully gated bar the D-05/D-06 human UAT items (HQ-5, non-blocking, drained S4-2). Next = S3-1 (Phase 12 discuss).
+Last activity: 2026-08-27 — S2-5 secure + validate both green; suite 1199 OK, check.sh all checks passed
 
 ## Project Reference
 
@@ -128,9 +128,9 @@ See: .planning/PROJECT.md (updated 2026-08-13)
 
 ## Session
 
-**Last session:** 2026-08-27T08:12:00.000Z
-**Stopped at:** Phase 11.3 S2-4 DONE — code review + WR-03 fix + verification technically passed. gsd-code-reviewer (opus/deep) found 0 critical/3 warning/3 info; §4 persona round (statistician+architect, opus, unanimous) licensed exactly one production fix (WR-03: harden DSX-EXP-053 against non-scalar multiplicity → no gate-path traceback; commit 0ffbddf), everything else BY-DESIGN or deferred to Phase-12 backlog. 11.3-VERIFICATION.md: 7/7 reqs, 0 gaps, 0 behavior_unverified, status human_needed solely for 2 D-05 reads + D-06 veto (→ HQ-5, non-blocking). Suite 1199 OK, check.sh all checks passed, dsx/findings.py untouched. Next = S2-5 (secure + validate).
-**Resume file:** .planning/phases/11.3-reporting-completeness/ (S2-5: /gsd-secure-phase 11.3 + /gsd-validate-phase 11.3)
+**Last session:** 2026-08-27T08:40:00.000Z
+**Stopped at:** Phase 11.3 S2-5 DONE — secure-phase + validate-phase both green. Secure-phase (State B): 16-threat register from the 6 plans' <threat_model> blocks; gsd-security-auditor (opus) SECURED 16/16, threats_open 0; orchestrator independently re-gated all 5 HIGH blockers by grep + 267 targeted tests OK; 11.3-SECURITY.md status verified; human sign-off + AR-11.3-02/-SC veto → HQ-5. Validate-phase (State A): 0 gaps, 7/7 COVERED, nyquist auditor not spawned; 9 named requirement tests re-run → Ran 9 OK; 2 D-05 citation reads Manual-Only (HQ-5); 11.3-VALIDATION.md status validated / nyquist_compliant true. Full corpus check.sh all checks passed (1199 OK, catalogue 256). Phase 11.3 technically complete. Next = S3-1 (Phase 12 discuss).
+**Resume file:** .planning/LOOP-LEDGER.md S3 (S3-1: Phase 12 discuss — corpus composition + catch-attribution persona round → CONTEXT.md); Phase 12 dir will be created by /gsd-discuss-phase 12
 
 Phase 10 context was re-verified 2026-08-14 (assumptions mode). Six unexecuted plans (`10-01` … `10-06`) already exist; this refresh did not rewrite them. Phase 8's blocking gap is in `08-VERIFICATION.md` (out-of-vocabulary `interference.risk` bypass).
 
