@@ -2,19 +2,19 @@
 gsd_state_version: 1.0
 milestone: v2.0.0
 milestone_name: DSX Validity Frame
-current_phase: 11.3
-current_phase_name: reporting-completeness
+current_phase: 12
+current_phase_name: calibration
 status: executing
-stopped_at: Phase 12 context gathered (assumptions mode); S3-1 done, next unblocked = S3-2 plan-phase
-last_updated: "2026-08-27T12:15:48.477Z"
+stopped_at: Phase 12 Wave 1 executed (plans 12-01 corpus+sidecars, 12-02 dsx stats --paradigm); S3-3 in progress, next unblocked = Wave 2 (plans 03, 04)
+last_updated: "2026-08-27T12:40:00.000Z"
 last_activity: 2026-08-27
-last_activity_desc: S2-5 secure + validate both green; suite 1199 OK, check.sh all checks passed
+last_activity_desc: S3-3 Wave 1 (plans 12-01+12-02) executed + independently gated; suite 1205 OK, catalogue 256, check.sh all checks passed
 progress:
   total_phases: 11
   completed_phases: 10
-  total_plans: 82
-  completed_plans: 82
-  percent: 91
+  total_plans: 89
+  completed_plans: 84
+  percent: 94
 ---
 
 # Project state
@@ -114,10 +114,10 @@ parity and visible-fallback criteria added).
 
 ## Current Position
 
-Phase: 11.3 (reporting-completeness) — TECHNICALLY COMPLETE (all 6 plans executed; reviewed + verified + secured + validated). Next phase to start: 12 (calibration, terminal) at S3-1.
-Plan: 6 of 6
-Status: Phase 11.3 S2-5 COMPLETE — secure-phase SECURED (16/16 threats, threats_open 0) + validate-phase nyquist_compliant (0 gaps, 7/7 COVERED). Phase 11.3 fully gated bar the D-05/D-06 human UAT items (HQ-5, non-blocking, drained S4-2). Next = S3-1 (Phase 12 discuss).
-Last activity: 2026-08-27 — S2-5 secure + validate both green; suite 1199 OK, check.sh all checks passed
+Phase: 12 (calibration, terminal) — EXECUTING. S3-1 (discuss) + S3-2 (plan, 7 plans/5 waves) closed. S3-3 (execute) IN PROGRESS: Wave 1 of 5 done (plans 12-01, 12-02).
+Plan: 2 of 7 (Wave 1 of 5)
+Status: S3-3 Wave 1 executed + independently gated — 12-01 (corpus 3 coverage classes + attribution sidecars, catalogue 256, zero codes minted) and 12-02 (dsx stats --paradigm reader, D-13 exclusion + D-14 dedup, always exit 0). Next unblocked = S3-3 Wave 2 (plans 03, 04; both depends_on [12-01], now done+gated). GSD resume file → 12-03-PLAN.md.
+Last activity: 2026-08-27 — S3-3 Wave 1 (plans 12-01+12-02) executed + independently gated; suite 1205 OK, catalogue 256, check.sh all checks passed
 
 ## Project Reference
 
@@ -128,9 +128,9 @@ See: .planning/PROJECT.md (updated 2026-08-13)
 
 ## Session
 
-**Last session:** 2026-08-27T09:16:14.806Z
-**Stopped at:** Phase 12 context gathered (assumptions mode); S3-1 done, next unblocked = S3-2 plan-phase
-**Resume file:** .planning/phases/12-calibration/12-CONTEXT.md
+**Last session:** 2026-08-27T12:40:00.000Z
+**Stopped at:** Phase 12 S3-3 Wave 1 executed (plans 12-01, 12-02) + independently gated; next unblocked = Wave 2 (plans 03, 04)
+**Resume file:** .planning/phases/12-calibration/12-03-PLAN.md
 
 Phase 10 context was re-verified 2026-08-14 (assumptions mode). Six unexecuted plans (`10-01` … `10-06`) already exist; this refresh did not rewrite them. Phase 8's blocking gap is in `08-VERIFICATION.md` (out-of-vocabulary `interference.risk` bypass).
 
