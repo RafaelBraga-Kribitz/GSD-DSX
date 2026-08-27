@@ -687,33 +687,67 @@ def cmd_stats(args: argparse.Namespace) -> int:
 
     result: "dict[str, Any]" = {"root": str(root)}
     try:
-        buckets = {"frequentist": 0, "bayesian": 0, "undeclared": 0}
+        # Dedup by distinct frame_digest (D-14): re-running the same spec
+        # collapses to one frame, so raw invocation volume cannot move the
+        # split. The frame_digest lives on the invocation header; the paradigm
+        # lives in a choice="paradigm=…" decision record tied back by
+        # invocation_id — so map invocation_id -> frame_digest per file (ids are
+        # only unique within one trail, WR-02) and read one paradigm per
+        # distinct frame. This multi-file aggregation is the deliberate
+        # divergence from cmd_explain's single-root read (RESEARCH landmine 3):
+        # reuse read_all() and the existing digest key, do not reparse trails.
+        digest_paradigm: "dict[str, str]" = {}
+        digests_seen: "set[str]" = set()
         trails = 0
         raw_invocations = 0
         for trail in _discover_operator_trails(root):
             trails += 1
-            for rec in read_all(trail):
-                rtype = rec.get("record_type")
-                if rtype == "invocation":
+            records = read_all(trail)
+            local_inv: "dict[str, str]" = {}
+            for rec in records:
+                if rec.get("record_type") == "invocation":
                     raw_invocations += 1
-                elif rtype == "decision":
-                    choice = rec.get("choice", "")
-                    if isinstance(choice, str) and choice.startswith("paradigm="):
-                        value = choice.split("=", 1)[1]
-                        if value not in ("frequentist", "bayesian"):
-                            value = "undeclared"
-                        buckets[value] += 1
-        total = sum(buckets.values())
+                    digest = rec.get("frame_digest")
+                    if digest is None:
+                        continue
+                    digests_seen.add(digest)
+                    inv_id = rec.get("invocation_id")
+                    if inv_id is not None:
+                        local_inv[inv_id] = digest
+            for rec in records:
+                if rec.get("record_type") != "decision":
+                    continue
+                choice = rec.get("choice", "")
+                if not (isinstance(choice, str) and choice.startswith("paradigm=")):
+                    continue
+                digest = local_inv.get(rec.get("invocation_id"))
+                if digest is None:
+                    continue
+                value = choice.split("=", 1)[1]
+                if value not in ("frequentist", "bayesian"):
+                    value = "undeclared"
+                digest_paradigm[digest] = value
+
+        buckets = {"frequentist": 0, "bayesian": 0, "undeclared": 0}
+        for digest in digests_seen:
+            buckets[digest_paradigm.get(digest, "undeclared")] += 1
+        distinct = len(digests_seen)
+
         result["trails_read"] = trails
-        result["raw_invocation_count"] = raw_invocations
+        result["distinct_frames"] = distinct
         result["paradigm_split"] = buckets
-        if total == 0:
+        # Secondary diagnostic only — the split's one unambiguous denominator
+        # is distinct_frames, never this raw count (D-14).
+        result["raw_invocation_count"] = raw_invocations
+        if distinct == 0:
             result["message"] = "no operator history yet"
         else:
-            result["shares"] = {k: v / total for k, v in buckets.items()}
-        _print_stats(args, result, total)
+            result["shares"] = {k: v / distinct for k, v in buckets.items()}
+        _print_stats(args, result, distinct)
     except Exception as exc:
         result.setdefault("paradigm_split", {"frequentist": 0, "bayesian": 0, "undeclared": 0})
+        result.setdefault("distinct_frames", 0)
+        result.setdefault("raw_invocation_count", 0)
         result["message"] = "no operator history yet"
         _print_stats(args, result, 0)
         if getattr(args, "verbose", False):
@@ -737,7 +771,7 @@ def _print_stats(args: argparse.Namespace, result: "dict[str, Any]", denom: int)
         return
     split = result["paradigm_split"]
     shares = result["shares"]
-    print(f"paradigm split over {denom} operator record(s):")
+    print(f"paradigm split over {denom} distinct operator frame(s):")
     for name in ("frequentist", "bayesian", "undeclared"):
         print(f"  {name:<12} {split[name]:>4}  ({shares[name] * 100:.1f}%)")
     print(
