@@ -47,20 +47,39 @@ the GSD framework that drives the ceremony, so the skills would not resolve.
    the ledger is a claim, the repo is the fact; if they disagree, trust the repo
    and correct the ledger before proceeding.
 
-## 1. One firing = as many units as the context window can hold well
+## 1. One firing = as many units as the context window (and the pacing cap) allow
 
-Work units **back to back** until your context is close to full, then stop
-cleanly. Do not stop after one unit — a fresh firing costs a re-read of this
-brief, the ledger and the git log before it can do anything, and paying that
-overhead for a single unit wastes most of the run.
+Work units **back to back**, but stop at whichever of two ceilings comes first:
+the context window, or the pacing cap below. Do not stop after one unit just
+because it's convenient — a fresh firing costs a re-read of this brief, the
+ledger and the git log before it can do anything, and paying that overhead for
+a single unit wastes most of the run.
 
 For each unit: take the **first unblocked unit** in stage order, execute it **to
 completion** (including its gate), update the ledger, commit + push. Then, if
-context allows, immediately start the next one. A unit is one ledger checkbox
-(one skill invocation or one bounded fix batch), not a whole stage.
+both ceilings below still allow it, immediately start the next one. A unit is
+one ledger checkbox (one skill invocation or one bounded fix batch), not a
+whole stage.
+
+**Pacing cap — spread usage across the full 5-hour window, don't burst it.**
+Measured behaviour: firings that just chase the context ceiling burn a whole
+5-hour usage window's budget in roughly 3.5 hours, then sit blocked for the
+remaining 1.5 hours until the window rolls over — net throughput lost to idle
+waiting, not gained by finishing sooner. Target **at most ~12 minutes of
+continuous active work per firing** (model generation + tool calls, not the
+git/file-read bookkeeping at the top), then stop at the nearest safe unit
+boundary even if context headroom remains. This is a starting estimate, not a
+measured constant — nothing today reports real token/usage figures back into
+this loop. If a human operator tells you (via a Log line or a brief update)
+that the account is still exhausting its window early or, conversely, sitting
+idle with headroom to spare, treat that as ground truth and adjust this number
+in your own Log entry for the next firing to read — do not silently ignore
+a correction like that.
 
 **When to stop.** Stop at the first of these, whichever comes first:
 
+- The ~12-minute pacing cap above is reached. Finish the unit you are on if
+  it is close to its own safe boundary; otherwise stop at that boundary now.
 - The harness warns you that context is running low or that auto-compaction is
   approaching (`context_guard_mode: warn` is enabled for this project). **Treat
   the first such warning as your stop signal** — finish the unit you are on,
@@ -178,6 +197,29 @@ next unblocked unit rather than stalling the firing.
 
 ## 5. Non-negotiable ground rules
 
+- **Keep the hot-path files lean — every word here is re-read on every firing.**
+  `LOOP-BRIEF.md`, `LOOP-LEDGER.md` and `HUMAN-QUEUE.md` are read in full at the
+  start of every single firing (§0). Measured on 2026-08-26: the ledger alone had
+  grown to ~19,000 words purely from verbose per-unit evidence essays inlined on
+  checkbox lines — paid again, in full, on every firing, whether or not that unit
+  was relevant to what this firing is doing. Full evidence still matters for audit;
+  it just does not belong in the file every firing must re-read to get oriented.
+  Concretely:
+  - When you check off a ledger item, write **one line** on the checkbox itself
+    (what happened, gate result, pointer to commits) — not the full essay. If the
+    evidence is long, put the full essay in `.planning/LOOP-LEDGER-ARCHIVE.md`
+    under a `## <unit-id>` heading and leave `(full evidence: LOOP-LEDGER-ARCHIVE.md#<unit-id>)`
+    on the checkbox line instead.
+  - Keep the Log section to roughly the **most recent 15–20 entries**. When it grows
+    past that, move the oldest entries into `LOOP-LEDGER-ARCHIVE.md` under
+    `## Log (archived)`, oldest first, and leave a one-line pointer at the top of
+    the active Log section noting the cutoff. Never delete history — move it.
+  - Same principle for `HUMAN-QUEUE.md`'s `## Answered` section: once an item has
+    been answered for more than a few firings and nothing downstream still needs
+    to double-check it inline, move its full record to
+    `.planning/HUMAN-QUEUE-ARCHIVE.md` and leave a one-line pointer.
+  - Do this trimming as its own light unit when you notice a file has grown past
+    a couple hundred lines — it pays for itself on every subsequent firing.
 - Never mark a ledger item done without its verifying gate actually passing
   (run the test / read the file / run the command — paste evidence into the ledger).
 - Tracking files (REQUIREMENTS.md, STATE.md, ROADMAP.md) are single-writer:
