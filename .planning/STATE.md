@@ -5,16 +5,16 @@ milestone_name: DSX Validity Frame
 current_phase: 11.3
 current_phase_name: reporting-completeness
 status: executing
-stopped_at: Phase 11.3 S2-3 IN PROGRESS — Waves 1-4 done (plans 01, 02, 03, 04, 05). Wave 4 (plan 05, REQ-P11.3-06 chart-review conformance) CLOSED this firing — RED+GREEN were committed unpushed by a prior firing that died mid-Task-3 (cli.py wiring + D-14 schema edit left uncommitted); this firing verified green, committed Task 3, wrote SUMMARY, pushed. New module dsx/checks/chart_review.py mints DSX-CRV-010 HIGH (schema tag) / DSX-CRV-011 MEDIUM (X/10 scale) / DSX-CRV-012 HIGH (terminal sentinel) / DSX-CRV-013 MEDIUM (untokenised finding line), reading structure only (D-13 boundary tested), degrading to empty on missing/undecodable (D-01); dual-registry PREFIX_GROUPS + _D05_ALLOWLIST_PREFIXES; DSX-CRV routed as report-acceptance precondition NOT into Gate-D DSX-FIG-* wildcard (D-14/D-12); wired into GATE_PROFILES verify+ship only; catalogue 252→256; suite 1194 OK, check.sh all checks passed (gate contract good/bad/missing green), findings.py untouched. Wave 5 next = plan 06 (REQ-P11.3-07 corpus-green, MUST run LAST per D-06, depends_on [01-05]). Resume file = 11.3-06-PLAN.md.
-last_updated: "2026-08-27T07:15:00.000Z"
+stopped_at: Phase 11.3 S2-3 CLOSED — all 6 plans across 5 waves executed + gated. Wave 5 (plan 06, REQ-P11.3-07 corpus-green closing gate) DONE this firing — a verification-only plan that authored no code. gen-finding-catalogue.py regenerated references/finding-codes.md byte-identically (already current from plan 05); --check exit 0, header Total: 256 codes, all 8 net-new codes render (DSX-EXP-053/STA-012/VAL-080/SPEC-083/CRV-010/011/012/013). Every D-15(a)-(f) fixture obligation audited present (5 chart-review fixtures + examples/good-CHART-REVIEW.md on disk; missingness/multiplicity/exclusions/effect-size/single-imputation cases by named unit test). bash scripts/check.sh → all checks passed, exit 0 (suite Ran 1194 tests OK; catalogue current; capability manifest conformant; gate contract good/bad/missing; determinism identical). No corpus-harness map edited (git diff empty). S2-3 checkbox closed; all 7 REQ-P11.3-01..07 now have executed gated plans. Next unblocked = S2-4 (Phase 11.3 code review + auto-fix; verification passed; human items → HUMAN-QUEUE). Resume file = 11.3-reporting-completeness phase dir.
+last_updated: "2026-08-27T11:30:00.000Z"
 last_activity: 2026-08-27
-last_activity_desc: S2-3 execute 11.3 Wave 4 (plan 05) — DSX-CRV-010/011/012/013 chart-review conformance family + new dsx/checks/chart_review.py + cli.py verify/ship wiring + D-14 schema report-acceptance precondition; recovered a prior firing's mid-Task-3 death (RED/GREEN unpushed, Task 3 uncommitted); independent orchestrator re-gate; catalogue 252→256; suite 1194 OK
+last_activity_desc: S2-3 execute 11.3 Wave 5 (plan 06, REQ-P11.3-07 corpus-green closing gate) — catalogue confirmed current at 256, D-15 fixture audit complete, full corpus check.sh green (suite 1194 OK); verification-only, no code change; S2-3 CLOSED
 progress:
   total_phases: 10
   completed_phases: 9
   total_plans: 82
-  completed_plans: 81
-  percent: 93
+  completed_plans: 82
+  percent: 94
 ---
 
 # Project state
@@ -128,9 +128,9 @@ See: .planning/PROJECT.md (updated 2026-08-13)
 
 ## Session
 
-**Last session:** 2026-08-27T07:15:00.000Z
-**Stopped at:** Phase 11.3 S2-3 Wave 4 (plan 05, chart-review conformance / DSX-CRV family) executed + independently gated; recovered a prior firing's mid-Task-3 death (unpushed RED/GREEN + uncommitted Task 3). Waves 1-4 done (plans 01-05); Wave 5 = plan 06 (corpus-green, LAST) next.
-**Resume file:** .planning/phases/11.3-reporting-completeness/11.3-06-PLAN.md
+**Last session:** 2026-08-27T11:30:00.000Z
+**Stopped at:** Phase 11.3 S2-3 CLOSED — Wave 5 (plan 06, REQ-P11.3-07 corpus-green closing gate) executed + gated this firing. Verification-only, no code change: catalogue confirmed current at 256 (regenerate byte-identical, --check exit 0), all D-15 fixture obligations audited present, full corpus check.sh green (suite 1194 OK). All 6 plans / 5 waves done; all 7 REQ-P11.3-01..07 executed + gated. Next = S2-4 (Phase 11.3 code review + verify).
+**Resume file:** .planning/phases/11.3-reporting-completeness/ (S2-4 code review + verification; then S2-5 secure + validate)
 
 Phase 10 context was re-verified 2026-08-14 (assumptions mode). Six unexecuted plans (`10-01` … `10-06`) already exist; this refresh did not rewrite them. Phase 8's blocking gap is in `08-VERIFICATION.md` (out-of-vocabulary `interference.risk` bypass).
 

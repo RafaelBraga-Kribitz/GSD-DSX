@@ -980,7 +980,7 @@ Plans:
 
 **Wave 5** *(blocked on Wave 4 — corpus-green gate, MUST run last)*
 
-- [ ] 11.3-06-PLAN.md — REQ-07: catalogue regenerated 248→256, all D-15 fixtures present, full
+- [x] 11.3-06-PLAN.md — REQ-07: catalogue regenerated 248→256, all D-15 fixtures present, full
       corpus `scripts/check.sh` green (wave 5)
 
 **Code assignments (D-06, locked at plan; human-veto window via the daily summary):** 8 net-new
