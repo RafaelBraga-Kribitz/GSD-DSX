@@ -1,0 +1,193 @@
+# Clean control spec — good-side FPR corpus (REQ-P12-03 / D-04).
+# Paradigm: frequentist. Outcome shape: continuous.
+# Powered on a responder proportion; primary analysis outcome is a continuous
+# metric (minutes of focused editing time per session).
+
+spec_version: 1
+title: "Does the distraction-free editor raise focused editing minutes per session?"
+owner: "r.braga"
+created: "2026-08-06"
+spec_id: "freq-continuous-timeontask"
+
+question_type: causal
+
+decision:
+  owner: "Head of Product"
+  decision_rule: >
+    Ship the distraction-free editor if the 95% CI lower bound on the uplift in
+    focused editing minutes per session exceeds +0.5 minutes and no guardrail
+    degrades beyond tolerance. Otherwise hold and iterate.
+  action_if_null: "Keep the current editor; close the initiative."
+  minimum_practical_effect: 0.5
+  reversible: true
+  deadline: "2026-09-22"
+  revisit_when: "focus_minutes 95% CI lower bound below +0.5 minutes at the 2026-Q4 review"
+  replay:
+    metric: focus_minutes
+    ci_lower_min: 0.5
+    on_pass: ship
+    on_fail: hold
+
+metrics:
+  - name: focus_minutes
+    type: average
+    definition: "Minutes of focused editing per active session"
+    grain: session
+    timezone: UTC
+    source: product_marts.fct_sessions
+    owner: product-analytics
+
+data:
+  - name: sessions
+    source: product_marts.fct_sessions
+    period: "2026-07-01..2026-07-14"
+    rows: 38820
+    snapshot_at: "2026-07-16T03:00:00Z"
+    known_gaps: "Idle sessions under 30 seconds excluded upstream. No outages in window."
+
+design:
+  kind: experiment
+  identification: randomized_experiment
+  randomization_unit: user
+  analysis_unit: session
+  variance_adjustment: cluster_robust
+  arms: [control, treatment]
+  expected_allocation: [0.5, 0.5]
+  baseline_rate: 0.31
+  mde: 0.02
+  alpha: 0.05
+  power: 0.80
+  planned_n_per_arm: 9200
+  duration_days: 14
+  guardrail_metrics: [focus_minutes]
+  peeking_policy: fixed_horizon
+
+analysis:
+  outcome_type: continuous
+  n_groups: 2
+  paired: false
+  n_per_group: 9300
+  test: welch_t
+  normality_ok: true
+  equal_variance: true
+  independence_ok: true
+
+results:
+  observed_n: [9300, 9280]
+  interim_looks: 1
+  comparisons_looked_at: 1
+  overall_effect: 1.4
+  tests:
+    - metric: focus_minutes
+      p_value: 0.0008
+      effect: 1.4
+      effect_size_kind: d
+      ci: [0.8, 2.0]
+      interpretation: "Treatment raises focused minutes; the interval clears the +0.5 minute floor."
+      minimum_practical_effect: 0.5
+
+claims:
+  - text: >
+      The distraction-free editor raises focused editing time by 1.4 minutes
+      (95% CI 0.8 to 2.0) per active session in the test window.
+    type: causal
+    evidence: "examples/good-corpus/freq-continuous-timeontask-NARRATIVE.md"
+    population: "Active editing sessions, 2026-07-01 to 2026-07-14"
+    identification: randomized_experiment
+
+assumptions:
+  - assumption: "Assignment is stable across sessions for a given user_id."
+    rationale: "Bucketing is hashed on user_id and persisted server-side."
+    impact_if_wrong: "Cross-arm contamination would bias the estimate toward zero."
+    checked: true
+
+limitations:
+  - "Measures focused minutes, not output quality."
+  - "Measured over two weeks; usage patterns are seasonal."
+
+reproducibility:
+  entrypoint: examples/good-corpus/_control_readout.py
+  language_version: "python 3.12.10"
+  package_versions: "numpy 2.1.0, statsmodels 0.14.2"
+  runs_clean_top_to_bottom: true
+  repro_lock:
+    schema_version: "1"
+    stochasticity_declaration: >
+      Analysis outputs depend on data extracts and library versions recorded
+      elsewhere in this block; this lock documents configuration, not
+      byte-identical replay.
+    dsx_version: "2.0.0"
+
+narrative:
+  path: examples/good-corpus/freq-continuous-timeontask-NARRATIVE.md
+  audience: executive
+  lead_claim: 0
+
+validity_frame:
+  estimand:
+    quantity: "difference in focused editing minutes per session"
+    type: difference_in_means
+    population: "active editing sessions, 2026-07-01 to 2026-07-14"
+    contrast: "distraction-free editor vs current editor"
+    time_window: "per session"
+    falsifier: "95% CI on the uplift includes zero, or its lower bound sits below +0.5 minutes"
+
+  units:
+    observation: session
+    assignment: user
+    analysis: session
+
+  identification:
+    strength: strong
+    evidence: "Assignment is hashed on user_id and persisted server-side; see design.identification"
+    constraint_source: none
+    constraint_justification: ""
+
+  dependence:
+    structure: clustered
+    cluster_var: user_id
+    method_family_required: cluster_robust
+
+  interference:
+    risk: none
+    mechanism: ""
+    mitigation: none
+    residual_note: ""
+
+  triggering:
+    eligible_population: "all active sessions in the test window"
+    triggered_definition: "started an active editing session"
+    analysis_population: eligible
+    expected_trigger_rate: 1.0
+    dilution_adjusted: true
+
+  stability:
+    window: "14 days"
+    novelty_primacy_assessed: true
+    evidence: "internal readout; the focus-minutes gap held flat after day 3"
+
+  sampling_frame:
+    source: "product_marts.fct_sessions, no region filter"
+    claim_population: "all active sessions in the test window"
+    known_exclusions: ["idle sessions under 30 seconds"]
+    selection_risk: "none identified"
+
+  missingness:
+    mechanism: MAR
+    rate: 0.0
+    method_implied: multiple_imputation
+
+  measurement:
+    construct: "focused attention"
+    operationalisation: "minutes of focused editing per active session"
+    known_gaps: "none identified"
+
+inference:
+  paradigm: frequentist
+  paradigm_justification: team_convention
+  declared_at: pre_data
+  primary_procedure: welch_t
+  alpha_spending: null
+  fallback_rule: >
+    If any arm's observed n falls below 80% of planned_n_per_arm, extend to the
+    pre-declared duration_days ceiling before analysing; do not analyse early.

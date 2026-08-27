@@ -1,0 +1,194 @@
+# Clean control spec — good-side FPR corpus (REQ-P12-03 / D-04).
+# Paradigm: bayesian. Outcome shape: continuous.
+
+spec_version: 1
+title: "Does the pricing-page redesign raise revenue per visitor?"
+owner: "r.braga"
+created: "2026-08-09"
+spec_id: "bayes-continuous-revenue"
+
+question_type: causal
+
+decision:
+  owner: "VP Revenue"
+  decision_rule: >
+    Ship the redesign if the posterior probability that revenue per visitor rises
+    by more than $0.20 is at least 0.95 and the credible-interval lower bound
+    clears $0.20. Otherwise hold and iterate.
+  action_if_null: "Keep the current pricing page; close the initiative."
+  minimum_practical_effect: 0.20
+  reversible: true
+  deadline: "2026-09-27"
+  revisit_when: "revenue_per_visitor credible-interval lower bound below $0.20 at the 2026-Q4 review"
+  replay:
+    metric: revenue_per_visitor
+    ci_lower_min: 0.20
+    on_pass: ship
+    on_fail: hold
+
+metrics:
+  - name: revenue_per_visitor
+    type: average
+    definition: "Gross revenue attributed to a pricing-page visitor within 7 days"
+    grain: visitor
+    timezone: UTC
+    source: revenue_marts.fct_pricing_visits
+    owner: revenue-analytics
+
+data:
+  - name: visits
+    source: revenue_marts.fct_pricing_visits
+    period: "2026-07-01..2026-07-14"
+    rows: 33470
+    snapshot_at: "2026-07-16T03:00:00Z"
+    known_gaps: "Refunded revenue netted out upstream. No outages in window."
+
+design:
+  kind: experiment
+  identification: randomized_experiment
+  randomization_unit: visitor
+  analysis_unit: visitor
+  arms: [control, treatment]
+  expected_allocation: [0.5, 0.5]
+  baseline_rate: 0.27
+  mde: 0.02
+  alpha: 0.05
+  power: 0.80
+  planned_n_per_arm: 8400
+  duration_days: 14
+  guardrail_metrics: [revenue_per_visitor]
+  peeking_policy: fixed_horizon
+
+analysis:
+  outcome_type: continuous
+  n_groups: 2
+  paired: false
+  n_per_group: 8500
+  normality_ok: true
+  equal_variance: true
+  independence_ok: true
+
+results:
+  observed_n: [8500, 8470]
+  interim_looks: 1
+  comparisons_looked_at: 1
+  overall_effect: 0.62
+  tests:
+    - metric: revenue_per_visitor
+      effect: 0.62
+      ci: [0.34, 0.90]
+      posterior_probability: 0.991
+      interpretation: "Posterior mass above the $0.20 floor is 0.99; the credible interval clears it."
+      minimum_practical_effect: 0.20
+
+claims:
+  - text: >
+      The pricing-page redesign raises revenue per visitor by $0.62
+      (credible interval 0.34 to 0.90) in the test window.
+    type: causal
+    evidence: "examples/good-corpus/bayes-continuous-revenue-NARRATIVE.md"
+    population: "Pricing-page visitors, 2026-07-01 to 2026-07-14"
+    identification: randomized_experiment
+
+assumptions:
+  - assumption: "Assignment is stable across sessions for a given visitor_id."
+    rationale: "Bucketing is hashed on visitor_id and persisted server-side."
+    impact_if_wrong: "Cross-arm contamination would bias the posterior toward the null."
+    checked: true
+
+limitations:
+  - "Measures 7-day revenue only; says nothing about durable lifetime value."
+  - "The posterior is conditional on the priors declared below."
+
+reproducibility:
+  entrypoint: examples/good-corpus/_control_readout.py
+  random_seed: 42
+  language_version: "python 3.12.10"
+  package_versions: "numpy 2.1.0, pymc 5.16.2"
+  runs_clean_top_to_bottom: true
+  repro_lock:
+    schema_version: "1"
+    stochasticity_declaration: >
+      Posterior draws depend on the random seed and library versions recorded
+      here; this lock documents configuration, not byte-identical replay.
+    dsx_version: "2.0.0"
+
+narrative:
+  path: examples/good-corpus/bayes-continuous-revenue-NARRATIVE.md
+  audience: executive
+  lead_claim: 0
+
+validity_frame:
+  estimand:
+    quantity: "difference in revenue per visitor"
+    type: difference_in_means
+    population: "pricing-page visitors, 2026-07-01 to 2026-07-14"
+    contrast: "redesigned pricing page vs current pricing page"
+    time_window: "7 days from visit"
+    falsifier: "credible interval on the uplift includes zero, or its lower bound sits below $0.20"
+
+  units:
+    observation: visitor
+    assignment: visitor
+    analysis: visitor
+
+  identification:
+    strength: strong
+    evidence: "Assignment is hashed on visitor_id and persisted server-side; see design.identification"
+    constraint_source: none
+    constraint_justification: ""
+
+  dependence:
+    structure: none
+    cluster_var: ""
+
+  interference:
+    risk: none
+    mechanism: ""
+    mitigation: none
+    residual_note: ""
+
+  triggering:
+    eligible_population: "all pricing-page visitors in the test window"
+    triggered_definition: "viewed the pricing page"
+    analysis_population: eligible
+    expected_trigger_rate: 1.0
+    dilution_adjusted: true
+
+  stability:
+    window: "14 days"
+    novelty_primacy_assessed: true
+    evidence: "internal readout; the revenue-per-visitor gap held flat after day 3"
+
+  sampling_frame:
+    source: "revenue_marts.fct_pricing_visits, no region filter"
+    claim_population: "all pricing-page visitors in the test window"
+    known_exclusions: ["refunded revenue"]
+    selection_risk: "none identified"
+
+  missingness:
+    mechanism: MAR
+    rate: 0.0
+    method_implied: multiple_imputation
+
+  measurement:
+    construct: "visitor revenue"
+    operationalisation: "gross revenue attributed to a visitor within 7 days"
+    known_gaps: "none identified"
+
+inference:
+  paradigm: bayesian
+  paradigm_justification: decision_theoretic_loss_specified
+  prior_justification: >
+    Weakly-informative Normal priors on each arm's mean, centred on the historical
+    revenue-per-visitor level; a wider-variance sensitivity check did not move the
+    decision.
+  threshold_calibration: >
+    The P(uplift > $0.20) >= 0.95 rule was fixed before data collection and
+    calibrated against the $0.20 practical floor.
+  declared_at: pre_data
+  primary_procedure: bayesian_normal_difference
+  decision_threshold: 0.95
+  fallback_rule: >
+    If either arm's observed n falls below 80% of planned_n_per_arm, extend to
+    the pre-declared duration_days ceiling before summarising the posterior.

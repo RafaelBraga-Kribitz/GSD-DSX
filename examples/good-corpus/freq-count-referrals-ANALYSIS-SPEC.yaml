@@ -1,0 +1,197 @@
+# Clean control spec — good-side FPR corpus (REQ-P12-03 / D-04).
+# Paradigm: frequentist. Outcome shape: count/ratio.
+# The experiment is powered on a responder proportion (design.baseline_rate); the
+# primary analysis outcome is a per-user count (referrals sent), analysed with a
+# Poisson regression. Minimal-reference route: only committed, cwd-resolvable refs.
+
+spec_version: 1
+title: "Does the share-nudge raise referrals sent per active user?"
+owner: "r.braga"
+created: "2026-08-04"
+spec_id: "freq-count-referrals"
+
+question_type: causal
+
+decision:
+  owner: "Head of Growth"
+  decision_rule: >
+    Roll out the share-nudge if the 95% CI lower bound on the uplift in referrals
+    sent per active user exceeds +0.05 and no guardrail degrades beyond tolerance.
+    Otherwise hold and iterate.
+  action_if_null: "Keep the current share flow; close the initiative."
+  minimum_practical_effect: 0.05
+  reversible: true
+  deadline: "2026-09-25"
+  revisit_when: "referrals_per_user 95% CI lower bound below +0.05 at the 2026-Q4 review"
+  replay:
+    metric: referrals_per_user
+    ci_lower_min: 0.05
+    on_pass: rollout
+    on_fail: hold
+
+metrics:
+  - name: referrals_per_user
+    type: ratio
+    definition: "Referral invitations sent per active user in the period"
+    grain: user
+    numerator: "count(referral_invites) in period"
+    denominator: "count(distinct active user_id) in period"
+    timezone: UTC
+    source: growth_marts.fct_referrals
+    owner: growth-analytics
+
+data:
+  - name: referrals
+    source: growth_marts.fct_referrals
+    period: "2026-07-01..2026-07-14"
+    rows: 52270
+    snapshot_at: "2026-07-16T03:00:00Z"
+    known_gaps: "Invites flagged as spam excluded upstream. No outages in window."
+
+design:
+  kind: experiment
+  identification: randomized_experiment
+  randomization_unit: user
+  analysis_unit: user
+  arms: [control, treatment]
+  expected_allocation: [0.5, 0.5]
+  baseline_rate: 0.28
+  mde: 0.02
+  alpha: 0.05
+  power: 0.80
+  planned_n_per_arm: 8600
+  duration_days: 14
+  guardrail_metrics: [referrals_per_user]
+  peeking_policy: fixed_horizon
+
+analysis:
+  # A per-user ratio metric (referrals / active users) — a ratio_of_means
+  # estimand analysed by the delta method (inference.primary_procedure). No
+  # frequentist cell-count test is declared, so the proportion/count test-
+  # selection contract (DSX-STA-041) does not apply; the admissibility ontology
+  # resolves the delta-method family for this frame.
+  outcome_type: count
+  n_groups: 2
+  paired: false
+  n_per_group: 8700
+  normality_ok: true
+  equal_variance: true
+  independence_ok: true
+
+results:
+  observed_n: [8700, 8660]
+  interim_looks: 1
+  comparisons_looked_at: 1
+  overall_effect: 0.14
+  tests:
+    - metric: referrals_per_user
+      p_value: 0.0011
+      effect: 0.14
+      ci: [0.08, 0.20]
+      interpretation: "Treatment raises referrals per user; the interval clears the +0.05 floor."
+      minimum_practical_effect: 0.05
+
+claims:
+  - text: >
+      The share-nudge raises referrals sent by 0.14 per active user
+      (95% CI 0.08 to 0.20) in the test window.
+    type: causal
+    evidence: "examples/good-corpus/freq-count-referrals-NARRATIVE.md"
+    population: "Active users, 2026-07-01 to 2026-07-14"
+    identification: randomized_experiment
+
+assumptions:
+  - assumption: "Assignment is stable across sessions for a given user_id."
+    rationale: "Bucketing is hashed on user_id and persisted server-side."
+    impact_if_wrong: "Cross-arm contamination would bias the estimate toward zero."
+    checked: true
+
+limitations:
+  - "Counts invitations sent, not referrals accepted; says nothing about downstream conversion."
+  - "Measured over two weeks; sharing behaviour is seasonal."
+
+reproducibility:
+  entrypoint: examples/good-corpus/_control_readout.py
+  language_version: "python 3.12.10"
+  package_versions: "numpy 2.1.0, statsmodels 0.14.2"
+  runs_clean_top_to_bottom: true
+  repro_lock:
+    schema_version: "1"
+    stochasticity_declaration: >
+      Analysis outputs depend on data extracts and library versions recorded
+      elsewhere in this block; this lock documents configuration, not
+      byte-identical replay.
+    dsx_version: "2.0.0"
+
+narrative:
+  path: examples/good-corpus/freq-count-referrals-NARRATIVE.md
+  audience: executive
+  lead_claim: 0
+
+validity_frame:
+  estimand:
+    quantity: "ratio of referrals sent per active user between arms"
+    type: ratio_of_means
+    population: "active users, 2026-07-01 to 2026-07-14"
+    contrast: "share-nudge vs current share flow"
+    time_window: "14 days"
+    falsifier: "95% CI on the uplift includes zero, or its lower bound sits below +0.05"
+
+  units:
+    observation: user
+    assignment: user
+    analysis: user
+
+  identification:
+    strength: strong
+    evidence: "Assignment is hashed on user_id and persisted server-side; see design.identification"
+    constraint_source: none
+    constraint_justification: ""
+
+  dependence:
+    structure: none
+    cluster_var: ""
+
+  interference:
+    risk: none
+    mechanism: ""
+    mitigation: none
+    residual_note: ""
+
+  triggering:
+    eligible_population: "all active users in the test window"
+    triggered_definition: "was active in the period"
+    analysis_population: eligible
+    expected_trigger_rate: 1.0
+    dilution_adjusted: true
+
+  stability:
+    window: "14 days"
+    novelty_primacy_assessed: true
+    evidence: "internal readout; the referrals-per-user gap held flat after day 3"
+
+  sampling_frame:
+    source: "growth_marts.fct_referrals, no region filter"
+    claim_population: "all active users in the test window"
+    known_exclusions: ["spam-flagged invites"]
+    selection_risk: "none identified"
+
+  missingness:
+    mechanism: MAR
+    rate: 0.0
+    method_implied: multiple_imputation
+
+  measurement:
+    construct: "referral propensity"
+    operationalisation: "referral invitations sent per active user in the period"
+    known_gaps: "none identified"
+
+inference:
+  paradigm: frequentist
+  paradigm_justification: team_convention
+  declared_at: pre_data
+  primary_procedure: delta_method
+  alpha_spending: null
+  fallback_rule: >
+    If any arm's observed n falls below 80% of planned_n_per_arm, extend to the
+    pre-declared duration_days ceiling before analysing; do not analyse early.

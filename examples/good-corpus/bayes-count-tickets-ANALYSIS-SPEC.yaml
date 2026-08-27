@@ -1,0 +1,198 @@
+# Clean control spec — good-side FPR corpus (REQ-P12-03 / D-04).
+# Paradigm: bayesian. Outcome shape: count/ratio.
+# A per-account ratio metric (self-serve resolutions / active accounts), a
+# ratio_of_means estimand summarised by a Bayesian posterior.
+
+spec_version: 1
+title: "Does the help-center revamp raise self-serve resolutions per account?"
+owner: "r.braga"
+created: "2026-08-10"
+spec_id: "bayes-count-tickets"
+
+question_type: causal
+
+decision:
+  owner: "Head of Support"
+  decision_rule: >
+    Ship the revamp if the posterior probability that self-serve resolutions per
+    account rise by more than +0.05 is at least 0.95 and the credible-interval
+    lower bound clears +0.05. Otherwise hold and iterate.
+  action_if_null: "Keep the current help center; close the initiative."
+  minimum_practical_effect: 0.05
+  reversible: true
+  deadline: "2026-09-29"
+  revisit_when: "resolutions_per_account credible-interval lower bound below +0.05 at the 2026-Q4 review"
+  replay:
+    metric: resolutions_per_account
+    ci_lower_min: 0.05
+    on_pass: ship
+    on_fail: hold
+
+metrics:
+  - name: resolutions_per_account
+    type: ratio
+    definition: "Self-serve resolutions per active account in the period"
+    grain: account
+    numerator: "count(self_serve_resolutions) in period"
+    denominator: "count(distinct active account_id) in period"
+    timezone: UTC
+    source: support_marts.fct_resolutions
+    owner: support-analytics
+
+data:
+  - name: resolutions
+    source: support_marts.fct_resolutions
+    period: "2026-07-01..2026-07-14"
+    rows: 24880
+    snapshot_at: "2026-07-16T03:00:00Z"
+    known_gaps: "Internal test accounts excluded upstream. No outages in window."
+
+design:
+  kind: experiment
+  identification: randomized_experiment
+  randomization_unit: account
+  analysis_unit: account
+  arms: [control, treatment]
+  expected_allocation: [0.5, 0.5]
+  baseline_rate: 0.32
+  mde: 0.02
+  alpha: 0.05
+  power: 0.80
+  planned_n_per_arm: 9800
+  duration_days: 14
+  guardrail_metrics: [resolutions_per_account]
+  peeking_policy: fixed_horizon
+
+analysis:
+  outcome_type: count
+  n_groups: 2
+  paired: false
+  n_per_group: 9900
+  normality_ok: true
+  equal_variance: true
+  independence_ok: true
+
+results:
+  observed_n: [9900, 9860]
+  interim_looks: 1
+  comparisons_looked_at: 1
+  overall_effect: 0.11
+  tests:
+    - metric: resolutions_per_account
+      effect: 0.11
+      ci: [0.06, 0.16]
+      posterior_probability: 0.99
+      interpretation: "Posterior mass above the +0.05 floor is 0.99; the credible interval clears it."
+      minimum_practical_effect: 0.05
+
+claims:
+  - text: >
+      The help-center revamp raises self-serve resolutions by 0.11 per active
+      account (credible interval 0.06 to 0.16) in the test window.
+    type: causal
+    evidence: "examples/good-corpus/bayes-count-tickets-NARRATIVE.md"
+    population: "Active accounts, 2026-07-01 to 2026-07-14"
+    identification: randomized_experiment
+
+assumptions:
+  - assumption: "Assignment is stable for a given account_id across sessions."
+    rationale: "Bucketing is hashed on account_id and persisted server-side."
+    impact_if_wrong: "Cross-arm contamination would bias the posterior toward the null."
+    checked: true
+
+limitations:
+  - "Counts self-serve resolutions, not deflected agent contacts."
+  - "The posterior is conditional on the priors declared below."
+
+reproducibility:
+  entrypoint: examples/good-corpus/_control_readout.py
+  random_seed: 42
+  language_version: "python 3.12.10"
+  package_versions: "numpy 2.1.0, pymc 5.16.2"
+  runs_clean_top_to_bottom: true
+  repro_lock:
+    schema_version: "1"
+    stochasticity_declaration: >
+      Posterior draws depend on the random seed and library versions recorded
+      here; this lock documents configuration, not byte-identical replay.
+    dsx_version: "2.0.0"
+
+narrative:
+  path: examples/good-corpus/bayes-count-tickets-NARRATIVE.md
+  audience: executive
+  lead_claim: 0
+
+validity_frame:
+  estimand:
+    quantity: "ratio of self-serve resolutions per active account between arms"
+    type: ratio_of_means
+    population: "active accounts, 2026-07-01 to 2026-07-14"
+    contrast: "revamped help center vs current help center"
+    time_window: "14 days"
+    falsifier: "credible interval on the uplift includes zero, or its lower bound sits below +0.05"
+
+  units:
+    observation: account
+    assignment: account
+    analysis: account
+
+  identification:
+    strength: strong
+    evidence: "Assignment is hashed on account_id and persisted server-side; see design.identification"
+    constraint_source: none
+    constraint_justification: ""
+
+  dependence:
+    structure: none
+    cluster_var: ""
+
+  interference:
+    risk: none
+    mechanism: ""
+    mitigation: none
+    residual_note: ""
+
+  triggering:
+    eligible_population: "all active accounts in the test window"
+    triggered_definition: "was active in the period"
+    analysis_population: eligible
+    expected_trigger_rate: 1.0
+    dilution_adjusted: true
+
+  stability:
+    window: "14 days"
+    novelty_primacy_assessed: true
+    evidence: "internal readout; the resolutions-per-account gap held flat after day 3"
+
+  sampling_frame:
+    source: "support_marts.fct_resolutions, no region filter"
+    claim_population: "all active accounts in the test window"
+    known_exclusions: ["internal test accounts"]
+    selection_risk: "none identified"
+
+  missingness:
+    mechanism: MAR
+    rate: 0.0
+    method_implied: multiple_imputation
+
+  measurement:
+    construct: "self-service success"
+    operationalisation: "self-serve resolutions per active account in the period"
+    known_gaps: "none identified"
+
+inference:
+  paradigm: bayesian
+  paradigm_justification: small_sample_informative_prior
+  prior_justification: >
+    Weakly-informative Gamma priors on each arm's rate, centred on the historical
+    resolutions-per-account level; a wider-variance sensitivity check did not move
+    the decision.
+  threshold_calibration: >
+    The P(uplift > +0.05) >= 0.95 rule was fixed before data collection and
+    calibrated against the +0.05 practical floor.
+  declared_at: pre_data
+  primary_procedure: bayesian_rate_ratio
+  decision_threshold: 0.95
+  fallback_rule: >
+    If either arm's observed n falls below 80% of planned_n_per_arm, extend to
+    the pre-declared duration_days ceiling before summarising the posterior.
