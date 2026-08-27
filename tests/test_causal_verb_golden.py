@@ -99,6 +99,33 @@ _GOLDEN_SHIP_FINDINGS: "dict[str, frozenset[str]]" = {
     "examples/good-ANALYSIS-SPEC.yaml": frozenset({
         "DSX-CLM-031", "DSX-DQ-001", "DSX-FIG-001", "DSX-NAR-010",
     }),
+    # Phase 12-04 (REQ-P12-03, D-04): the good-side FPR control corpus — twelve
+    # genuinely clean ANALYSIS-SPECs spanning both paradigms (6 frequentist, 6
+    # Bayesian) and all three outcome shapes (proportion, continuous, count/ratio),
+    # so the false-positive rate has a denominator with resolution rather than 0/1.
+    # Each set below was measured 2026-08-27 against a fresh
+    # tempfile.TemporaryDirectory() per spec via _ship_findings above (never
+    # guessed). Every set is frozenset(): unlike examples/good-ANALYSIS-SPEC.yaml
+    # (which references sibling artifacts absent from the fresh tempdir and so
+    # fires the four artifact-stripping noise codes), each control spec takes the
+    # minimal-reference route — it references only committed, cwd-resolvable
+    # artifacts (a per-spec NARRATIVE.md doubling as claim evidence, and the shared
+    # examples/good-corpus/_control_readout.py entrypoint) — so a fresh-tempdir
+    # ship run resolves every reference and fires none of DSX-DQ-001 /
+    # DSX-CLM-031 / DSX-FIG-001 / DSX-NAR-010. plan 12-05 therefore needs no
+    # tempdir sibling-seeding for this corpus; the FPR count is honest at zero.
+    "examples/good-corpus/bayes-continuous-nps-ANALYSIS-SPEC.yaml": frozenset(),
+    "examples/good-corpus/bayes-continuous-revenue-ANALYSIS-SPEC.yaml": frozenset(),
+    "examples/good-corpus/bayes-count-sessions-ANALYSIS-SPEC.yaml": frozenset(),
+    "examples/good-corpus/bayes-count-tickets-ANALYSIS-SPEC.yaml": frozenset(),
+    "examples/good-corpus/bayes-proportion-adoption-ANALYSIS-SPEC.yaml": frozenset(),
+    "examples/good-corpus/bayes-proportion-signup-ANALYSIS-SPEC.yaml": frozenset(),
+    "examples/good-corpus/freq-continuous-aov-ANALYSIS-SPEC.yaml": frozenset(),
+    "examples/good-corpus/freq-continuous-timeontask-ANALYSIS-SPEC.yaml": frozenset(),
+    "examples/good-corpus/freq-count-installs-ANALYSIS-SPEC.yaml": frozenset(),
+    "examples/good-corpus/freq-count-referrals-ANALYSIS-SPEC.yaml": frozenset(),
+    "examples/good-corpus/freq-proportion-checkout-ANALYSIS-SPEC.yaml": frozenset(),
+    "examples/good-corpus/freq-proportion-email-open-ANALYSIS-SPEC.yaml": frozenset(),
     "examples/known-bad/bayesian-continuous-monitoring-ANALYSIS-SPEC.yaml": frozenset({
         "DSX-CLM-031", "DSX-COH-031", "DSX-MET-040", "DSX-NAR-001", "DSX-PAR-011",
         "DSX-REP-001", "DSX-REP-030", "DSX-STA-041", "DSX-VAL-041",
