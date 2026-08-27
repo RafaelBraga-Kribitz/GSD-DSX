@@ -1,0 +1,134 @@
+"""Tests for `dsx stats --paradigm` (REQ-P12-04).
+
+A pure-reader subcommand that reports the operator's own
+frequentist/Bayesian/undeclared frame split, deduplicated by distinct
+``frame_digest`` (D-14), sourced from real operator ``.planning/`` decision
+trails only — never from the polluted ``examples/known-bad/DECISIONS.jsonl``
+fixture floor or a ``templates/`` trail (D-13). Stdlib unittest, no pytest.
+
+Run:  python -m unittest tests.test_cli_stats -v
+"""
+
+from __future__ import annotations
+
+import io
+import json
+import sys
+import tempfile
+import unittest
+from contextlib import redirect_stderr, redirect_stdout
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from dsx import cli  # noqa: E402
+from dsx.decisions import DecisionRecord, InvocationHeader, append  # noqa: E402
+
+
+def _run(argv: "list[str]") -> int:
+    """Invoke the CLI, swallow its output, return the exit code."""
+    out, err = io.StringIO(), io.StringIO()
+    with redirect_stdout(out), redirect_stderr(err):
+        return cli.main(argv)
+
+
+def _capture(argv: "list[str]") -> str:
+    """Invoke the CLI, return its stdout."""
+    out, err = io.StringIO(), io.StringIO()
+    with redirect_stdout(out), redirect_stderr(err):
+        cli.main(argv)
+    return out.getvalue()
+
+
+def _seed_trail(path: Path, entries: "list[tuple[str, str, str]]") -> None:
+    """Write a DECISIONS.jsonl at ``path`` from ``(invocation_id, frame_digest,
+    paradigm)`` triples, using the real ``dsx.decisions`` primitives a genuine
+    ``dsx gate`` run writes with — one invocation header plus one
+    ``choice="paradigm=…"`` decision record per triple, so the seed cannot
+    drift from the writer it stands in for."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    for inv_id, digest, paradigm in entries:
+        append(
+            path,
+            InvocationHeader(
+                invocation_id=inv_id,
+                gate_point="plan",
+                dsx_version="test-seed",
+                frame_digest=digest,
+            ),
+        )
+        append(
+            path,
+            DecisionRecord(
+                id="DEC-001",
+                invocation_id=inv_id,
+                layer="deterministic",
+                choice=f"paradigm={paradigm}",
+            ),
+        )
+
+
+class TestCmdStats(unittest.TestCase):
+    def test_always_exits_zero(self):
+        # Empty root: no DECISIONS.jsonl anywhere under it.
+        with tempfile.TemporaryDirectory() as tmp:
+            for extra in ([], ["--json"]):
+                code = _run(["stats", "--paradigm", "--root", tmp] + extra)
+                self.assertEqual(code, 0, f"empty-root run returned {code}")
+            out = _capture(["stats", "--paradigm", "--root", tmp])
+            self.assertIn(
+                "no operator history",
+                out.lower(),
+                f"empty history not named honestly: {out!r}",
+            )
+
+        # Unreadable / half-written trail: still exits 0, never a traceback.
+        with tempfile.TemporaryDirectory() as tmp:
+            bad = Path(tmp) / "phase" / "DECISIONS.jsonl"
+            bad.parent.mkdir(parents=True)
+            bad.write_bytes(b"\xff\xfe not json at all {half-written")
+            self.assertEqual(_run(["stats", "--paradigm", "--root", tmp]), 0)
+            self.assertEqual(
+                _run(["stats", "--paradigm", "--root", tmp, "--json"]), 0
+            )
+
+    def test_never_sources_the_known_bad_floor(self):
+        # A root carrying the polluted fixture floors (a huge known-bad-shaped
+        # Bayesian trail and a templates trail) plus one real frequentist
+        # operator trail. The floors must be excluded (D-13): the reported
+        # split must show zero Bayesian, sourced from the operator trail only.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            _seed_trail(
+                root / "examples" / "known-bad" / "DECISIONS.jsonl",
+                [(f"INV-KB-{i}", "kb-bayes-frame", "bayesian") for i in range(500)],
+            )
+            _seed_trail(
+                root / "templates" / "DECISIONS.jsonl",
+                [(f"INV-T-{i}", "tmpl-bayes-frame", "bayesian") for i in range(50)],
+            )
+            _seed_trail(
+                root / "12-calibration" / "DECISIONS.jsonl",
+                [("INV-OP-1", "op-freq-frame", "frequentist")],
+            )
+            out = _capture(["stats", "--paradigm", "--root", str(root), "--json"])
+            data = json.loads(out)
+            self.assertEqual(
+                data["paradigm_split"]["bayesian"],
+                0,
+                "the known-bad Bayesian floor leaked into the split",
+            )
+            self.assertNotIn("kb-bayes-frame", out)
+            self.assertNotIn("tmpl-bayes-frame", out)
+
+    def test_block_on_flag_is_rejected(self):
+        # `dsx stats` always passes; it carries no --block-on, so argparse
+        # must reject the flag with exit 2 (D-12/D-18 — not a gate).
+        with self.assertRaises(SystemExit) as cm:
+            _run(["stats", "--paradigm", "--block-on", "high"])
+        self.assertEqual(cm.exception.code, 2)
+
+
+if __name__ == "__main__":
+    unittest.main()
