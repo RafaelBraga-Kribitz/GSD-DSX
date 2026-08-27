@@ -631,6 +631,73 @@ _SECTION_65_ITEM_IDS = frozenset({
 })
 
 
+# ── Phase 12-05 (REQ-P12-03, D-04/D-09/D-10): stratified catch rate + FPR ──────────
+#
+# The good-side control corpus committed by plan 12-04 (examples/good-corpus/, 12
+# genuinely clean specs spanning both paradigms and all three outcome shapes) is the
+# FPR denominator with resolution D-04 requires — a rate over ≥10 clean specs, not
+# the old 0/1 baseline. Discovered by the same glob-on-suffix discipline as the
+# known-bad corpus (never a hardcoded slug list).
+GOOD_CORPUS_DIR = ROOT / "examples" / "good-corpus"
+
+# The four fresh-tempdir artifact-stripping "noise" codes (RESEARCH Pitfall 1): each
+# fires purely because the isolated `--phase-dir` a live gate run uses has none of
+# the fixture's own committed sibling artifacts (data profile, figure manifest,
+# narrative, evidence) to resolve against — every one names a file-path `where`, not
+# a statistical-validity concept, so none is a real false positive (D-04). This is
+# the documented allowlist-with-inline-reason the plan-12-04 record calls for,
+# mirroring _INCIDENTAL_GAP_CODES' house style (:64-101) — and it is deliberately a
+# NEW, separate constant, never read from _INCIDENTAL_GAP_CODES or
+# _GOLDEN_SHIP_FINDINGS (D-09: no reported number is lifted from a stale ledger).
+#
+# In practice plan 12-04 took the minimal-reference / cwd-resolvable route (every
+# referenced artifact resolves from the repo-root cwd, not from `--phase-dir`), so
+# none of these fires against the current good-corpus and the honest FPR is 0/12.
+# This allowlist is the standing guard that keeps the FPR honest if a future control
+# spec ever references a sibling artifact that the fresh tempdir cannot resolve.
+_FPR_TEMPDIR_NOISE_CODES = {
+    "DSX-DQ-001":  "data[].assertions/profile_path resolve against a sibling DATA-PROFILE absent from the fresh tempdir",
+    "DSX-CLM-031": "claims[].evidence points at a sibling file absent from the fresh tempdir",
+    "DSX-FIG-001": "visuals[].artifact_path names a figure file absent from the fresh tempdir",
+    "DSX-NAR-010": "narrative body/artifact absent from the fresh tempdir",
+}
+
+# Minimum ABSENT/miss-partition representation (D-10 floor): the headline is the pair
+# (miss-rate, FPR), and the miss-rate is measured over the ABSENT partition — the
+# live-confirmed miss cases (attribution sidecars, kind="miss", whose named absent
+# code fires nowhere). Flooring that partition is what stops a 100%-present corpus
+# reporting a passing calibration: a corpus with fewer than this many miss cases is a
+# regression-pin dressed as detection, not a measurement of what the gate misses.
+# Set to 3, matching the corpus's own ≥3 pair floor (test_corpus_holds_at_least_three_pairs).
+_ABSENT_PARTITION_FLOOR = 3
+
+
+def _false_positive_findings(
+    findings: list[dict], noise_codes: "dict[str, str] | set[str]"
+) -> "set[str]":
+    # RED (naive, plan 12-05 task 1): counts EVERY CRITICAL/HIGH blocking finding as a
+    # false positive, including the documented tempdir-noise codes — the spuriously
+    # high FPR the plan's RED step describes. GREEN subtracts `noise_codes`.
+    return {
+        f["code"]
+        for f in findings
+        if f.get("severity") in ("CRITICAL", "HIGH")
+    }
+
+
+def _headline(
+    present: "tuple[int, int]", absent: "tuple[int, int]", fpr: "tuple[int, int]"
+) -> "tuple[float, float]":
+    # RED (naive, plan 12-05 task 2): folds the PRESENT partition into the miss-rate,
+    # so adding an already-caught target-PRESENT case moves the headline. GREEN makes
+    # the miss-rate depend on the ABSENT partition alone (D-10 invariance).
+    miss_num = present[0] + absent[0]
+    miss_den = present[1] + absent[1]
+    miss_rate = miss_num / miss_den if miss_den else 0.0
+    fp_rate = fpr[0] / fpr[1] if fpr[1] else 0.0
+    return (miss_rate, fp_rate)
+
+
 class TestKnownBadCorpus(unittest.TestCase):
     def _spec_paths(self) -> list[Path]:
         return sorted(CORPUS_DIR.glob(f"*{SPEC_SUFFIX}"))
@@ -1365,6 +1432,137 @@ class TestKnownBadCorpus(unittest.TestCase):
                         "be credited as a catch",
                     )
 
+    def test_stratified_catch_rate_and_fpr_report(self):
+        """The measurement step (REQ-P12-03, D-04/D-09/D-10): a stratified catch rate
+        with independent PRESENT/ABSENT denominators, an FPR over the good-control
+        corpus with tempdir-noise resolved, and the headline pair (miss-rate, FPR)
+        with a floored ABSENT partition and a target-present-invariance proof.
+
+        Every number is computed LIVE in this method via `self._gate_findings`
+        (fresh-tempdir) and `_classify_target_defect` — the same live source the
+        golden and falsifiability tests use — and never lifted from
+        `_INCIDENTAL_GAP_CODES` or `_GOLDEN_SHIP_FINDINGS` (D-09), neither of which is
+        read here.
+
+        Stratification (D-10):
+          - PRESENT partition: every (slug, gate-point) cell that `_effective_target_map()`
+            expects to fire a target code; caught iff `_classify_target_defect` finds no
+            problem (exit 1 with every expected code among the CRITICAL findings).
+          - ABSENT partition: the live-confirmed miss cases — attribution sidecars with
+            kind "miss" whose named absent code fires nowhere CRITICAL across all four
+            gate points (the falsifiability guarantee plan 12-03 already enforces). Each
+            is an uncaught defect, attributable to a specific absent code.
+
+        The headline is the pair (miss-rate over the ABSENT partition, FPR over the
+        good-control corpus), computed through `_headline`, whose miss-rate depends on
+        the ABSENT partition alone — so injecting an already-caught target-PRESENT case
+        is mathematically incapable of moving it. The ABSENT partition is FLOORED
+        (`_ABSENT_PARTITION_FLOOR`): a 100%-present corpus with too few miss cases
+        cannot report a passing calibration.
+        """
+        # ── Task 1: FPR over the good-control corpus, tempdir-noise resolved ──────────
+        good_specs = sorted(GOOD_CORPUS_DIR.glob(f"*{SPEC_SUFFIX}"))
+        self.assertGreaterEqual(
+            len(good_specs), 10,
+            f"the FPR denominator must have resolution (>=10 clean control specs), "
+            f"found {len(good_specs)} under {GOOD_CORPUS_DIR}",
+        )
+        fpr_blockers: "dict[str, list[str]]" = {}
+        for path in good_specs:
+            _code, findings = self._gate_findings(path, "ship")
+            real_fp = _false_positive_findings(findings, _FPR_TEMPDIR_NOISE_CODES)
+            if real_fp:
+                fpr_blockers[path.name[: -len(SPEC_SUFFIX)]] = sorted(real_fp)
+        fpr_num, fpr_denom = len(fpr_blockers), len(good_specs)
+
+        # ── Task 2: PRESENT-partition catch rate (live, per-case, attributable) ───────
+        effective = _effective_target_map()
+        present_denom = 0
+        present_caught = 0
+        present_detail: "dict[tuple[str, str], tuple[list[str], bool]]" = {}
+        for path in self._spec_paths():
+            slug = path.name[: -len(SPEC_SUFFIX)]
+            for point in _CRITICAL_THRESHOLD_POINTS:
+                expected = effective.get(slug, {}).get(point)
+                if not expected:
+                    continue
+                present_denom += 1
+                code, findings = self._gate_findings(path, point)
+                problems = _classify_target_defect(slug, point, code, findings, effective)
+                caught = problems == []
+                present_caught += int(caught)
+                present_detail[(slug, point)] = (sorted(expected), caught)
+        self.assertGreater(
+            present_denom, 0, "no PRESENT-partition cells found in the effective target map"
+        )
+
+        # ── Task 2: ABSENT-partition miss-rate (live-confirmed miss tags) ─────────────
+        absent_denom = 0
+        absent_misses = 0
+        absent_detail: "dict[str, tuple[str, bool]]" = {}
+        for sidecar in self._attribution_paths():
+            data = load(str(sidecar))
+            if data.get("kind", "miss") != "miss":
+                continue
+            absent_denom += 1
+            slug = sidecar.name[: -len(ATTRIBUTION_SUFFIX)]
+            spec_path = CORPUS_DIR / f"{slug}{SPEC_SUFFIX}"
+            absent_code = data["absent_code"]
+            # Each ABSENT-partition case is attributable to a specific code.
+            self.assertRegex(absent_code, _FINDING_CODE_RE)
+            all_critical: set[str] = set()
+            for point in ("plan", "execute", "verify", "ship"):
+                _code, findings = self._gate_findings(spec_path, point)
+                all_critical |= {
+                    f["code"] for f in findings if f.get("severity") == "CRITICAL"
+                }
+            missed = absent_code not in all_critical
+            absent_misses += int(missed)
+            absent_detail[slug] = (absent_code, missed)
+
+        # Floor the ABSENT partition (D-10): a 100%-present corpus cannot pass as a
+        # calibration. The floor is a real minimum-representation gate — a
+        # zero-representation corpus is rejected by construction (floor > 0).
+        self.assertGreater(
+            _ABSENT_PARTITION_FLOOR, 0,
+            "the ABSENT-partition floor must be a positive minimum-representation "
+            "requirement, or a 100%-present corpus would pass for free",
+        )
+        self.assertGreaterEqual(
+            absent_denom, _ABSENT_PARTITION_FLOOR,
+            f"the ABSENT/miss partition has {absent_denom} case(s), below the floor "
+            f"{_ABSENT_PARTITION_FLOOR}: a corpus with too few miss cases is a "
+            "regression-pin dressed as detection, not a calibration (D-10)",
+        )
+
+        # ── Headline = (miss-rate over ABSENT, FPR over good corpus), computed live ───
+        present = (present_caught, present_denom)
+        absent = (absent_misses, absent_denom)
+        fpr = (fpr_num, fpr_denom)
+        headline = _headline(present, absent, fpr)
+        miss_rate, fp_rate = headline
+        self.assertEqual(
+            miss_rate, absent_misses / absent_denom,
+            "the headline miss-rate must be the ABSENT partition's rate alone (D-10)",
+        )
+        self.assertEqual(
+            fp_rate, fpr_num / fpr_denom,
+            "the headline FPR must be the live good-control-corpus rate (D-04)",
+        )
+
+        # ── Invariance (D-10): an already-caught target-PRESENT case cannot move it ───
+        present_plus = (present_caught + 1, present_denom + 1)  # one synthetic easy catch
+        headline_after = _headline(present_plus, absent, fpr)
+        self.assertEqual(
+            headline, headline_after,
+            "injecting a target-PRESENT case moved the (miss-rate, FPR) headline — "
+            "adding easy catches must be mathematically incapable of moving it (D-10)",
+        )
+
+        # Both partitions carry their own, independent, non-empty denominator.
+        self.assertGreater(present_denom, 0)
+        self.assertGreater(absent_denom, 0)
+
 
 class TestClassifyTargetDefectHelper(unittest.TestCase):
     """Proves `_classify_target_defect` fires against fabricated inputs, independent
@@ -1476,6 +1674,67 @@ class TestSeedEntrypoint(unittest.TestCase):
             copied = Path(tmp) / "synthetic-entrypoint.py"
             self.assertTrue(copied.is_file(), f"{copied} was not seeded")
             self.assertEqual(copied.read_text(), entry_path.read_text())
+
+
+class TestStratifiedHeadlineHelpers(unittest.TestCase):
+    """Filesystem-independent proofs of the FPR noise-exclusion and the
+    headline-invariance arithmetic (plan 12-05), matching the two-proofs discipline
+    `TestClassifyTargetDefectHelper` sets for `_classify_target_defect`.
+
+    These are the load-bearing guards: the live
+    `test_stratified_catch_rate_and_fpr_report` runs against the plan-12-04
+    good-corpus, which is clean by construction (every reference cwd-resolvable, so a
+    fresh-tempdir ship run fires nothing) — so the live FPR is 0/12 whether or not the
+    tempdir-noise exclusion is wired, and every measured rate is degenerate (all
+    catches present, all misses absent). A test that only ever scanned that corpus
+    could therefore never go red while the exclusion or the invariance was wrong.
+    These fabricated-input proofs supply the non-degenerate RED signal the plan's
+    RED→GREEN steps describe."""
+
+    def test_false_positive_findings_excludes_documented_tempdir_noise(self):
+        # A block whose `where` names a file path (evidence/figure/profile/narrative)
+        # is tempdir noise and is NOT counted as a false positive; only the genuine
+        # statistical-validity finding survives.
+        findings = [
+            {"code": "DSX-DQ-001", "severity": "CRITICAL", "where": "good-DATA-PROFILE.yaml"},
+            {"code": "DSX-CLM-031", "severity": "HIGH", "where": "RESULTS.md#claim-1"},
+            {"code": "DSX-FIG-001", "severity": "HIGH", "where": "fig-1.svg"},
+            {"code": "DSX-NAR-010", "severity": "HIGH", "where": "NARRATIVE.md"},
+            {"code": "DSX-STA-002", "severity": "CRITICAL", "where": "analysis.test"},
+        ]
+        self.assertEqual(
+            _false_positive_findings(findings, _FPR_TEMPDIR_NOISE_CODES),
+            {"DSX-STA-002"},
+        )
+
+    def test_naive_fpr_counting_noise_is_spuriously_higher_than_the_excluded_fpr(self):
+        # The exact contrast the plan's RED step names: counting the tempdir-noise
+        # codes (empty allowlist) inflates the false-positive set; the documented
+        # exclusion removes them, leaving only the real statistical-validity finding.
+        findings = [
+            {"code": "DSX-DQ-001", "severity": "CRITICAL"},
+            {"code": "DSX-CLM-031", "severity": "HIGH"},
+            {"code": "DSX-STA-002", "severity": "CRITICAL"},
+        ]
+        naive = _false_positive_findings(findings, set())
+        excluded = _false_positive_findings(findings, _FPR_TEMPDIR_NOISE_CODES)
+        self.assertEqual(len(naive), 3)
+        self.assertEqual(excluded, {"DSX-STA-002"})
+        self.assertLess(len(excluded), len(naive))
+
+    def test_headline_is_the_absent_miss_rate_and_fpr_pair(self):
+        # miss-rate = ABSENT partition alone (1/4); FPR = good-corpus rate (3/10).
+        self.assertEqual(_headline((2, 5), (1, 4), (3, 10)), (0.25, 0.3))
+
+    def test_headline_is_invariant_to_adding_a_target_present_case(self):
+        present, absent, fpr = (2, 5), (1, 4), (1, 10)
+        base = _headline(present, absent, fpr)
+        plus = _headline((present[0] + 1, present[1] + 1), absent, fpr)
+        self.assertEqual(
+            base, plus,
+            "adding a target-PRESENT case changed the headline — easy catches must "
+            "be incapable of moving (miss-rate, FPR) (D-10)",
+        )
 
 
 if __name__ == "__main__":
