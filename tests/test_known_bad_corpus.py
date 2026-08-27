@@ -1307,6 +1307,64 @@ class TestKnownBadCorpus(unittest.TestCase):
                     "'miss' (default) or 'caught'",
                 )
 
+    def test_attribution_tags_are_falsifiable_against_live_gate(self):
+        """D-08 falsifiability (anti-laundering): each attribution tag is checked
+        against a LIVE gate run, so it cannot lie. For every sidecar, build the
+        CRITICAL union `all_critical` across ALL FOUR gate points
+        (plan/execute/verify/ship) from `self._gate_findings(spec_path, point)` —
+        the exact same fresh-tempdir live source the golden corpus tests use
+        (`:580`), never a lifted ledger (`_INCIDENTAL_GAP_CODES` /
+        `_GOLDEN_SHIP_FINDINGS` are deliberately NOT read here, T-12-01).
+
+        - `kind == "miss"`: the named absent_code must fire NOWHERE CRITICAL across
+          the union — a miss whose code actually fires is a laundered catch and a
+          hard failure (T-12-05).
+        - `kind == "caught"`: the named code MUST fire CRITICAL somewhere in the
+          union.
+
+        A named §6.5 backlog code that is not in the shipped catalogue is inherently
+        absent live — it can never appear in `all_critical` — so it satisfies the
+        miss assertion by construction and can NEVER be credited as a catch (D-08:
+        "we'd catch it with a code we haven't written" inflates nothing). That falls
+        out of the two assertions directly: a caught tag naming an unshipped code
+        fails the `in all_critical` check, exactly as intended.
+        """
+        sidecars = self._attribution_paths()
+        self.assertTrue(sidecars, "no attribution sidecars found to falsify")
+        for path in sidecars:
+            slug = path.name[: -len(ATTRIBUTION_SUFFIX)]
+            data = load(str(path))
+            absent_code = data["absent_code"]
+            kind = data.get("kind", "miss")
+            spec_path = CORPUS_DIR / f"{slug}{SPEC_SUFFIX}"
+            with self.subTest(sidecar=path.name, kind=kind):
+                self.assertTrue(
+                    spec_path.is_file(),
+                    f"{path.name} has no sibling spec {spec_path.name} to gate against",
+                )
+                all_critical: set[str] = set()
+                for point in ("plan", "execute", "verify", "ship"):
+                    _code, findings = self._gate_findings(spec_path, point)
+                    all_critical |= {
+                        f["code"] for f in findings if f.get("severity") == "CRITICAL"
+                    }
+                if kind == "miss":
+                    self.assertNotIn(
+                        absent_code, all_critical,
+                        f"{path.name} tags {absent_code!r} as a miss, but it fires CRITICAL "
+                        f"live somewhere across plan/execute/verify/ship "
+                        f"({sorted(all_critical)}) — a code that fires is a laundered catch, "
+                        "not a miss",
+                    )
+                else:  # kind == "caught"
+                    self.assertIn(
+                        absent_code, all_critical,
+                        f"{path.name} tags {absent_code!r} as caught, but it never fires "
+                        f"CRITICAL live across plan/execute/verify/ship "
+                        f"({sorted(all_critical)}) — a hypothetical/unshipped code can never "
+                        "be credited as a catch",
+                    )
+
 
 class TestClassifyTargetDefectHelper(unittest.TestCase):
     """Proves `_classify_target_defect` fires against fabricated inputs, independent
