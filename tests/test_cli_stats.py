@@ -129,6 +129,59 @@ class TestCmdStats(unittest.TestCase):
             _run(["stats", "--paradigm", "--block-on", "high"])
         self.assertEqual(cm.exception.code, 2)
 
+    def test_dedup_is_by_distinct_frame_digest(self):
+        # N distinct frequentist frames, each re-run many times (many
+        # invocation records sharing one frame_digest), scattered across
+        # several DECISIONS.jsonl files, plus 1 distinct Bayesian frame.
+        # The split's denominator is DISTINCT frame_digests (D-14), so the
+        # Bayesian share is 1/(N+1) — not the raw-record proportion.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            n = 7
+            repeats = 20
+            for i in range(n):
+                _seed_trail(
+                    root / f"phase-{i}" / "DECISIONS.jsonl",
+                    [
+                        (f"INV-F{i}-{j}", f"freq-frame-{i}", "frequentist")
+                        for j in range(repeats)
+                    ],
+                )
+            _seed_trail(
+                root / "phase-bayes" / "DECISIONS.jsonl",
+                [("INV-B-1", "bayes-frame-1", "bayesian")],
+            )
+
+            data = json.loads(
+                _capture(["stats", "--paradigm", "--root", str(root), "--json"])
+            )
+            self.assertEqual(data["distinct_frames"], n + 1)
+            self.assertEqual(data["paradigm_split"]["frequentist"], n)
+            self.assertEqual(data["paradigm_split"]["bayesian"], 1)
+            self.assertAlmostEqual(data["shares"]["bayesian"], 1 / (n + 1))
+            # The raw invocation count is a labelled secondary diagnostic only.
+            self.assertEqual(data["raw_invocation_count"], n * repeats + 1)
+
+    def test_out_of_vocabulary_paradigm_folds_to_undeclared(self):
+        # A paradigm value outside the closed vocabulary is reported in the
+        # undeclared bucket, not forced into the binary split.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            _seed_trail(
+                root / "p" / "DECISIONS.jsonl",
+                [
+                    ("INV-1", "frame-freq", "frequentist"),
+                    ("INV-2", "frame-oov", "empirical-bayes"),
+                ],
+            )
+            data = json.loads(
+                _capture(["stats", "--paradigm", "--root", str(root), "--json"])
+            )
+            self.assertEqual(data["distinct_frames"], 2)
+            self.assertEqual(data["paradigm_split"]["undeclared"], 1)
+            self.assertEqual(data["paradigm_split"]["frequentist"], 1)
+            self.assertEqual(data["paradigm_split"]["bayesian"], 0)
+
 
 if __name__ == "__main__":
     unittest.main()
