@@ -13,7 +13,7 @@ a suppression or a reference in a review stays valid across versions.
 **Gate thresholds.** `plan` and `execute` block at CRITICAL; `verify` and
 `ship` block at HIGH.
 
-**Total: 250 codes.**
+**Total: 252 codes.**
 
 ## Contract structure — `DSX-SPEC-*`
 
@@ -55,6 +55,7 @@ Shape and vocabulary of ANALYSIS-SPEC itself.
 | `DSX-SPEC-080` | CRITICAL | validity_frame block is missing |
 | `DSX-SPEC-081` | CRITICAL | validity_frame.<…> is required and missing |
 | `DSX-SPEC-082` | HIGH | validity_frame.<…>.<…> <…> is not recognised |
+| `DSX-SPEC-083` | HIGH | unexpected key in the closed exclusions sub-block |
 | `DSX-SPEC-085` | HIGH | inference.<…> <…> is not recognised |
 | `DSX-SPEC-086` | HIGH | inference.<…> is not a field under inference: |
 
@@ -386,6 +387,7 @@ Estimand, unit triad, dependence, identification, sampling frame, missingness an
 | `DSX-VAL-050` | HIGH | sampling frame is not internally consistent |
 | `DSX-VAL-060` | CRITICAL | missingness mechanism paired with a method it does not license |
 | `DSX-VAL-070` | HIGH | measurement construct declared with no operationalisation |
+| `DSX-VAL-080` | HIGH | exclusion rule declared without a justification |
 
 ## Interference, triggering and stability — `DSX-INT-*`
 

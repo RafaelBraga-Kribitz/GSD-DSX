@@ -1175,6 +1175,15 @@ def needs_causal_block(spec: dict) -> bool:
     )
 
 
+# The closed key set for the validity_frame.exclusions sub-block (DSX-SPEC-083,
+# REQ-P11.3-04). Born strict on exclusions ONLY: a declared row-exclusion rule
+# carries exactly these four keys and nothing else, so a data-dependent row count
+# (n_excluded) cannot be smuggled into a content-locked frame. This strictness is
+# deliberately NOT retrofitted to the legacy tolerant validity_frame/inference
+# blocks below (D-09) — those still parse unknown keys silently.
+_EXCLUSIONS_ALLOWED_KEYS = {"rule", "action", "applied_before_split", "justification"}
+
+
 def _validate_validity_frame_shape(spec: dict, report: Report) -> None:
     """Requiredness, aggregation and membership shape of the ``validity_frame:`` block.
 
@@ -1275,6 +1284,41 @@ def _validate_validity_frame_shape(spec: dict, report: Report) -> None:
                 detail="Allowed: " + ", ".join(sorted(vocab)),
                 remedy=f"Set validity_frame.{block_name}.{field_name} to one of the allowed values.",
                 where=f"spec.validity_frame.{block_name}.{field_name}",
+            )
+
+    # DSX-SPEC-083 (REQ-P11.3-04): the exclusions sub-block is closed-key. Scoped
+    # to frame.get("exclusions") ONLY — the membership loop above deliberately
+    # tolerates unknown keys in every other sub-block (and the inference block
+    # tolerates them too), and this guard does NOT widen that tolerance (D-09). The
+    # sub-block is accepted as either a single rule-dict or a list of rule-dicts;
+    # each entry's keys must fall inside _EXCLUSIONS_ALLOWED_KEYS so a data-dependent
+    # row count cannot be registered in a content-locked frame. A non-dict/list
+    # value is left to the content check's presence guard (T-11.3-10).
+    exclusions = frame.get("exclusions")
+    if isinstance(exclusions, (dict, list)):
+        entries = exclusions if isinstance(exclusions, list) else [exclusions]
+        for entry in entries:
+            if not isinstance(entry, dict):
+                continue
+            unexpected = set(entry.keys()) - _EXCLUSIONS_ALLOWED_KEYS
+            if not unexpected:
+                continue
+            report.add(
+                "DSX-SPEC-083",
+                "HIGH",
+                "unexpected key in the closed exclusions sub-block",
+                detail=(
+                    "validity_frame.exclusions carries key(s) outside the closed set "
+                    f"{sorted(_EXCLUSIONS_ALLOWED_KEYS)}: {sorted(unexpected)}. A "
+                    "data-dependent row count (e.g. n_excluded) has no place in the frame."
+                ),
+                remedy=(
+                    "Remove the unexpected key(s). Row counts belong in results/ or the "
+                    "data profile, not in validity_frame — the frame is content-locked at "
+                    "plan time, and a count that moves with the data would silently change "
+                    "the frame digest."
+                ),
+                where="spec.validity_frame.exclusions",
             )
 
 

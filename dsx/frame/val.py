@@ -241,6 +241,7 @@ def check(spec: dict) -> Report:
     _check_sampling_frame(frame, report)
     _check_missingness(frame, report)
     _check_measurement(frame, report)
+    _check_exclusions(frame, report)
 
     estimand = frame.get("estimand")
     if isinstance(estimand, dict):
@@ -1288,3 +1289,76 @@ def _check_measurement(frame: dict, report: Report) -> None:
         remedy=remedy,
         where="spec.validity_frame.measurement.operationalisation",
     )
+
+
+def _check_exclusions(frame: dict, report: Report) -> None:
+    """Emit DSX-VAL-080 when a declared row-exclusion rule carries no
+    justification.
+
+    Citation: Simmons, J.P., Nelson, L.D. & Simonsohn, U. (2011),
+    "False-Positive Psychology: Undisclosed Flexibility in Data Collection and
+    Analysis Allows Presenting Anything as Significant", Psychological Science
+    22(11):1359-1366, DOI 10.1177/0956797611417632 — data exclusion is named
+    there as a researcher degree of freedom whose rule and rationale must be
+    disclosed. Author, year, title, venue and DOI were confirmed; the exact
+    requirement-number and table locator inside the paper are UNVERIFIED — do
+    not invent one.
+
+    Structural criterion: a declared row-exclusion rule must carry a
+    justification. For each entry whose ``rule`` is non-blank under
+    ``is_blank()``, ``justification`` must also be non-blank; nothing else in
+    the entry is judged here. This is not the Lohr sampling-frame criterion
+    (``_check_sampling_frame``, DSX-VAL-050) nor the White & Carlin missingness
+    one (``_check_missingness``, DSX-VAL-060) — a distinct concept with its own
+    source.
+
+    The ``exclusions`` sub-block is accepted as EITHER a single rule-dict OR a
+    list of rule-dicts (RESEARCH Open Question 1, planner decision); both shapes
+    normalise to a list of entries and iterate. A value that is neither a dict
+    nor a list degrades to no finding (threat T-11.3-10: a malformed sub-block
+    must not take the whole gate down), the same presence-guard shape
+    ``_check_sampling_frame`` uses.
+
+    ``applied_before_split`` is RECORD-ONLY in 11.3 (D-10): no branch below
+    reads its value. Whether an exclusion was applied before or after the
+    train/test split is recorded for the reader, but the firing post-split
+    check is a distinct, deferred concept with its own future code — this check
+    never branches on ``applied_before_split``. Because ``exclusions`` lives
+    UNDER ``validity_frame``, ``dsx.decisions.frame_digest`` already hashes it,
+    so a changed cutoff or a flipped ``applied_before_split`` after results
+    exist is caught by the existing DSX-PRE-020 content lock with no new
+    machinery here (proven by ``tests/test_frame_prereg.py``'s
+    ``TestExclusionsContentLock``).
+    """
+    exclusions = frame.get("exclusions")
+    if not isinstance(exclusions, (dict, list)):
+        return
+
+    entries = exclusions if isinstance(exclusions, list) else [exclusions]
+    for entry in entries:
+        if not isinstance(entry, dict):
+            continue
+        rule = entry.get("rule")
+        justification = entry.get("justification")
+        if is_blank(rule) or not is_blank(justification):
+            continue
+        detail = (
+            f"exclusions rule {rule!r} is declared with no justification — a "
+            "row-exclusion rule with no stated rationale is an undisclosed "
+            "researcher degree of freedom."
+        )
+        remedy = (
+            "State why these rows are excluded in the entry's justification: "
+            "what the rule removes and why removing it is defensible for the "
+            "claim population, not merely convenient for the result. "
+            "applied_before_split is recorded but not judged here — a post-split "
+            "exclusion is a separate, deferred concern."
+        )
+        report.add(
+            "DSX-VAL-080",
+            "HIGH",
+            "exclusion rule declared without a justification",
+            detail=detail,
+            remedy=remedy,
+            where="spec.validity_frame.exclusions",
+        )
