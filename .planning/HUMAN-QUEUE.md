@@ -82,6 +82,40 @@ more not less) and AR-11.3-SC (stdlib-only, no supply-chain surface) — both de
 plan-decided residuals, not fresh redispositions. See `11.3-SECURITY.md` "Accepted Risks Log"
 + "Sign-Off". Answer e.g. `HQ-5 security: approved` (or veto any specific item).
 
+### HQ-6 — Phase 12 (Calibration) UAT round: 3 D-05 corpus-case citation reads + §4 veto window (added 2026-08-27, S3-5)
+
+Phase 12's technical verification **passed** (`12-VERIFICATION.md`: 5/5 must-haves,
+0 gaps, 0 behavior_unverified — every requirement backed by a named passing test).
+Code review is `resolved` (`12-REVIEW.md`: CR-01 + WR-01 fixed in `4e8d1ff`, IN-01/IN-02
+by-design, 0 open). The calibration readout is recorded (`12-READOUT.md`, opus/high
+Statistician-reviewed, S3-4). Status is `human_needed` **solely** for the three D-05
+primary-source reads below (verbatim quote-at-locator — the project's D-05 bar, pre-registered
+in 12-CONTEXT `<deferred>`) plus the §4 veto window. **Non-blocking for S3-5's remaining
+secure-phase + validate-phase** (they run on the technically-verified phase); it blocks only
+the phase's formal UAT/ship sign-off, drained at S4-2. Evidence packs assembled the way HQ-1's were.
+
+| # | Read | Anchors requirement | Expected |
+|---|------|--------------------|----------|
+| 1 | `garden-of-forking-paths-p-hacking` — Simmons, Nelson & Simonsohn (2011) *Psych Sci* 22(11):1359-1366 and/or Gelman & Loken (2014): the p-hacking / garden-of-forking-paths archetype, verbatim at locator. | REQ-P12-01 | Confirms a real documented archetype, not a reverse-engineered fixture. |
+| 2 | `retracted-fabricated-field-experiment` — LaCour & Green (2014) *Science* 346(6215):1366-1369 (RETRACTED, notice 348(6239):1100) + Broockman-Kalla-Aronow (2015) post-mortem, verbatim at locator. | REQ-P12-01 | Confirms a real retracted-with-postmortem archetype. |
+| 3 | `operator-known-answer-selective-exclusion` — Reinhart & Rogoff (2010) *AER* 100(2):573-578 + Herndon-Ash-Pollin (2014) *CJE* 38(2), verbatim/provenance at locator. | REQ-P12-01 | Confirms genuine operator-known-answer, sourced-before-counted (D-02). |
+
+**§4 veto window (loud decisions, vetoable here).** Phase 12 mints **ZERO** finding codes
+(D-18, catalogue stays 256) so there is no D-06 code veto. The loud reversible decisions to veto:
+(i) **this firing's S3-5 code-review dispositions** — CR-01 fixed by an *absolute* D-13 boundary
+(match `examples`/`templates` against the trail's **resolved, case-folded** path; residual
+over-exclusion under an ancestor named examples/templates fails safe — the fix-form tie was
+resolved on rigour over the Architect's F-asgiven vote); IN-01 (`--paradigm` no-op) kept
+BY-DESIGN; IN-02 (retracted sidecar `absent_code: DSX-REP-020` nearest-anchor polarity) kept
+BY-DESIGN as an honestly-flagged uncatchable-authenticity class; (ii) the S3-1/S3-3 loud items
+already daily-summary-flagged — sidecar-carrier `<slug>-ATTRIBUTION.yaml`, the missingness/paradigm
+DEFERs, the §6.5 carry-8/remove-1 + **REV-002** relocate-not-delete, and the WR-01/IN-01/IN-02
+Phase-12-backlog routing from 11.3's S2-4. **Ship-time reconciliation (INFO, not a gap):**
+`REVERSALS.md:116` describes §6.5 item-4 as "measured below 15%", but the corrected
+`12-READOUT.md` §5 (Statistician F5) shows the operator paradigm split is **0/0 undefined**
+(empty history), not below-15% — the disposition (carry item-4) is identical either way; a
+one-line wording fix owed at ship. Answer e.g. `HQ-6: cite1 pass, cite2 pass, cite3 pass, dispositions accepted`.
+
 ## Will be added by the loop when reached
 
 - End-of-phase UAT rounds for Phases 11.2, 11.3, 12 (batched, with evidence packs).

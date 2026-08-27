@@ -5,10 +5,10 @@ milestone_name: DSX Validity Frame
 current_phase: 12
 current_phase_name: calibration
 status: executing
-stopped_at: Phase 12 S3-3 CLOSED — all 7 plans (12-01..07) executed + gated. Wave 5 (plan 12-07) = §6.5 backlog re-eval carry-8/remove-1 + REV-002 relocate-not-delete + corpus-green closing gate; docs-only (brief.md + .planning/REVERSALS.md), suite 1219 OK, catalogue 256 (D-18), check.sh all passed. Next unblocked = S3-4 (catch-rate/FPR readout + Statistician adversarial review, high effort)
-last_updated: "2026-08-27T18:35:00.000Z"
+stopped_at: Phase 12 S3-5 code-review + auto-fix + verification DONE (2026-08-27T21:54Z). 12-REVIEW.md resolved (CR-01 D-13-exclusion-absolute + WR-01 fixed `4e8d1ff`; IN-01/IN-02 by-design); 12-VERIFICATION.md human_needed 5/5 must-haves / 0 gaps / 0 behavior_unverified; suite 1221 OK, catalogue 256 (D-18), check.sh all passed. S3-5 checkbox stays `[ ]` — remainder = `/gsd-secure-phase 12` + `/gsd-validate-phase 12` (next firing). 3 D-05 corpus reads + §4 veto → HQ-6 (non-blocking). Next unblocked = S3-5 remainder (secure + validate)
+last_updated: "2026-08-27T21:54:00.000Z"
 last_activity: 2026-08-27
-last_activity_desc: S3-3 Wave 5 (plan 12-07) executed + gated — CLOSES S3-3. §6.5 backlog re-eval (carry 8, remove 1: item 6 ratio-metric dilution relocated to a Removed/permanently-out-of-scope subsection with pinned substrings intact) + REV-002 filed (SELF-001-safe); docs-only (brief.md + REVERSALS.md); suite 1219 OK, catalogue 256, check.sh all checks passed
+last_activity_desc: S3-5 code-review + auto-fix + verification — gsd-code-reviewer (opus/deep) found 1 Blocker (CR-01 D-13 fixture-floor exclusion defeatable via --root into examples/**) + 1 Warning + 2 Info, all independently reproduced; CR-01+WR-01 fixed `4e8d1ff` via §4 persona round (F-resolve+case-fold, absolute boundary); gsd-verifier (opus/high) 5/5 must-haves 0 gaps; secure+validate remain
 progress:
   total_phases: 11
   completed_phases: 10
