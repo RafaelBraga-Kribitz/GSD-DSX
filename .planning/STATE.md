@@ -5,16 +5,16 @@ milestone_name: DSX Validity Frame
 current_phase: 12
 current_phase_name: calibration
 status: executing
-stopped_at: Phase 12 Waves 1-3 executed (12-01..05; 12-05 = stratified catch-rate + FPR harness, headline (miss-rate,FPR)=(1.0,0.0)); S3-3 in progress, next unblocked = Wave 4 (plan 12-06 friction column RAW+NET + catalogue-invariant(256) test, deps [12-05])
-last_updated: "2026-08-27T17:33:00.000Z"
+stopped_at: Phase 12 Waves 1-4 executed (12-01..06; 12-06 = per-family friction column RAW+NET rate over non-target in-profile cells, 3 guards, + catalogue-invariant test pinning 256); S3-3 in progress, next unblocked = Wave 5 (plan 12-07 §6.5 re-eval carry-8/remove-1 + REV-002 relocate + corpus-green closing gate, deps [12-01..06])
+last_updated: "2026-08-27T17:54:00.000Z"
 last_activity: 2026-08-27
-last_activity_desc: S3-3 Wave 3 (plan 12-05) executed + independently gated; stratified catch-rate + FPR harness, headline (miss-rate,FPR)=(1.0,0.0) [FPR 0/12, ABSENT miss 3/3, PRESENT 9/9]; suite 1212 OK, catalogue 256, check.sh all checks passed; zero codes minted (D-18)
+last_activity_desc: S3-3 Wave 4 (plan 12-06) executed + independently gated; per-family friction column (raw+net rate, 3 guards) + catalogue-invariant(256) test; test-only, zero codes minted (D-18); suite 1219 OK, catalogue 256, check.sh all checks passed
 progress:
   total_phases: 11
   completed_phases: 10
   total_plans: 89
-  completed_plans: 87
-  percent: 94
+  completed_plans: 88
+  percent: 95
 ---
 
 # Project state
@@ -114,10 +114,10 @@ parity and visible-fallback criteria added).
 
 ## Current Position
 
-Phase: 12 (calibration, terminal) — EXECUTING. S3-1 (discuss) + S3-2 (plan, 7 plans/5 waves) closed. S3-3 (execute) IN PROGRESS: Waves 1-2 of 5 done (plans 12-01, 12-02, 12-03, 12-04).
-Plan: 4 of 7 (Waves 1-2 of 5)
-Status: S3-3 Wave 2 executed + independently gated — 12-03 (attribution sidecar sibling-integrity + live falsifiability, test-only, catalogue 256) and 12-04 (good-side FPR control corpus: 12 clean multi-paradigm specs, all measure frozenset() at ship, real FPR denominator, zero codes minted). Next unblocked = S3-3 Wave 3 (plan 05; depends_on [12-03, 12-04], now done+gated). GSD resume file → 12-05-PLAN.md.
-Last activity: 2026-08-27 — S3-3 Wave 2 (plans 12-03+12-04) executed + independently gated; suite 1207 OK, catalogue 256, check.sh all checks passed
+Phase: 12 (calibration, terminal) — EXECUTING. S3-1 (discuss) + S3-2 (plan, 7 plans/5 waves) closed. S3-3 (execute) IN PROGRESS: Waves 1-4 of 5 done (plans 12-01..06).
+Plan: 6 of 7 (Waves 1-4 of 5)
+Status: S3-3 Wave 4 executed + independently gated — 12-06 (per-family friction column: pure (raw,net) helper [net=raw−own] as a per-cell rate over non-target in-profile cells, RAW and NET both surfaced (D-11); 3 guards — synthetic arithmetic, live-source tie to _gate_findings, incidental→own relabel closure; + catalogue-invariant test pinning Total=256, D-18). Test-only, zero codes minted; suite 1219 OK, catalogue 256, check.sh all checks passed. Next unblocked = S3-3 Wave 5 (plan 07; depends_on [12-01..06], now done+gated). GSD resume file → 12-07-PLAN.md.
+Last activity: 2026-08-27 — S3-3 Wave 4 (plan 12-06) executed + independently gated; suite 1219 OK, catalogue 256, check.sh all checks passed
 
 ## Project Reference
 
@@ -128,9 +128,9 @@ See: .planning/PROJECT.md (updated 2026-08-13)
 
 ## Session
 
-**Last session:** 2026-08-27T14:45:00.000Z
-**Stopped at:** Phase 12 S3-3 Wave 2 executed (plans 12-03, 12-04) + independently gated; next unblocked = Wave 3 (plan 05)
-**Resume file:** .planning/phases/12-calibration/12-05-PLAN.md
+**Last session:** 2026-08-27T17:54:00.000Z
+**Stopped at:** Phase 12 S3-3 Wave 4 executed (plan 12-06) + independently gated; next unblocked = Wave 5 (plan 12-07, corpus-green closing gate)
+**Resume file:** .planning/phases/12-calibration/12-07-PLAN.md
 
 Phase 10 context was re-verified 2026-08-14 (assumptions mode). Six unexecuted plans (`10-01` … `10-06`) already exist; this refresh did not rewrite them. Phase 8's blocking gap is in `08-VERIFICATION.md` (out-of-vocabulary `interference.risk` bypass).
 
