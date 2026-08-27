@@ -21,6 +21,7 @@ from typing import Any, Callable
 
 from . import __version__
 from .checks import (
+    chart_review,
     claims,
     code,
     coherence,
@@ -80,6 +81,7 @@ CHECKS: dict[str, Callable] = {
     "interference": interference.check,
     "prereg": prereg.check,
     "admissibility": admissibility.check,
+    "chart_review": chart_review.check,
 }
 
 # Which checks each GSD loop point cares about. Keeping this here rather than in
@@ -119,12 +121,12 @@ GATE_PROFILES: dict[str, tuple[str, ...]] = {
     "verify": (
         "spec", "design", "stats", "ml", "metrics", "claims", "viz", "repro",
         "dq", "coherence", "smells", "figures", "narrative", "code", "decision",
-        "paradigm", "val", "interference", "prereg", "admissibility",
+        "paradigm", "val", "interference", "prereg", "admissibility", "chart_review",
     ),
     "ship": (
         "spec", "design", "stats", "ml", "metrics", "claims", "viz", "repro",
         "dq", "coherence", "smells", "figures", "narrative", "code", "decision",
-        "paradigm", "val", "interference", "prereg", "admissibility",
+        "paradigm", "val", "interference", "prereg", "admissibility", "chart_review",
     ),
 }
 
@@ -195,6 +197,8 @@ def run_checks(
             reports.append(coherence.check(spec, strict=strict))
         elif name == "figures":
             reports.append(figures.check(spec, root, strict=strict))
+        elif name == "chart_review":
+            reports.append(chart_review.check(spec, root, strict=strict))
         elif name == "smells":
             reports.append(smells.check(spec))
         elif name == "narrative":
