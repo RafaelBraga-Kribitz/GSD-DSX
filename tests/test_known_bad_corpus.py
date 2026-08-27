@@ -34,6 +34,7 @@ from dsx.loader import load  # noqa: E402
 CORPUS_DIR = ROOT / "examples" / "known-bad"
 SPEC_SUFFIX = "-ANALYSIS-SPEC.yaml"
 POSTMORTEM_SUFFIX = "-POSTMORTEM.md"
+ATTRIBUTION_SUFFIX = "-ATTRIBUTION.yaml"
 SYMMETRY_AUDIT_PATH = ROOT / "references" / "paradigm-symmetry.md"
 
 # The three controlled design.peeking_policy values REQ-P9-01 names as "the
@@ -570,12 +571,75 @@ def _slugs(pattern: str, suffix: str) -> set[str]:
     return {p.name[: -len(suffix)] for p in CORPUS_DIR.glob(pattern)}
 
 
+# The 256-code shipped catalogue is the source of truth for which finding codes a
+# fixture's <slug>-ATTRIBUTION.yaml sidecar may name as its currently-ABSENT
+# catch (D-07). It is enumerated from references/finding-codes.md — the same
+# generated catalogue scripts/gen-finding-catalogue.py::collect() writes from the
+# real report.add(...) call sites, so this test cannot drift from what the checks
+# actually emit — rather than re-walking the dsx/ AST here. Every catalogue row is
+# a Markdown table cell of the form `| `DSX-<FAMILY>-<digits>` | <severity> | ...`.
+_FINDING_CATALOGUE_PATH = ROOT / "references" / "finding-codes.md"
+_CATALOGUE_ROW_RE = re.compile(r"\|\s*`(DSX-[A-Z]+-\d+)`\s*\|")
+
+
+def _catalogue_codes() -> "frozenset[str]":
+    """Every shipped finding code, enumerated from the generated catalogue.
+
+    Returns the exact set of `DSX-*` codes listed in references/finding-codes.md
+    (256 today, pinned invariant under D-18). Parsed by table-row regex rather
+    than by importing and AST-walking dsx/ so this harness stays a pure reader of
+    the same generated artifact `scripts/gen-finding-catalogue.py --check` gates.
+    """
+    text = _FINDING_CATALOGUE_PATH.read_text(encoding="utf-8")
+    return frozenset(_CATALOGUE_ROW_RE.findall(text))
+
+
+# The named §6.5 backlog codes an attribution sidecar may reference as its
+# absent_code even though they are NOT in the shipped catalogue — REFERENCING an
+# unbuilt backlog code is the point of the miss-attribution polarity (D-05/D-07)
+# and is explicitly NOT minting (D-18: the catalogue stays 256, unchanged). This
+# is the allowlist-with-inline-reason house style of _INCIDENTAL_GAP_CODES
+# (:64-100), one entry per §6.5 row that names a concrete unshipped code. A wildcard
+# family (item 4's "DSX-ADM-*, second axis") is deliberately NOT enumerated here —
+# it is a family, not a code — so no sidecar can reference it as a bare code.
+# test_attribution_sidecars_reference_valid_codes_and_items asserts this set is
+# disjoint from the shipped catalogue, so a code that later ships must be moved out
+# of here rather than silently double-counted as both backlog and catalogue.
+_SECTION_65_BACKLOG_CODES = {
+    "DSX-PAR-020",  # §6.5 item 1 (brief.md:371): prior justification — unwritten, D-12a mirror pending
+    "DSX-PAR-021",  # §6.5 item 1 (brief.md:371): prior sensitivity — unwritten, D-12a mirror pending
+    "DSX-PAR-022",  # §6.5 item 2 (brief.md:372): prior predictive check — writable but unshipped (REV-001)
+    "DSX-PAR-030",  # §6.5 item 3 (brief.md:373): convergence declarations — unwritten, D-12a mirror pending
+}
+
+# The nine §6.5 gated-backlog item ids (brief.md:369-379 table, one id per row), the
+# closed set a sidecar's promotes_backlog_item must name so the D-13 entry conditions
+# are machine-countable ("≥N cases naming this item" = count of sidecars). Exactly
+# nine, in the brief's row order. The two ids the plan-12-01 sidecars actually use —
+# item 1 and item 7 — are load-bearing strings and must match the sidecars verbatim;
+# the other seven follow the same 6.5-item-<N>-<slug> shape, one per remaining row.
+_SECTION_65_ITEM_IDS = frozenset({
+    "6.5-item-1-prior-justification-and-sensitivity",  # brief.md:371 row 1 (DSX-PAR-020/-021)
+    "6.5-item-2-prior-predictive-check",               # brief.md:372 row 2 (DSX-PAR-022, REV-001)
+    "6.5-item-3-convergence-declarations",             # brief.md:373 row 3 (DSX-PAR-030)
+    "6.5-item-4-bayesian-admissibility",               # brief.md:374 row 4 (DSX-ADM-*, second axis)
+    "6.5-item-5-quiz-fading-mode",                     # brief.md:375 row 5 (dsx quiz, not a check)
+    "6.5-item-6-ratio-metric-dilution",                # brief.md:376 row 6 (Deng & Hu 2015, REV-002 removal)
+    "6.5-item-7-feature-provenance",                   # brief.md:377 row 7 (per-feature origin list)
+    "6.5-item-8-magnitude-without-computed-effect",    # brief.md:378 row 8 (magnitude residual)
+    "6.5-item-9-subgroup-harm-declaration",            # brief.md:379 row 9 (prescriptive subgroup harm)
+})
+
+
 class TestKnownBadCorpus(unittest.TestCase):
     def _spec_paths(self) -> list[Path]:
         return sorted(CORPUS_DIR.glob(f"*{SPEC_SUFFIX}"))
 
     def _postmortem_paths(self) -> list[Path]:
         return sorted(CORPUS_DIR.glob(f"*{POSTMORTEM_SUFFIX}"))
+
+    def _attribution_paths(self) -> list[Path]:
+        return sorted(CORPUS_DIR.glob(f"*{ATTRIBUTION_SUFFIX}"))
 
     def _gate_findings(self, spec_path: Path, point: str) -> tuple[int, list[dict]]:
         """Run one real ``dsx gate <point>`` against one fixture and return
@@ -1166,6 +1230,81 @@ class TestKnownBadCorpus(unittest.TestCase):
                     reference_value, normalized,
                     f"{SYMMETRY_AUDIT_PATH.name} no longer states the reference value "
                     f"{reference_value!r}",
+                )
+
+    def test_attribution_sidecars_reference_valid_codes_and_items(self):
+        """D-07 sibling-integrity: every `<slug>-ATTRIBUTION.yaml` names a real
+        slug, an absent_code in the validated union (the 256 shipped catalogue
+        codes ∪ the named §6.5 backlog codes), and a promotes_backlog_item that is
+        one of the nine §6.5 item ids — validated at schema time, before any live
+        gate check runs (T-12-07). A hallucinated or misspelled absent_code, or a
+        promotes_backlog_item outside the nine ids, fails here.
+
+        Discovery is by glob on the slug (`*-ATTRIBUTION.yaml`, D-06) and every
+        sidecar is parsed with `dsx.loader.load` — no hardcoded slug list, no
+        `import yaml`, no hand-rolled parser (D-01). The sibling-spec check is a
+        SUBSET (`attribution_slugs ⊆ spec_slugs`), not the symmetric difference the
+        spec/postmortem pairing uses (`:646`), because sidecars are optional per
+        D-03 (present for miss/backlog-promotion cases, absent for pure-catch
+        cases) — a spec with no sidecar is fine, a sidecar with no spec is not.
+        """
+        catalogue = _catalogue_codes()
+        self.assertTrue(catalogue, "no finding codes enumerated from the catalogue")
+        # Referencing an unbuilt §6.5 backlog code is the miss-attribution point and
+        # is NOT minting (D-07/D-18): the backlog set must stay disjoint from the
+        # shipped catalogue, so a code that later ships is moved out of the backlog
+        # allow-list rather than silently counted as both.
+        self.assertEqual(
+            _SECTION_65_BACKLOG_CODES & catalogue, set(),
+            f"§6.5 backlog codes overlap the shipped catalogue: "
+            f"{sorted(_SECTION_65_BACKLOG_CODES & catalogue)} — a shipped code must be "
+            "removed from _SECTION_65_BACKLOG_CODES, not referenced as an unbuilt backlog code",
+        )
+        self.assertEqual(
+            len(_SECTION_65_ITEM_IDS), 9,
+            f"_SECTION_65_ITEM_IDS must have exactly nine members (one per §6.5 row), "
+            f"found {len(_SECTION_65_ITEM_IDS)}: {sorted(_SECTION_65_ITEM_IDS)}",
+        )
+        validated_union = catalogue | _SECTION_65_BACKLOG_CODES
+
+        spec_slugs = _slugs(f"*{SPEC_SUFFIX}", SPEC_SUFFIX)
+        attribution_slugs = _slugs(f"*{ATTRIBUTION_SUFFIX}", ATTRIBUTION_SUFFIX)
+        self.assertTrue(attribution_slugs, "no attribution sidecars found to validate")
+        orphaned = attribution_slugs - spec_slugs
+        self.assertEqual(
+            orphaned, set(),
+            f"attribution sidecar(s) name a slug with no sibling ANALYSIS-SPEC: "
+            f"{sorted(orphaned)} — a sidecar must pair with a real fixture",
+        )
+
+        for path in self._attribution_paths():
+            with self.subTest(sidecar=path.name):
+                data = load(str(path))
+                self.assertIsInstance(
+                    data, dict, f"{path.name} did not load as a mapping"
+                )
+                for key in ("absent_code", "promotes_backlog_item"):
+                    self.assertIn(
+                        key, data,
+                        f"{path.name} is missing required key {key!r} (D-07 schema)",
+                    )
+                self.assertIn(
+                    data["absent_code"], validated_union,
+                    f"{path.name} names absent_code {data['absent_code']!r} outside the "
+                    "validated union (256 catalogue codes ∪ named §6.5 backlog codes) — "
+                    "a hallucinated or misspelled code is rejected before any live check",
+                )
+                self.assertIn(
+                    data["promotes_backlog_item"], _SECTION_65_ITEM_IDS,
+                    f"{path.name} names promotes_backlog_item "
+                    f"{data['promotes_backlog_item']!r}, not one of the nine §6.5 item ids: "
+                    f"{sorted(_SECTION_65_ITEM_IDS)}",
+                )
+                kind = data.get("kind", "miss")
+                self.assertIn(
+                    kind, ("miss", "caught"),
+                    f"{path.name} has kind {kind!r}; the D-07 schema allows only "
+                    "'miss' (default) or 'caught'",
                 )
 
 
