@@ -5,15 +5,15 @@ milestone_name: DSX Validity Frame
 current_phase: 12
 current_phase_name: calibration
 status: executing
-stopped_at: Phase 12 Waves 1-4 executed (12-01..06; 12-06 = per-family friction column RAW+NET rate over non-target in-profile cells, 3 guards, + catalogue-invariant test pinning 256); S3-3 in progress, next unblocked = Wave 5 (plan 12-07 §6.5 re-eval carry-8/remove-1 + REV-002 relocate + corpus-green closing gate, deps [12-01..06])
-last_updated: "2026-08-27T17:54:00.000Z"
+stopped_at: Phase 12 S3-3 CLOSED — all 7 plans (12-01..07) executed + gated. Wave 5 (plan 12-07) = §6.5 backlog re-eval carry-8/remove-1 + REV-002 relocate-not-delete + corpus-green closing gate; docs-only (brief.md + .planning/REVERSALS.md), suite 1219 OK, catalogue 256 (D-18), check.sh all passed. Next unblocked = S3-4 (catch-rate/FPR readout + Statistician adversarial review, high effort)
+last_updated: "2026-08-27T18:35:00.000Z"
 last_activity: 2026-08-27
-last_activity_desc: S3-3 Wave 4 (plan 12-06) executed + independently gated; per-family friction column (raw+net rate, 3 guards) + catalogue-invariant(256) test; test-only, zero codes minted (D-18); suite 1219 OK, catalogue 256, check.sh all checks passed
+last_activity_desc: S3-3 Wave 5 (plan 12-07) executed + gated — CLOSES S3-3. §6.5 backlog re-eval (carry 8, remove 1: item 6 ratio-metric dilution relocated to a Removed/permanently-out-of-scope subsection with pinned substrings intact) + REV-002 filed (SELF-001-safe); docs-only (brief.md + REVERSALS.md); suite 1219 OK, catalogue 256, check.sh all checks passed
 progress:
   total_phases: 11
   completed_phases: 10
   total_plans: 89
-  completed_plans: 88
+  completed_plans: 89
   percent: 95
 ---
 
@@ -114,10 +114,10 @@ parity and visible-fallback criteria added).
 
 ## Current Position
 
-Phase: 12 (calibration, terminal) — EXECUTING. S3-1 (discuss) + S3-2 (plan, 7 plans/5 waves) closed. S3-3 (execute) IN PROGRESS: Waves 1-4 of 5 done (plans 12-01..06).
-Plan: 6 of 7 (Waves 1-4 of 5)
-Status: S3-3 Wave 4 executed + independently gated — 12-06 (per-family friction column: pure (raw,net) helper [net=raw−own] as a per-cell rate over non-target in-profile cells, RAW and NET both surfaced (D-11); 3 guards — synthetic arithmetic, live-source tie to _gate_findings, incidental→own relabel closure; + catalogue-invariant test pinning Total=256, D-18). Test-only, zero codes minted; suite 1219 OK, catalogue 256, check.sh all checks passed. Next unblocked = S3-3 Wave 5 (plan 07; depends_on [12-01..06], now done+gated). GSD resume file → 12-07-PLAN.md.
-Last activity: 2026-08-27 — S3-3 Wave 4 (plan 12-06) executed + independently gated; suite 1219 OK, catalogue 256, check.sh all checks passed
+Phase: 12 (calibration, terminal) — EXECUTING. S3-1 (discuss) + S3-2 (plan, 7 plans/5 waves) closed. S3-3 (execute) CLOSED: all 7 plans (12-01..07) executed + gated across 5 waves.
+Plan: 7 of 7 (Waves 1-5 of 5) — S3-3 CLOSED
+Status: S3-3 Wave 5 (plan 12-07) executed + gated by the orchestrator directly (docs-only closing plan, the gate IS the plan) — §6.5 backlog re-evaluated against the measured evidence (carry 8, remove 1): item 6 (ratio-metric dilution) removed as structurally unevaluable and relocated verbatim into a new "Removed / permanently out of scope (D-14)" subsection with its three pinned substrings intact (pin test green, unmodified); per-item dispositions cite the measured (miss-rate 1.0, FPR 0.0) headline (12-05), the empty operator paradigm split (12-02, item 4 NOT auto-promoted), and the friction column (12-06). REV-002 filed in .planning/REVERSALS.md as an honest reclassification surviving SELF-001. Suite 1219 OK, catalogue 256 (D-18, zero minted), check.sh all checks passed. Next unblocked = S3-4 (catch-rate/FPR readout + Statistician adversarial review at high effort).
+Last activity: 2026-08-27 — S3-3 Wave 5 (plan 12-07) executed + gated; CLOSES S3-3; suite 1219 OK, catalogue 256, check.sh all checks passed
 
 ## Project Reference
 
@@ -128,9 +128,9 @@ See: .planning/PROJECT.md (updated 2026-08-13)
 
 ## Session
 
-**Last session:** 2026-08-27T17:54:00.000Z
-**Stopped at:** Phase 12 S3-3 Wave 4 executed (plan 12-06) + independently gated; next unblocked = Wave 5 (plan 12-07, corpus-green closing gate)
-**Resume file:** .planning/phases/12-calibration/12-07-PLAN.md
+**Last session:** 2026-08-27T18:35:00.000Z
+**Stopped at:** Phase 12 S3-3 CLOSED — Wave 5 (plan 12-07) executed + gated (§6.5 re-eval carry-8/remove-1 + REV-002); next unblocked = S3-4 (catch-rate/FPR readout + Statistician adversarial review)
+**Resume file:** .planning/phases/12-calibration/12-07-SUMMARY.md
 
 Phase 10 context was re-verified 2026-08-14 (assumptions mode). Six unexecuted plans (`10-01` … `10-06`) already exist; this refresh did not rewrite them. Phase 8's blocking gap is in `08-VERIFICATION.md` (out-of-vocabulary `interference.risk` bypass).
 

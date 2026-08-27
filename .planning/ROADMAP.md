@@ -1027,7 +1027,7 @@ cases where absence permitted a false pass" is a debate, not a count.
      measured corpus, and any item whose condition cannot be evaluated is removed from §6.5
      rather than carried — with a D-14 reversal record where a removal reverses a prior decision.
 
-**Plans**: 7 plans across 5 waves (planned 2026-08-27, S3-2; plan-checker PASSED at opus — 0 blockers; 18/18 CONTEXT decisions + 5/5 REQ covered; ZERO finding codes minted, catalogue stays 256). Wave graph `{01,02} → {03,04} → 05 → 06 → 07`. **Executed: 6/7 (Wave 4 of 5 done, S3-3, 2026-08-27) — suite 1219 OK, catalogue 256, check.sh all checks passed. 12-05 headline (miss-rate,FPR)=(1.0,0.0); 12-06 friction column RAW+NET + catalogue-invariant(256), zero codes minted.**
+**Plans**: 7 plans across 5 waves (planned 2026-08-27, S3-2; plan-checker PASSED at opus — 0 blockers; 18/18 CONTEXT decisions + 5/5 REQ covered; ZERO finding codes minted, catalogue stays 256). Wave graph `{01,02} → {03,04} → 05 → 06 → 07`. **Executed: 7/7 — S3-3 CLOSED (all 5 waves done, 2026-08-27) — suite 1219 OK, catalogue 256, check.sh all checks passed. 12-05 headline (miss-rate,FPR)=(1.0,0.0); 12-06 friction column RAW+NET + catalogue-invariant(256), zero codes minted; 12-07 §6.5 re-eval carry-8/remove-1 + REV-002.**
 
 - **12-01** ✅ executed (wave 1, deps []) — REQ-P12-01/-02: extend the known-bad corpus across three coverage classes (retracted-paper+postmortem, p-hacking, operator-known-answer) and author each miss/promotion case's `<slug>-ATTRIBUTION.yaml` sidecar in the SAME change (D-02 source-before-count; class-presence coverage predicate).
 - **12-02** ✅ executed (wave 1, deps []) — REQ-P12-04: `dsx stats --paradigm` — a pure always-return-0 reader (`cmd_stats` on the `cmd_explain` template), multi-file `.planning/` aggregation with `--root`, distinct-`frame_digest` dedup, hard-exclude of the polluted known-bad `DECISIONS.jsonl` (negative-source assertion).
@@ -1035,7 +1035,7 @@ cases where absence permitted a false pass" is a debate, not a count.
 - **12-04** ✅ executed (wave 2, deps [12-01]) — REQ-P12-03: good-side control corpus (12 clean specs, 6 frequentist / 6 Bayesian × proportion/continuous/count) with the fresh-tempdir noise trap resolved via minimal cwd-resolvable references — all measure `frozenset()`, a real FPR denominator; golden-file entries landed in lockstep.
 - **12-05** ✅ executed (wave 3, deps [12-03, 12-04]) — REQ-P12-03: stratified catch rate + FPR with independent PRESENT/ABSENT denominators, floored ABSENT partition, `(miss-rate, FPR)` headline, easy-catch invariance.
 - **12-06** ✅ executed (wave 4, deps [12-05]) — REQ-P12-02: friction column RAW + NET with three guards (synthetic arithmetic, live-source, incidental→own relabel closure) + the catalogue-invariant (256) test.
-- **12-07** (wave 5, deps [12-02, 12-05, 12-06]) — REQ-P12-05: §6.5 re-evaluation (carry 8, remove 1), item-6 relocation with pinned substrings intact, REV-002 surviving SELF-001, corpus-green closing gate.
+- **12-07** ✅ executed (wave 5, deps [12-02, 12-05, 12-06]) — REQ-P12-05: §6.5 re-evaluation (carry 8, remove 1) against the measured evidence, item-6 (ratio-metric dilution) relocated verbatim into a "Removed / permanently out of scope (D-14)" subsection with pinned substrings intact (pin test green, unmodified), REV-002 filed surviving SELF-001, corpus-green closing gate (suite 1219 OK, catalogue 256). Docs-only (brief.md + .planning/REVERSALS.md); zero codes minted.
 
 ---
 
