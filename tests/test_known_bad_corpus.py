@@ -706,6 +706,59 @@ def _headline(
     return (miss_rate, fp_rate)
 
 
+def _friction(
+    blocking: "set[str] | frozenset[str]", own: "set[str] | frozenset[str]"
+) -> "tuple[int, int]":
+    """The per-family friction pair ``(raw, net)`` (D-11). ``blocking`` is the set of
+    ship-blocking finding codes a fixture fires (CRITICAL/HIGH at ship — the same live
+    set the golden test consumes); ``own`` is that fixture's own-target codes
+    (``_own_target_codes(slug)``). ``raw`` is the full count of ship-blocking findings —
+    the honest gross over-block, which no relabel can shrink; ``net`` is ``raw`` minus
+    the ship-blocking findings that are the fixture's own declared target — the
+    over-blocking BEYOND what the fixture exists to demonstrate.
+
+    Both numbers are returned; friction is never reported net-only (D-11), so a fixture
+    that over-blocks on unrelated codes cannot look clean by attributing two of them to
+    itself: an inflated ``own`` shrinks ``net`` while ``raw`` stays put, and guard (c)
+    (``test_target_defect_codes_fire_and_are_named``) closes the relabel path by
+    requiring every ``own`` code to fire live and be publicly declared. Pure arithmetic
+    over two sets, taking both as parameters so a synthetic proof exercises it without
+    the filesystem or the gate (the module's two-proofs discipline)."""
+    raw = len(set(blocking))
+    net = raw - len(set(blocking) & set(own))
+    return (raw, net)
+
+
+def _friction_rate(total: int, cells: int) -> float:
+    """A friction count expressed as a per-cell rate over the non-target in-profile
+    (fixture × gate-point) cells (D-11): ``total`` (a raw or net over-block count)
+    divided by ``cells`` (``_non_target_in_profile_cells``). Floors to 0.0 on an empty
+    denominator rather than raising, matching ``_headline``'s empty-denominator floor —
+    friction is a rate, not a bare count, so a larger corpus does not read as more
+    friction merely for holding more fixtures."""
+    return total / cells if cells else 0.0
+
+
+def _non_target_in_profile_cells(
+    effective: "dict[str, dict[str, frozenset[str]]]",
+    slugs: "set[str] | frozenset[str]",
+    points: "tuple[str, ...]",
+) -> int:
+    """Count the non-target in-profile (fixture × gate-point) cells that normalise the
+    friction rate (D-11): every ``(slug, point)`` cell over ``slugs`` × ``points`` where
+    ``effective`` (``_effective_target_map()``) has NO expected own-target code for that
+    fixture at that point. These are the cells at which any blocking finding is
+    over-blocking rather than the fixture's intended catch. Takes ``effective`` and the
+    ``slugs``/``points`` axes as parameters so a synthetic proof exercises the count
+    without the filesystem, the same testability discipline the other helpers keep."""
+    return sum(
+        1
+        for slug in slugs
+        for point in points
+        if not effective.get(slug, {}).get(point)
+    )
+
+
 class TestKnownBadCorpus(unittest.TestCase):
     def _spec_paths(self) -> list[Path]:
         return sorted(CORPUS_DIR.glob(f"*{SPEC_SUFFIX}"))
