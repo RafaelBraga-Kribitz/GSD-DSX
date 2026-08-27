@@ -632,7 +632,14 @@ def _all_fixture_paths() -> "list[Path]":
 # dropped its family early-return so DSX-EXP-051 fires on the reported test count
 # independent of whether a family is declared (D-02). Both are sanctioned
 # deliberate edits this guard exists to force into the open, not a regression.
-_DESIGN_PY_SHA256 = "b0dda7dd70d0465dae426ef24424c27faefb5b453172dd4bb557d22521c70f3e"
+# Updated 2026-08-27 (Phase 11.3 S2-4 code review, WR-03/D-01): _check_multiplicity's
+# DSX-EXP-053 naming set-difference (`reported - set(family)`) crashed the gate with
+# an uncaught TypeError/AttributeError when a malformed spec declared a non-scalar
+# multiplicity.family member, a non-scalar test metric, or a non-dict test entry.
+# Hardened all three sites (filter to string members before the set op); the
+# count-based fire is unchanged so no canonical verdict moves. Sanctioned deliberate
+# edit this guard exists to force into the open, not a regression.
+_DESIGN_PY_SHA256 = "f18056a6cc041cccdffee666ee627ec9dd6efb7411b331cc9558141fa527cd3d"
 
 
 def _design_py_hash() -> str:

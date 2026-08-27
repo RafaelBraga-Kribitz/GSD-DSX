@@ -384,8 +384,22 @@ def _check_multiplicity(
     n_tests = max(len(family) if isinstance(family, list) else 0, len(tests))
 
     if isinstance(family, list) and family and len(family) < len(tests):
-        reported = {t.get("metric") for t in tests if not is_blank(t.get("metric"))}
-        absent = sorted(reported - set(family))
+        # A malformed spec can declare non-scalar family/test metrics (a list of
+        # mappings, a nested dict) or a non-dict test entry. The naming
+        # set-difference below must degrade to a controlled finding, never a
+        # gate-path TypeError/AttributeError (D-01) — every hashable/attribute
+        # site is guarded together, the one crash class hardened at once
+        # (cf. S0-6a). The count-based fire above stays on len(family)/len(tests)
+        # (D-01 max() semantics; IN-03), so no canonical verdict moves.
+        reported = {
+            t.get("metric")
+            for t in tests
+            if isinstance(t, dict)
+            and isinstance(t.get("metric"), str)
+            and not is_blank(t.get("metric"))
+        }
+        family_metrics = {m for m in family if isinstance(m, str)}
+        absent = sorted(reported - family_metrics)
         report.add(
             "DSX-EXP-053",
             "HIGH",

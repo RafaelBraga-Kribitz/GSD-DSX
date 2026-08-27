@@ -94,6 +94,76 @@ class TestMultiplicityFamilyUnderDeclared(unittest.TestCase):
         report = design.check(spec)  # must not raise
         self.assertNotIn("DSX-EXP-053", codes(report))
 
+    def test_exp_053_no_traceback_on_nonscalar_family(self):
+        # WR-03 (11.3 S2-4 review): a family declared as a list of mappings and
+        # shorter than the reported tests enters the DSX-EXP-053 branch. The
+        # naming set-difference must degrade to a controlled finding, never a
+        # gate-path TypeError (set() over unhashable dicts).
+        spec = {
+            "design": {
+                "kind": "observational",
+                "multiplicity": {
+                    "family": [{"metric": "churn"}],  # list of mappings
+                    "correction": "holm",
+                },
+            },
+            "results": {
+                "tests": [
+                    {"metric": "churn", "p_value": 0.01},
+                    {"metric": "arpu", "p_value": 0.02},
+                ],
+            },
+        }
+        report = design.check(spec)  # must not raise
+        # Count-based fire is unchanged (len(family)=1 < len(tests)=2); the
+        # non-string family member simply names no metric it cannot cover.
+        self.assertIn("DSX-EXP-053", codes(report))
+        detail = detail_for(report, "DSX-EXP-053")
+        self.assertIn("churn", detail)
+        self.assertIn("arpu", detail)
+
+    def test_exp_053_no_traceback_on_nonscalar_test_metric(self):
+        # WR-03 sibling site: a test whose `metric` is a non-scalar (dict) must
+        # not crash the `reported` set-comprehension; it is skipped, the scalar
+        # metrics are still named.
+        spec = {
+            "design": {
+                "kind": "observational",
+                "multiplicity": {"family": ["churn"], "correction": "holm"},
+            },
+            "results": {
+                "tests": [
+                    {"metric": {"nested": "x"}, "p_value": 0.01},
+                    {"metric": "arpu", "p_value": 0.02},
+                    {"metric": "ltv", "p_value": 0.03},
+                ],
+            },
+        }
+        report = design.check(spec)  # must not raise
+        self.assertIn("DSX-EXP-053", codes(report))
+        detail = detail_for(report, "DSX-EXP-053")
+        self.assertIn("arpu", detail)
+        self.assertIn("ltv", detail)
+
+    def test_exp_053_no_traceback_on_nondict_test_entry(self):
+        # WR-03 sibling site: a bare non-dict test entry must not crash the
+        # `reported` comprehension (t.get on a str) — it is skipped.
+        spec = {
+            "design": {
+                "kind": "observational",
+                "multiplicity": {"family": ["churn"], "correction": "holm"},
+            },
+            "results": {
+                "tests": [
+                    "not-a-dict",
+                    {"metric": "arpu", "p_value": 0.02},
+                    {"metric": "ltv", "p_value": 0.03},
+                ],
+            },
+        }
+        report = design.check(spec)  # must not raise
+        self.assertIn("DSX-EXP-053", codes(report))
+
 
 class TestExploratoryLooksFamilyIndependent(unittest.TestCase):
     # REQ-P11.3-02: DSX-EXP-051 — fires on the reported test count, family or not.

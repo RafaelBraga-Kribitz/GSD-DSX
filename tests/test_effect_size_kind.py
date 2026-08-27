@@ -72,5 +72,38 @@ class TestEffectSizeKindGuard(unittest.TestCase):
         self.assertEqual(finding.severity.label, "MEDIUM")
 
 
+class TestEffectSizeKindAbsentVsNull(unittest.TestCase):
+    """Pin the absent-key vs explicit-null asymmetry as a documented invariant.
+
+    IN-02 (11.3 S2-4 review, §4 persona round — BY-DESIGN, keep firing): an
+    *absent* effect_size_kind defaults to the recognised "d" (backward-compatible
+    "use the default") and stays silent; an *explicitly-null* kind is an author
+    actively declaring an effect-size analysis with no valid kind — a real
+    reporting gap — so it fires DSX-STA-012 MEDIUM rather than silently skipping
+    the magnitude guard (D-11 intent). Treating null as absent would re-open that
+    silent skip, so this asymmetry is pinned deliberately, not incidental.
+    """
+
+    @staticmethod
+    def _base_test() -> dict:
+        return {
+            "metric": "conversion",
+            "p_value": 0.001,
+            "standardized_effect": 0.42,
+        }
+
+    def test_absent_effect_size_kind_stays_silent(self):
+        spec = {"design": {"alpha": 0.05}, "results": {"tests": [self._base_test()]}}
+        self.assertNotIn("DSX-STA-012", _codes(stats.check(spec)))
+
+    def test_explicit_null_effect_size_kind_fires_medium(self):
+        test = dict(self._base_test(), effect_size_kind=None)
+        spec = {"design": {"alpha": 0.05}, "results": {"tests": [test]}}
+        report = stats.check(spec)
+        self.assertIn("DSX-STA-012", _codes(report))
+        finding = next(f for f in report.findings if f.code == "DSX-STA-012")
+        self.assertEqual(finding.severity.label, "MEDIUM")
+
+
 if __name__ == "__main__":
     unittest.main()
