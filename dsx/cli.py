@@ -637,6 +637,115 @@ def cmd_explain(args: argparse.Namespace) -> int:
     return 0
 
 
+def _discover_operator_trails(root: "str | Path") -> "list[Path]":
+    """Every ``DECISIONS.jsonl`` under ``root`` that counts as *operator*
+    history (D-13). Hard-**excludes** any trail whose path passes through an
+    ``examples/`` tree or a ``templates/`` tree — matched by path COMPONENT,
+    not a single hardcoded string literal, so ``examples/DECISIONS.jsonl``,
+    ``examples/known-bad/DECISIONS.jsonl`` and ``templates/DECISIONS.jsonl``
+    are all dropped.
+
+    The exclusion is the negative-source boundary the whole readout turns on:
+    ``examples/known-bad/DECISIONS.jsonl`` is a polluted test floor (~1,151
+    invocation records but only ~15 distinct ``frame_digest``, ~45.8%
+    raw-Bayesian) that, counted, would inflate the §6.5 item-4 "Bayesian >
+    15%" gate roughly four-fold on fixture re-runs. This has no analog in
+    ``cmd_explain`` (a single-root reader with no exclusion list at all).
+    """
+    root_path = Path(root)
+    trails: "list[Path]" = []
+    for trail in root_path.rglob("DECISIONS.jsonl"):
+        try:
+            parts = trail.relative_to(root_path).parts
+        except ValueError:
+            parts = trail.parts
+        if "examples" in parts or "templates" in parts:
+            continue
+        trails.append(trail)
+    return trails
+
+
+def cmd_stats(args: argparse.Namespace) -> int:
+    """Report the operator's own paradigm split (REQ-P12-04, D-12). A pure
+    reader modelled on ``cmd_explain``'s structural safety: it never imports
+    the block-contract primitives (``Severity``/``GATE_THRESHOLDS``/
+    ``Report``), carries no ``--block-on``, is not registered in ``CHECKS`` or
+    ``GATE_PROFILES``, and ``return 0`` at the end by construction rather than
+    by enumeration — it is a readout, never a gate (D-18).
+
+    Root resolution has a defensive fallback (an unusable ``--root`` degrades
+    to ``.planning``), and everything from trail discovery through the final
+    print is wrapped in a guard over ``Exception`` — control-flow signals like
+    ``KeyboardInterrupt``/``SystemExit`` are deliberately left to propagate —
+    so no failure reachable from ``rglob``/``read_all``/the aggregation can
+    escape the "always returns 0" contract, exactly as ``cmd_explain`` does.
+    """
+    try:
+        root = args.root or ".planning"
+    except Exception:
+        root = ".planning"
+
+    result: "dict[str, Any]" = {"root": str(root)}
+    try:
+        buckets = {"frequentist": 0, "bayesian": 0, "undeclared": 0}
+        trails = 0
+        raw_invocations = 0
+        for trail in _discover_operator_trails(root):
+            trails += 1
+            for rec in read_all(trail):
+                rtype = rec.get("record_type")
+                if rtype == "invocation":
+                    raw_invocations += 1
+                elif rtype == "decision":
+                    choice = rec.get("choice", "")
+                    if isinstance(choice, str) and choice.startswith("paradigm="):
+                        value = choice.split("=", 1)[1]
+                        if value not in ("frequentist", "bayesian"):
+                            value = "undeclared"
+                        buckets[value] += 1
+        total = sum(buckets.values())
+        result["trails_read"] = trails
+        result["raw_invocation_count"] = raw_invocations
+        result["paradigm_split"] = buckets
+        if total == 0:
+            result["message"] = "no operator history yet"
+        else:
+            result["shares"] = {k: v / total for k, v in buckets.items()}
+        _print_stats(args, result, total)
+    except Exception as exc:
+        result.setdefault("paradigm_split", {"frequentist": 0, "bayesian": 0, "undeclared": 0})
+        result["message"] = "no operator history yet"
+        _print_stats(args, result, 0)
+        if getattr(args, "verbose", False):
+            print(f"dsx: {exc}", file=sys.stderr)
+    return 0
+
+
+def _print_stats(args: argparse.Namespace, result: "dict[str, Any]", denom: int) -> None:
+    """Render the paradigm split. ``--json`` is deterministic
+    (``sort_keys=True``); the text form labels the raw invocation count as a
+    secondary diagnostic so the 15% predicate has one unambiguous
+    denominator."""
+    if args.json:
+        print(json.dumps(result, indent=2, sort_keys=True))
+        return
+    if denom == 0:
+        print(
+            "dsx: no operator history yet — no operator decision trails found "
+            f"under {result['root']!r} (examples/ and templates/ excluded)."
+        )
+        return
+    split = result["paradigm_split"]
+    shares = result["shares"]
+    print(f"paradigm split over {denom} operator record(s):")
+    for name in ("frequentist", "bayesian", "undeclared"):
+        print(f"  {name:<12} {split[name]:>4}  ({shares[name] * 100:.1f}%)")
+    print(
+        "raw invocation count (secondary diagnostic): "
+        f"{result.get('raw_invocation_count', 0)}"
+    )
+
+
 def _self_reported_fields(spec: "dict") -> "list[tuple[str, Any]]":
     """The compared-but-never-computed field set (D-13, T-11.2-11): every
     declared spec value the gate compares against but never itself computes
@@ -852,6 +961,24 @@ def build_parser() -> argparse.ArgumentParser:
     add_common(p_explain, include_block_on=False)
     p_explain.add_argument("--invocation", help="render only this invocation id's records")
     p_explain.set_defaults(func=cmd_explain)
+
+    p_stats = sub.add_parser(
+        "stats",
+        help="report the operator's own paradigm split — read-only, never blocks",
+    )
+    # Deliberately NOT add_common(...): that helper also adds --block-on, and
+    # this command always passes (D-12) — a blocking-severity flag on a reader
+    # that returns 0 by construction would be a lie in the help text, the same
+    # reasoning already recorded for `explain`/`recommend-test`. It is NOT
+    # registered in CHECKS or GATE_PROFILES; it is a readout, not a gate (D-18).
+    p_stats.add_argument("--paradigm", action="store_true",
+                         help="report the frequentist/bayesian/undeclared frame split")
+    p_stats.add_argument("--root", default=".planning",
+                         help="operator trail search root (default: %(default)s; D-13)")
+    p_stats.add_argument("--json", action="store_true", help="emit machine-readable JSON")
+    p_stats.add_argument("--verbose", action="store_true",
+                         help="surface read errors on stderr")
+    p_stats.set_defaults(func=cmd_stats)
 
     p_rec = sub.add_parser("recommend-test", help="derive the correct test from the data's shape")
     p_rec.add_argument("outcome_type", help="proportion | continuous | count | ordinal | time_to_event")
