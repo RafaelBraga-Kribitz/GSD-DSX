@@ -362,12 +362,50 @@ def _check_guardrails(design: dict, report: Report) -> None:
 def _check_multiplicity(
     design: dict, spec: dict, report: Report, *, strict: bool = False
 ) -> None:
+    """Guard the multiplicity contract: correction coverage and family completeness.
+
+    DSX-EXP-053 (HIGH) fires when a non-empty declared family is a strict subset
+    of the reported tests — the correction then covers fewer hypotheses than were
+    actually run, and the reported metrics absent from the family are named.
+
+    Citation: reuses the multiplicity family's existing lineage — Benjamini &
+    Hochberg (1995), "Controlling the False Discovery Rate", J. R. Statist. Soc. B
+    57(1):289-300 — the same correction ontology DSX-EXP-050 rests on.
+    Structural criterion: the declared multiplicity.family must be a superset of
+    the reported results.tests metrics; a family shorter than the reported test
+    set under-declares the correction and fires DSX-EXP-053.
+    """
     family = get(design, "multiplicity.family")
     correction = get(design, "multiplicity.correction")
     tests = items(section(spec, "results"), "tests") if section(spec, "results") else []
-    n_tests = len(family) if isinstance(family, list) else 0
-    if not n_tests and tests:
-        n_tests = len(tests)
+    # Never silently undercount: a declared family with >=1 member must not
+    # suppress the results-based count. n_tests is the larger of the two so a
+    # family shorter than the reported tests still trips DSX-EXP-050 coverage.
+    n_tests = max(len(family) if isinstance(family, list) else 0, len(tests))
+
+    if isinstance(family, list) and family and len(family) < len(tests):
+        reported = {t.get("metric") for t in tests if not is_blank(t.get("metric"))}
+        absent = sorted(reported - set(family))
+        report.add(
+            "DSX-EXP-053",
+            "HIGH",
+            f"Multiplicity family declares {len(family)} test(s) but {len(tests)} are reported",
+            detail=(
+                f"The declared family covers {len(family)} hypotheses while "
+                f"{len(tests)} tests are reported, so the correction is applied to fewer "
+                "comparisons than were run. "
+                + (
+                    f"Reported but absent from the family: {', '.join(absent)}."
+                    if absent
+                    else "The reported tests name no metric outside the family, but the "
+                    "family count still trails the reported test count."
+                )
+            ),
+            remedy="expand the multiplicity family to cover every reported test",
+            where="spec.design.multiplicity.family",
+            family_size=len(family),
+            reported_tests=len(tests),
+        )
 
     if n_tests <= 1:
         if n_tests == 1:
@@ -399,20 +437,23 @@ def _check_multiplicity(
 def _check_exploratory_looks(
     design: dict, spec: dict, report: Report, *, strict: bool
 ) -> None:
+    # No family early-return: comparisons_looked_at is audited against the
+    # reported test count whether or not a family is declared (D-02). The base
+    # is the larger of the declared family and the reported tests, so an absent
+    # family does not suppress the check.
     family = get(design, "multiplicity.family")
-    if not isinstance(family, list) or not family:
-        return
-    family_n = len(family)
     results = section(spec, "results")
     looked = as_number(results.get("comparisons_looked_at")) if results else None
     tests = items(results, "tests") if results else []
+    base = max(len(family) if isinstance(family, list) else 0, len(tests))
 
-    if looked is not None and looked > family_n:
+    if looked is not None and looked > base:
         report.add(
             "DSX-EXP-051",
             "HIGH",
-            f"comparisons_looked_at={int(looked)} exceeds multiplicity family size {family_n}",
+            f"comparisons_looked_at={int(looked)} exceeds the reported test count {base}",
             detail=(
+                f"{int(looked)} comparisons were examined but only {base} are reported. "
                 "Segment cuts and exploratory comparisons inflate the family-wise error "
                 "beyond what the declared correction covers."
             ),
@@ -422,10 +463,10 @@ def _check_exploratory_looks(
             ),
             where="spec.results.comparisons_looked_at",
             looked_at=int(looked),
-            family_size=family_n,
+            family_size=base,
         )
     elif looked is not None:
-        report.ok(f"comparisons_looked_at={int(looked)} within family size {family_n}")
+        report.ok(f"comparisons_looked_at={int(looked)} within the reported test count {base}")
 
     if strict and len(tests) >= 2 and looked is None:
         report.add(

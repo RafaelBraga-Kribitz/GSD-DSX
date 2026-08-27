@@ -624,7 +624,14 @@ def _all_fixture_paths() -> "list[Path]":
 # design.alpha:0 into 0.05 (the falsy-`or` bug, 07-REVIEW WR-04). Fixed to
 # default only on a missing value; this is the sanctioned deliberate edit this
 # guard exists to force into the open, not a Phase-7 regression of REQ-P7-03.
-_DESIGN_PY_SHA256 = "2b367ba4081744edbb4609e3005dc0dec67d13184c5e012de28af137894ba885"
+# Updated 2026-08-27 (Phase 11.3 plan 11.3-01, D-01/D-02): _check_multiplicity
+# now mints DSX-EXP-053 (HIGH) when a non-empty multiplicity family is a strict
+# subset of the reported tests, and its n_tests uses max(len(family), len(tests))
+# so a declared family no longer undercounts (D-01); _check_exploratory_looks
+# dropped its family early-return so DSX-EXP-051 fires on the reported test count
+# independent of whether a family is declared (D-02). Both are sanctioned
+# deliberate edits this guard exists to force into the open, not a regression.
+_DESIGN_PY_SHA256 = "b0dda7dd70d0465dae426ef24424c27faefb5b453172dd4bb557d22521c70f3e"
 
 
 def _design_py_hash() -> str:
