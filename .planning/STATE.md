@@ -5,16 +5,16 @@ milestone_name: DSX Validity Frame
 current_phase: 11.3
 current_phase_name: reporting-completeness
 status: executing
-stopped_at: Phase 11.3 S2-3 IN PROGRESS — Wave 1 (plan 01) executed + independently gated (DSX-EXP-053 HIGH minted, DSX-EXP-051 rebased family-independent, catalogue 248→249; suite 1152 OK, check.sh all checks passed). Wave 2 next = plans 02, 03 (both depends_on [01]). Resume file = 11.3-02-PLAN.md.
-last_updated: "2026-08-27T03:18:00.000Z"
+stopped_at: Phase 11.3 S2-3 IN PROGRESS — Waves 1-2 done (plans 01, 02, 03). Wave 2 (plans 02, 03) executed + independently gated this firing — DSX-STA-012 MEDIUM effect-size-kind guard (single-sourced EFFECT_SIZE_KINDS), MISSINGNESS_METHODS 7-member closed vocab (reuse DSX-SPEC-082), DSX-VAL-060 CRITICAL single_imputation-under-MAR branch (Rubin 1987 §3.1), catalogue 249→250, no catalogue drift from plan 03; suite 1162 OK, check.sh all checks passed. Wave 3 next = plan 04 (REQ-04 exclusions, depends_on [03]). Resume file = 11.3-04-PLAN.md.
+last_updated: "2026-08-27T03:51:00.000Z"
 last_activity: 2026-08-27
-last_activity_desc: S2-3 execute 11.3 Wave 1 (plan 01) — multiplicity-reporting DSX-EXP-053 + DSX-EXP-051 family-independent rebase; §4 persona round (Statistician+Auditor, opus) resolved the corpus incidental-catch as Option 1 (document, not narrow); suite 1152 OK
+last_activity_desc: S2-3 execute 11.3 Wave 2 (plans 02, 03) — DSX-STA-012 MEDIUM effect_size_kind guard + DSX-SPEC-082 method_implied closed vocab + DSX-VAL-060 CRITICAL single_imputation branch (Rubin 1987 §3.1); two gsd-executor (sonnet) + independent orchestrator re-gate; suite 1162 OK
 progress:
   total_phases: 10
   completed_phases: 9
   total_plans: 82
-  completed_plans: 77
-  percent: 90
+  completed_plans: 79
+  percent: 91
 ---
 
 # Project state

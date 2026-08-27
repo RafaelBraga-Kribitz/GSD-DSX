@@ -954,15 +954,15 @@ Plans:
 
 **Wave 1**
 
-- [ ] 11.3-01-PLAN.md — REQ-01/02: multiplicity family undercount (DSX-EXP-053) + family-independent
+- [x] 11.3-01-PLAN.md — REQ-01/02: multiplicity family undercount (DSX-EXP-053) + family-independent
       DSX-EXP-051 rebase in design.py, the D-03 PREREG_FACTS comment fix, and the mandatory
       `_DESIGN_PY_SHA256` same-commit update (wave 1)
 
 **Wave 2** *(blocked on Wave 1)*
 
-- [ ] 11.3-02-PLAN.md — REQ-05: unrecognised effect_size_kind fires DSX-STA-012 MEDIUM from a guard
+- [x] 11.3-02-PLAN.md — REQ-05: unrecognised effect_size_kind fires DSX-STA-012 MEDIUM from a guard
       preceding interpret_effect, recognised set single-sourced with mathx.py (wave 2)
-- [ ] 11.3-03-PLAN.md — REQ-03: MISSINGNESS_METHODS closed vocab (reuse DSX-SPEC-082) + per-method
+- [x] 11.3-03-PLAN.md — REQ-03: MISSINGNESS_METHODS closed vocab (reuse DSX-SPEC-082) + per-method
       severity split so single_imputation-under-MAR blocks at plan (DSX-VAL-060 CRITICAL, Rubin 1987
       §3.1); D-07 rate reconciliation deferred (wave 2)
 
