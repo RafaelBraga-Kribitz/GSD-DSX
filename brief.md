@@ -373,7 +373,6 @@ estimate about future workload, including the operator's own.
 | Convergence declarations (`DSX-PAR-030`) | Frequentist estimation convergence: mixed-model non-convergence, separation in logistic models. **Not written.** | Same, at least two cases |
 | Bayesian procedure admissibility (`DSX-ADM-*`, second axis) | The frequentist ontology (M4) | M4 ships, **and** `dsx stats --paradigm` shows Bayesian frames above 15% of the operator's history |
 | `dsx quiz` fading mode | n/a, not a check | M5 ships. Weekly, on a sample of past decisions, never inline. |
-| **Ratio-metric dilution for trigger analysis** (Deng & Hu 2015 Formula (3), §3.3) | **Not a paradigm-paired item.** The additive case ships this milestone as `DSX-INT-030`; this is its unshipped extension, not a frequentist/Bayesian mirror under D-12a. | **A source of per-unit trigger and outcome data reaching the gate.** Formula (3) sums over individual users (`∆Overall(X) = (1/N) Σ_Tr TR_i × (TrX_iT − TrX_iC)`) and has no closed-form scalar multiplier, so it cannot be evaluated from a declaration alone the way the additive Formula (1) can. The paper itself is freely available and the equation is readable today — access was never the blocker. This item may be **permanently out of scope** for a declaration-only gate, not merely deferred: the determinism doctrine that keeps computation off the gate path (D-01/D-02) is what forbids evaluating it here, and that constraint does not lift with more time. |
 | Feature-provenance per-feature list (origin, method, fitted-on, motivating result) | Not a paradigm-paired item. | The M5 corpus contains at least one case whose target defect is attributable **only** through feature origin — no name pattern matches, no fit call is visible, and no declaration contradicts. Until then the leakage principle is covered elsewhere; this buys attribution, not a catch (2026-08-20 paper-evaluation integration) |
 | Magnitude-without-computed-effect residual (absolute magnitudes; relative % that declares its base) | Not a paradigm-paired item. | A corpus case passes all claims checks while asserting a magnitude no reported test computed. The paper-shaped instances all fire `DSX-CLM-070` and the per-test effect-size finding already (2026-08-20) |
 | Subgroup-harm declaration for prescriptive work | Not a paradigm-paired item. | A primary source with operationalisable criteria (D-05) **and** a corpus case where subgroup harm was the documented failure. Until promoted, the question lives in the architect and storyteller prompts as an agent guardrail (2026-08-20) |
@@ -382,6 +381,62 @@ Note what D-12a does here: prior sensitivity is deferred **not** because Bayesia
 speculative, but because its frequentist mirror does not exist yet, so shipping it alone would
 violate D-12. That is a structural reason, not a forecast. It also means the cheapest route to
 promoting these items is writing the missing counterparts, which is honest work either way.
+
+### Phase 12 re-evaluation of the gated backlog (REQ-P12-05, 2026-08-27)
+
+Phase 12 measured the numbers this section exists to wait for and re-evaluated
+every row against its own entry condition. **Disposition: carry eight, remove one.**
+Each carried item names the measured count, rate or split it rests on; nothing is
+promoted by manufacturing a case to hit a threshold (D-02/D-15).
+
+- **Prior justification / sensitivity** (item 1) — **carried.** Its frequentist
+  mirror (specification sensitivity) is still unwritten under D-12a, so no corpus
+  count can promote it; the cheapest route remains writing the mirror.
+- **Prior predictive check `DSX-PAR-022`** (item 2) — **already promoted** (REV-001);
+  the row records the reversal.
+- **Convergence declarations `DSX-PAR-030`** (item 3) — **carried,** same structural
+  reason as item 1: the frequentist convergence mirror is unwritten (D-12a).
+- **Bayesian procedure admissibility, second axis** (item 4) — **carried; explicitly
+  NOT auto-promoted.** Its condition needs M4 shipped **and** `dsx stats --paradigm`
+  above 15% Bayesian. The measured operator split (plan 12-02) is **empty — zero
+  distinct frames** across the operator's real `.planning` history (the polluted
+  `examples/**` and `templates/**` floors excluded by construction), so the honest
+  share is below 15%. That non-promotion is exactly what the number is for
+  (§6, "Done when: there is a number").
+- **`dsx quiz` fading mode** (item 5) — **carried, prerequisite-pending:** it ships
+  on M5, which has not shipped.
+- **Ratio-metric dilution** (item 6) — **removed as structurally unevaluable;** see
+  "Removed / permanently out of scope (D-14)" below and REV-002.
+- **Feature-provenance per-feature list** (item 7) — **carried.** Promotion needs a
+  corpus case whose target defect is attributable *only* through feature origin. The
+  three measured ABSENT-partition misses (plan 12-05: undisclosed forking, data
+  fabrication, undisclosed selective exclusion; miss-rate 3/3) are not that case —
+  data fabrication is a provenance-of-data miss, not a per-feature-origin attribution —
+  so the naming case has not appeared. Not manufactured.
+- **Magnitude-without-computed-effect residual** (item 8) — **carried; likely none.**
+  No corpus case passes all claims checks while asserting an uncomputed magnitude; the
+  paper-shaped instances already fire `DSX-CLM-070` and the per-test effect-size finding.
+- **Subgroup-harm declaration for prescriptive work** (item 9) — **carried.** Promotion
+  needs an admissible D-05 source with operationalisable criteria **and** a corpus case
+  where subgroup harm was the documented failure; neither is in the measured corpus.
+
+The calibration backdrop these dispositions read: the measured headline is
+**(miss-rate 1.0, FPR 0.0)** — zero false positives over the twelve-spec good-control
+corpus (plan 12-05, 0/12), a benign per-family friction column over the same corpus
+(plan 12-06, reported raw and net), and a 3/3 miss on the semantic-defect class a
+declaration-only gate structurally cannot catch. Those misses are what items 1/3/7/9
+would eventually address; none is promotable on today's measured evidence.
+
+### Removed / permanently out of scope (D-14)
+
+Phase 12's systematic re-evaluation (REQ-P12-05) recognised one item's entry condition
+as structurally unreachable rather than merely unmet, and removed it. It is relocated
+here verbatim — not deleted and not softened back to the access premise D-12 proved
+false — with the reversal recorded as REV-002.
+
+| Item | Symmetric counterpart (D-12a) | Entry condition |
+| --- | --- | --- |
+| **Ratio-metric dilution for trigger analysis** (Deng & Hu 2015 Formula (3), §3.3) | **Not a paradigm-paired item.** The additive case ships this milestone as `DSX-INT-030`; this is its unshipped extension, not a frequentist/Bayesian mirror under D-12a. | **A source of per-unit trigger and outcome data reaching the gate.** Formula (3) sums over individual users (`∆Overall(X) = (1/N) Σ_Tr TR_i × (TrX_iT − TrX_iC)`) and has no closed-form scalar multiplier, so it cannot be evaluated from a declaration alone the way the additive Formula (1) can. The paper itself is freely available and the equation is readable today — access was never the blocker. This item may be **permanently out of scope** for a declaration-only gate, not merely deferred: the determinism doctrine that keeps computation off the gate path (D-01/D-02) is what forbids evaluating it here, and that constraint does not lift with more time. |
 
 ### Reversal record REV-001 (D-14)
 
