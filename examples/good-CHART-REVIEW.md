@@ -71,8 +71,7 @@ Pass
 
 ## Moderate Issues
 
-- [COMMUNICATION] `daily_activation_trend` y-axis does not start at zero, exaggerating the
-  visual slope of an already-significant trend — DSX-VIZ-021
+- [COMMUNICATION] `daily_activation_trend` y-axis does not start at zero, exaggerating the visual slope of an already-significant trend — DSX-VIZ-021
 
 ## Minor Issues
 

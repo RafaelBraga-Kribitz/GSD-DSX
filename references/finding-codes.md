@@ -13,7 +13,7 @@ a suppression or a reference in a review stays valid across versions.
 **Gate thresholds.** `plan` and `execute` block at CRITICAL; `verify` and
 `ship` block at HIGH.
 
-**Total: 252 codes.**
+**Total: 256 codes.**
 
 ## Contract structure — `DSX-SPEC-*`
 
@@ -420,3 +420,14 @@ The ranked admissible set for a declared frequentist frame, naming the assumptio
 |---|---|---|
 | `DSX-ADM-010` | HIGH | Declared procedure is admissible but a cited ordering prefers another family |
 | `DSX-ADM-020` | CRITICAL | No admissible procedure for the declared frame |
+
+## Chart review conformance — `DSX-CRV-*`
+
+Structural conformance of CHART-REVIEW.md against its own schema — schema tag, the forbidden ten-point scale, the terminal sentinel, and finding-line traceability tokens — never the stochastic agent verdict content itself (scores, gates, final_assessment).
+
+| Code | Severity | Finding |
+|---|---|---|
+| `DSX-CRV-010` | HIGH | CHART-REVIEW.md frontmatter schema is <…>, not <…> |
+| `DSX-CRV-011` | MEDIUM | CHART-REVIEW.md contains the forbidden free-form 'X/10' scale |
+| `DSX-CRV-012` | HIGH | CHART-REVIEW.md does not end with the terminal '## CHART AUDIT COMPLETE' sentinel |
+| `DSX-CRV-013` | MEDIUM | CHART-REVIEW.md finding line carries neither a DSX- code nor UNMAPPED |

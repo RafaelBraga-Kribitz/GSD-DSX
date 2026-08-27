@@ -171,6 +171,18 @@ report.add("DSX-PAR-001", "HIGH", "t")
         prefixes = [prefix for prefix, _heading, _blurb in g.PREFIX_GROUPS]
         self.assertIn("DSX-PAR", prefixes)
 
+    def test_dsx_crv_prefix_group_registered(self):
+        # REQ-P11.3-06/D-12: dsx/checks/chart_review.py is a brand-new family —
+        # this is Pitfall 2's loud-failure guard (the rows would otherwise
+        # silently vanish from the rendered catalogue while staying in the count).
+        prefixes = [prefix for prefix, _heading, _blurb in g.PREFIX_GROUPS]
+        self.assertIn("DSX-CRV", prefixes)
+
+    def test_dsx_crv_prefix_in_d05_allowlist(self):
+        # REQ-P11.3-06/D-12: Pitfall 3's loud-failure guard — DSX-CRV-* must be
+        # opted into D-05 citation enforcement, not silently exempt from it.
+        self.assertIn("DSX-CRV-", g._D05_ALLOWLIST_PREFIXES)
+
     def test_every_collected_code_resolves_to_a_prefix_group(self):
         prefixes = [prefix for prefix, _heading, _blurb in g.PREFIX_GROUPS]
         unresolved = [

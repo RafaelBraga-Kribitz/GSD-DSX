@@ -55,6 +55,10 @@ PREFIX_GROUPS = [
     ("DSX-ADM", "Frequentist admissibility",
      "The ranked admissible set for a declared frequentist frame, naming the assumptions each "
      "family buys and charges, and the refusal when no procedure in the ontology is admissible."),
+    ("DSX-CRV", "Chart review conformance",
+     "Structural conformance of CHART-REVIEW.md against its own schema — schema tag, the "
+     "forbidden ten-point scale, the terminal sentinel, and finding-line traceability tokens — "
+     "never the stochastic agent verdict content itself (scores, gates, final_assessment)."),
 ]
 
 # D-20: the finite, visible exemption boundary for D-05 citation/reference-value
@@ -73,7 +77,16 @@ PREFIX_GROUPS = [
 # call sites (DSX-ADM-010, DSX-ADM-020) already carry `Citation:` and
 # `Structural criterion:` docstring lines and `# D-05:` test markers, so this
 # entry is what turns those from convention into an enforced build gate.
-_D05_ALLOWLIST_PREFIXES = ("DSX-PAR-", "DSX-VAL-", "DSX-INT-", "DSX-PRE-", "DSX-ADM-")
+#
+# Phase 11.3 (REQ-P11.3-06, D-12) adds "DSX-CRV-" here: `dsx/checks/chart_review.py`
+# is a brand-new file with zero legacy siblings, and each of its four report.add
+# call sites (DSX-CRV-010/011/012/013) already carries a `Citation:` line (the
+# schema file itself, since D-13 forbids citing any judgement-source content) and
+# a `Structural criterion:` docstring line plus a `# D-05:` test marker, so this
+# entry is what turns those from convention into an enforced build gate.
+_D05_ALLOWLIST_PREFIXES = (
+    "DSX-PAR-", "DSX-VAL-", "DSX-INT-", "DSX-PRE-", "DSX-ADM-", "DSX-CRV-",
+)
 
 # The individually-enumerated half of D-20's finite, visible boundary: exact
 # codes this milestone introduced inside a pre-existing family (DSX-SPEC-*,
