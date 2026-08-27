@@ -1571,6 +1571,131 @@ class TestKnownBadCorpus(unittest.TestCase):
         self.assertGreater(present_denom, 0)
         self.assertGreater(absent_denom, 0)
 
+    def test_friction_uses_the_same_live_findings_as_golden(self):
+        """Friction (guard b, D-11b/D-09): the per-family over-blocking column is
+        computed from the SAME live ``self._gate_findings(slug, "ship")`` set the
+        golden ship-completeness test
+        (``test_ship_gate_findings_are_all_documented_incidental_corpus_gaps``, :1034)
+        consumes — never a number lifted from ``_INCIDENTAL_GAP_CODES``,
+        ``_GOLDEN_SHIP_FINDINGS`` or any stale ledger. Every raw/net pair here is
+        recomputed live and asserted equal to the value derived from the identical
+        live blocking set, so a hardcoded or lifted number would break the equality.
+
+        Both raw and net are surfaced and both are expressed as a per-family rate over
+        the non-target in-profile (fixture × gate-point) cells (D-11): reporting net
+        alone is forbidden, because a fixture that over-blocks on unrelated codes could
+        otherwise look clean by attributing two of them to itself.
+        """
+        specs = self._spec_paths()
+        self.assertTrue(specs, "no known-bad specs found to gate")
+        total_raw = 0
+        total_net = 0
+        for path in specs:
+            slug = path.name[: -len(SPEC_SUFFIX)]
+            with self.subTest(spec=path.name):
+                _code, findings = self._gate_findings(path, "ship")
+                # The exact blocking set the golden test derives (:1035) — the single
+                # live source both this friction column and the golden test share.
+                blocking = {
+                    f["code"] for f in findings if f["severity"] in ("CRITICAL", "HIGH")
+                }
+                own = _own_target_codes(slug)
+                raw, net = _friction(blocking, own)
+                # Tied to the live set: raw is its size; net removes only this
+                # fixture's own-target codes. A lifted/hardcoded raw or net would not
+                # equal this live recomputation.
+                self.assertEqual(raw, len(blocking))
+                self.assertEqual(net, len(blocking - own))
+                self.assertLessEqual(net, raw)
+                total_raw += raw
+                total_net += net
+        # The corpus DOES over-block at ship (documented incidental corpus gaps), so
+        # the per-family equalities above are exercised against non-empty live sets — a
+        # zero here would mean friction was lifted from a constant, not measured live.
+        self.assertGreater(
+            total_raw, 0,
+            "expected non-zero live ship-blocking friction across the corpus; a zero "
+            "means friction was lifted from a constant rather than the live gate",
+        )
+        # Friction is a rate over the non-target in-profile (fixture × gate-point)
+        # cells, not a bare count (D-11): cells the corpus is NOT expected to fire its
+        # own target at, across the in-profile CRITICAL-threshold gate points.
+        effective = _effective_target_map()
+        slugs = {p.name[: -len(SPEC_SUFFIX)] for p in specs}
+        cells = _non_target_in_profile_cells(effective, slugs, _CRITICAL_THRESHOLD_POINTS)
+        self.assertGreater(
+            cells, 0, "no non-target in-profile cells to normalise friction over"
+        )
+        raw_rate = _friction_rate(total_raw, cells)
+        net_rate = _friction_rate(total_net, cells)
+        # BOTH rates are surfaced (net-only is forbidden, D-11) and net never exceeds raw.
+        self.assertEqual(raw_rate, total_raw / cells)
+        self.assertEqual(net_rate, total_net / cells)
+        self.assertLessEqual(net_rate, raw_rate)
+
+    def test_target_defect_codes_fire_and_are_named(self):
+        """Incidental→own relabel closure (guard c, D-11c / T-12-04): every entry in
+        ``_TARGET_DEFECT_CODES`` — every code the friction column subtracts from raw to
+        reach net — must be positively verified two ways, so a code cannot be quietly
+        demoted from friction into a fixture's own-target map to shrink net without
+        publicly declaring it the intended defect:
+
+          1. It FIRES live as a blocking finding at its mapped gate point — CRITICAL at
+             ``plan``/``execute``, CRITICAL or HIGH at ``verify``/``ship`` (the gate
+             thresholds of references/finding-codes.md). This closes the fabricated /
+             never-fires relabel: an own-target code that does not actually block is
+             rejected.
+          2. It is NAMED as an intended defect in that slug's POSTMORTEM.md (or, when a
+             later phase adds one, its ATTRIBUTION.yaml). One documented cross-fixture
+             exception is allowed: a code that is a second fixture's PRIMARY declared
+             target — DSX-INT-030 is triggering-dilution's own code, recorded as a
+             secondary key on weak-identification-mmm (see the ``_TARGET_DEFECT_CODES``
+             comment) — is accepted when it is named in some corpus postmortem/
+             attribution, because it is still publicly declared an intended defect, not
+             a silent relabel.
+        """
+        corpus_docs = "\n".join(
+            p.read_text(encoding="utf-8")
+            for p in self._postmortem_paths() + self._attribution_paths()
+        )
+        for slug, points in _TARGET_DEFECT_CODES.items():
+            spec_path = CORPUS_DIR / f"{slug}{SPEC_SUFFIX}"
+            own_docs_parts = []
+            for suffix in (POSTMORTEM_SUFFIX, ATTRIBUTION_SUFFIX):
+                doc = CORPUS_DIR / f"{slug}{suffix}"
+                if doc.is_file():
+                    own_docs_parts.append(doc.read_text(encoding="utf-8"))
+            own_docs = "\n".join(own_docs_parts)
+            for point, value in points.items():
+                codes = {value} if isinstance(value, str) else set(value)
+                blocking_severities = (
+                    ("CRITICAL",)
+                    if point in _CRITICAL_THRESHOLD_POINTS
+                    else ("CRITICAL", "HIGH")
+                )
+                _code, findings = self._gate_findings(spec_path, point)
+                fired = {
+                    f["code"]
+                    for f in findings
+                    if f.get("severity") in blocking_severities
+                }
+                for code in sorted(codes):
+                    with self.subTest(slug=slug, point=point, code=code):
+                        self.assertIn(
+                            code, fired,
+                            f"{slug}'s own-target code {code} does not fire as a "
+                            f"blocking finding ({blocking_severities}) at {point!r} — a "
+                            "code that never blocks cannot be credited as this fixture's "
+                            "own defect and subtracted from friction (D-11c)",
+                        )
+                        self.assertTrue(
+                            code in own_docs or code in corpus_docs,
+                            f"{slug}'s own-target code {code} is named in no "
+                            "postmortem/attribution — an own-target code must be "
+                            "publicly declared an intended defect, never a silent "
+                            "relabel of incidental over-blocking (D-11c)",
+                        )
+
 
 class TestClassifyTargetDefectHelper(unittest.TestCase):
     """Proves `_classify_target_defect` fires against fabricated inputs, independent
@@ -1743,6 +1868,70 @@ class TestStratifiedHeadlineHelpers(unittest.TestCase):
             "adding a target-PRESENT case changed the headline — easy catches must "
             "be incapable of moving (miss-rate, FPR) (D-10)",
         )
+
+
+class TestFrictionArithmetic(unittest.TestCase):
+    """Filesystem-independent proof of the friction arithmetic (guard a, D-11),
+    matching the two-proofs discipline ``TestClassifyTargetDefectHelper`` and
+    ``TestStratifiedHeadlineHelpers`` set: the live
+    ``test_friction_uses_the_same_live_findings_as_golden`` runs against the real
+    corpus, but a test that only ever scans real fixtures could never go red while the
+    raw/net arithmetic was wrong. These fabricated-input proofs supply that RED signal.
+    """
+
+    def test_net_is_raw_minus_own_and_both_are_surfaced(self):
+        # A fabricated per-family ship-blocking findings dict — no filesystem, no gate:
+        # each family maps (its blocking codes, its own-target codes).
+        fabricated = {
+            "fixture-a": ({"DSX-AAA-001", "DSX-BBB-002", "DSX-CCC-003"}, {"DSX-AAA-001"}),
+            "fixture-b": ({"DSX-DDD-004", "DSX-EEE-005"}, {"DSX-DDD-004", "DSX-EEE-005"}),
+            "fixture-c": ({"DSX-FFF-006"}, set()),
+        }
+        for slug, (blocking, own) in fabricated.items():
+            with self.subTest(slug=slug):
+                result = _friction(blocking, own)
+                # BOTH raw and net are surfaced — never net alone (D-11).
+                self.assertEqual(len(result), 2)
+                raw, net = result
+                self.assertEqual(raw, len(blocking))
+                self.assertEqual(net, raw - len(blocking & own))
+                self.assertLessEqual(net, raw)
+        # A worked case: 3 blocking, 1 own -> raw 3, net 2.
+        self.assertEqual(_friction({"X", "Y", "Z"}, {"X"}), (3, 2))
+        # Fully-own fixture: net collapses to 0, raw stays the gross count.
+        self.assertEqual(_friction({"X", "Y"}, {"X", "Y"}), (2, 0))
+
+    def test_relabeling_incidental_to_own_shrinks_net_but_not_raw(self):
+        # The exact laundering path guard (c) closes, proven arithmetically here:
+        # attributing an incidental block to the fixture's own target shrinks NET but
+        # leaves RAW untouched — which is why both must be reported (D-11). Reporting
+        # net alone would hide the over-blocking a relabel conceals.
+        blocking = {"DSX-AAA-001", "DSX-BBB-002", "DSX-CCC-003"}
+        honest_own = {"DSX-AAA-001"}
+        inflated_own = {"DSX-AAA-001", "DSX-BBB-002"}  # laundered one incidental as own
+        raw_h, net_h = _friction(blocking, honest_own)
+        raw_i, net_i = _friction(blocking, inflated_own)
+        self.assertEqual(raw_h, raw_i)  # raw is stable — a relabel cannot shrink it
+        self.assertLess(net_i, net_h)  # net shrinks when an incidental is relabelled own
+
+    def test_friction_rate_normalises_over_non_target_cells_and_floors_on_empty(self):
+        # Friction is a RATE over non-target in-profile cells, not a bare count (D-11).
+        self.assertEqual(_friction_rate(6, 3), 2.0)
+        self.assertEqual(_friction_rate(0, 5), 0.0)
+        # Empty denominator floors to 0.0 rather than raising (mirrors `_headline`).
+        self.assertEqual(_friction_rate(4, 0), 0.0)
+
+    def test_non_target_in_profile_cells_counts_only_untargeted_cells(self):
+        # Over a fabricated effective target map, a (slug, point) cell counts iff the
+        # fixture has NO expected own-target code there — the friction denominator.
+        effective = {
+            "fixture-a": {"plan": frozenset({"DSX-AAA-001"})},  # targeted at plan only
+            "fixture-b": {},  # untargeted at both points
+        }
+        slugs = {"fixture-a", "fixture-b", "fixture-c"}  # fixture-c absent from the map
+        points = ("plan", "execute")
+        # fixture-a: execute (plan is targeted) = 1; fixture-b: 2; fixture-c: 2 -> 5.
+        self.assertEqual(_non_target_in_profile_cells(effective, slugs, points), 5)
 
 
 if __name__ == "__main__":
