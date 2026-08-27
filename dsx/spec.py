@@ -449,6 +449,42 @@ MISSINGNESS_MECHANISMS = {
     "not_assessed": "The missingness mechanism has not been evaluated.",
 }
 
+# The closed vocabulary the missingness.method_implied sub-field may hold (D-04,
+# REQ-P11.3-03). Exactly seven locked members — do not shrink. multiple_imputation
+# must stay (the good fixture declares it) and single_imputation must stay (else the
+# DSX-VAL-060 CRITICAL block path in dsx/frame/val.py is unreachable). An unrecognised
+# method is a decidable error (DSX-SPEC-082 HIGH via the _VALIDITY_FRAME_MEMBERSHIP
+# loop), never a silent no-op. Whether a recognised method is LICENSED under the
+# declared mechanism is a separate, content-layer judgment (dsx/frame/val.py's
+# DSX-VAL-060) — this vocabulary only decides recognition, not licensing.
+MISSINGNESS_METHODS = {
+    "multiple_imputation": (
+        "Missing values are imputed multiple times and the between-imputation "
+        "variance is propagated into the standard errors (Rubin's rules)."
+    ),
+    "single_imputation": (
+        "Each missing value is filled once and thereafter treated as if observed, "
+        "which drops the missing-data variance component and understates uncertainty."
+    ),
+    "complete_case": "Only units with no missing values in the analysis are used.",
+    "available_case": (
+        "Each estimate uses whichever units have the values that estimate needs, "
+        "so the effective sample differs across estimates."
+    ),
+    "mechanism_model": (
+        "The missingness mechanism itself is modelled explicitly (e.g. a shared-parameter "
+        "or joint model of the outcome and the missingness process)."
+    ),
+    "selection_model": (
+        "Missingness is modelled as a selection process conditional on the (possibly "
+        "unobserved) outcome."
+    ),
+    "pattern_mixture_model": (
+        "The distribution is modelled separately within each missingness pattern and "
+        "then mixed over the patterns."
+    ),
+}
+
 ANALYSIS_POPULATIONS = {
     "eligible": "The population that met eligibility criteria, regardless of subsequent engagement.",
     "triggered": "The subset of the eligible population that actually triggered the analyzed event.",
@@ -1125,6 +1161,7 @@ _VALIDITY_FRAME_MEMBERSHIP: "tuple[tuple[str, str, Any], ...]" = (
     ("interference", "mitigation", INTERFERENCE_MITIGATIONS),
     ("triggering", "analysis_population", ANALYSIS_POPULATIONS),
     ("missingness", "mechanism", MISSINGNESS_MECHANISMS),
+    ("missingness", "method_implied", MISSINGNESS_METHODS),
 )
 
 

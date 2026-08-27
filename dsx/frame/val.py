@@ -174,20 +174,34 @@ _MISSINGNESS_CITATION = (
 # concept this table encodes, not a citable artifact — do not describe this table,
 # in any docstring or comment, as reproducing a printed source.
 #
-# Each entry: (mode, methods, severity).
-#   - mode "deny": `methods` are the implied methods this mechanism does NOT
-#     license; anything outside `methods` is licensed (missing_at_random).
-#   - mode "allow": `methods` are the ONLY implied methods this mechanism
-#     licenses; anything outside `methods` is not licensed (missing_not_at_random).
+# Per-method severity within a mechanism (D-05, REQ-P11.3-03): the value is
+# (mode, methods, fallback_severity).
+#   - mode "deny": `methods` is a {method: severity} mapping — the denied methods
+#     under this mechanism, each keyed to its own severity, because the harm is not
+#     uniform across denied methods. Complete-case / available-case under MAR only
+#     sacrifice power while reporting honest uncertainty (HIGH); single imputation
+#     treated as if observed additionally fabricates precision — it drops the
+#     missing-data variance component (Rubin's B forced to 0), so its interval is
+#     anti-conservative, a strictly-worse structural defect (CRITICAL). The
+#     per-method keying is deliberate: a reversion to one-severity-per-mechanism
+#     would let single imputation pass at HIGH. `fallback_severity` is the severity
+#     for a denied method not individually keyed (defence in depth; every current
+#     denied method is keyed).
+#   - mode "allow": `methods` is a frozenset of the ONLY methods this mechanism
+#     licenses; anything outside it is not licensed, at `fallback_severity`.
 # missing_completely_at_random has no entry: it denies nothing, so it is handled
 # by the absence of a key, not by an explicit empty deny set.
 # not_assessed also has no entry — that absence is what makes the mechanism a
 # skip: an author who has declared they have not evaluated the mechanism has not
 # made the claim this check judges.
-_MISSINGNESS_METHOD_VALIDITY: "dict[str, tuple[str, frozenset[str], str]]" = {
+_MISSINGNESS_METHOD_VALIDITY: "dict[str, tuple[str, object, str]]" = {
     "mar": (
         "deny",
-        frozenset({"complete_case", "available_case"}),
+        {
+            "complete_case": "HIGH",
+            "available_case": "HIGH",
+            "single_imputation": "CRITICAL",
+        },
         "HIGH",
     ),
     "mnar": (
@@ -1082,6 +1096,15 @@ def _check_missingness(frame: dict, report: Report) -> None:
     with complete-case analysis for missing covariate values", Statistics in
     Medicine 29(28):2920-2931, DOI 10.1002/sim.3944.
 
+    D-05/D-06 severity split: single imputation treated as if observed under a
+    MAR mechanism fires at CRITICAL (not HIGH), carrying its OWN citation —
+    Rubin, D.B. (1987), Multiple Imputation for Nonresponse in Surveys, §3.1,
+    the total-variance decomposition T = W̄ + (1+1/m)·B. Single imputation
+    forces the between-imputation term B to zero, understating variance in the
+    anti-conservative direction; that standard-error fabrication is a strictly
+    worse defect than the complete-case power sacrifice White & Carlin (2010)
+    describe, so it does NOT reuse the White & Carlin remedy.
+
     Honesty disclosure (D-05's whole point): the (mechanism, method) pairing
     tested here — ``_MISSINGNESS_METHOD_VALIDITY`` — is not a printed table
     from either cited source; it is assembled from Chapter 3 section 3.2's
@@ -1121,7 +1144,7 @@ def _check_missingness(frame: dict, report: Report) -> None:
     if entry is None:
         return
 
-    mode, methods, severity = entry
+    mode, methods, fallback_severity = entry
     method_implied = missingness.get("method_implied")
     normalized_method = normalize(method_implied) if not is_blank(method_implied) else None
 
@@ -1133,16 +1156,28 @@ def _check_missingness(frame: dict, report: Report) -> None:
     if valid:
         return
 
+    # Resolve the emit severity. Under a deny mechanism the harm is per method:
+    # `methods` maps each denied method to its own severity (D-05, REQ-P11.3-03), so
+    # single_imputation resolves to CRITICAL while complete_case/available_case resolve
+    # to HIGH. Under an allow mechanism every unlicensed method is the fallback severity.
+    if mode == "deny":
+        emit_severity = methods.get(normalized_method, fallback_severity)
+    else:
+        emit_severity = fallback_severity
+
     detail = (
         f"missingness.mechanism is {mechanism!r}, but missingness.method_implied is "
         f"{method_implied!r} — a pairing this project-assembled table does not license."
     )
     # Severity is written as a literal string in each branch, not passed through as the
-    # `severity` variable, because scripts/gen-finding-catalogue.py's AST-based catalogue
-    # extractor (`extract()`) only recognises a `report.add(CODE, SEVERITY, TITLE, ...)`
-    # call whose second argument is itself a string literal — a variable there would make
-    # DSX-VAL-060 invisible to the generated catalogue (D-16).
-    if severity == "HIGH":
+    # `emit_severity` variable, because scripts/gen-finding-catalogue.py's AST-based
+    # catalogue extractor (`extract()`) only recognises a `report.add(CODE, SEVERITY,
+    # TITLE, ...)` call whose second argument is itself a string literal — a variable
+    # there would make DSX-VAL-060 invisible to the generated catalogue (D-16). All three
+    # branches reuse the identical title and, for the two CRITICAL branches, the identical
+    # "CRITICAL" literal, so the rendered catalogue row and the _CANONICAL_DECLARATIONS
+    # pin do not drift — only remedy/detail differ (D-06).
+    if mode == "deny" and emit_severity == "HIGH":
         remedy = (
             "White & Carlin (2010) document a real sub-case in which complete-case "
             "analysis is unbiased under a missing-at-random mechanism: when missingness "
@@ -1154,6 +1189,33 @@ def _check_missingness(frame: dict, report: Report) -> None:
         report.add(
             "DSX-VAL-060",
             "HIGH",
+            "missingness mechanism paired with a method it does not license",
+            detail=detail,
+            remedy=remedy,
+            where="spec.validity_frame.missingness",
+        )
+    elif mode == "deny" and emit_severity == "CRITICAL":
+        # Single imputation treated as if observed under MAR (D-05, D-06): unlike
+        # complete/available-case — which only sacrifice power while reporting honest
+        # uncertainty — single imputation fabricates precision. It sets n to the full
+        # sample and drops the missing-data variance component, producing an
+        # anti-conservative interval: a structural defect no downstream evidence rescues,
+        # which is why it blocks at plan (CRITICAL), not HIGH. Its own citation is Rubin
+        # (1987) §3.1, NOT the White & Carlin (2010) complete-case sub-case above.
+        remedy = (
+            "Single imputation treated as if observed fabricates precision: it fixes n "
+            "at the full sample and drops the missing-data variance component, so the "
+            "reported interval is anti-conservative. Rubin (1987), Multiple Imputation "
+            "for Nonresponse in Surveys, §3.1 decomposes the total variance as "
+            "T = W̄ + (1+1/m)·B — within- plus between-imputation variance — and single "
+            "imputation forces the between-imputation term B to zero. Declare "
+            "method_implied as multiple_imputation, or another method that explicitly "
+            "propagates the missing-data variance, instead of a single fill treated as "
+            "observed."
+        )
+        report.add(
+            "DSX-VAL-060",
+            "CRITICAL",
             "missingness mechanism paired with a method it does not license",
             detail=detail,
             remedy=remedy,
