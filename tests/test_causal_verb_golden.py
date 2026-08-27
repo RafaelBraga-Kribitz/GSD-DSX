@@ -107,17 +107,25 @@ _GOLDEN_SHIP_FINDINGS: "dict[str, frozenset[str]]" = {
         "DSX-CLM-031", "DSX-COH-031", "DSX-EXP-007", "DSX-MET-040", "DSX-NAR-001",
         "DSX-PAR-010", "DSX-REP-030",
     }),
+    # Phase 11.3-01 (D-02): DSX-EXP-051 now fires family-independently — this fixture
+    # declares comparisons_looked_at:5 with no multiplicity.family and no results.tests
+    # (base=0), a real undisclosed-multiple-comparisons catch incidental to its
+    # data-leakage target. Measured re-baseline, §4 persona round (rigour); still BLOCKS.
     "examples/known-bad/full-frame-cleaning-ANALYSIS-SPEC.yaml": frozenset({
         "DSX-CLM-031", "DSX-CODE-020", "DSX-CODE-021", "DSX-CODE-030", "DSX-COH-031",
-        "DSX-MET-040", "DSX-ML-090", "DSX-NAR-001",
+        "DSX-EXP-051", "DSX-MET-040", "DSX-ML-090", "DSX-NAR-001",
     }),
     "examples/known-bad/interference-shared-budget-ANALYSIS-SPEC.yaml": frozenset({
         "DSX-CLM-031", "DSX-COH-031", "DSX-INT-010", "DSX-MET-040", "DSX-NAR-001",
         "DSX-REP-030",
     }),
+    # Phase 11.3-01 (D-02): DSX-EXP-051 now fires family-independently — this fixture
+    # declares comparisons_looked_at:5 with no multiplicity.family and no results.tests
+    # (base=0), a real undisclosed-multiple-comparisons catch incidental to its
+    # procedure-switch target. Measured re-baseline, §4 persona round (rigour); still BLOCKS.
     "examples/known-bad/post-hoc-procedure-switch-ANALYSIS-SPEC.yaml": frozenset({
-        "DSX-CLM-031", "DSX-COH-031", "DSX-MET-040", "DSX-NAR-001", "DSX-PRE-030",
-        "DSX-REP-030", "DSX-STA-041",
+        "DSX-CLM-031", "DSX-COH-031", "DSX-EXP-051", "DSX-MET-040", "DSX-NAR-001",
+        "DSX-PRE-030", "DSX-REP-030", "DSX-STA-041",
     }),
     "examples/known-bad/prescriptive-churn-recommendation-ANALYSIS-SPEC.yaml": frozenset({
         "DSX-CLM-020", "DSX-CLM-031", "DSX-COH-001", "DSX-COH-010",

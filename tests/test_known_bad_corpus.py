@@ -65,6 +65,14 @@ _INCIDENTAL_GAP_CODES = {
     "DSX-CLM-031",  # claims[].evidence points at "RESULTS.md#..." — a file this corpus never commits
     "DSX-COH-031",  # assumptions[0] is declared but neither checked: true nor waived
     "DSX-EXP-007",  # frequentist fixture: design.mde (0.02) exceeds decision.minimum_practical_effect (0.01)
+    "DSX-EXP-051",  # full-frame-cleaning + post-hoc-procedure-switch declare
+                    # comparisons_looked_at:5 with no multiplicity.family and no
+                    # results.tests, so the Phase 11.3-01 (D-02) family-independent
+                    # rebase fires HIGH — a true undisclosed-multiple-comparisons
+                    # observation incidental to each fixture's encoded target defect
+                    # (data leakage / procedure switch), not that defect itself. §4
+                    # persona round (Statistician+Auditor, rigour): documented, not
+                    # silenced by narrowing the check.
     "DSX-MET-040",  # metrics[0].source is warehouse.* with no metrics[0].sql definition
     "DSX-NAR-001",  # claims declared but narrative.path missing (ship-only check)
     "DSX-REP-001",  # bayesian fixture: bayesian_ab is a stochastic method with no reproducibility.random_seed
