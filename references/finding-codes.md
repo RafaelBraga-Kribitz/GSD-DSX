@@ -13,7 +13,7 @@ a suppression or a reference in a review stays valid across versions.
 **Gate thresholds.** `plan` and `execute` block at CRITICAL; `verify` and
 `ship` block at HIGH.
 
-**Total: 248 codes.**
+**Total: 249 codes.**
 
 ## Contract structure — `DSX-SPEC-*`
 
@@ -80,8 +80,9 @@ Power, allocation, units, duration, multiplicity, peeking.
 | `DSX-EXP-031` | LOW | Experiment duration of <…> days is not a whole number of weeks |
 | `DSX-EXP-040` | MEDIUM | No guardrail metrics declared for the experiment |
 | `DSX-EXP-050` | HIGH | <…> hypotheses tested with no multiplicity correction |
-| `DSX-EXP-051` | HIGH | comparisons_looked_at=<…> exceeds multiplicity family size <…> |
+| `DSX-EXP-051` | HIGH | comparisons_looked_at=<…> exceeds the reported test count <…> |
 | `DSX-EXP-052` | MEDIUM | Multiple tests with a declared family but comparisons_looked_at is missing |
+| `DSX-EXP-053` | HIGH | Multiplicity family declares <…> test(s) but <…> are reported |
 | `DSX-EXP-060` | CRITICAL | <…> interim looks were taken under a fixed-horizon design |
 
 ## Causal identification — `DSX-CAU-*`

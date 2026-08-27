@@ -466,9 +466,11 @@ DECLARATION_POINTS = {
 # REQ-P10-01) may reference. (a) This is deliberately closed: a rule naming a fact
 # outside this dict is a decidable error (DSX-PRE-010), never a silent no-op (D-04).
 # (b) It coins no new contract field — every value is a dotted path to a field that
-# already exists and is already read by a shipped check: design.alpha at
-# dsx/checks/design.py:452, results.interim_looks at :446, results.comparisons_looked_at
-# at :407. (c) results.observed_n is deliberately excluded — it is a list of per-arm
+# already exists and is already read by a shipped check: results.comparisons_looked_at
+# is read by dsx/checks/design.py::_check_exploratory_looks; results.interim_looks and
+# design.alpha are read by dsx/checks/design.py::_check_peeking. (Stable function-name
+# references, not line numbers, so this comment cannot drift on the next design.py edit —
+# D-03.) (c) results.observed_n is deliberately excluded — it is a list of per-arm
 # counts, not a scalar, and no Phase 10 requirement needs list-to-scalar semantics.
 # (d) brief.md's own worked example names a fact, `clusters`, that has never existed in
 # any spec in this repository — the brief binds structurally (fact -> number -> compare),
