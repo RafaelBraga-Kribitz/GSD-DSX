@@ -1385,6 +1385,17 @@ _EXPECTED_VAL_CODES: "dict[str, set[str]]" = {
     # triggering/stability, which are not required for a descriptive/observational
     # spec), and every one it declares is clean, so no DSX-VAL-* code fires.
     "prescriptive-churn-recommendation-ANALYSIS-SPEC.yaml": set(),
+    # Measured 2026-08-27 (plan 12-01, REQ-P12-01) against each fixture as
+    # committed: loaded via dsx.loader.load(), ran dsx.frame.val.check(spec),
+    # recorded {f.code for f in report.findings} — the empty set for all three.
+    # These are coverage-class MISS fixtures whose encoded defect is invisible to
+    # any declaration-only check (undisclosed forking / data fabrication /
+    # undisclosed selective exclusion); each declares a clean, complete
+    # validity_frame, so no DSX-VAL-* code fires. The absent-code attribution
+    # lives in each fixture's <slug>-ATTRIBUTION.yaml sidecar (D-06/D-07).
+    "garden-of-forking-paths-p-hacking-ANALYSIS-SPEC.yaml": set(),
+    "retracted-fabricated-field-experiment-ANALYSIS-SPEC.yaml": set(),
+    "operator-known-answer-selective-exclusion-ANALYSIS-SPEC.yaml": set(),
 }
 
 

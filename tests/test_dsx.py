@@ -544,6 +544,12 @@ class TestSpecStructure(unittest.TestCase):
         # eleventh; count updated from 10 to 11 in the same commit that adds it. It is a
         # descriptive fixture but still declares a valid estimand.type
         # (difference_in_proportions), so it satisfies the same assertion.
+        # Plan 12-01 (REQ-P12-01): the three coverage-class fixtures
+        # (garden-of-forking-paths-p-hacking, retracted-fabricated-field-experiment,
+        # operator-known-answer-selective-exclusion) are the twelfth, thirteenth and
+        # fourteenth; count updated from 11 to 14 in the same commit that adds them.
+        # Each declares a valid estimand.type (difference_in_proportions /
+        # difference_in_means), so all satisfy the same assertion.
         from dsx.loader import load
         from dsx.spec import ESTIMAND_TYPES
 
@@ -553,7 +559,7 @@ class TestSpecStructure(unittest.TestCase):
             + sorted((root / "examples" / "known-bad").glob("*-ANALYSIS-SPEC.yaml"))
             + sorted((root / "templates").glob("ANALYSIS-SPEC.yaml"))
         )
-        self.assertEqual(len(paths), 11, [str(p) for p in paths])
+        self.assertEqual(len(paths), 14, [str(p) for p in paths])
         bad = []
         for p in paths:
             estimand_type = load(str(p)).get("validity_frame", {}).get("estimand", {}).get("type")

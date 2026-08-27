@@ -268,7 +268,15 @@ class TestNeedsCausalBlock(unittest.TestCase):
     # what makes the prescriptive claim the sole overreach). It is excluded from the
     # needs_causal_block-True sweep below by slug rather than silently, so a future
     # causal known-bad fixture that regressed to False still fails loudly.
-    _NON_CAUSAL_KNOWN_BAD = {"prescriptive-churn-recommendation-ANALYSIS-SPEC.yaml"}
+    # Plan 12-01 (REQ-P12-01): the operator-known-answer selective-exclusion
+    # coverage-class fixture is deliberately descriptive/observational (its famous
+    # defect is undisclosed selective exclusion and weighting, a stylised-fact
+    # comparison, not a causal claim), so needs_causal_block is legitimately False
+    # for it — excluded here by slug rather than silently, same as the flagship.
+    _NON_CAUSAL_KNOWN_BAD = {
+        "prescriptive-churn-recommendation-ANALYSIS-SPEC.yaml",
+        "operator-known-answer-selective-exclusion-ANALYSIS-SPEC.yaml",
+    }
 
     def test_needs_causal_block_true_for_known_bad_and_canonical_fixtures(self):
         known_bad = sorted((ROOT / "examples" / "known-bad").glob("*-ANALYSIS-SPEC.yaml"))
