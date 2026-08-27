@@ -64,6 +64,13 @@ _CRITICAL_THRESHOLD_POINTS = ("plan", "execute")
 _INCIDENTAL_GAP_CODES = {
     "DSX-CLM-031",  # claims[].evidence points at "RESULTS.md#..." — a file this corpus never commits
     "DSX-COH-031",  # assumptions[0] is declared but neither checked: true nor waived
+    "DSX-DEC-001",  # Phase 12 (REQ-P12-01): the three coverage-class fixtures
+                    # (garden-of-forking-paths-p-hacking, retracted-fabricated-
+                    # field-experiment) declare a results.tests block with a CI but
+                    # no decision.replay block, so the replay-completeness check
+                    # fires HIGH — a corpus-completeness gap (these fixtures never
+                    # commit a replay harness), never the encoded miss each exists
+                    # to demonstrate (undisclosed forking / data fabrication).
     "DSX-EXP-007",  # frequentist fixture: design.mde (0.02) exceeds decision.minimum_practical_effect (0.01)
     "DSX-EXP-051",  # full-frame-cleaning + post-hoc-procedure-switch declare
                     # comparisons_looked_at:5 with no multiplicity.family and no
@@ -77,6 +84,11 @@ _INCIDENTAL_GAP_CODES = {
     "DSX-NAR-001",  # claims declared but narrative.path missing (ship-only check)
     "DSX-REP-001",  # bayesian fixture: bayesian_ab is a stochastic method with no reproducibility.random_seed
     "DSX-REP-030",  # reproducibility.entrypoint is not declared
+    "DSX-REP-050",  # Phase 12 (REQ-P12-01): the three coverage-class fixtures declare
+                    # a non-empty results.tests block but no reproducibility.repro_lock,
+                    # so the repro-lock-required-with-results check fires HIGH — the same
+                    # corpus-completeness gap as DSX-REP-030 (no reproducibility harness is
+                    # committed for these hand-authored fixtures), never the encoded miss.
     "DSX-STA-041",  # bayesian fixture: declared analysis.test (bayesian_ab) is outside the stats
                     # recommendation engine's acceptable set for this outcome shape
     "DSX-VAL-041",  # bayesian fixture: strength: strong with constraint_source:
@@ -418,6 +430,19 @@ _EXPECTED_CAUGHT_DEFECTS: "dict[str, frozenset[str]]" = {
     # _TARGET_DEFECT_CODES above. The key is required here solely so
     # test_expected_caught_defects_keys_match_the_corpus_on_disk stays green.
     "prescriptive-churn-recommendation": frozenset(),
+    # Phase 12 (REQ-P12-01, D-01/D-02): the three coverage-class fixtures are
+    # MISSES — each encodes a real-world defect (undisclosed garden-of-forking-
+    # paths specification search, data fabrication, undisclosed selective
+    # exclusion) that a declaration-only gate structurally cannot catch. No
+    # shipped check fires their target defect, so the caught-defect set is empty
+    # by design. The currently-ABSENT code that would attribute each miss, and the
+    # §6.5 backlog item it promotes, live in each fixture's <slug>-ATTRIBUTION.yaml
+    # sidecar (D-06/D-07), never in these harness maps (D-05: do not overload the
+    # present-code maps with the absent-code polarity). The key is required here
+    # solely so test_expected_caught_defects_keys_match_the_corpus_on_disk stays green.
+    "garden-of-forking-paths-p-hacking": frozenset(),
+    "retracted-fabricated-field-experiment": frozenset(),
+    "operator-known-answer-selective-exclusion": frozenset(),
 }
 
 

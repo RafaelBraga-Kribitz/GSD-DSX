@@ -1,0 +1,196 @@
+# A known-bad ANALYSIS-SPEC (REQ-P12-01, Phase 12 D-01/D-02: p-hacking coverage class).
+#
+# Coverage class: documented p-hacking / garden-of-forking-paths (REQ-P12-01).
+#
+# The encoded defect is DELIBERATELY INVISIBLE to a declaration-only gate. The
+# analyst tried many outcome operationalisations, subgroups and covariate sets,
+# and reported the single specification that crossed p<0.05 — but this spec
+# declares one clean pre-registered primary outcome, a single comparison
+# (results.comparisons_looked_at: 1), no multiplicity family, and an executed
+# test that matches the pre-declared primary_procedure. Nothing in the shipped
+# catalogue has a signal to fire on: the forking was never disclosed as a
+# comparison family, so the shipped undisclosed-multiplicity catch (DSX-EXP-051)
+# has nothing to count, and no prereg reconciliation trips because the executed
+# test equals the declared one. It therefore BLOCKS at verify/ship only on the
+# shared corpus-completeness incidental gaps (see _INCIDENTAL_GAP_CODES in
+# tests/test_known_bad_corpus.py), never on its actual defect.
+#
+# This is the point of the fixture: the garden of forking paths is a miss for a
+# declaration-only gate. Catching it needs the unwritten frequentist
+# specification-sensitivity check (brief.md §6.5 item 1's frequentist half) — does
+# the conclusion survive alternative model specifications — which does not exist
+# yet. The catch-attribution is carried in the sidecar
+# garden-of-forking-paths-p-hacking-ATTRIBUTION.yaml (D-06/D-07), never in this
+# spec, so frame_digest is unperturbed (11.2 D-08 placement precedent,
+# dsx/decisions.py:99-121). See the paired POSTMORTEM.md for the primary source.
+
+spec_version: 1
+title: "Does a personalised subject line raise trial-to-paid conversion in the onboarding email?"
+spec_id: "garden-of-forking-paths-p-hacking"  # top-level only (11.2 D-08); never inside validity_frame/inference.
+owner: "lifecycle-marketing"
+created: "2026-07-04"
+
+question_type: causal
+
+decision:
+  owner: "VP Lifecycle"
+  decision_rule: >
+    Ship the personalised subject line to 100% of onboarding sends if the 95% CI
+    lower bound on the trial-to-paid conversion uplift exceeds +0.5pp. Otherwise
+    keep the current generic subject line.
+  action_if_null: "Keep the generic subject line; close the initiative."
+  minimum_practical_effect: 0.01
+  reversible: true
+  deadline: "2026-08-20"
+  revisit_when: "trial_to_paid_rate uplift below +0.5pp at the 2026-Q4 review"
+
+metrics:
+  - name: trial_to_paid_rate
+    type: ratio
+    definition: "Share of trial signups that convert to a paid plan within 14 days"
+    grain: user
+    numerator: "count(distinct user_id) where first_paid_at <= trial_started_at + 14 days"
+    denominator: "count(distinct user_id) where trial_started_at in period"
+    source: warehouse.fct_trials
+    owner: lifecycle-marketing
+
+data:
+  - name: trials
+    source: warehouse.fct_trials
+    period: "2026-06-01..2026-06-28"
+    rows: 41880
+
+design:
+  kind: experiment
+  identification: randomized_experiment
+  randomization_unit: user
+  analysis_unit: user
+  arms: [control, treatment]
+  expected_allocation: [0.5, 0.5]
+  baseline_rate: 0.11
+  mde: 0.01
+  alpha: 0.05
+  power: 0.80
+  planned_n_per_arm: 20000
+  duration_days: 28
+  peeking_policy: fixed_horizon
+
+analysis:
+  outcome_type: proportion
+  n_groups: 2
+  paired: false
+  n_per_group: 20940
+  test: two_proportion_z
+  normality_ok: true
+  equal_variance: true
+  independence_ok: true
+
+results:
+  observed_n: [20940, 20940]
+  interim_looks: 1
+  comparisons_looked_at: 1
+  overall_effect: 0.007
+  tests:
+    - metric: trial_to_paid_rate
+      p_value: 0.041
+      effect: 0.007
+      standardized_effect: 0.022
+      effect_size_kind: h
+      ci: [0.0003, 0.0137]
+      interpretation: "The personalised subject line raises trial-to-paid conversion; the interval clears the practical floor."
+      minimum_practical_effect: 0.005
+
+claims:
+  - text: >
+      The personalised subject line increases 14-day trial-to-paid conversion by
+      0.7 percentage points among trial signups in the test window.
+    type: causal
+    evidence: "RESULTS.md#personalised-subject-uplift"
+    population: "Trial signups, 2026-06-01 to 2026-06-28"
+    identification: randomized_experiment
+
+assumptions:
+  - assumption: "Assignment is stable per user across the trial window."
+    rationale: "Bucketing is hashed on user_id and persisted server-side."
+    impact_if_wrong: "Cross-arm contamination would bias the estimate toward zero."
+    checked: false
+
+limitations:
+  - "Reports a single primary outcome; the analyst's exploratory passes over alternative outcome windows, subgroups and covariate sets are not enumerated here. See the paired POSTMORTEM.md."
+
+# ── Validity frame (REQ-P6-02) ───────────────────────────────────────────────
+# Clean by construction: question_type causal + design.kind experiment, all ten
+# sub-blocks present and internally consistent. The defect is not here — it is the
+# undisclosed specification search behind results, invisible to the frame.
+validity_frame:
+  estimand:
+    quantity: "difference in 14-day trial-to-paid conversion rate"
+    type: difference_in_proportions
+    population: "trial signups, 2026-06-01 to 2026-06-28"
+    contrast: "personalised subject line (treatment) vs generic subject line (control)"
+    time_window: "14 days from trial start"
+    falsifier: "the 95% CI on the conversion uplift includes zero, or its lower bound sits below +0.5pp"
+
+  units:
+    observation: user
+    assignment: user
+    analysis: user
+
+  identification:
+    strength: strong               # strong | moderate | weak
+    evidence: "Assignment is randomized per user at trial start and persisted server-side."
+    constraint_source: none        # none | informative_priors | penalisation | design_restriction | hierarchical_pooling
+    constraint_justification: ""
+
+  dependence:
+    structure: none                # none | clustered | repeated_measures | temporal | spatial | hierarchical
+    cluster_var: ""
+    method_family_required: ""
+
+  interference:
+    risk: none                     # none | shared_budget | marketplace | geo_spillover | social_graph | shared_inventory
+    mechanism: ""
+    mitigation: none               # none | geo_split | cluster_randomisation | time_split | budget_isolation | modelled
+    residual_note: ""
+
+  triggering:
+    eligible_population: "all trial signups in the window"
+    triggered_definition: "received the onboarding email"
+    analysis_population: eligible  # eligible | triggered
+    expected_trigger_rate: 1.0
+    dilution_adjusted: false
+
+  stability:
+    window: "28 days"
+    novelty_primacy_assessed: true
+    evidence: "RESULTS.md#personalised-subject-uplift-stability"
+
+  sampling_frame:
+    source: "warehouse.fct_trials, all regions"
+    claim_population: "all trial signups in the window"
+    known_exclusions: []
+    selection_risk: "none identified"
+
+  missingness:
+    mechanism: not_assessed        # MCAR | MAR | MNAR | not_assessed
+    rate: 0.0
+    method_implied: complete_case
+
+  measurement:
+    construct: "trial-to-paid conversion"
+    operationalisation: "a paid plan recorded within 14 days of trial start"
+    known_gaps: "none identified"
+
+# ── Inference plan (REQ-P6-04) ───────────────────────────────────────────────
+# Internally consistent: primary_procedure equals the executed analysis.test, so
+# no procedure-reconciliation finding fires. The forking lives outside every
+# declared field.
+inference:
+  paradigm: frequentist            # frequentist | bayesian
+  paradigm_justification: team_convention
+  declared_at: pre_data            # pre_data | post_data
+  primary_procedure: two_proportion_z
+  alpha_spending: null
+  fallback_rule: >
+    If any arm's observed n falls below 80% of planned_n_per_arm, extend to the
+    duration_days ceiling before analysing; do not analyse early.
