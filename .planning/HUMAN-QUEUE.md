@@ -7,150 +7,20 @@ and checks the item off here.
 
 ## Open
 
-### HQ-4 — Phase 11.2 formal D-05 UAT round: four primary-source citation reads (added 2026-08-26, S1-4)
+(none currently — HQ-1 through HQ-6 are all answered; see below. The
+Zimmerman citation-fix decision from the S4-1 sweep is also answered below.)
 
-Phase 11.2's technical verification **passed** (11.2-VERIFICATION.md: 5/5 ROADMAP
-success criteria, 7/7 requirements, 0 gaps, 0 behavior_unverified). Status is
-`human_needed` **solely** because of the D-05 primary-source reads below — the
-citation *selections* were already approved in HQ-3 (answered), but the verbatim
-quote-at-locator read (the project's D-05 bar) is a human check owed before 11.2
-*ships*. **Non-blocking for S1-5** (secure-phase + validate-phase run on the
-technically-verified phase); it blocks only the phase's formal UAT/ship sign-off,
-drained at S4-2. Evidence packs will be assembled the way HQ-1's were.
+## Standing framework notes (not queue items — nothing to answer, just remember)
 
-| # | Read | Anchors requirement | Expected |
-|---|------|--------------------|----------|
-| 1 | Hernán, M.A. (2018) "The C-Word," *AJPH* 108(5):616-619 — exact quotable sentence + page for the causal-verb / prescriptive-language structural criterion. | REQ-P11.2-03 / -02 | Locator matches; D-16 unverified-locator flag cleared. |
-| 2 | Simmons, Nelson & Simonsohn (2011) p.1361/1365; Gelman & Loken (2014); Wagenmakers et al. (2012) support the DSX-PRE-040/041 **firing** half; Nosek et al. (2018) supports the **clearing** half ONLY (must not anchor the firing half — 10-CONTEXT D-14). | REQ-P11.2-05 | Firing/clearing anchors each confirmed; flags cleared. |
-| 3 | The structural-criterion citation for DSX-COH-040 (revisit_when completeness) and the prescriptive-severity companion for REQ-P11.2-02 (Manski, per HQ-3). | REQ-P11.2-04 / -02 | Both confirmed or replaced; flags cleared. |
-| 4 | Veto window: the D-06 codes minted this phase (DSX-COH-040 CRITICAL, DSX-PRE-040 HIGH, DSX-PRE-041 HIGH) and the REQ-P11.2-02 severity amendment (flat HIGH → CRITICAL-none/HIGH-weak). | D-06 / D-03 | No veto raised; the irreversible decisions stand. |
-
-Also for the veto window (loud §4 persona decisions from S1-4 code review, vetoable
-here): CR-01 purpose-gate denylist; WR-01 exempting prescriptive from DSX-CLM-011
-(flagship golden re-baselined, still blocks on DSX-CLM-020); WR-02 requiring a
-metric/threshold separate from the time anchor (inverted the bare-duration test).
-See 11.2-REVIEW.md "Resolution" for full rationale.
-
-**Phase 11.2 security sign-off (added 2026-08-26, S1-5).** `/gsd-secure-phase 11.2`
-ran State B and reached `status: verified`, `threats_open: 0` (14/14 threats closed —
-`gsd-security-auditor` opus verdict SECURED, orchestrator independently re-gated: 4
-HIGH blockers re-verified by grep + 332 targeted tests OK + full suite 1147 OK). The
-technical gate is closed; per brief §4 category 4 the **human phase security sign-off
-line** on `11.2-SECURITY.md` is owed here before ship (non-blocking for S1-5/downstream).
-Also in this window: the four ACCEPT dispositions AR-11.2-04/-06/-07/-SC (design-time
-D-12 residuals decided in the S1-1 persona round, not fresh redispositions). See
-`11.2-SECURITY.md` "Accepted Risks Log" + "Sign-Off". Answer e.g.
-`HQ-4 security: approved` (or veto any specific item).
-
-### HQ-5 — Phase 11.3 D-05 citation reads + D-06 code veto window (added 2026-08-27, S2-4)
-
-Phase 11.3's technical verification **passed** (`11.3-VERIFICATION.md`: 7/7 requirements
-satisfied, 0 gaps, 0 behavior_unverified — every truth backed by a named passing test).
-Code review is `resolved` (`11.3-REVIEW.md`: 1 fixed WR-03, 3 by-design, 2 deferred to
-Phase-12 backlog, 0 open). Status is `human_needed` **solely** for the two D-05
-primary-source reads below (verbatim quote-at-locator — the project's D-05 bar) plus the
-D-06 veto window. **Non-blocking for S2-5** (secure-phase + validate-phase run on the
-technically-verified phase); it blocks only the phase's formal UAT/ship sign-off, drained
-at S4-2. Evidence packs will be assembled the way HQ-1's were.
-
-| # | Read | Anchors requirement | Expected |
-|---|------|--------------------|----------|
-| 1 | Rubin, D.B. (1987) *Multiple Imputation for Nonresponse in Surveys* §3.1 — the total-variance formula `T = W̄ + (1+1/m)·B` that anchors the DSX-VAL-060 single-imputation-under-MAR **CRITICAL** branch (`dsx/frame/val.py`). This is the phase's OWN new citation, NOT the reused White & Carlin one on the existing HIGH branch. | REQ-P11.3-03 | Locator matches; the CRITICAL branch's provenance is confirmed. |
-| 2 | Simmons, Nelson & Simonsohn (2011) "False-Positive Psychology" — data exclusion as a researcher degree of freedom, anchoring DSX-VAL-080 (exclusion rule without justification, `dsx/frame/val.py`). The exact requirement-number / table locator is honestly flagged **UNVERIFIED** in-code (D-05 discipline). | REQ-P11.3-04 | Locator confirmed or replaced; the unverified-locator flag cleared. |
-
-**D-06 veto window (loud §4 decisions from S2-1 discuss, vetoable here).** The 8 net-new
-finding codes minted this phase — `DSX-EXP-053` HIGH, `DSX-STA-012` MEDIUM, `DSX-VAL-080`
-HIGH, `DSX-SPEC-083` HIGH, and the new `DSX-CRV-010` HIGH / `DSX-CRV-011` MEDIUM /
-`DSX-CRV-012` HIGH / `DSX-CRV-013` MEDIUM family — are D-06 irreversible. Also in this
-window: the missingness-rate-reconciliation **DEFER** decision (D-07), the `DSX-CRV-*`-not-
-`DSX-FIG-*` family choice (D-12/D-14 Gate-D circularity), and the S2-4 code-review
-dispositions routed to the Phase-12 backlog as governed entry conditions (WR-01 numeric
-`N/10` catch-rate hole; IN-01 chart-review corpus discoverability; the IN-02 absent-key
-yardstick question) — none is a fresh re-scope; each is loud and vetoable. DSX-CRV-* needs
-no external judgement citation (the schema file is its own structural criterion). Answer
-e.g. `HQ-5: cite1 pass, cite2 pass, codes accepted` (or veto any specific item).
-
-**Phase 11.3 security sign-off (added 2026-08-27, S2-5).** `/gsd-secure-phase 11.3` ran
-State B and reached `status: verified`, `threats_open: 0` (16/16 threats closed —
-`gsd-security-auditor` opus verdict SECURED, orchestrator independently re-gated: 5 HIGH
-blockers T-11.3-04/-08/-09/-11/-12 re-verified by grep + 267 targeted tests OK + full suite
-`Ran 1199 tests … OK` + `bash scripts/check.sh` all checks passed). The technical gate is
-closed; per brief §4 category 4 the **human phase security sign-off line** on
-`11.3-SECURITY.md` is owed here before ship (non-blocking for S2-5/downstream). Also in this
-window: the two ACCEPT dispositions AR-11.3-02 (set-like-string family reads as empty → fires
-more not less) and AR-11.3-SC (stdlib-only, no supply-chain surface) — both design-time
-plan-decided residuals, not fresh redispositions. See `11.3-SECURITY.md` "Accepted Risks Log"
-+ "Sign-Off". Answer e.g. `HQ-5 security: approved` (or veto any specific item).
-
-### HQ-6 — Phase 12 (Calibration) UAT round: 3 D-05 corpus-case citation reads + §4 veto window (added 2026-08-27, S3-5)
-
-Phase 12's technical verification **passed** (`12-VERIFICATION.md`: 5/5 must-haves,
-0 gaps, 0 behavior_unverified — every requirement backed by a named passing test).
-Code review is `resolved` (`12-REVIEW.md`: CR-01 + WR-01 fixed in `4e8d1ff`, IN-01/IN-02
-by-design, 0 open). The calibration readout is recorded (`12-READOUT.md`, opus/high
-Statistician-reviewed, S3-4). Status is `human_needed` **solely** for the three D-05
-primary-source reads below (verbatim quote-at-locator — the project's D-05 bar, pre-registered
-in 12-CONTEXT `<deferred>`) plus the §4 veto window. **Non-blocking for S3-5's remaining
-secure-phase + validate-phase** (they run on the technically-verified phase); it blocks only
-the phase's formal UAT/ship sign-off, drained at S4-2. Evidence packs assembled the way HQ-1's were.
-
-| # | Read | Anchors requirement | Expected |
-|---|------|--------------------|----------|
-| 1 | `garden-of-forking-paths-p-hacking` — Simmons, Nelson & Simonsohn (2011) *Psych Sci* 22(11):1359-1366 and/or Gelman & Loken (2014): the p-hacking / garden-of-forking-paths archetype, verbatim at locator. | REQ-P12-01 | Confirms a real documented archetype, not a reverse-engineered fixture. |
-| 2 | `retracted-fabricated-field-experiment` — LaCour & Green (2014) *Science* 346(6215):1366-1369 (RETRACTED, notice 348(6239):1100) + Broockman-Kalla-Aronow (2015) post-mortem, verbatim at locator. | REQ-P12-01 | Confirms a real retracted-with-postmortem archetype. |
-| 3 | `operator-known-answer-selective-exclusion` — Reinhart & Rogoff (2010) *AER* 100(2):573-578 + Herndon-Ash-Pollin (2014) *CJE* 38(2), verbatim/provenance at locator. | REQ-P12-01 | Confirms genuine operator-known-answer, sourced-before-counted (D-02). |
-
-**§4 veto window (loud decisions, vetoable here).** Phase 12 mints **ZERO** finding codes
-(D-18, catalogue stays 256) so there is no D-06 code veto. The loud reversible decisions to veto:
-(i) **this firing's S3-5 code-review dispositions** — CR-01 fixed by an *absolute* D-13 boundary
-(match `examples`/`templates` against the trail's **resolved, case-folded** path; residual
-over-exclusion under an ancestor named examples/templates fails safe — the fix-form tie was
-resolved on rigour over the Architect's F-asgiven vote); IN-01 (`--paradigm` no-op) kept
-BY-DESIGN; IN-02 (retracted sidecar `absent_code: DSX-REP-020` nearest-anchor polarity) kept
-BY-DESIGN as an honestly-flagged uncatchable-authenticity class; (ii) the S3-1/S3-3 loud items
-already daily-summary-flagged — sidecar-carrier `<slug>-ATTRIBUTION.yaml`, the missingness/paradigm
-DEFERs, the §6.5 carry-8/remove-1 + **REV-002** relocate-not-delete, and the WR-01/IN-01/IN-02
-Phase-12-backlog routing from 11.3's S2-4. **Ship-time reconciliation (INFO, not a gap):**
-`REVERSALS.md:116` describes §6.5 item-4 as "measured below 15%", but the corrected
-`12-READOUT.md` §5 (Statistician F5) shows the operator paradigm split is **0/0 undefined**
-(empty history), not below-15% — the disposition (carry item-4) is identical either way; a
-one-line wording fix owed at ship. Answer e.g. `HQ-6: cite1 pass, cite2 pass, cite3 pass, dispositions accepted`.
-
-**Phase 12 security sign-off (added 2026-08-27, S3-5 remainder).** `/gsd-secure-phase 12` ran State B
-and reached `status: verified`, `threats_open: 0` (15 distinct threats — 14 mitigate CLOSED + 1 accept;
-`gsd-security-auditor` opus verdict SECURED, orchestrator independently re-gated the HIGH blockers:
-T-12-03/-03b/-08/-12/-06 re-verified first-hand at file:line + 52 requirement tests OK + full suite
-`Ran 1221 tests … OK` + `bash scripts/check.sh` all checks passed). The technical gate is closed; per
-brief §4 category 4 the **human phase security sign-off line** on `12-SECURITY.md` is owed here before
-ship (non-blocking for downstream). Also in this window: the ACCEPT disposition AR-12-SC (zero new
-packages / no supply-chain surface, D-01 hermeticity) — a design-time plan-decided residual, not a
-fresh redisposition. See `12-SECURITY.md` "Accepted Risks Log" + "Sign-Off". `/gsd-validate-phase 12`
-also ran (State A) → `status: validated`, `nyquist_compliant: true`, 0 gaps, 5/5 requirements COVERED
-(no nyquist-auditor needed). Answer e.g. `HQ-6 security: approved` (or veto any specific item).
-
-### S4-1 cross-phase UAT sweep result (added 2026-08-27, S4-1)
-
-The `/gsd-audit-uat` sweep ran across all 11 phases. **No un-queued residue found** — every
-outstanding UAT/verification item is already tracked: Phase 11 → HQ-1 (Answered), Phase 11.2 →
-HQ-4, Phase 11.3 → HQ-5, Phase 12 → HQ-6. Phases 06/07/08/09/10/11.1/11.1.1 are all
-`passed`/`complete` (zero residue). Two things surfaced that the S4-2 drain / S4-4 audit must not lose:
-
-1. **⚠Z Zimmerman follow-up (under HQ-1, still OPEN despite HQ-1 being "Answered").** The operator
-   accepted HQ-1 Check 1 as *partial* and flagged ⚠Z (Zimmerman 2004 cited to *J. Gen. Psychology*
-   131(2):142-160 for `no_variance_pretesting` in `references/families.yaml`; likely-correct source is
-   *Br. J. Math. Stat. Psychol.* 57(1):173-181) for manual research. `11-UAT.md` still shows
-   `status: testing`, `blocked: 1`, Check 1 `[blocked]`, and REQ-P11-01 stays **partial** until it is
-   resolved. A D-05 primary-source read + a `families.yaml` citation-fix unit (families #6/#7/#8 +
-   `ranking_rules`) are owed before v2.0.0 ships. **Drain this at S4-2** (do not let its home in the
-   Answered section hide it).
-2. **Tooling caveat — the automated `/gsd-audit-uat` under-reports.** The CLI returned a FALSE "All
-   Clear" (`total_files:0`) because the `gsd-verifier` template writes the section as
-   `### Human Verification Required` (level-3) while `gsd-core/bin/lib/uat.cjs::parseVerificationItems`
-   only recognizes a level-2 `## Human Verification` heading. The milestone filter is fine (passes all
-   16 phases, verified). The human items in 11.2/11.3/12-VERIFICATION.md are therefore invisible to the
-   automated sweep — the manual cross-phase read above is authoritative. **At S4-4 do not accept a CLI
-   "all clear" as evidence of no outstanding UAT.** (Framework-internal defect, not repo code; recorded,
-   not patched.)
+**`/gsd-audit-uat`'s automated CLI under-reports human-verification items.**
+Found 2026-08-27 during S4-1: the CLI returns a false "All Clear" because
+`gsd-core/bin/lib/uat.cjs::parseVerificationItems` only recognizes a level-2
+`## Human Verification` heading, while the `gsd-verifier` template actually
+writes a level-3 `### Human Verification Required` heading. This is a
+framework-internal defect (not a bug in this repo's own code) — recorded,
+not patched here. **At S4-4 and any future milestone audit, do not accept a
+CLI "all clear" as evidence of no outstanding UAT** — cross-check each
+phase's VERIFICATION.md by hand, the way the S4-1 sweep did.
 
 ## Will be added by the loop when reached
 
@@ -204,4 +74,87 @@ HQ-4, Phase 11.3 → HQ-5, Phase 12 → HQ-6. Phases 06/07/08/09/10/11.1/11.1.1 
 | Cite 3 (REQ-P11.2-05) | **Re-anchor approved** | Firing half re-anchored to Simmons, Nelson & Simonsohn 2011 (60.7% false-positive rate, Table 1 p.1361) + Gelman & Loken 2014 + Wagenmakers et al. 2012. Nosek et al. 2018 retained **only** for the clearing half, per the persona round's reasoning that using it to fire on amendments would cite the paper against its own thesis (Phase 10's D-14 already relies on Nosek to argue declared deviations are legal). |
 
 **Requirement impact:** REQ-P11.2-02, -03, -05 have a decided citation set. D-05's primary-source read itself remains outstanding and non-blocking — tracked for the formal Phase 11.2 UAT round, not reopened here.
+
+### HQ-4 — Phase 11.2 formal D-05 UAT round + security sign-off (answered 2026-08-27)
+
+**Operator verdict (verbatim):** `HQ-4: approve all citations + accept dispositions; security approved`
+
+**D-05 reads — evidence gathered by the operator's own web verification** (not a mechanical
+persona-round pack, an independent check against real sources) before asking: Hernán 2018 "The
+C-Word" confirmed exact (*AJPH* 108(5):616-619, DOI 10.2105/AJPH.2018.304337), argument matches
+(causal content is set by intent, not verb form). The reused Simmons/Nelson/Simonsohn 2011 +
+Gelman & Loken 2014 set (already approved in HQ-3) independently re-confirmed real (*Psych Sci*
+22(11):1359-1366; *American Scientist* 2014).
+
+**Recorded in:** `.planning/phases/11.2-prescriptive-claim-layer/11.2-SECURITY.md`, Sign-Off section.
+
+| Item | Result | Detail |
+|---|---|---|
+| 4 citation reads | **Approved** | REQ-P11.2-02/-03/-04/-05's D-05 bar met. |
+| Veto window (CR-01, WR-01, WR-02) | **Accepted as decided** | Code-review dispositions from 11.2-REVIEW.md stand unchanged. |
+| Security sign-off | **Approved** | Phase 11.2 now technically verified AND human-approved. 4 ACCEPT dispositions (AR-11.2-04/-06/-07/-SC) confirmed. |
+
+**Requirement impact:** Phase 11.2 fully closed for ship — technical gate, D-05 bar, and human security sign-off all satisfied.
+
+### HQ-5 — Phase 11.3 D-05 citation reads + D-06 code veto + security sign-off (answered 2026-08-27)
+
+**Operator verdict (verbatim):** `HQ-5: approve all citations + accept codes/dispositions; security approved`
+
+**D-05 reads — independently web-verified before asking:** Rubin 1987's total-variance formula
+(anchoring the DSX-VAL-060 CRITICAL branch) confirmed — the book is real (Wiley 1987) and the
+formula matches (found as T=Ū+B+B/m, algebraically identical to the cited T=W̄+(1+1/m)·B).
+Simmons/Nelson/Simonsohn 2011 (anchoring DSX-VAL-080) is the same confirmed source as HQ-4's.
+
+**Recorded in:** `.planning/phases/11.3-reporting-completeness/11.3-SECURITY.md`, Sign-Off section.
+
+| Item | Result | Detail |
+|---|---|---|
+| 2 citation reads | **Approved** | REQ-P11.3-03/-04's D-05 bar met. |
+| D-06 veto window (8 new codes) | **Accepted** | `DSX-EXP-053`, `DSX-STA-012`, `DSX-VAL-080`, `DSX-SPEC-083`, `DSX-CRV-010/011/012/013` stand — D-06 irreversible. Missingness-rate DEFER and Phase-12-backlog routing also accepted. |
+| Security sign-off | **Approved** | Phase 11.3 now technically verified AND human-approved. 2 ACCEPT dispositions (AR-11.3-02, AR-11.3-SC) confirmed. |
+
+**Requirement impact:** Phase 11.3 fully closed for ship.
+
+### HQ-6 — Phase 12 (Calibration) UAT round + §4 veto + security sign-off (answered 2026-08-27)
+
+**Operator verdict (verbatim):** `HQ-6: approve all citations + accept dispositions; security approved`
+
+**D-05 reads — independently web-verified before asking, all three of this milestone's most
+sensitive corpus-case citations:** (1) garden-of-forking-paths — Simmons/Nelson/Simonsohn 2011 +
+Gelman & Loken 2014, both confirmed above; (2) LaCour & Green 2014 fabrication — confirmed
+retracted by *Science*, retraction notice at exactly 348(6239):1100 as cited, fraud uncovered by
+Broockman/Kalla/Aronow as cited; (3) Reinhart & Rogoff 2010 + the Herndon/Ash/Pollin 2014
+critique — confirmed real, published in *Cambridge Journal of Economics* as cited, the canonical
+operator-known-answer case that fell apart under independent replication.
+
+**Recorded in:** `.planning/phases/12-calibration/12-SECURITY.md`, Sign-Off section.
+
+| Item | Result | Detail |
+|---|---|---|
+| 3 citation reads | **Approved** | REQ-P12-01's D-05 bar met — the corpus's most sensitive cases confirmed genuine, not invented. |
+| §4 veto window | **Accepted** | CR-01 (absolute D-13 boundary fix), IN-01/IN-02 (by-design), plus carried-forward items (sidecar format, missingness/paradigm DEFERs, §6.5 carry/relocate) all stand. |
+| Security sign-off | **Approved** | Phase 12 — the milestone's terminal phase — now technically verified AND human-approved. AR-12-SC confirmed. |
+
+**Requirement impact:** Phase 12 fully closed for ship. All three shipped phases (11.2, 11.3, 12) now have both their D-05 bar and human security sign-off satisfied.
+
+### ⚠Z Zimmerman citation fix — HQ-1 follow-up (answered 2026-08-27)
+
+**Operator verdict (verbatim):** `Correct to the British Journal locator`
+
+The operator independently verified, via three sources (Wiley Online Library, PubMed, Semantic
+Scholar), that Zimmerman, D.W. (2004), "A note on preliminary tests of equality of variances,"
+*British Journal of Mathematical and Statistical Psychology* 57(1):173-181, DOI
+10.1348/000711004849222, is real and its finding (a preliminary variance test fails to protect
+the significance level, usually making it worse) matches exactly what `families.yaml` cites it
+for. No matching article exists at the previously-cited *Journal of General Psychology*
+131(2):142-160 locator.
+
+**New ledger unit needed (not yet executed):** edit `references/families.yaml` for families
+`students_t`, `welch_t`, `welch_t_cluster_robust` (#6/#7/#8 per 11-UAT.md's numbering) and
+`ranking_rules` — replace the *Journal of General Psychology* locator with the *British Journal
+of Mathematical and Statistical Psychology* one above, re-run the D-05 catalogue gate, and update
+`locator_status` accordingly. **Added to `LOOP-LEDGER.md` as S4-1b.**
+
+**Requirement impact:** once the fix unit executes and its gate passes, REQ-P11-01 moves from
+partial to satisfied — the last open item from Phase 11's original UAT round.
 

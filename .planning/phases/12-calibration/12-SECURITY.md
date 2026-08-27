@@ -96,4 +96,4 @@ Verified SECURED by `gsd-security-auditor` (opus) and independently re-gated by 
 - [x] `threats_open: 0` confirmed
 - [x] `status: verified` set in frontmatter
 
-**Approval:** verified 2026-08-27 (technical gate). Per brief §4 category 4 the **human phase security sign-off line** is owed at the Phase-12 UAT/ship round (HQ-6) — non-blocking for downstream gates; the AR-12-SC accept disposition is also in that veto window. Answer e.g. `HQ-6 security: approved`.
+**Approval:** verified 2026-08-27 (technical gate). **Human sign-off granted 2026-08-27 (operator verdict recorded in HUMAN-QUEUE.md, item HQ-6):** the phase sign-off line is approved as written, and the AR-12-SC accept disposition is confirmed. Phase 12 — the milestone's terminal phase — is now both technically verified and human-approved.
