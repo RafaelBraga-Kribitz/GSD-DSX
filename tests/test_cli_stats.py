@@ -122,6 +122,63 @@ class TestCmdStats(unittest.TestCase):
             self.assertNotIn("kb-bayes-frame", out)
             self.assertNotIn("tmpl-bayes-frame", out)
 
+    def test_root_pointed_at_the_floor_still_excludes_it(self):
+        # CR-01 regression (12-REVIEW.md): D-13 is an ABSOLUTE boundary, so
+        # `--root` pointed AT or INSIDE the excluded tree must still exclude it.
+        # The pre-fix code computed exclusion from root-RELATIVE parts, which
+        # stripped the 'examples'/'templates' component exactly here and leaked
+        # the polluted floor (e.g. `--root examples/known-bad` -> 20% Bayesian).
+        # The earlier guard test only ever put the floor UNDER the root, never
+        # pointed the root AT it, so it passed green while the boundary leaked.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            _seed_trail(
+                root / "examples" / "known-bad" / "DECISIONS.jsonl",
+                [(f"INV-KB-{i}", "kb-bayes-frame", "bayesian") for i in range(20)],
+            )
+            _seed_trail(
+                root / "templates" / "DECISIONS.jsonl",
+                [(f"INV-T-{i}", "tmpl-bayes-frame", "bayesian") for i in range(5)],
+            )
+            for at_root in (
+                root / "examples",
+                root / "examples" / "known-bad",
+                root / "templates",
+            ):
+                data = json.loads(
+                    _capture(["stats", "--paradigm", "--root", str(at_root), "--json"])
+                )
+                self.assertEqual(
+                    data["distinct_frames"],
+                    0,
+                    f"--root {at_root} leaked the excluded floor: {data}",
+                )
+                self.assertEqual(data["paradigm_split"]["bayesian"], 0)
+                text = _capture(["stats", "--paradigm", "--root", str(at_root)])
+                self.assertIn("no operator history", text.lower())
+
+    def test_excluded_component_match_is_case_folded(self):
+        # A fixture tree spelled with different case (Examples/TEMPLATES) must
+        # still be excluded on a case-insensitive filesystem (Windows), where
+        # `Examples` and `examples` name the same directory. The compare is
+        # case-folded, so the floor never enters and the genuine operator trail
+        # is the only source counted.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            _seed_trail(
+                root / "Examples" / "known-bad" / "DECISIONS.jsonl",
+                [("INV-KB-1", "kb-bayes-frame", "bayesian")],
+            )
+            _seed_trail(
+                root / "op-phase" / "DECISIONS.jsonl",
+                [("INV-OP-1", "op-freq-frame", "frequentist")],
+            )
+            out = _capture(["stats", "--paradigm", "--root", str(root), "--json"])
+            data = json.loads(out)
+            self.assertEqual(data["paradigm_split"]["bayesian"], 0)
+            self.assertEqual(data["paradigm_split"]["frequentist"], 1)
+            self.assertNotIn("kb-bayes-frame", out)
+
     def test_block_on_flag_is_rejected(self):
         # `dsx stats` always passes; it carries no --block-on, so argparse
         # must reject the flag with exit 2 (D-12/D-18 — not a gate).

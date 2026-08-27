@@ -651,15 +651,25 @@ def _discover_operator_trails(root: "str | Path") -> "list[Path]":
     raw-Bayesian) that, counted, would inflate the §6.5 item-4 "Bayesian >
     15%" gate roughly four-fold on fixture re-runs. This has no analog in
     ``cmd_explain`` (a single-root reader with no exclusion list at all).
+
+    D-13 is an ABSOLUTE boundary: the fixture floor must NEVER enter the split,
+    regardless of where ``--root`` is anchored. The excluded component is
+    therefore matched against the trail's RESOLVED path, not its root-relative
+    parts (CR-01, 12-REVIEW.md: computing parts as ``relative_to(root)`` stripped
+    the very ``examples``/``templates`` component the guard filters on whenever
+    ``--root`` pointed *at* or *inside* the fixture tree — e.g.
+    ``--root examples/known-bad`` counted the floor at 20% Bayesian). ``resolve()``
+    also collapses symlink aliasing, and the compare is case-folded for
+    case-insensitive filesystems (Windows: ``Examples`` == ``examples``). The one
+    residual — a repository checked out under an ancestor directory literally
+    named ``examples``/``templates`` — fails SAFE (the readout goes empty, never a
+    false promotion), an accepted known-limit of an absolute-boundary fix.
     """
     root_path = Path(root)
     trails: "list[Path]" = []
+    excluded = {"examples", "templates"}
     for trail in root_path.rglob("DECISIONS.jsonl"):
-        try:
-            parts = trail.relative_to(root_path).parts
-        except ValueError:
-            parts = trail.parts
-        if "examples" in parts or "templates" in parts:
+        if excluded & {part.lower() for part in trail.resolve().parts}:
             continue
         trails.append(trail)
     return trails
@@ -1005,6 +1015,11 @@ def build_parser() -> argparse.ArgumentParser:
     # that returns 0 by construction would be a lie in the help text, the same
     # reasoning already recorded for `explain`/`recommend-test`. It is NOT
     # registered in CHECKS or GATE_PROFILES; it is a readout, not a gate (D-18).
+    # --paradigm is the sole current `stats` report selector, reserved for
+    # forward compatibility (IN-01, 12-REVIEW.md): its help text is accurate —
+    # the split IS what the command reports — so a bare `dsx stats` reporting
+    # the same split is by-design, not a false contract. When a second `stats`
+    # sub-report is added, wire the report choice on this flag then, not now.
     p_stats.add_argument("--paradigm", action="store_true",
                          help="report the frequentist/bayesian/undeclared frame split")
     p_stats.add_argument("--root", default=".planning",
