@@ -5,10 +5,10 @@ milestone_name: DSX Validity Frame
 current_phase: 12
 current_phase_name: calibration
 status: executing
-stopped_at: Phase 12 S3-5 code-review + auto-fix + verification DONE (2026-08-27T21:54Z). 12-REVIEW.md resolved (CR-01 D-13-exclusion-absolute + WR-01 fixed `4e8d1ff`; IN-01/IN-02 by-design); 12-VERIFICATION.md human_needed 5/5 must-haves / 0 gaps / 0 behavior_unverified; suite 1221 OK, catalogue 256 (D-18), check.sh all passed. S3-5 checkbox stays `[ ]` — remainder = `/gsd-secure-phase 12` + `/gsd-validate-phase 12` (next firing). 3 D-05 corpus reads + §4 veto → HQ-6 (non-blocking). Next unblocked = S3-5 remainder (secure + validate)
-last_updated: "2026-08-27T21:54:00.000Z"
+stopped_at: Phase 12 S3-5 CLOSED — secure + validate remainder green (2026-08-27T22:47Z). `/gsd-secure-phase 12` State B → `12-SECURITY.md` `status: verified`, threats_open 0 (15 threats: 14 mitigate CLOSED + T-12-SC accept; gsd-security-auditor opus SECURED, orchestrator independently re-gated HIGH blockers T-12-03/-03b/-08/-12/-06 first-hand). `/gsd-validate-phase 12` State A → `12-VALIDATION.md` `status: validated`, `nyquist_compliant: true`, 0 gaps, 5/5 REQ-P12 COVERED (no nyquist-auditor). Combined gate: 52 requirement tests OK, full suite 1221 OK, check.sh all passed, catalogue 256 (D-18). Human security sign-off + AR-12-SC → HQ-6 (non-blocking). Phase 12 (terminal) technically COMPLETE; S3 CLOSED. Next unblocked = S4-1 (`/gsd-audit-uat` cross-phase sweep).
+last_updated: "2026-08-27T22:47:00.000Z"
 last_activity: 2026-08-27
-last_activity_desc: S3-5 code-review + auto-fix + verification — gsd-code-reviewer (opus/deep) found 1 Blocker (CR-01 D-13 fixture-floor exclusion defeatable via --root into examples/**) + 1 Warning + 2 Info, all independently reproduced; CR-01+WR-01 fixed `4e8d1ff` via §4 persona round (F-resolve+case-fold, absolute boundary); gsd-verifier (opus/high) 5/5 must-haves 0 gaps; secure+validate remain
+last_activity_desc: S3-5 remainder — /gsd-secure-phase 12 (State B, SECURED threats_open 0, 15-threat register, opus auditor + independent HIGH-blocker re-gate §5) + /gsd-validate-phase 12 (State A, validated / nyquist_compliant true, 0 gaps 5/5 COVERED). Phase 12 technically complete; S3 closed; next = S4-1 close-out sweep
 progress:
   total_phases: 11
   completed_phases: 10

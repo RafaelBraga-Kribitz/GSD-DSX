@@ -116,6 +116,18 @@ Phase-12-backlog routing from 11.3's S2-4. **Ship-time reconciliation (INFO, not
 (empty history), not below-15% — the disposition (carry item-4) is identical either way; a
 one-line wording fix owed at ship. Answer e.g. `HQ-6: cite1 pass, cite2 pass, cite3 pass, dispositions accepted`.
 
+**Phase 12 security sign-off (added 2026-08-27, S3-5 remainder).** `/gsd-secure-phase 12` ran State B
+and reached `status: verified`, `threats_open: 0` (15 distinct threats — 14 mitigate CLOSED + 1 accept;
+`gsd-security-auditor` opus verdict SECURED, orchestrator independently re-gated the HIGH blockers:
+T-12-03/-03b/-08/-12/-06 re-verified first-hand at file:line + 52 requirement tests OK + full suite
+`Ran 1221 tests … OK` + `bash scripts/check.sh` all checks passed). The technical gate is closed; per
+brief §4 category 4 the **human phase security sign-off line** on `12-SECURITY.md` is owed here before
+ship (non-blocking for downstream). Also in this window: the ACCEPT disposition AR-12-SC (zero new
+packages / no supply-chain surface, D-01 hermeticity) — a design-time plan-decided residual, not a
+fresh redisposition. See `12-SECURITY.md` "Accepted Risks Log" + "Sign-Off". `/gsd-validate-phase 12`
+also ran (State A) → `status: validated`, `nyquist_compliant: true`, 0 gaps, 5/5 requirements COVERED
+(no nyquist-auditor needed). Answer e.g. `HQ-6 security: approved` (or veto any specific item).
+
 ## Will be added by the loop when reached
 
 - End-of-phase UAT rounds for Phases 11.2, 11.3, 12 (batched, with evidence packs).
