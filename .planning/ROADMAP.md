@@ -948,7 +948,47 @@ settled at discuss under D-05.
      CHART-REVIEW.md structure is validated against `references/chart-review-schema.md` by
      four structural codes — no stochastic agent verdict gates.
 
-**Plans**: TBD
+**Plans**: 6 plans
+
+Plans:
+
+**Wave 1**
+
+- [ ] 11.3-01-PLAN.md — REQ-01/02: multiplicity family undercount (DSX-EXP-053) + family-independent
+      DSX-EXP-051 rebase in design.py, the D-03 PREREG_FACTS comment fix, and the mandatory
+      `_DESIGN_PY_SHA256` same-commit update (wave 1)
+
+**Wave 2** *(blocked on Wave 1)*
+
+- [ ] 11.3-02-PLAN.md — REQ-05: unrecognised effect_size_kind fires DSX-STA-012 MEDIUM from a guard
+      preceding interpret_effect, recognised set single-sourced with mathx.py (wave 2)
+- [ ] 11.3-03-PLAN.md — REQ-03: MISSINGNESS_METHODS closed vocab (reuse DSX-SPEC-082) + per-method
+      severity split so single_imputation-under-MAR blocks at plan (DSX-VAL-060 CRITICAL, Rubin 1987
+      §3.1); D-07 rate reconciliation deferred (wave 2)
+
+**Wave 3** *(blocked on Wave 2)*
+
+- [ ] 11.3-04-PLAN.md — REQ-04: validity_frame.exclusions sub-block — DSX-VAL-080 (rule without
+      justification) + DSX-SPEC-083 (unexpected key), applied_before_split record-only, content-lock
+      regression (wave 3)
+
+**Wave 4** *(blocked on Wave 3)*
+
+- [ ] 11.3-05-PLAN.md — REQ-06: new dsx/checks/chart_review.py with DSX-CRV-010/011/012/013, the
+      four-registry wiring, the D-14 schema Gate-proxy edit, fixtures + the D-13 forbidden-input
+      boundary test (wave 4)
+
+**Wave 5** *(blocked on Wave 4 — corpus-green gate, MUST run last)*
+
+- [ ] 11.3-06-PLAN.md — REQ-07: catalogue regenerated 248→256, all D-15 fixtures present, full
+      corpus `scripts/check.sh` green (wave 5)
+
+**Code assignments (D-06, locked at plan; human-veto window via the daily summary):** 8 net-new
+codes minted — `DSX-EXP-053` HIGH (D-01), `DSX-STA-012` MEDIUM (D-11), `DSX-VAL-080` HIGH (D-08),
+`DSX-SPEC-083` HIGH (D-09), `DSX-CRV-010` HIGH / `DSX-CRV-011` MEDIUM / `DSX-CRV-012` HIGH /
+`DSX-CRV-013` MEDIUM (D-12). Three codes reused (mint nothing): `DSX-EXP-051` (rebased
+family-independent, D-02), `DSX-SPEC-082` (new membership row, D-04), `DSX-VAL-060` (new CRITICAL
+branch, D-05). Catalogue 248 → 256.
 
 ### Phase 12: Calibration
 
