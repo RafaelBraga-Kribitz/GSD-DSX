@@ -5,15 +5,15 @@ milestone_name: DSX Validity Frame
 current_phase: 12
 current_phase_name: calibration
 status: executing
-stopped_at: Phase 12 Wave 1 executed (plans 12-01 corpus+sidecars, 12-02 dsx stats --paradigm); S3-3 in progress, next unblocked = Wave 2 (plans 03, 04)
-last_updated: "2026-08-27T12:40:00.000Z"
+stopped_at: Phase 12 Waves 1-2 executed (12-01 corpus+sidecars, 12-02 dsx stats --paradigm, 12-03 sidecar sibling-integrity+falsifiability, 12-04 good-side FPR control corpus); S3-3 in progress, next unblocked = Wave 3 (plan 05)
+last_updated: "2026-08-27T14:45:00.000Z"
 last_activity: 2026-08-27
-last_activity_desc: S3-3 Wave 1 (plans 12-01+12-02) executed + independently gated; suite 1205 OK, catalogue 256, check.sh all checks passed
+last_activity_desc: S3-3 Wave 2 (plans 12-03+12-04) executed + independently gated; suite 1207 OK, catalogue 256, check.sh all checks passed, good-corpus 12 clean specs all frozenset()
 progress:
   total_phases: 11
   completed_phases: 10
   total_plans: 89
-  completed_plans: 84
+  completed_plans: 86
   percent: 94
 ---
 
@@ -114,10 +114,10 @@ parity and visible-fallback criteria added).
 
 ## Current Position
 
-Phase: 12 (calibration, terminal) — EXECUTING. S3-1 (discuss) + S3-2 (plan, 7 plans/5 waves) closed. S3-3 (execute) IN PROGRESS: Wave 1 of 5 done (plans 12-01, 12-02).
-Plan: 2 of 7 (Wave 1 of 5)
-Status: S3-3 Wave 1 executed + independently gated — 12-01 (corpus 3 coverage classes + attribution sidecars, catalogue 256, zero codes minted) and 12-02 (dsx stats --paradigm reader, D-13 exclusion + D-14 dedup, always exit 0). Next unblocked = S3-3 Wave 2 (plans 03, 04; both depends_on [12-01], now done+gated). GSD resume file → 12-03-PLAN.md.
-Last activity: 2026-08-27 — S3-3 Wave 1 (plans 12-01+12-02) executed + independently gated; suite 1205 OK, catalogue 256, check.sh all checks passed
+Phase: 12 (calibration, terminal) — EXECUTING. S3-1 (discuss) + S3-2 (plan, 7 plans/5 waves) closed. S3-3 (execute) IN PROGRESS: Waves 1-2 of 5 done (plans 12-01, 12-02, 12-03, 12-04).
+Plan: 4 of 7 (Waves 1-2 of 5)
+Status: S3-3 Wave 2 executed + independently gated — 12-03 (attribution sidecar sibling-integrity + live falsifiability, test-only, catalogue 256) and 12-04 (good-side FPR control corpus: 12 clean multi-paradigm specs, all measure frozenset() at ship, real FPR denominator, zero codes minted). Next unblocked = S3-3 Wave 3 (plan 05; depends_on [12-03, 12-04], now done+gated). GSD resume file → 12-05-PLAN.md.
+Last activity: 2026-08-27 — S3-3 Wave 2 (plans 12-03+12-04) executed + independently gated; suite 1207 OK, catalogue 256, check.sh all checks passed
 
 ## Project Reference
 
@@ -128,9 +128,9 @@ See: .planning/PROJECT.md (updated 2026-08-13)
 
 ## Session
 
-**Last session:** 2026-08-27T12:40:00.000Z
-**Stopped at:** Phase 12 S3-3 Wave 1 executed (plans 12-01, 12-02) + independently gated; next unblocked = Wave 2 (plans 03, 04)
-**Resume file:** .planning/phases/12-calibration/12-03-PLAN.md
+**Last session:** 2026-08-27T14:45:00.000Z
+**Stopped at:** Phase 12 S3-3 Wave 2 executed (plans 12-03, 12-04) + independently gated; next unblocked = Wave 3 (plan 05)
+**Resume file:** .planning/phases/12-calibration/12-05-PLAN.md
 
 Phase 10 context was re-verified 2026-08-14 (assumptions mode). Six unexecuted plans (`10-01` … `10-06`) already exist; this refresh did not rewrite them. Phase 8's blocking gap is in `08-VERIFICATION.md` (out-of-vocabulary `interference.risk` bypass).
 
