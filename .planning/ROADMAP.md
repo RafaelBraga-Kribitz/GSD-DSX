@@ -968,7 +968,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2)*
 
-- [ ] 11.3-04-PLAN.md — REQ-04: validity_frame.exclusions sub-block — DSX-VAL-080 (rule without
+- [x] 11.3-04-PLAN.md — REQ-04: validity_frame.exclusions sub-block — DSX-VAL-080 (rule without
       justification) + DSX-SPEC-083 (unexpected key), applied_before_split record-only, content-lock
       regression (wave 3)
 

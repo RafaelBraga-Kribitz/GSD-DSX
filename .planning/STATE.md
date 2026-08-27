@@ -5,16 +5,16 @@ milestone_name: DSX Validity Frame
 current_phase: 11.3
 current_phase_name: reporting-completeness
 status: executing
-stopped_at: Phase 11.3 S2-3 IN PROGRESS — Waves 1-2 done (plans 01, 02, 03). Wave 2 (plans 02, 03) executed + independently gated this firing — DSX-STA-012 MEDIUM effect-size-kind guard (single-sourced EFFECT_SIZE_KINDS), MISSINGNESS_METHODS 7-member closed vocab (reuse DSX-SPEC-082), DSX-VAL-060 CRITICAL single_imputation-under-MAR branch (Rubin 1987 §3.1), catalogue 249→250, no catalogue drift from plan 03; suite 1162 OK, check.sh all checks passed. Wave 3 next = plan 04 (REQ-04 exclusions, depends_on [03]). Resume file = 11.3-04-PLAN.md.
-last_updated: "2026-08-27T03:51:00.000Z"
+stopped_at: Phase 11.3 S2-3 IN PROGRESS — Waves 1-3 done (plans 01, 02, 03, 04). Wave 3 (plan 04, REQ-P11.3-04 validity_frame.exclusions) executed + independently gated this firing — DSX-VAL-080 HIGH (new presence-guarded _check_exclusions, own Simmons 2011 citation, applied_before_split RECORD-ONLY D-10) + DSX-SPEC-083 HIGH (closed-key guard scoped to exclusions ONLY, legacy inference tolerance untouched D-09), catalogue 250→252; content lock covers the sub-block via the existing frame_digest (no new machinery, DSX-PRE-020 regression proven); suite 1176 OK, check.sh all checks passed, findings.py/checks/ untouched. Wave 4 next = plan 05 (REQ-P11.3-06 new dsx/checks/chart_review.py + DSX-CRV-010/011/012/013 family + cli.py wiring, depends_on [04]). Resume file = 11.3-05-PLAN.md.
+last_updated: "2026-08-27T06:43:00.000Z"
 last_activity: 2026-08-27
-last_activity_desc: S2-3 execute 11.3 Wave 2 (plans 02, 03) — DSX-STA-012 MEDIUM effect_size_kind guard + DSX-SPEC-082 method_implied closed vocab + DSX-VAL-060 CRITICAL single_imputation branch (Rubin 1987 §3.1); two gsd-executor (sonnet) + independent orchestrator re-gate; suite 1162 OK
+last_activity_desc: S2-3 execute 11.3 Wave 3 (plan 04) — DSX-VAL-080 HIGH exclusion-without-justification (_check_exclusions, Simmons 2011) + DSX-SPEC-083 HIGH closed-key guard on validity_frame.exclusions; gsd-executor (sonnet) + independent orchestrator re-gate; catalogue 250→252; suite 1176 OK
 progress:
   total_phases: 10
   completed_phases: 9
   total_plans: 82
-  completed_plans: 79
-  percent: 91
+  completed_plans: 80
+  percent: 92
 ---
 
 # Project state
