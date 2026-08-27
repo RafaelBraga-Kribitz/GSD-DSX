@@ -1557,3 +1557,67 @@ class TestDocumentedLimits(unittest.TestCase):
             "dsx/frame/prereg.py must still flag the unpublished 2013 Columbia "
             "working paper as a notation source only",
         )
+
+
+class TestExclusionsContentLock(unittest.TestCase):
+    """REQ-P11.3-04: exclusions lives UNDER validity_frame, so frame_digest hashes
+    it and a changed exclusion cutoff (or a flipped applied_before_split) after
+    results exist is caught by the EXISTING DSX-PRE-020 content lock with no new
+    machinery — proven here, not asserted. These pass against the current code
+    because the coverage is already there; the point of the regression is that it
+    stays that way when the exclusions sub-block ships."""
+
+    def _append_plan_header(self, root, digest, invocation_id="INV-0001"):
+        append_decision(
+            decisions_path(root),
+            InvocationHeader(
+                invocation_id=invocation_id,
+                gate_point="plan",
+                dsx_version=__version__,
+                frame_digest=digest,
+            ),
+        )
+
+    def _spec(self, cutoff, applied_before_split=True):
+        return {
+            "validity_frame": {
+                "exclusions": {
+                    "rule": f"drop sessions shorter than {cutoff}",
+                    "action": "remove",
+                    "applied_before_split": applied_before_split,
+                    "justification": "short sessions are automated crawlers",
+                }
+            },
+            "inference": {"declared_at": "pre_data"},
+        }
+
+    def test_changed_cutoff_changes_frame_digest(self):
+        # REQ-P11.3-04
+        self.assertNotEqual(
+            frame_digest(self._spec("2s")), frame_digest(self._spec("5s"))
+        )
+
+    def test_flipped_applied_before_split_changes_frame_digest(self):
+        # REQ-P11.3-04
+        self.assertNotEqual(
+            frame_digest(self._spec("2s", applied_before_split=True)),
+            frame_digest(self._spec("2s", applied_before_split=False)),
+        )
+
+    # D-05: DSX-PRE-020
+    def test_changed_cutoff_trips_pre_020_via_existing_content_lock(self):
+        # REQ-P11.3-04: the plan-recorded digest was taken over the 2s cutoff; a
+        # verify-time spec whose cutoff moved to 5s no longer matches, so the
+        # existing content lock trips DSX-PRE-020 CRITICAL.
+        planned = self._spec("2s")
+        verified = self._spec("5s")
+        with tempfile.TemporaryDirectory() as root:
+            self._append_plan_header(root, frame_digest(planned))
+            report = prereg.check(verified, root, reconcile_trail=True)
+            findings = [f for f in report.findings if f.code == "DSX-PRE-020"]
+            self.assertEqual(len(findings), 1)
+            self.assertEqual(findings[0].severity, Severity.CRITICAL)
+
+
+if __name__ == "__main__":
+    unittest.main(verbosity=2)

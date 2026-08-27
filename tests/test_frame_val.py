@@ -1779,5 +1779,190 @@ class TestKishCitationCoherence(unittest.TestCase):
         )
 
 
+# REQ-P11.3-04: the validity_frame.exclusions sub-block. DSX-VAL-080 holds a
+# declared row-exclusion rule to account (it must carry a justification), and
+# DSX-SPEC-083 rejects any key outside the closed exclusions sub-block so a
+# data-dependent row count (n_excluded) cannot be smuggled into the frame. The
+# sub-block is accepted as EITHER a single rule-dict OR a list of rule-dicts.
+class TestValExclusions(unittest.TestCase):
+    # D-05: DSX-VAL-080
+    def test_rule_without_justification_fires_high_val_080_single_dict(self):
+        # REQ-P11.3-04
+        report = val.check(
+            {
+                "validity_frame": {
+                    "exclusions": {
+                        "rule": "drop sessions shorter than 2s",
+                        "action": "remove",
+                        "applied_before_split": True,
+                        "justification": "",
+                    }
+                }
+            }
+        )
+        found = [f for f in report.findings if f.code == "DSX-VAL-080"]
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0].severity, Severity.HIGH)
+        self.assertEqual(found[0].where, "spec.validity_frame.exclusions")
+
+    def test_rule_with_absent_justification_key_fires_val_080(self):
+        # REQ-P11.3-04
+        report = val.check(
+            {
+                "validity_frame": {
+                    "exclusions": {"rule": "drop bot traffic", "action": "remove"}
+                }
+            }
+        )
+        self.assertIn("DSX-VAL-080", codes(report))
+
+    def test_rule_with_justification_produces_no_val_080_single_dict(self):
+        # REQ-P11.3-04
+        report = val.check(
+            {
+                "validity_frame": {
+                    "exclusions": {
+                        "rule": "drop sessions shorter than 2s",
+                        "action": "remove",
+                        "applied_before_split": True,
+                        "justification": "sub-2s sessions are automated crawlers, not users",
+                    }
+                }
+            }
+        )
+        self.assertNotIn("DSX-VAL-080", codes(report))
+
+    def test_list_of_dicts_one_missing_justification_fires_val_080_for_that_entry(self):
+        # REQ-P11.3-04: the list-of-dicts shape iterates per entry.
+        report = val.check(
+            {
+                "validity_frame": {
+                    "exclusions": [
+                        {"rule": "drop bots", "justification": "bots are not real users"},
+                        {"rule": "drop sessions shorter than 2s", "justification": ""},
+                    ]
+                }
+            }
+        )
+        found = [f for f in report.findings if f.code == "DSX-VAL-080"]
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0].severity, Severity.HIGH)
+
+    def test_list_of_dicts_all_justified_produces_no_val_080(self):
+        # REQ-P11.3-04
+        report = val.check(
+            {
+                "validity_frame": {
+                    "exclusions": [
+                        {"rule": "drop bots", "justification": "bots are not real users"},
+                        {"rule": "drop test accounts", "justification": "internal QA rows"},
+                    ]
+                }
+            }
+        )
+        self.assertNotIn("DSX-VAL-080", codes(report))
+
+    def test_applied_before_split_false_with_justification_fires_nothing_extra(self):
+        # REQ-P11.3-04 (D-10): applied_before_split is RECORD-ONLY in 11.3 — no
+        # branch reads its value, so a post-split rule (applied_before_split: false)
+        # carrying a justification produces no DSX-VAL-080 and no other finding.
+        report = val.check(
+            {
+                "validity_frame": {
+                    "exclusions": {
+                        "rule": "drop outliers beyond 3 SD",
+                        "action": "remove",
+                        "applied_before_split": False,
+                        "justification": "pre-registered robustness trim",
+                    }
+                }
+            }
+        )
+        self.assertEqual(codes(report), set())
+
+    def test_non_dict_non_list_exclusions_degrades_to_no_finding(self):
+        # REQ-P11.3-04 (T-11.3-10): a malformed exclusions block must not raise
+        # nor fire.
+        for bad in ("drop bots", 3, None):
+            with self.subTest(bad=bad):
+                report = val.check({"validity_frame": {"exclusions": bad}})
+                self.assertNotIn("DSX-VAL-080", codes(report))
+
+    def _exclusions_shape_spec(self, exclusions):
+        # A minimal spec that reaches _validate_validity_frame_shape with an
+        # exclusions sub-block, so the closed-key guard runs.
+        return {
+            "spec_version": 1,
+            "title": "t",
+            "question_type": "descriptive",
+            "decision": {"owner": "x"},
+            "validity_frame": {"exclusions": exclusions},
+        }
+
+    # D-05: DSX-SPEC-083
+    def test_unexpected_key_in_exclusions_fires_high_spec_083_single_dict(self):
+        # REQ-P11.3-04
+        report = validate_structure(
+            self._exclusions_shape_spec(
+                {
+                    "rule": "drop bots",
+                    "justification": "bots are not users",
+                    "n_excluded": 412,
+                }
+            )
+        )
+        found = [f for f in report.findings if f.code == "DSX-SPEC-083"]
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0].severity, Severity.HIGH)
+        self.assertEqual(found[0].where, "spec.validity_frame.exclusions")
+        self.assertIn("n_excluded", found[0].detail)
+
+    def test_clean_exclusions_entry_produces_no_spec_083(self):
+        # REQ-P11.3-04: every key is inside {rule, action, applied_before_split,
+        # justification}.
+        report = validate_structure(
+            self._exclusions_shape_spec(
+                {
+                    "rule": "drop bots",
+                    "action": "remove",
+                    "applied_before_split": True,
+                    "justification": "bots are not users",
+                }
+            )
+        )
+        self.assertNotIn("DSX-SPEC-083", codes(report))
+
+    def test_unexpected_key_in_list_of_dicts_fires_spec_083(self):
+        # REQ-P11.3-04: the guard iterates the list shape too.
+        report = validate_structure(
+            self._exclusions_shape_spec(
+                [
+                    {"rule": "drop bots", "justification": "bots"},
+                    {"rule": "drop test rows", "justification": "qa", "row_count": 9},
+                ]
+            )
+        )
+        found = [f for f in report.findings if f.code == "DSX-SPEC-083"]
+        self.assertEqual(len(found), 1)
+        self.assertIn("row_count", found[0].detail)
+
+    def test_unknown_inference_key_does_not_fire_spec_083(self):
+        # REQ-P11.3-04 (D-09): the closed-key guard is born strict on exclusions
+        # ONLY — the legacy inference-block key tolerance is untouched, so an
+        # unknown key under inference: still parses silently.
+        spec = {
+            "spec_version": 1,
+            "title": "t",
+            "question_type": "descriptive",
+            "decision": {"owner": "x"},
+            "validity_frame": {
+                "exclusions": {"rule": "drop bots", "justification": "bots"}
+            },
+            "inference": {"declared_at": "pre_data", "made_up_inference_key": "whatever"},
+        }
+        report = validate_structure(spec)
+        self.assertNotIn("DSX-SPEC-083", codes(report))
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
