@@ -27,6 +27,7 @@ from dsx.checks import design  # noqa: E402
 from dsx.findings import Report, Severity  # noqa: E402
 from dsx.frame import val  # noqa: E402
 from dsx.loader import load  # noqa: E402
+from dsx.spec import validate_structure  # noqa: E402
 
 
 def codes(report: Report) -> set[str]:
@@ -915,6 +916,128 @@ class TestValSamplingMissingnessMeasurement(unittest.TestCase):
                 spec = load(str(path))
                 report = val.check(spec)
                 self.assertNotIn("DSX-VAL-060", codes(report), path.name)
+
+    # REQ-P11.3-03 (D-04, D-05, D-06): missingness.method_implied is a closed
+    # vocabulary (unknown method fires DSX-SPEC-082 HIGH), and single imputation
+    # treated as if observed under a MAR mechanism fires DSX-VAL-060 at CRITICAL
+    # — a strictly-worse standard-error fabrication than the HIGH complete/
+    # available-case power sacrifice.
+    @staticmethod
+    def _structural_spec(missingness: dict) -> dict:
+        # A minimal spec that reaches _validate_validity_frame_shape's membership
+        # loop: the six always-required sub-blocks present (non-empty dicts),
+        # question_type descriptive so the causal sub-blocks are not required.
+        return {
+            "spec_version": 1,
+            "title": "t",
+            "question_type": "descriptive",
+            "decision": {"owner": "x"},
+            "validity_frame": {
+                **{
+                    k: {"a": 1}
+                    for k in ("estimand", "units", "measurement", "dependence", "sampling_frame")
+                },
+                "missingness": missingness,
+            },
+        }
+
+    def test_missingness_mar_with_single_imputation_fires_critical_val_060(self):
+        # REQ-P11.3-03 (D-05): single imputation under MAR is CRITICAL, not HIGH.
+        report = val.check(
+            {
+                "validity_frame": {
+                    "missingness": {"mechanism": "MAR", "method_implied": "single_imputation"}
+                }
+            }
+        )
+        found = [f for f in report.findings if f.code == "DSX-VAL-060"]
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0].severity, Severity.CRITICAL)
+
+    def test_missingness_mar_complete_and_available_case_stay_high_val_060(self):
+        # REQ-P11.3-03 (D-05): the per-method split leaves complete_case and
+        # available_case at HIGH (unchanged behaviour).
+        for method in ("complete_case", "available_case"):
+            with self.subTest(method=method):
+                report = val.check(
+                    {
+                        "validity_frame": {
+                            "missingness": {"mechanism": "MAR", "method_implied": method}
+                        }
+                    }
+                )
+                found = [f for f in report.findings if f.code == "DSX-VAL-060"]
+                self.assertEqual(len(found), 1)
+                self.assertEqual(found[0].severity, Severity.HIGH)
+
+    def test_missingness_mar_with_multiple_imputation_fires_neither_val_060_nor_spec_082(self):
+        # REQ-P11.3-03: the good-fixture pairing (MAR + multiple_imputation) is
+        # recognised AND licensed — it must fire neither code.
+        content = val.check(
+            {
+                "validity_frame": {
+                    "missingness": {"mechanism": "MAR", "method_implied": "multiple_imputation"}
+                }
+            }
+        )
+        self.assertNotIn("DSX-VAL-060", codes(content))
+        shape = validate_structure(
+            self._structural_spec(
+                {"mechanism": "MAR", "method_implied": "multiple_imputation"}
+            )
+        )
+        self.assertNotIn("DSX-SPEC-082", codes(shape))
+
+    def test_missingness_unknown_method_implied_fires_spec_082_high(self):
+        # REQ-P11.3-03 (D-04): method_implied is a closed vocabulary — an
+        # unrecognised method is DSX-SPEC-082's territory, at HIGH.
+        report = validate_structure(
+            self._structural_spec(
+                {"mechanism": "MCAR", "method_implied": "made_up_method"}
+            )
+        )
+        found = [f for f in report.findings if f.code == "DSX-SPEC-082"]
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0].severity, Severity.HIGH)
+        self.assertEqual(found[0].where, "spec.validity_frame.missingness.method_implied")
+
+    def test_missingness_methods_has_exactly_the_seven_locked_members(self):
+        # REQ-P11.3-03 (D-04): the vocab is locked at 7 members — it must include
+        # multiple_imputation (good fixture) and single_imputation (else the
+        # CRITICAL block path is unreachable), and must not be silently shrunk.
+        from dsx.spec import MISSINGNESS_METHODS
+
+        self.assertEqual(
+            set(MISSINGNESS_METHODS),
+            {
+                "multiple_imputation",
+                "single_imputation",
+                "complete_case",
+                "available_case",
+                "mechanism_model",
+                "selection_model",
+                "pattern_mixture_model",
+            },
+        )
+
+    def test_mar_deny_set_resolves_each_method_to_exactly_one_severity(self):
+        # REQ-P11.3-03 (optional invariant, D-05): the MAR deny set is keyed per
+        # method so single_imputation (CRITICAL) and complete_case/available_case
+        # (HIGH) resolve to distinct severities. A reversion to one-severity-per-
+        # mechanism (a frozenset + one scalar severity) makes this go red.
+        from dsx.spec import MISSINGNESS_METHODS
+
+        entry = val._MISSINGNESS_METHOD_VALIDITY["mar"]
+        mode, methods = entry[0], entry[1]
+        self.assertEqual(mode, "deny")
+        self.assertIsInstance(methods, dict)
+        self.assertEqual(methods.get("single_imputation"), "CRITICAL")
+        self.assertEqual(methods.get("complete_case"), "HIGH")
+        self.assertEqual(methods.get("available_case"), "HIGH")
+        for method, severity in methods.items():
+            self.assertIn(method, MISSINGNESS_METHODS)
+            self.assertIn(severity, ("HIGH", "CRITICAL"))
+        self.assertGreaterEqual(len(set(methods.values())), 2)
 
     def test_malformed_sampling_frame_and_measurement_subblocks_produce_no_finding_and_do_not_raise(
         self,
