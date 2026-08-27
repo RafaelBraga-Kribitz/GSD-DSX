@@ -5,22 +5,22 @@ milestone_name: DSX Validity Frame
 current_phase: 12
 current_phase_name: calibration
 status: executing
-stopped_at: Phase 12 Waves 1-2 executed (12-01 corpus+sidecars, 12-02 dsx stats --paradigm, 12-03 sidecar sibling-integrity+falsifiability, 12-04 good-side FPR control corpus); S3-3 in progress, next unblocked = Wave 3 (plan 05)
-last_updated: "2026-08-27T14:45:00.000Z"
+stopped_at: Phase 12 Waves 1-3 executed (12-01..05; 12-05 = stratified catch-rate + FPR harness, headline (miss-rate,FPR)=(1.0,0.0)); S3-3 in progress, next unblocked = Wave 4 (plan 12-06 friction column RAW+NET + catalogue-invariant(256) test, deps [12-05])
+last_updated: "2026-08-27T17:33:00.000Z"
 last_activity: 2026-08-27
-last_activity_desc: S3-3 Wave 2 (plans 12-03+12-04) executed + independently gated; suite 1207 OK, catalogue 256, check.sh all checks passed, good-corpus 12 clean specs all frozenset()
+last_activity_desc: S3-3 Wave 3 (plan 12-05) executed + independently gated; stratified catch-rate + FPR harness, headline (miss-rate,FPR)=(1.0,0.0) [FPR 0/12, ABSENT miss 3/3, PRESENT 9/9]; suite 1212 OK, catalogue 256, check.sh all checks passed; zero codes minted (D-18)
 progress:
   total_phases: 11
   completed_phases: 10
   total_plans: 89
-  completed_plans: 86
+  completed_plans: 87
   percent: 94
 ---
 
 # Project state
 
 **Status:** Ready to execute
-**Progress:** [███████████████████░] 59/63 plans (94%)  
+**Progress:** [███████████████████░] 60/63 plans (95%)  
 **Locked decisions:** DQ = profile runner + hermetic gates; Glyph = hermetic svg_sha256 only (no MCP dep); forbidden claims = universal pack + optional phase YAML; repro_lock = ARS-style honest-null (not byte-replay); decision replay = structured thresholds only; suppressions = ADR/SPEC authority required (unknown codes → exit 2)  
 **v2.0.0 locked decisions:** DSX-PAR-010 is a distinct code, DSX-EXP-060 untouched (M-01); no `inference.stopping_rule` — PAR-010/011 read the existing `design.peeking_policy` (M-02); PEEKING_POLICIES gains an uncontrolled-continuous-monitoring value (M-03); automated import test enforces the D-03a boundary from M1 (M-04); SELF-001 stays a convention, REVERSALS.md template seeded in M1 (M-05); `validity_frame` sub-block requiredness gated by `question_type` (M-06); existing `suppressions[]` is the pre-v2.0.0 grandfather path (M-07); D-05 citation enforcement automated via `gen-finding-catalogue.py` (M-08); `dependence.method_family_required` reuses `VARIANCE_ADJUSTMENTS` (M-09)
 
