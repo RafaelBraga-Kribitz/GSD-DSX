@@ -33,6 +33,16 @@ Analytical phase. The spec is the contract; the code must match it.
   the least informative number in the output.
 - **Warehouse metrics need SQL.** A `source` of `warehouse.*` / `dbt.*` /
   `catalog.schema.table` without `sql:` fails `DSX-MET-040`.
+- **Prefer a `scripts/*.py` entrypoint over a notebook** for
+  `reproducibility.entrypoint`. A notebook entrypoint fires `DSX-REP-040` HIGH
+  unless it is confirmed to run clean top-to-bottom, whose own remedy is to move
+  the logic into a module the notebook imports; and the `DSX-CODE` fit-order scan
+  reads `.py` source directly, where a saved `.ipynb` offers only reconstructed
+  cell offsets a reader cannot usefully open. The benefit is ordering fidelity — a
+  linear `.py` makes `reproducibility.entrypoint` a faithful record of execution
+  order, not an out-of-order cell counter. This is NOT a leakage claim: the
+  deterministic `dsx check code` gate stays suffix-neutral, reading `.py` and
+  `.ipynb` identically and blocking no notebook.
 
 **Stop and escalate rather than working around:**
 

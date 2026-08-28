@@ -48,6 +48,33 @@ in the analytical loop is checkable until this exists.
 
 </process>
 
+<ceremony_tier>
+Before scaffolding, classify the engagement and recommend a **ceremony tier** — how
+much of the GSD/DSX gate machinery this work runs under. This is advisory: the skill
+classifies and PRINTS the command; the operator runs it. The scope skill never
+mutates global configuration itself.
+
+Fixed mapping (authority: `docs/gsd-tiers.md`, which lists exactly what each tier
+flips):
+
+| Engagement | Tier | What it means |
+|---|---|---|
+| **lookup** — throwaway, no audience | **Tier 0 exploratory** | `dsx.enforce=false`; the DS gates are off because a throwaway has no audience to mislead. |
+| **ad-hoc** — a published artifact others read but do not re-run | **Tier 1 published artifact** | `dsx.enforce=true`; the DS gates are on. |
+| **full pipeline** — code other people run | **Tier 2 code others run** | `dsx.enforce=true`, `mode=interactive`, full ceremony. |
+
+For the recommended tier, emit the exact command for the operator to run:
+
+```
+pwsh scripts/gsd-tier.ps1 -Tier N     # N in {0,1,2}
+```
+
+`gsd-tier.ps1` is the thing that flips the global keys, and only when the operator
+chooses to run it. Auto-apply is deferred behind an explicit operator opt-in flag;
+recommending a tier is never an ungated side effect of writing a spec. Tier routing
+configures ceremony, not statistics — it introduces no statistical threshold.
+</ceremony_tier>
+
 <gates>
 The three questions that most often reveal the phase is not ready:
 
