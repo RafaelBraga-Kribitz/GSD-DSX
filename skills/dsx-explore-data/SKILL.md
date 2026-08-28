@@ -838,6 +838,19 @@ Plus a hermetic profile:
    `computed_by: measured_export` with the query that produced the counts — not `manual`
    without a known_gaps note.
 
+Plus a data dictionary, authored next to the profile:
+
+4. Right after `dsx profile` runs, author `DATA-DICTIONARY.md` next to `DATA-PROFILE.yaml`,
+   starting from `templates/DATA-DICTIONARY.md`. **Copy** the column roster (`column`, `dtype`,
+   `null_rate`, `unique_count`) and `source_hash` **verbatim** from `DATA-PROFILE.yaml` — the same
+   "never invent profile numbers / one extract, one set of numbers" discipline the `EDA.md` copy
+   already follows; a roster that disagrees with the profile is an invented number. Then **author**
+   only the semantics the CSV cannot carry: `grain` (one row = one ...), `primary_key`, `join_keys`
+   ({column, joins_to, cardinality}), per-column `semantic_type` (closed set), `description`,
+   `source`, `pii`, plus `timezone` and `owner`. The dictionary is **written and read by later
+   sessions but NOT gated** — no `dsx` check opens it, so it mints no finding code (the `EDA.md`
+   precedent). Do not add or imply a gate for it.
+
 The execute/verify gates compare assertions to the profile artifact. They do not open the
-warehouse, and they do not read `EDA.md`.
+warehouse, and they do not read `EDA.md` or `DATA-DICTIONARY.md`.
 </output>
