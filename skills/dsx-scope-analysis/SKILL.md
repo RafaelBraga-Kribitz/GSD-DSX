@@ -20,6 +20,24 @@ in the analytical loop is checkable until this exists.
 
 <process>
 
+0. **Search dated learnings before framing.** Before scaffolding and before spawning
+   the architect, search `docs/dsx/learnings/` for a prior analysis of the same
+   question, metric or domain — framing happens *after* the search, so a prior result
+   that contradicts the current framing reshapes it rather than arriving too late.
+   Grep the dated files on the fixed frontmatter keys (`domain`, `question_type`,
+   `metrics`, `tags`); a plain filename sort is chronological (`YYYY-MM-DD-<slug>.md`),
+   so the most recent prior result is the last one listed. The schema authority for
+   that key set is `docs/dsx/learnings/README.md`. Cite any prior result that
+   contradicts or informs the current framing **directly in the scope reasoning**;
+   when the directory yields nothing, record `searched dated learnings: none found`
+   so the absence is a recorded result, not a skipped step. The producer of these
+   dated files is the existing `gsd-extract-learnings` skill, run at phase close-out.
+   This search uses the skill's already-granted tools and adds **no new tool grant, no
+   `dsx` CLI subcommand, and no gate** — it reads the files, it never gates them:
+   - Grep — match the fixed frontmatter keys across `docs/dsx/learnings/*.md`.
+   - Glob — enumerate the dated files so the newest sorts last.
+   - Read — open any hit whose `outcome` bears on the current question.
+
 1. **Scaffold.** `dsx init --output <phase-dir>/ANALYSIS-SPEC.yaml`
 
 2. **Spawn `dsx-analysis-architect`** with the question and the phase context.
