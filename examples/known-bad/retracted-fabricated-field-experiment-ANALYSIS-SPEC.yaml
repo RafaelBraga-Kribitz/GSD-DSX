@@ -1,0 +1,197 @@
+# A known-bad ANALYSIS-SPEC (REQ-P12-01, Phase 12 D-01/D-02: retracted-paper coverage class).
+#
+# Coverage class: a retracted paper carrying a published post-mortem / retraction
+# notice (REQ-P12-01).
+#
+# The encoded defect is DELIBERATELY INVISIBLE to a declaration-only gate. The
+# reported panel responses were fabricated — the survey waves the effect rests on
+# were never collected. A declaration of the study describes a well-powered field
+# experiment with strong randomised identification, a computed effect and a
+# clean estimand; nothing in the shipped catalogue can tell a plausibly-declared
+# extract from a fabricated one. The spec therefore clears every substantive
+# check and BLOCKS at verify/ship only on the shared corpus-completeness
+# incidental gaps (see _INCIDENTAL_GAP_CODES in tests/test_known_bad_corpus.py).
+#
+# This is the point of the fixture: data fabrication is a miss for a
+# declaration-only gate. Attributing it needs the provenance/origin work tracked
+# by brief.md §6.5 item 7 (feature/data origin, method, fitted-on, motivating
+# result) — no shipped check verifies that a declared extract corresponds to real
+# collected data. The catch-attribution is carried in the sidecar
+# retracted-fabricated-field-experiment-ATTRIBUTION.yaml (D-06/D-07), never in
+# this spec, so frame_digest is unperturbed (11.2 D-08 placement precedent,
+# dsx/decisions.py:99-121). See the paired POSTMORTEM.md for the primary source
+# and the retraction notice.
+
+spec_version: 1
+title: "Does a single face-to-face canvassing conversation durably reduce prejudice toward a stigmatised group?"
+spec_id: "retracted-fabricated-field-experiment"  # top-level only (11.2 D-08); never inside validity_frame/inference.
+owner: "field-experiments-lab"
+created: "2026-07-05"
+
+question_type: causal
+
+decision:
+  owner: "Program Director"
+  decision_rule: >
+    Fund the canvassing program at scale if the 95% CI lower bound on the uplift
+    in the share of respondents who durably warmed exceeds +2.0 percentage
+    points. Otherwise return to message testing.
+  action_if_null: "Do not scale canvassing; reallocate the field budget to message testing."
+  minimum_practical_effect: 0.02
+  reversible: true
+  deadline: "2026-08-30"
+  revisit_when: "durable_warming_rate uplift below +2.0pp at the 2026-Q4 review"
+
+metrics:
+  - name: durable_warming_rate
+    type: ratio
+    definition: "Share of respondents whose feeling-thermometer index rose by at least one point and held at the nine-month follow-up"
+    grain: respondent
+    numerator: "count(distinct respondent_id) where thermometer_delta >= 1 at wave 9m"
+    denominator: "count(distinct respondent_id) where completed the baseline wave"
+    source: warehouse.fct_survey_waves
+    owner: field-experiments-lab
+
+data:
+  - name: survey_waves
+    source: warehouse.fct_survey_waves
+    period: "2026-01-01..2026-06-30"
+    rows: 19507
+
+design:
+  kind: experiment
+  identification: randomized_experiment
+  randomization_unit: respondent
+  analysis_unit: respondent
+  arms: [control, treatment]
+  expected_allocation: [0.5, 0.5]
+  baseline_rate: 0.30
+  mde: 0.02
+  alpha: 0.05
+  power: 0.80
+  planned_n_per_arm: 9000
+  duration_days: 270
+  peeking_policy: fixed_horizon
+
+analysis:
+  outcome_type: proportion
+  n_groups: 2
+  paired: false
+  n_per_group: 9506
+  test: two_proportion_z
+  normality_ok: true
+  equal_variance: true
+  independence_ok: true
+
+results:
+  observed_n: [9506, 9505]
+  interim_looks: 1
+  comparisons_looked_at: 1
+  overall_effect: 0.062
+  tests:
+    - metric: durable_warming_rate
+      p_value: 0.0008
+      effect: 0.062
+      standardized_effect: 0.13
+      effect_size_kind: h
+      ci: [0.041, 0.083]
+      interpretation: "The canvassing conversation raises the share who durably warmed; the interval clears the practical floor at nine months."
+      minimum_practical_effect: 0.02
+
+claims:
+  - text: >
+      A single face-to-face canvassing conversation raises the share of
+      respondents who durably warmed toward the group by 6.2 percentage points
+      (95% CI 4.1 to 8.3pp) at the nine-month follow-up, among canvassed
+      respondents in the study window.
+    type: causal
+    evidence: "RESULTS.md#durable-attitude-change"
+    population: "Registered voters in the canvassed precincts, 2026-01 to 2026-06"
+    identification: randomized_experiment
+
+assumptions:
+  - assumption: "Randomisation at the respondent level holds across follow-up waves."
+    rationale: "Assignment was drawn from a fixed randomisation list before the first wave."
+    impact_if_wrong: "Differential attrition across arms would bias the durable effect."
+    checked: false
+
+limitations:
+  - "The durable effect rests entirely on the follow-up survey waves; the raw wave-level response records are not re-derived here. See the paired POSTMORTEM.md and the retraction notice."
+
+# ── Validity frame (REQ-P6-02) ───────────────────────────────────────────────
+# Clean by construction: a well-powered randomised field experiment with strong
+# declared identification and a computed effect. The defect is not here — it is
+# that the data underlying results was fabricated, which no field in the frame
+# can expose.
+validity_frame:
+  estimand:
+    quantity: "difference in the share of respondents who durably warmed at nine months"
+    type: difference_in_proportions
+    population: "registered voters in the canvassed precincts, 2026-01 to 2026-06"
+    contrast: "canvassing conversation (treatment) vs no contact (control)"
+    time_window: "nine months after the canvassing wave"
+    falsifier: "the 95% CI on the durable-warming uplift includes zero, or its lower bound sits below +2.0pp"
+
+  units:
+    observation: respondent
+    assignment: respondent
+    analysis: respondent
+
+  identification:
+    strength: strong               # strong | moderate | weak
+    evidence: "Respondents were randomised to canvassing from a fixed list before the first survey wave."
+    constraint_source: none        # none | informative_priors | penalisation | design_restriction | hierarchical_pooling
+    constraint_justification: ""
+
+  dependence:
+    structure: none                # none | clustered | repeated_measures | temporal | spatial | hierarchical
+    cluster_var: ""
+    method_family_required: ""
+
+  interference:
+    risk: none                     # none | shared_budget | marketplace | geo_spillover | social_graph | shared_inventory
+    mechanism: ""
+    mitigation: none               # none | geo_split | cluster_randomisation | time_split | budget_isolation | modelled
+    residual_note: ""
+
+  triggering:
+    eligible_population: "all registered voters in the canvassed precincts"
+    triggered_definition: "answered the door and completed the baseline wave"
+    analysis_population: eligible  # eligible | triggered
+    expected_trigger_rate: 1.0
+    dilution_adjusted: true
+
+  stability:
+    window: "270 days"
+    novelty_primacy_assessed: true
+    evidence: "RESULTS.md#durable-attitude-change-stability"
+
+  sampling_frame:
+    source: "warehouse.fct_survey_waves, canvassed precincts"
+    claim_population: "registered voters in the canvassed precincts"
+    known_exclusions: []
+    selection_risk: "none identified"
+
+  missingness:
+    mechanism: not_assessed        # MCAR | MAR | MNAR | not_assessed
+    rate: 0.0
+    method_implied: complete_case
+
+  measurement:
+    construct: "attitude toward the stigmatised group"
+    operationalisation: "a standardised feeling-thermometer index at each survey wave"
+    known_gaps: "none identified"
+
+# ── Inference plan (REQ-P6-04) ───────────────────────────────────────────────
+# Internally consistent: primary_procedure equals the executed analysis.test, so
+# no procedure-reconciliation finding fires. The fabrication lives outside every
+# declared field.
+inference:
+  paradigm: frequentist            # frequentist | bayesian
+  paradigm_justification: team_convention
+  declared_at: pre_data            # pre_data | post_data
+  primary_procedure: two_proportion_z
+  alpha_spending: null
+  fallback_rule: >
+    If either arm's observed n falls below 80% of planned_n_per_arm, extend the
+    fielding window before analysing; do not analyse early.

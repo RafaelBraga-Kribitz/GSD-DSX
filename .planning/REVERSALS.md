@@ -78,3 +78,42 @@ genuine subjective-belief priors.
 (convergence) stay deferred. Their mirrors remain unwritten, and D-12a's
 scoping rule — a paradigm-specific check ships only when its counterpart also
 ships — still governs both.
+
+### Reversal record REV-002 (D-14)
+
+**Date:** 2026-08-27 (Phase 12, plan 12-07)
+
+**Reversed:** the D-13 gated-backlog *deferral* of the ratio-metric dilution
+item (`brief.md` §6.5 item 6, Deng & Hu 2015 Formula (3)). It moves from
+**deferred** to **permanently out of scope** — relocated into §6.5's "Removed /
+permanently out of scope (D-14)" subsection, not left waiting for a promoting
+condition.
+
+**New evidence:** Phase 12's charter (REQ-P12-05) required re-evaluating all nine
+§6.5 rows against their stated entry conditions using the milestone's now-measured
+evidence, under one uniform disposition rule — *evaluable-and-unmet ⇒ carry;
+structurally-unreachable ⇒ remove*. Running that pass is the new event: it sorts
+item 6 against the other eight and shows item 6 is the **only** row whose entry
+condition ("a source of per-unit trigger and outcome data reaching the gate")
+cannot be met in principle rather than merely today — Formula (3) is a per-user
+sum with no scalar a declaration gate can read, so no future corpus, source or
+workload makes it declaration-evaluable. The original row already *hedged* this
+("may be permanently out of scope … not merely deferred"); the systematic
+re-evaluation is what resolves the hedge into a decision. This is emphatically
+**not** the D-01/D-02 determinism doctrine restated as a discovery — that doctrine
+pre-dates the deferral and the row already cites it. What changed is the completed
+REQ-P12-05 disposition pass that applied the doctrine as a removal rule and found
+item 6 uniquely and permanently fails it.
+
+**What would have made the original deferral correct:** a declaration-evaluable
+scalar multiplier — an aggregate Formula (3) could collapse to and the gate could
+check from the spec alone, the way the additive Formula (1) yields the shipped
+`DSX-INT-030`. Formula (3) has none; that is why the condition is structural, not a
+forecast about future data access (which D-12 already proved was never the blocker).
+
+**What did not change:** D-01 and D-02 (the determinism doctrine that keeps
+computation off the gate path) stand exactly as decided; the additive ratio-metric
+case **stays shipped** as `DSX-INT-030`; and §6.5 items 4 (Bayesian admissibility —
+`dsx stats --paradigm` measured below 15%) and 5 (`dsx quiz`, awaiting M5) stay
+**carried** as evaluable-and-unmet. The "unevaluable ⇒ remove" rule reaches only
+item 6's structural unreachability, never a merely-unmet condition.

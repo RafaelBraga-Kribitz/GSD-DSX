@@ -5,3 +5,9 @@ __pycache__/
 .venv/
 *.egg-info/
 DECISIONS.jsonl
+
+# Autonomous ceremony firing logs (local, per-run transcripts)
+.planning/loop-logs/
+
+# graphify build artifacts (regenerable; large graph.json/html, cache dir)
+dsx/graphify-out/

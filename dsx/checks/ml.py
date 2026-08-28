@@ -11,12 +11,14 @@ from __future__ import annotations
 
 import re
 
+from ..decisions import DecisionRecord, record_decision
 from ..findings import Report
 from ..spec import (
     IMBALANCE_UNSAFE_METRICS,
     as_number,
     get,
     is_blank,
+    items,
     normalize,
     section,
 )
@@ -50,11 +52,46 @@ IMBALANCE_THRESHOLD = 0.20
 OVERFIT_GAP_THRESHOLD = 0.10
 DECISION_TASKS = {"binary_classification", "multiclass_classification"}
 
+# Phase 11.1 (REQ-P11.1-03): the three values `_check_preprocessing` already
+# accepted for the whole-pipeline `preprocessing_fit_on` field, lifted into a
+# shared constant so `_check_cleaning`'s per-step boundary test and
+# `_check_preprocessing`'s whole-pipeline test can never drift apart on what
+# counts as "training rows only".
+TRAIN_ONLY_FIT_VALUES = frozenset({"train_only", "train_fold_only", "none"})
+
+# Phase 11.1 (REQ-P11.1-05): where a reported model score claims to have come
+# from. Five declared values are recognised at all — but only the first three
+# are *accepted*: a cross-validation mean, a held-out set and a nested
+# protocol are three different ways to honestly estimate performance. The
+# other two members of this same set are declared-but-disqualifying answers:
+# "best_fold" names a selection artefact (the largest of several noisy draws,
+# chosen after seeing them, not an estimate), and "unknown" is an honest
+# admission that provenance was never tracked. A reader who sees five members
+# and one membership test (`in SCORE_SOURCES`) would otherwise assume all
+# five pass — they do not; see `_check_baseline` for the two-part test that
+# also excludes the last two.
+SCORE_SOURCES = frozenset({"cv_mean", "holdout", "nested_cv", "best_fold", "unknown"})
+
+# Phase 11.1 (REQ-P11.1-06): where a model-selection choice was made — not
+# where a reported score came from (SCORE_SOURCES, above). The two vocabularies
+# describe different things and must not be merged: a selection basis of
+# 'test' says the test set chose the model; a score source of 'holdout' says
+# the reported number came from a held-out set. A spec can name either
+# independently of the other, and a value valid in one is not automatically
+# valid in the other.
+SELECTION_BASES = frozenset({"train", "validation", "test", "cv_same_fold", "nested_cv"})
+
 
 def check(spec: dict) -> Report:
     report = Report(check="ml")
     model = section(spec, "model")
     qtype = normalize(spec.get("question_type", ""))
+
+    # Phase 11.1 (REQ-P11.1-03): runs ahead of the no-model early return
+    # below, because a data-only specification that declares a leaky
+    # cleaning step is still leaky — the defect lives in the data
+    # declaration, not in whether a model section happens to exist.
+    _check_cleaning(spec, report)
 
     if not model:
         if qtype == "predictive":
@@ -72,8 +109,10 @@ def check(spec: dict) -> Report:
     _check_split(model, report, task)
     _check_preprocessing(model, report)
     _check_features(model, report)
+    _check_prediction_time_definition(model, report)
     _check_metric_choice(model, spec, report, task)
     _check_baseline(model, spec, report)
+    _check_selection_ledger(model, report)
     _check_overfit(spec, report)
     _check_test_set_hygiene(model, spec, report)
     _check_calibration(model, spec, report, task)
@@ -195,7 +234,7 @@ def _check_preprocessing(model: dict, report: Report) -> None:
             remedy="Declare preprocessing_fit_on: train_only and fit inside a pipeline per fold.",
             where="spec.model.preprocessing_fit_on",
         )
-    elif fit_on not in ("train_only", "train_fold_only", "none"):
+    elif fit_on not in TRAIN_ONLY_FIT_VALUES:
         report.add(
             "DSX-ML-021",
             "CRITICAL",
@@ -222,6 +261,173 @@ def _check_preprocessing(model: dict, report: Report) -> None:
             remedy="Resample inside the training fold only, never before the split.",
             where="spec.model.resampling_applied_to",
         )
+
+
+def _check_cleaning(spec: dict, report: Report) -> None:
+    """`data[].cleaning[]` per-step fit-boundary check (DSX-ML-023, DSX-ML-024).
+
+    Phase 11.1 (REQ-P11.1-03): `_check_preprocessing` above states one fit
+    boundary for the whole pipeline. The reproduction this requirement
+    responds to declared that whole-pipeline boundary honestly — training
+    rows only — and then imputed a column's missing values over the full
+    frame during a cleaning stage that boundary was never understood to
+    cover. Until the contract could carry a per-step boundary, an operator
+    who wanted to declare the truth had no field to declare it in. This
+    check reads that new, optional `data[].cleaning[].fit_on` declaration
+    and applies the same accepted-value test `_check_preprocessing` applies
+    to the whole-pipeline field, via the one constant both consult
+    (`TRAIN_ONLY_FIT_VALUES`).
+
+    Called from `check()`'s dispatch ahead of the no-model early return, so
+    a data-only specification that declares a leaky cleaning step still
+    blocks.
+
+    A cleaning step with a blank or absent `fit_on` is skipped, not
+    flagged: an incomplete declaration is treated exactly as no
+    declaration, because punishing a partial declaration harder than none
+    would push operators back to declaring nothing at all — the opposite of
+    what this field exists to encourage.
+
+    Citation: Kaufman, S., Rosset, S., Perlich, C. and Stitelman, O.
+    (2012), "Leakage in Data Mining: Formulation, Detection, and
+    Avoidance," ACM Transactions on Knowledge Discovery from Data, 6(4),
+    article 15. The paper's formulation of attribute "legitimacy" — a
+    feature value is legitimate only if it would genuinely have been
+    available, for the entity in question, at the moment the target
+    becomes known — is the general statement of the boundary both this
+    check and `_check_preprocessing` enforce for a specific class of
+    statistic-fitting operation (an imputation value or an outlier
+    threshold fitted across rows outside that boundary). The exact
+    section/page locator within the paper for the legitimacy formulation is
+    UNVERIFIED — the ACM Digital Library PDF was not independently
+    paginated in this session; do not invent a locator.
+
+    Structural criterion: DSX-ML-023 is a membership test of a declared,
+    non-blank `fit_on` value against `TRAIN_ONLY_FIT_VALUES` after
+    normalisation — the same constant and the same test
+    `_check_preprocessing` applies to the whole-pipeline field, so the two
+    can never disagree about what counts as training rows only.
+    DSX-ML-024 is a second, additional test on the same data: whether the
+    model section's own `preprocessing_fit_on` normalises to a member of
+    that same constant while at least one cleaning step's boundary does
+    not — two declarations compared for agreement, not a third boundary
+    value being introduced. DSX-ML-024 is emitted at most once per report.
+    """
+    datasets = items(spec, "data")
+    if not datasets:
+        return
+
+    any_cleaning_declared = False
+    leaky_steps: list[dict[str, str]] = []
+
+    for d_index, dataset in enumerate(datasets):
+        cleaning = dataset.get("cleaning")
+        if not isinstance(cleaning, list):
+            continue
+        dataset_name = dataset.get("name", d_index)
+        for c_index, step in enumerate(cleaning):
+            if not isinstance(step, dict):
+                continue
+            any_cleaning_declared = True
+            fit_on = step.get("fit_on")
+            # Phase 11.1: an incomplete declaration (blank or absent fit_on)
+            # is treated exactly as no declaration — see the docstring above
+            # for why. This is not the CRITICAL branch below; it is a skip.
+            if is_blank(fit_on):
+                continue
+            if normalize(fit_on) in TRAIN_ONLY_FIT_VALUES:
+                continue
+
+            column = step.get("column", "<unnamed column>")
+            method = step.get("method")
+            where = f"spec.data[{d_index}].cleaning[{c_index}].fit_on"
+            leaky_steps.append({"dataset": str(dataset_name), "column": str(column)})
+            report.add(
+                "DSX-ML-023",
+                "CRITICAL",
+                f"Cleaning statistic for '{column}' was fitted outside the training rows",
+                detail=(
+                    f"Dataset {dataset_name!r}, column {column!r}"
+                    + (f", method {method!r}" if method else "")
+                    + f", declares fit_on: {fit_on!r}. An imputation value or an outlier "
+                    "threshold computed across the whole frame carries held-out information "
+                    "into training, whether or not the model's own preprocessing was fitted "
+                    "correctly."
+                ),
+                remedy=(
+                    "Compute the statistic on the training rows and apply it to the held-out "
+                    "rows, then declare fit_on accordingly."
+                ),
+                where=where,
+                dataset=str(dataset_name),
+                column=str(column),
+            )
+
+    if not any_cleaning_declared:
+        return
+
+    whole_pipeline_fit_on = normalize(get(spec, "model.preprocessing_fit_on", ""))
+    fired_024 = bool(leaky_steps) and whole_pipeline_fit_on in TRAIN_ONLY_FIT_VALUES
+    if fired_024:
+        steps_listing = "; ".join(f"{s['dataset']}.{s['column']}" for s in leaky_steps)
+        report.add(
+            "DSX-ML-024",
+            "HIGH",
+            "Cleaning declaration contradicts the declared whole-pipeline boundary",
+            detail=(
+                f"model.preprocessing_fit_on declares {whole_pipeline_fit_on!r} (training rows "
+                f"only), but the following cleaning step(s) declare a boundary outside "
+                f"training rows: {steps_listing}."
+            ),
+            remedy=(
+                "Make the two declarations agree. If the cleaning declaration accurately "
+                "describes what the pipeline does, the pipeline is what needs changing, not "
+                "the declaration."
+            ),
+            where="spec.data[].cleaning[].fit_on",
+        )
+
+    # Phase 11.1 (D-04): a decision record covering both codes, appended once
+    # per report whenever any cleaning step is declared at all — a "cleared"
+    # or "no contradiction to compare against" judgment is still a judgment,
+    # mirroring `_check_metric_choice`'s precedent (plan 11.1-04).
+    record_decision(
+        report,
+        DecisionRecord(
+            id="",
+            invocation_id="",
+            layer="deterministic",
+            choice=(
+                "DSX-ML-023 and DSX-ML-024 fired"
+                if fired_024
+                else f"DSX-ML-023 fired ({len(leaky_steps)} step(s)); no whole-pipeline "
+                "boundary of training rows only to contradict"
+                if leaky_steps
+                else "cleared: every declared, non-blank cleaning boundary is within "
+                "TRAIN_ONLY_FIT_VALUES"
+            ),
+            inputs=[
+                f"model.preprocessing_fit_on:{whole_pipeline_fit_on or 'undeclared'}",
+                f"cleaning_steps_outside_boundary:{len(leaky_steps)}",
+            ],
+            rule=(
+                "DSX-ML-023 fires when a declared, non-blank data[].cleaning[].fit_on "
+                "normalises to a value outside TRAIN_ONLY_FIT_VALUES. DSX-ML-024 "
+                "additionally fires, once per report, when model.preprocessing_fit_on "
+                "normalises to a member of TRAIN_ONLY_FIT_VALUES while any cleaning "
+                "step's declared boundary does not."
+            ),
+            citation=(
+                "Kaufman, S., Rosset, S., Perlich, C. and Stitelman, O. (2012), \"Leakage "
+                "in Data Mining: Formulation, Detection, and Avoidance,\" ACM Transactions "
+                "on Knowledge Discovery from Data, 6(4), article 15."
+            ),
+            counterfactual=(
+                "A cleaning boundary declared inside TRAIN_ONLY_FIT_VALUES for every step "
+                "would have cleared both codes."
+            ),
+        ),
+    )
 
 
 # ── Features ─────────────────────────────────────────────────────────────────
@@ -283,6 +489,20 @@ def _check_features(model: dict, report: Report) -> None:
     else:
         report.ok(f"{len(names)} features screened, no leakage patterns matched")
 
+
+def _check_prediction_time_definition(model: dict, report: Report) -> None:
+    """`model.prediction_time_definition` presence check (DSX-ML-033).
+
+    Phase 11.1 (REQ-P11.1-04): extracted from `_check_features` into its own
+    call site so it runs whenever a model is declared at all, independent of
+    whether `model.features` is populated. `_check_features` returns early on
+    a blank features list, which used to hide this check entirely for a
+    specification that never got as far as listing features — the check
+    itself needs no feature list to be meaningful, since it evaluates a
+    stated production trigger, not a derived property of `features`. Code
+    number, severity, title, detail, remedy and location string are
+    unchanged from the block this replaces.
+    """
     if is_blank(model.get("prediction_time_definition")):
         report.add(
             "DSX-ML-033",
@@ -301,6 +521,38 @@ def _check_features(model: dict, report: Report) -> None:
 
 
 def _check_metric_choice(model: dict, spec: dict, report: Report, task: str) -> None:
+    """Primary-metric declaration and its fitness for the declared class balance.
+
+    Phase 11.1 (REQ-P11.1-04) adds DSX-ML-043: a decision task (binary or
+    multiclass classification) whose primary metric is a member of
+    IMBALANCE_UNSAFE_METRICS, and whose positive rate is undeclared on both
+    the model section and the results section, produces a HIGH finding
+    instead of silence. A positive rate the numeric accessor (`as_number`)
+    cannot parse — a non-numeric string, or a boolean — arrives at this
+    branch as an absence, which is the correct reading: a rate nobody can
+    evaluate is not a declared rate. Do not "fix" this by adding a separate
+    branch for the unparseable case; it is intentionally folded into the
+    same undeclared branch as the absent case.
+
+    Citation: Saito, T. and Rehmsmeier, M. (2015), "The Precision-Recall
+    Plot Is More Informative than the ROC Plot When Evaluating Binary
+    Classifiers on Imbalanced Datasets," PLOS ONE, 10(3), e0118432, DOI
+    10.1371/journal.pone.0118432. The finding that ROC-AUC overstates
+    apparent classifier quality as the positive class becomes rarer is
+    stated in the paper's own Abstract. The exact figure/table locator for
+    the specific numeric illustration is UNVERIFIED — the paper's figures
+    were not independently re-read pixel-by-pixel in this session (the paper
+    is open access at the DOI above); do not invent a locator.
+
+    Structural criterion: DSX-ML-043 fires on the joint absence of a
+    parseable positive rate (read from model.positive_rate, falling back to
+    results.positive_rate, both via as_number — which returns None for a
+    boolean and for any string it cannot parse as a number) and membership
+    of the primary metric in IMBALANCE_UNSAFE_METRICS, for a decision task
+    only. This is a presence-and-membership test, not a numeric threshold
+    test — the numeric threshold test (against IMBALANCE_THRESHOLD) belongs
+    to the sibling DSX-ML-041 branch, which this task does not retune.
+    """
     primary = normalize(model.get("primary_metric", ""))
     if not primary:
         report.add(
@@ -315,9 +567,14 @@ def _check_metric_choice(model: dict, spec: dict, report: Report, task: str) -> 
     if positive_rate is None:
         positive_rate = as_number(get(spec, "results.positive_rate"))
 
+    imbalance_applicable = task in DECISION_TASKS and primary in IMBALANCE_UNSAFE_METRICS
+    fired_041 = False
+    fired_043 = False
+
     if task in DECISION_TASKS and positive_rate is not None:
         minority = min(positive_rate, 1.0 - positive_rate)
         if minority < IMBALANCE_THRESHOLD and primary in IMBALANCE_UNSAFE_METRICS:
+            fired_041 = True
             report.add(
                 "DSX-ML-041",
                 "HIGH",
@@ -334,6 +591,29 @@ def _check_metric_choice(model: dict, spec: dict, report: Report, task: str) -> 
             )
         else:
             report.ok(f"primary metric '{primary}' suits a {minority:.1%} minority class")
+    elif task in DECISION_TASKS and positive_rate is None and primary in IMBALANCE_UNSAFE_METRICS:
+        # Phase 11.1 (REQ-P11.1-04): the sibling of DSX-ML-041's declared-and-
+        # risky branch — this is the undeclared-or-unparseable branch. See
+        # this function's own docstring for why an unparseable string is
+        # treated identically to an absent field, not as a third case.
+        fired_043 = True
+        report.add(
+            "DSX-ML-043",
+            "HIGH",
+            f"'{primary}' is imbalance-unsafe and the class balance it depends on is undeclared",
+            detail=(
+                f"'{primary}''s reliability as a metric is a function of the positive rate — "
+                "how rare the minority class is. Without a declared rate on either the model "
+                "section or the results section, this check cannot evaluate that reliability, "
+                "and silence here would read as a pass when it is really an absence of the "
+                "information the check needs to judge it at all."
+            ),
+            remedy=(
+                "Declare model.positive_rate or results.positive_rate, or switch the primary "
+                f"metric to {IMBALANCE_UNSAFE_METRICS[primary]}."
+            ),
+            where="spec.model.primary_metric",
+        )
 
     if task == "regression" and primary in ("r2", "r_squared") and is_blank(
         model.get("secondary_metrics")
@@ -350,11 +630,98 @@ def _check_metric_choice(model: dict, spec: dict, report: Report, task: str) -> 
             where="spec.model.primary_metric",
         )
 
+    # Phase 11.1 (D-04): the first decision record dsx/checks/ml.py has ever
+    # emitted, covering the metric-choice imbalance judgment — appended once
+    # a primary metric is declared (the point above where this function would
+    # otherwise have returned), whether or not the imbalance branches were
+    # even reachable for this task/metric combination. A judgment that the
+    # imbalance question does not apply here is still a judgment.
+    if imbalance_applicable:
+        choice = (
+            "DSX-ML-041 fired: declared positive rate's minority share is below "
+            "IMBALANCE_THRESHOLD" if fired_041
+            else "DSX-ML-043 fired: positive rate is undeclared or unparseable" if fired_043
+            else "cleared: declared positive rate is not imbalance-risky"
+        )
+    else:
+        choice = (
+            "not applicable: task is not a decision task, or primary metric is "
+            "not a member of IMBALANCE_UNSAFE_METRICS"
+        )
+    record_decision(
+        report,
+        DecisionRecord(
+            id="",
+            invocation_id="",
+            layer="deterministic",
+            choice=choice,
+            inputs=[
+                f"primary_metric:{primary}",
+                f"task:{task}",
+                f"positive_rate:{'undeclared' if positive_rate is None else positive_rate}",
+            ],
+            rule=(
+                "DSX-ML-041 fires when a declared, parseable positive rate's minority share "
+                "is strictly less than IMBALANCE_THRESHOLD and the primary metric is a member "
+                "of IMBALANCE_UNSAFE_METRICS, for a decision task. DSX-ML-043 fires when the "
+                "positive rate is undeclared or unparseable and the primary metric is a "
+                "member of IMBALANCE_UNSAFE_METRICS, for the same task set."
+            ),
+            citation=(
+                "Saito, T. and Rehmsmeier, M. (2015), \"The Precision-Recall Plot Is More "
+                "Informative than the ROC Plot When Evaluating Binary Classifiers on "
+                "Imbalanced Datasets,\" PLOS ONE, 10(3), e0118432."
+            ),
+            counterfactual=(
+                "A declared, parseable positive rate would have sent the check to the "
+                "evaluated branch (DSX-ML-041 fired, or cleared) instead of DSX-ML-043."
+            ),
+        ),
+    )
+
 
 # ── Baseline and overfitting ─────────────────────────────────────────────────
 
 
 def _check_baseline(model: dict, spec: dict, report: Report) -> None:
+    """Baseline comparison: declared, beaten, its score provenance and its fold-to-fold margin.
+
+    Phase 11.1 (REQ-P11.1-05) adds two checks, both inside the branch below
+    where the model already beats its baseline — a model that loses gets the
+    existing CRITICAL (DSX-ML-051) and neither of these, because a negative
+    margin is a different finding than a small one. DSX-ML-052 tests whether
+    `results.model_score_source` is one of the three accepted values (see
+    `SCORE_SOURCES`'s own comment) versus blank, disqualifying or
+    unrecognised — an unrecognised value is deliberately folded into the same
+    failing branch as a blank one, the same bypass class this milestone has
+    already closed for `_check_cleaning`'s `fit_on` and `_check_metric_choice`'s
+    metric vocabulary; a misspelling must not buy silence. DSX-ML-053 tests
+    whether the margin by which the model beats its baseline is strictly
+    smaller than the spread of the model's own declared `results.fold_scores`
+    — a margin exactly equal to the spread does not fire, since the advisory
+    is for a margin genuinely inside the model's own run-to-run variation, and
+    equal-to is the boundary of that, not inside it.
+
+    Citation: Varma, S. and Simon, R. (2006), "Bias in Error Estimation When
+    Using Cross-Validation for Model Selection," BMC Bioinformatics, 7,
+    article 91. The paper's result that selecting the best of several
+    cross-validated scores yields an optimistically biased performance
+    estimate is stated in the paper's own Abstract and Conclusions. The exact
+    page locator within the PDF is UNVERIFIED — the paper's pagination was
+    not independently re-read in this session (the paper is open access);
+    do not invent a locator.
+
+    Structural criterion: DSX-ML-052 is a membership test of a declared,
+    normalised `results.model_score_source` value against `SCORE_SOURCES`,
+    with two of that set's five members ('best_fold', 'unknown') treated as
+    failing rather than passing, and any value outside the set (including a
+    blank one) also failing. DSX-ML-053 is an ordering comparison between two
+    quantities derived by subtraction from declared numbers — margin
+    (model_score − baseline_score) against spread (max − min of the
+    parseable `results.fold_scores`) — never a corrected estimate, a
+    confidence interval, a standard deviation or any other inferential
+    quantity computed from those numbers.
+    """
     baseline = model.get("baseline")
     if is_blank(baseline):
         report.add(
@@ -388,9 +755,285 @@ def _check_baseline(model: dict, spec: dict, report: Report) -> None:
             remedy="Ship the baseline, or state explicitly why the model is worth its complexity.",
             where="spec.results.model_score",
         )
+        return
+
+    lift = (model_score - baseline_score) / abs(baseline_score) if baseline_score else float("inf")
+    report.ok(f"model beats baseline by {lift:.1%}")
+
+    # Phase 11.1 (REQ-P11.1-05): score provenance. Blank source reads as "".
+    # An unrecognised (misspelled or otherwise out-of-vocabulary) value is
+    # deliberately treated the same as a blank one — see this function's own
+    # docstring for why.
+    score_source_raw = get(spec, "results.model_score_source")
+    score_source = normalize(score_source_raw) if not is_blank(score_source_raw) else ""
+    fired_052 = score_source not in SCORE_SOURCES or score_source in ("best_fold", "unknown")
+    if fired_052:
+        # The title is one unconditional f-string, not a ternary, on purpose:
+        # `scripts/gen-finding-catalogue.py::extract()` reads the catalogue
+        # title straight off the AST and only understands a literal string or
+        # a plain f-string (`ast.Constant`/`ast.JoinedStr`) in this argument
+        # position — a Python conditional expression here is invisible to it,
+        # which would silently drop DSX-ML-052 from the generated catalogue
+        # entirely. `score_source_display` folds the blank case into one
+        # readable word instead, so the title still names the declared value
+        # when there is one.
+        score_source_display = score_source_raw if score_source_raw else "not stated"
+        report.add(
+            "DSX-ML-052",
+            "HIGH",
+            f"Reported score's provenance is missing or disqualifying "
+            f"(declared: {score_source_display!r})",
+            detail=(
+                "A cross-validation mean, a held-out score and a best-fold score are three "
+                "different claims about the same model. The best fold is a selection artefact "
+                "— the largest of several noisy draws, chosen after seeing them — not a "
+                "performance estimate. A comparison whose provenance is unstated cannot be "
+                "read as a performance claim."
+            ),
+            remedy=(
+                "Declare results.model_score_source as one of cv_mean, holdout or nested_cv. "
+                "If the reported number really is a best fold, report the mean instead."
+            ),
+            where="spec.results.model_score_source",
+        )
+
+    # Phase 11.1 (REQ-P11.1-05): fold-to-fold margin. The spread is derived
+    # here, at check time, from declared numbers — never accepted as a
+    # pre-computed field, and never a standard deviation or confidence
+    # interval. Non-numeric entries (an unparseable string, a boolean) are
+    # skipped via `as_number`, not raised on.
+    raw_fold_scores = get(spec, "results.fold_scores")
+    if not isinstance(raw_fold_scores, list):
+        raw_fold_scores = []
+    parsed_fold_scores = [n for n in (as_number(v) for v in raw_fold_scores) if n is not None]
+    fired_053 = False
+    spread = margin = None
+    if len(parsed_fold_scores) >= 2:
+        spread = max(parsed_fold_scores) - min(parsed_fold_scores)
+        margin = model_score - baseline_score
+        # Strictly less-than: a margin exactly equal to the spread does not
+        # fire. Do not widen this to <= without a reason.
+        if margin < spread:
+            fired_053 = True
+            report.add(
+                "DSX-ML-053",
+                "MEDIUM",
+                f"Margin over baseline ({margin:.4g}) is inside the model's own fold-to-fold "
+                f"variation ({spread:.4g})",
+                detail=(
+                    f"The model beats its baseline by {margin:.4g}, but its own "
+                    f"{len(parsed_fold_scores)} declared fold scores span {spread:.4g} "
+                    f"(from {min(parsed_fold_scores):.4g} to {max(parsed_fold_scores):.4g}). "
+                    "A difference smaller than the model's own fold-to-fold variation is not "
+                    "evidence the model is better than the baseline."
+                ),
+                remedy=(
+                    "Report the fold spread alongside the margin, or run enough folds to "
+                    "separate the two."
+                ),
+                where="spec.results.fold_scores",
+            )
+
+    # Phase 11.1 (D-04): a decision record covering both codes, appended once
+    # per report inside this branch — the only branch where either code is
+    # reachable, since both are gated on the model already beating its
+    # baseline.
+    record_decision(
+        report,
+        DecisionRecord(
+            id="",
+            invocation_id="",
+            layer="deterministic",
+            choice=(
+                "DSX-ML-052 and DSX-ML-053 fired" if fired_052 and fired_053
+                else "DSX-ML-052 fired; fold spread did not additionally trigger DSX-ML-053"
+                if fired_052
+                else "DSX-ML-053 fired; score provenance cleared" if fired_053
+                else "cleared: score provenance accepted and margin at or above fold spread "
+                "(or fewer than two parseable fold scores to compare)"
+            ),
+            inputs=[
+                f"results.model_score_source:{score_source_raw or 'undeclared'}",
+                f"fold_scores_parsed:{len(parsed_fold_scores)}",
+            ],
+            rule=(
+                "DSX-ML-052 fires when results.model_score_source, after normalisation, is "
+                "blank, is 'best_fold' or 'unknown', or is not a member of SCORE_SOURCES at "
+                "all. DSX-ML-053 fires when at least two fold scores parse and the margin over "
+                "baseline (model_score − baseline_score) is strictly less than the spread "
+                "(max − min) of the parseable results.fold_scores."
+            ),
+            citation=(
+                "Varma, S. and Simon, R. (2006), \"Bias in Error Estimation When Using "
+                "Cross-Validation for Model Selection,\" BMC Bioinformatics, 7, article 91."
+            ),
+            counterfactual=(
+                "A declared score source inside the accepted three (cv_mean, holdout, "
+                "nested_cv) and a margin at or above the fold spread would have cleared both "
+                "codes."
+            ),
+        ),
+    )
+
+
+def _check_selection_ledger(model: dict, report: Report) -> None:
+    """Selection-ledger completeness and basis-branch check (DSX-ML-090/091/092).
+
+    Phase 11.1 (REQ-P11.1-06): a declared model.algorithm is a declaration
+    that a choice was made among candidates. This check returns immediately
+    when the algorithm is blank — nothing is owed when no choice was
+    declared at all. Otherwise it reads three declared fields under
+    model.selection_ledger — candidates_evaluated, configurations_tried and
+    selected_on, through the mapping-section idiom (`section`), so a ledger
+    declared as a list or any other non-mapping value is treated as absent
+    rather than raising — and asks whether the account of that choice is
+    complete, and if it is, whether the basis the choice was made on
+    invalidates the reported score.
+
+    An unrecognised selected_on value (blank, or any string outside
+    SELECTION_BASES after normalisation, including a misspelling of an
+    accepted value) is counted as a missing field, not as a distinct
+    finding: the alternative would let a misspelling of the test-set value
+    clear DSX-ML-091's CRITICAL, the bypass class this milestone has
+    already closed for _check_cleaning's fit_on vocabulary and
+    _check_metric_choice's metric vocabulary.
+
+    Citation: Cawley, G.C. and Talbot, N.L.C. (2010), "On Over-fitting in
+    Model Selection and Subsequent Selection Bias in Performance
+    Evaluation," Journal of Machine Learning Research, 11, pages 2079 to
+    2107. The paper's central result — that selecting a model by the same
+    cross-validated performance figure later reported as its score is
+    optimistically biased, and that nested cross-validation removes the
+    bias — is stated in the paper's own Abstract. The exact section locator
+    for the fuller treatment of nested cross-validation as the recommended
+    remedy is UNVERIFIED — the PDF's section numbering was not
+    independently re-read in this session (the paper is open access at
+    JMLR); do not invent a locator.
+
+    Structural criterion: the three codes are a completeness test over
+    three declared fields (candidates_evaluated, configurations_tried,
+    selected_on — the first two blank-checked via is_blank, the third
+    additionally checked for membership in SELECTION_BASES after
+    normalisation) followed by a membership branch on that one closed
+    vocabulary. No statistic is computed; the check reads three declared
+    fields and branches on one of them.
+    """
+    if is_blank(model.get("algorithm")):
+        return
+
+    ledger = section(model, "selection_ledger")
+    candidates = ledger.get("candidates_evaluated")
+    configurations = ledger.get("configurations_tried")
+    basis_raw = ledger.get("selected_on")
+    basis = normalize(basis_raw) if not is_blank(basis_raw) else ""
+
+    missing: list[str] = []
+    if is_blank(candidates):
+        missing.append("candidates evaluated")
+    if is_blank(configurations):
+        missing.append("configurations tried")
+    # Phase 11.1: an unrecognised basis (blank, or out of SELECTION_BASES —
+    # including a misspelling of an accepted value) is counted as missing,
+    # not as a distinct finding. See this function's own docstring for why.
+    if is_blank(basis_raw) or basis not in SELECTION_BASES:
+        missing.append("selection basis")
+
+    fired_090 = bool(missing)
+    fired_091 = False
+    fired_092 = False
+    listing = ", ".join(missing)
+
+    if fired_090:
+        report.add(
+            "DSX-ML-090",
+            "HIGH",
+            "Declared algorithm has no complete selection ledger",
+            detail=(
+                f"Missing: {listing}. A model chosen from a set of candidates carries an "
+                "optimistic bias that depends on how many candidates were tried and on what "
+                "data the trying was scored against — neither of which can be read from a "
+                "specification that does not record them."
+            ),
+            remedy=(
+                "Declare the candidates evaluated, the number of configurations tried, and "
+                "the basis the selection was made on, under model.selection_ledger."
+            ),
+            where="spec.model.selection_ledger",
+        )
+    elif basis == "test":
+        fired_091 = True
+        report.add(
+            "DSX-ML-091",
+            "CRITICAL",
+            "Model was selected on the test set",
+            detail=(
+                "Once the test set chooses the model it has become a validation set, and the "
+                "reported score is an optimistic estimate of nothing in particular."
+            ),
+            remedy=(
+                "Select on a validation split or a nested protocol, and hold out a fresh test "
+                "set."
+            ),
+            where="spec.model.selection_ledger.selected_on",
+        )
+    elif basis == "cv_same_fold":
+        fired_092 = True
+        report.add(
+            "DSX-ML-092",
+            "HIGH",
+            "The selection and the reported score share their folds",
+            detail=(
+                "Tuning inside the same resampling loop that produces the reported estimate "
+                "biases it upward by an amount nobody can bound from the specification alone."
+            ),
+            remedy="Use a nested protocol with separate inner and outer loops.",
+            where="spec.model.selection_ledger.selected_on",
+        )
     else:
-        lift = (model_score - baseline_score) / abs(baseline_score) if baseline_score else float("inf")
-        report.ok(f"model beats baseline by {lift:.1%}")
+        report.ok(f"model selection basis declared: '{basis}'")
+
+    # Phase 11.1 (D-04): a decision record covering all three codes, appended
+    # once per report whenever a model algorithm is declared — the only
+    # gate that makes this check applicable at all.
+    record_decision(
+        report,
+        DecisionRecord(
+            id="",
+            invocation_id="",
+            layer="deterministic",
+            choice=(
+                f"DSX-ML-090 fired: missing {listing}" if fired_090
+                else "DSX-ML-091 fired: selected on the test set" if fired_091
+                else "DSX-ML-092 fired: selected on the same folds as the reported score"
+                if fired_092
+                else f"cleared: complete ledger, selection basis declared as {basis!r}"
+            ),
+            inputs=[
+                f"selection_ledger.candidates_evaluated:"
+                f"{'declared' if not is_blank(candidates) else 'missing'}",
+                f"selection_ledger.configurations_tried:"
+                f"{'declared' if not is_blank(configurations) else 'missing'}",
+                f"selection_ledger.selected_on:{basis_raw if not is_blank(basis_raw) else 'undeclared'}",
+            ],
+            rule=(
+                "DSX-ML-090 fires when model.algorithm is declared and any of "
+                "selection_ledger.candidates_evaluated, .configurations_tried or "
+                ".selected_on is blank, or .selected_on does not normalise to a member of "
+                "SELECTION_BASES. Otherwise DSX-ML-091 fires when .selected_on normalises to "
+                "'test'; DSX-ML-092 fires when it normalises to 'cv_same_fold'; every other "
+                "member of SELECTION_BASES clears all three codes."
+            ),
+            citation=(
+                "Cawley, G.C. and Talbot, N.L.C. (2010), \"On Over-fitting in Model "
+                "Selection and Subsequent Selection Bias in Performance Evaluation,\" "
+                "Journal of Machine Learning Research, 11, pages 2079 to 2107."
+            ),
+            counterfactual=(
+                "A complete ledger whose basis names a nested protocol (or a validation or "
+                "training set) would have cleared all three codes."
+            ),
+        ),
+    )
 
 
 def _check_overfit(spec: dict, report: Report) -> None:

@@ -2,25 +2,25 @@
 gsd_state_version: 1.0
 milestone: v2.0.0
 milestone_name: DSX Validity Frame
-current_phase: 06
-current_phase_name: contract-extension-decision-record-paradigm-manifest
-status: executing
-stopped_at: Completed 06-08-PLAN.md
-last_updated: "2026-08-08T08:49:45.550Z"
-last_activity: 2026-08-08
-last_activity_desc: Phase 06 execution started
+status: completed
+stopped_at: "S4-5 /gsd-complete-milestone DONE (2026-08-28) — v2.0.0 DSX Validity Frame archived (11 phases, 89 plans, 208 tasks) to .planning/milestones/v2.0.0-* (ROADMAP + REQUIREMENTS + AUDIT + 11 phase dirs moved); MILESTONES.md + RETROSPECTIVE.md written; REQUIREMENTS.md git-rm'd; ROADMAP compacted; PROJECT.md evolved. tag v2.0.0 NOT created (pre-existing 2026-08-10 tag at old cb94015; not force-moved — release-tag placement deferred to S4-6/ship). closeout_type=override_closeout (2 dormant seeds deferred). Next unblocked = S4-6 (/gsd-cleanup deletion approval via HUMAN-QUEUE + /gsd-ship)."
+last_updated: "2026-08-28T03:00:19.244Z"
+last_activity: 2026-08-28
+last_activity_desc: Milestone v2.0.0 completed and archived
 progress:
-  total_phases: 1
-  completed_phases: 0
-  total_plans: 13
-  completed_plans: 10
-  percent: 0
+  total_phases: 11
+  completed_phases: 11
+  total_plans: 89
+  completed_plans: 89
+  percent: 100
+current_phase: 12
+current_phase_name: calibration
 ---
 
 # Project state
 
-**Status:** Executing Phase 06
-**Progress:** [████████░░] 80% (0/7 phases)  
+**Status:** v2.0.0 milestone complete
+**Progress:** [████████████████████] v2.0.0 SHIPPED 2026-08-28 — 11/11 phases, 89/89 plans (100%)  
 **Locked decisions:** DQ = profile runner + hermetic gates; Glyph = hermetic svg_sha256 only (no MCP dep); forbidden claims = universal pack + optional phase YAML; repro_lock = ARS-style honest-null (not byte-replay); decision replay = structured thresholds only; suppressions = ADR/SPEC authority required (unknown codes → exit 2)  
 **v2.0.0 locked decisions:** DSX-PAR-010 is a distinct code, DSX-EXP-060 untouched (M-01); no `inference.stopping_rule` — PAR-010/011 read the existing `design.peeking_policy` (M-02); PEEKING_POLICIES gains an uncontrolled-continuous-monitoring value (M-03); automated import test enforces the D-03a boundary from M1 (M-04); SELF-001 stays a convention, REVERSALS.md template seeded in M1 (M-05); `validity_frame` sub-block requiredness gated by `question_type` (M-06); existing `suppressions[]` is the pre-v2.0.0 grandfather path (M-07); D-05 citation enforcement automated via `gen-finding-catalogue.py` (M-08); `dependence.method_family_required` reuses `VARIANCE_ADJUSTMENTS` (M-09)
 
@@ -34,31 +34,70 @@ progress:
 - Phase 5 (v1.5.0): ANALYSIS-SPEC `suppressions[]`, scored CHART-REVIEW.md (`dsx-chart-review-v1`), skill `dsx-chart-audit`, viz-critic writes CHART-REVIEW
 - v2.0.0 requirements defined (53 requirements, REQ-P6-* … REQ-P12-*)
 - v2.0.0 roadmap written — Phases 6–12, 53/53 requirements mapped, traceability populated
+- Phase 6 (M1, v2.0.0) — Contract extension, decision record, paradigm manifest. 13/13 plans, UAT 4/4, verification passed, security verified (35 threats, 0 open). Completed 2026-08-10.
+- Phase 9 (M2c, v2.0.0) — Monitoring discipline, symmetric (`DSX-PAR-010`/`-011` plus membership-free `DSX-PAR-002`). 7/7 plans, UAT 1/1 (split accepted), verification passed, security verified (24 threats, 0 open). Completed 2026-08-13.
+- Phase 7 (M2a, v2.0.0) — Validity frame checks (`DSX-VAL-*`), ten codes: estimand completeness/falsifiability, unit triad, dependence method family, identification strength, sampling frame, missingness, measurement. 8/8 plans, UAT 38/38, re-verification passed 5/5 success criteria, security verified (0 open threats). Completed 2026-08-20.
+- Phase 8 (M2b, v2.0.0) — Interference, triggering, stability (`DSX-INT-010`/`-011`/`-030`/`-040`). 10/10 plans, verification passed 6/6 must-haves. The out-of-vocabulary `interference.risk` bypass is closed (08-10): the risk-vocabulary clause is gone from `_check_interference_mitigation_admissibility`'s guard, so a misspelled risk with a channel-inadmissible mitigation now fires `DSX-INT-011` at CRITICAL instead of clearing the gate. Security not yet run. Completed 2026-08-14.
 
 ## Next
 
-- Phase 6 (M1) — Contract extension, decision record, paradigm manifest. Blocks every other v2.0.0 phase.
-- Then Phases 7/8/9 (M2a/M2b/M2c) — no hard ordering among themselves; listed order is catastrophe-prevention value per unit of work.
-- Then Phase 10 (M3, soft-depends on 7), Phase 11 (M4, hard-depends on 7), Phase 12 (M5, terminal).
+- Phase 7 (M2a) — **complete 2026-08-20**. Re-verification passed: 5/5 roadmap success criteria, 8/9 requirements MET, REQ-P7-08 PARTIAL by the deliberate D-06 scope decision (not a gap). Both prior `human_needed` items (Chan & Perry 2017 citation admissibility; the two D-05 honesty disclosures) were closed by recorded human verdicts in `07-UAT.md` (38/38 pass, 0 gaps). Security verified, 0 open threats. Outstanding, non-blocking: 07-REVIEW.md CR-01 (an out-of-vocabulary `inference.paradigm` made the `DSX-PAR-001` manifest contradict `DSX-PAR-010`/`-011` and silenced `DSX-PAR-002`) is **fixed 2026-08-20** in `dsx/frame/paradigm.py` — both readers now fold an unrecognised value into the undeclared case, matching `_check_monitoring_discipline`; suite 549 OK. Still open: WR-01 (`val.py::check()` hand-duplicates each `_check_*` blocking predicate with no drift test).
+- Phase 8 (M2b) — **complete 2026-08-14**, verification passed 6/6. Outstanding, non-blocking: `/gsd-secure-phase 08` has not been run (security enforcement is active), and 08-REVIEW.md carries two WARNING findings (WR-01 self-contradictory DSX-INT-011 remedy text for an out-of-vocabulary risk; WR-02 `design.alpha: 0` silently defaulted in `dsx/frame/paradigm.py`).
+- Then Phase 10 (M3, context re-verified 2026-08-14, 6 unexecuted plans already on disk, soft-depends on 7), Phase 11 (M4, hard-depends on 7), Phase 12 (M5, terminal).
+- Inserted 2026-08-20 (paper-evaluation integration, Option A): Phases 11.1 (generated-pipeline reality), 11.2 (prescriptive claim layer), 11.3 (reporting completeness / missing-data discipline) run after Phase 11 and before Phase 12 — the catch rate Phase 12 measures must cover their checks and the full-frame-cleaning corpus case (REQ-P11.1-07).
 - Deferred, unchanged: Parquet profiler, live Glyph MCP, NLP decision_rule — out of scope for core gates.
 
 ## Accumulated Context
 
 **Hard ordering constraints carried into planning:**
 
-- Phase 6 blocks Phases 7–12.
-- Within Phase 6: the loader `_NULL` fix (REQ-P6-01) lands before the `validity_frame:` schema (REQ-P6-02) — four frame fields declare `none` as a legitimate value.
-- `DSX-PAR-001` (REQ-P6-09) ships in Phase 6, not Phase 9 — no window where `paradigm` exists without defined behaviour.
-- Phase 9's `DSX-PAR-010` and `DSX-PAR-011` are atomic (D-12): both ship or neither; the phase cannot close half-delivered.
+- Phase 6 blocks Phases 7–12. **Resolved** — Phase 6 complete 2026-08-10, so Phases 7–12 are unblocked.
+- Phase 9's `DSX-PAR-010` and `DSX-PAR-011` are atomic (D-12): both ship or neither. **Resolved** — both shipped in 09-03 at CRITICAL; phase closed 2026-08-13.
 - Phase 7 precedes Phase 11 — admissibility is keyed on the dependence taxonomy.
 - Phase 12 is necessarily last.
+- Phases 11.1–11.3 (inserted 2026-08-20) precede Phase 12 — the corpus case REQ-P11.1-07 and the checks that catch it must exist before the catch rate is measured.
 
 **Open items to resolve at phase discuss (do not decide silently):**
 
 - Phase 7: `method_family_required` cannot express a disjunction under M-09's single-member reuse of `VARIANCE_ADJUSTMENTS`.
 - Phases 7, 8, 11: final numeric code assignments beyond those the brief fixes (D-06 makes numbering irreversible).
-- Phase 9: whether the pre-existing `inflation_from_peeking()` docstring is upgraded to a full D-05 citation.
-- Phase 6: research (ARCHITECTURE §4.3) recommends shipping the `PEEKING_POLICIES` addition with its consumer in Phase 9; REQ-P6-05 places it in Phase 6. Reconcile at Phase 6 discuss.
+- Phases 11.1–11.3: final numeric code assignments (D-06).
+- Phase 11 (discuss): per-spec vs per-hypothesis adjudication — the one-row-per-hypothesis container from the 2026-08-20 paper evaluation is UNVERIFIED; run a verification spike before writing any requirement on it.
+- Phase 11.3 (discuss): missingness-rate reconciliation against the profile — the naive version fires on the good fixture; redesign with tolerance + re-baseline, or defer with an entry condition.
+- ~~Phase 9: whether the pre-existing `inflation_from_peeking()` docstring is upgraded to a full D-05 citation.~~ **Resolved 2026-08-12 at discuss** — yes, with an explicit unverified-locator flag (09-CONTEXT D-13). D-05 does not mechanically reach the function (no `report.add` call site), so this is elective; it is done because leaving it uncited puts a seam where a v2.0.0 check depends on a v1.5.0 computation. Anchor values verified by independent quadrature + Monte Carlo; the 1969 paper itself remains inaccessible, so **no table or page may be cited**.
+- Phase 9: the "prior-averaged Ville bound" name is retired. **Corrected further 2026-08-12** — Deng Theorem 1 does **not** state `1/(K+1)`; it states an optional-stopping equality. The bound is unnumbered prose, §3.2 in its operational form. Verified against the arXiv LaTeX source (09-CONTEXT D-10). Ville's `1/k` remains a separate result, and Ville is never cited in Deng et al. at all (D-12). **REQ-P9-02/03 and ROADMAP Phase 9 SC 2/SC 3 still carry the old attribution and must be amended during planning.** The three regression guards in `tests/test_known_bad_corpus.py` hold the Deng-vs-Ville line and should be re-read, not assumed stale (UAT gap G-01).
+- ~~Phase 9: omitting `inference.paradigm` produces no finding.~~ **Resolved in 09-03** — undeclared paradigm selects every `_MONITORING_DISCIPLINE` row, so both CRITICAL codes fire at `plan`.
+- Phase 9 D-08 (`DSX-PAR-002` membership-free; `DSX-SPEC-085` owns vocabulary): **accepted at UAT 2026-08-13**. ROADMAP SC 4 and REQ-P9-04 now name both codes.
+- Phase 10: numeric code assignments **resolved 2026-08-13 at discuss** — `DSX-PRE-010` (rule does not resolve to exactly one branch), `-020` (recorded plan-time `frame_digest` differs from verify-time bytes while `declared_at: pre_data` is claimed), `-030` (executed procedure differs from the selected branch, both labels named). `-011` deliberately unspent; the unparseable-rule case carries no code at all and is exit 2 (10-CONTEXT D-12, D-02). Note this phase was not named in the numbering open item above — it is recorded here because brief D-06 makes numbering irreversible. **Shipped 2026-08-20** — all three ship at CRITICAL: `DSX-PRE-010` owns the fallback rule not resolving to a branch (10-02), `DSX-PRE-020` owns the recorded plan-time `frame_digest` differing from verify-time bytes while `declared_at: pre_data` is claimed (10-03), `DSX-PRE-030` owns the executed procedure differing from the declared branch with both labels named (10-02).
+- Phase 10: **new, surfaced at discuss** — reading the plan-time content lock promotes `DECISIONS.jsonl` from side channel to gate input, narrowing the unconditional invariant at `dsx/cli.py:285-289` to the write path. A `verify` with no recorded `plan` header exits `2`, which collides with the M-07 grandfather path; the exit-2 message must name `suppressions[]` so that path stays walkable (10-CONTEXT D-09). **Do not solve this by making the missing header pass.** Locked 2026-08-14: compare by set membership over all recorded plan-time digests; missing-header exit 2 is `gate_invocation`-only (`dsx check` / `dsx audit` stay silent); `_gate_findings` must be repaired in the same commit as `GATE_PROFILES`.
+- Phase 10: fact registry locked 2026-08-14 as D-04a — exactly three scalars (`alpha`, `interim_looks`, `comparisons_looked_at`). Discretion items from the 2026-08-13 discuss are now locked in `10-CONTEXT.md`; do not re-open them at execute.
+- Phase 10: `_D05_ALLOWLIST_PREFIXES` (`scripts/gen-finding-catalogue.py:65`) is an **inclusion** list, not an exemption list, and does not cover `DSX-PRE-`. Without that edit the brief-D-05 citation gate is silently disabled for this family and `--check` still passes (10-CONTEXT D-13 item 4).
+- Phase 10: `brief.md` §7 names no pre-registration source and gains the Gelman & Loken (2014) anchor — a citation addition where none existed, not a brief-D-14 reversal (10-CONTEXT D-14). **Resolved 2026-08-20** — `brief.md` §7 now carries the Gelman & Loken (2014) anchor, both locator warnings intact, plus the Simmons, Nelson & Simonsohn (2011) and Nosek, Ebersole, DeHaven & Mellor (2018) secondary sources, each with its own scope note (10-06).
+- Phase 10: two decisions left to the planner's discretion, settled at execute 2026-08-20 (10-06) — the content-lock comparison is set membership over every recorded plan-time digest rather than a most-recent or earliest pick, because `InvocationHeader` records no specification identity and any ordering rule produces cross-specification false positives in a shared trail directory; and trail reconciliation is scoped to a real `dsx gate` invocation only, because the read-only inspection commands (`dsx check`/`dsx audit`) never write a trail and could therefore never satisfy the precondition.
+
+### Phase 11.1.1 re-scope (2026-08-21)
+
+Mechanism changed from hand-patching the regular-expression text scanner to an `ast.parse`
+primary path with the text scan retained as a visible fallback (owner decision, Option B).
+Driver: the shipped scanner scored 3/12 on a session-time variant probe against 12/12 for a
+stdlib proof of concept, and two of the misses were **false positives** — a module docstring
+or a notebook markdown cell that merely describes leakage blocks byte-identical code. Phase 12
+publishes a false-positive rate, so those would have been measured.
+
+Three adversarial lenses returned `design-needs-amendment` with four blockers (notebook line
+geometry, undecodable-entrypoint silent pass, `splitlines()` vs tokenizer line axis, prose
+mask eating a closing line). All four are discharged in the rewritten plans;
+`11.1.1-AST-DESIGN.md` carries an amendment banner naming each and its owning plan. Original
+plans preserved under `superseded/`. ROADMAP success criteria amended to six (false-positive
+parity and visible-fallback criteria added).
+
+**Execution not yet resumed** — stopping at re-planned was the explicit instruction.
+
+### Roadmap Evolution
+
+- Phase 11.1 inserted after Phase 11 (2026-08-20): Generated-pipeline reality — closes the live gate bypass reproduced in the paper evaluation (URGENT)
+- Phase 11.2 inserted after Phase 11.1 (2026-08-20): Prescriptive claim layer — recommendations become checkable
+- Phase 11.3 inserted after Phase 11.2 (2026-08-20): Reporting completeness and missing-data discipline
 
 **Standing per-phase deliverables:**
 
@@ -67,18 +106,33 @@ progress:
 - Register new modules in `GATE_PROFILES`; assert every new code is reachable from at least one profile.
 - Emit decision records at each family's key judgment points (D-04).
 
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Status | Directory |
+|---|-------------|------|--------|--------|-----------|
+| 260821-d6h | Deepen dsx-explore-data into an insight-driving EDA protocol (branches, ledgers, spec reconciliation, EDA.md template) | 2026-08-21 | 40e015d | Verified | [260821-d6h-deepen-dsx-explore-data-into-an-insight-](./quick/260821-d6h-deepen-dsx-explore-data-into-an-insight-/) |
+
 ## Current Position
 
-Phase: 06 (contract-extension-decision-record-paradigm-manifest) — EXECUTING
-Plan: 1 of 13
-Status: Executing Phase 06
-Last activity: 2026-08-08 — Phase 06 execution started
+Phase: Milestone v2.0.0 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-08-28 — Milestone v2.0.0 completed and archived
+
+## Project Reference
+
+See: .planning/PROJECT.md (updated 2026-08-13)
+
+**Core value:** Gate analytical work on validity before the data is touched.
+**Current focus:** Planning the next milestone — v2.0.0 shipped and archived 2026-08-28; run `/gsd-new-milestone`
 
 ## Session
 
-**Last session:** 2026-08-08T01:32:42+02:00
-**Stopped at:** Completed 06-09-PLAN.md (executor interrupted by session limit after its final task commit; SUMMARY and tracking reconciled by the orchestrator during /gsd-resume-work — all 9 of the plan's verification items re-run and passing)
-**Resume file:** None
+**Last session:** 2026-08-27T18:35:00.000Z
+**Stopped at:** Phase 12 S3-3 CLOSED — Wave 5 (plan 12-07) executed + gated (§6.5 re-eval carry-8/remove-1 + REV-002); next unblocked = S3-4 (catch-rate/FPR readout + Statistician adversarial review)
+**Resume file:** .planning/phases/12-calibration/12-07-SUMMARY.md
+
+Phase 10 context was re-verified 2026-08-14 (assumptions mode). Six unexecuted plans (`10-01` … `10-06`) already exist; this refresh did not rewrite them. Phase 8's blocking gap is in `08-VERIFICATION.md` (out-of-vocabulary `interference.risk` bypass).
 
 ## Performance Metrics
 
@@ -117,3 +171,26 @@ Last activity: 2026-08-08 — Phase 06 execution started
 - [Phase ?]: 06-09: `explain` carries no `--block-on` at all (argparse exits 2) rather than accepting-and-ignoring it — a block flag on a command that always passes is a lie in the help text (D-04)
 - [Phase ?]: 06-09: `add_common` gains keyword-only `include_block_on=True`, making "all four existing call sites unchanged" a property of the signature rather than a per-site re-verification
 - [Phase ?]: 06-09: gate-path trail write is a side channel — an unwritable trail directory leaves every gate exit code untouched; a trail that cannot be written is a missing trail, not a failed gate (D-16/D-18)
+
+## Session Continuity
+
+Last session: 2026-08-21T20:32:49.273Z
+Stopped at: Session resumed via /gsd-resume-work — context restored from the Phase 11.1.1 handoff; awaiting selection of next action (primary: execute Phase 11.1.1).
+Resume file: .planning/phases/11.1.1-detection-code-hardening-inserted/.continue-here.md
+
+## Operator Next Steps
+
+- Start the next milestone with /gsd-new-milestone
+
+## Deferred Items
+
+Items acknowledged and deferred at milestone close on 2026-08-28 (closeout_type=override_closeout):
+
+| Category | Item | Status |
+|----------|------|--------|
+| seed | SEED-001-deepen-dsx-explore-data-eda-protocol | dormant — carry to next milestone |
+| seed | SEED-002-grow-data-profile-hermetic-eda-artifacts | dormant — carry to next milestone |
+
+These are captured future ideas (deepen `dsx-explore-data` into a reusable EDA protocol;
+grow DATA-PROFILE / `dsx profile` into hermetic EDA artifacts), not v2.0.0 gaps — the
+milestone audit reached `passed` with all 75 requirements accounted. They do not block ship.

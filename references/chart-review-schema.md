@@ -54,6 +54,23 @@ Every score needs ≥1 evidence bullet.
 
 Suppressed findings (ANALYSIS-SPEC `suppressions[]`) do **not** fail gates.
 
+## Report-acceptance precondition (deterministic, `DSX-CRV-*`)
+
+| Precondition | Fail when |
+|------|-----------|
+| Report accepted | Open `DSX-CRV-*` at CRITICAL/HIGH (`DSX-CRV-010` schema tag mismatch, `DSX-CRV-012` missing terminal sentinel) |
+
+`DSX-CRV-*` (`dsx/checks/chart_review.py`) gates the validity of *this report as an artifact*,
+not any analytical conclusion inside it — REQ-P11.3-06, D-14. It is deliberately **not** folded
+into Gate D's `DSX-FIG-*` wildcard above: this report is what states whether Gate D passed, so
+minting a `DSX-FIG-*` code for the report's own structural defects would sweep the report into
+the very gate it reports on (D-12). The precondition is evaluated *before* Gates A–D are trusted
+at all — a structurally malformed CHART-REVIEW.md (wrong schema tag, missing terminal sentinel,
+a free-form `X/10` scale, or an untraceable finding line) means the four gate proxies above
+cannot yet be read off it. `DSX-CRV-*` reads structure only — the frontmatter `schema` tag, the
+absence of `X/10`, the terminal sentinel, and the `DSX-`/`UNMAPPED` token on finding lines —
+never `scores.*`, `gates.A`–`D`, `final_assessment`, or any verdict prose (D-13).
+
 ## Final assessment decision table
 
 First matching row wins:

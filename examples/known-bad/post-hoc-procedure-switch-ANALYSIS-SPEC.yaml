@@ -1,0 +1,207 @@
+# A known-bad ANALYSIS-SPEC (REQ-P10-03, REQ-P10-04, ROADMAP Success Criterion 3).
+# Unlike every sibling in this directory, this file is EXPECTED TO CLEAR `dsx gate
+# plan` and `dsx gate execute` (both exit 0) — `prereg` (dsx/frame/prereg.py) is
+# registered in the verify and ship gate profiles only (dsx/cli.py::GATE_PROFILES),
+# so there is no executed branch to reconcile against before the data has even been
+# analysed. It is EXPECTED TO BLOCK at `dsx gate verify` and `dsx gate ship` (both
+# exit 1), naming DSX-PRE-030 among their CRITICAL findings.
+#
+# The encoded defect: inference.fallback_rule declares, before the data was
+# touched, that once the comparison family passed four members the analysis would
+# switch to a Holm-adjusted two-proportion z-test (branch label two_proportion_z).
+# results.comparisons_looked_at records five — the declared condition holds — so
+# the rule resolves cleanly to that branch and DSX-PRE-010 stays silent. The
+# executed procedure at analysis.test, fishers_exact, is a different label, so
+# DSX-PRE-030 fires (dsx/frame/prereg.py::_check_procedure_reconciliation).
+#
+# The point of this fixture: Fisher's exact test is the more conservative choice
+# at this fixture's declared cell counts — an operator could argue in good faith
+# that switching after seeing sparse cells made the analysis stricter, not weaker.
+# It blocks anyway, because the check compares branch identity alone and never
+# consults which of the two procedures is more conservative (brief D-02). See the
+# paired POSTMORTEM.md for why a more-conservative substitution is still a new
+# researcher degree of freedom.
+#
+# Precondition for reaching verify or ship against this fixture: a plan-time
+# header recorded in the decision trail for the same root
+# (dsx/frame/prereg.py::_check_content_lock). The corpus test harness seeds one
+# via tests/_trail_seed.py::seed_plan_header; without it the run stops at exit 2
+# before any finding is emitted — that is the missing-plan-header CheckError, not
+# a defect in this fixture.
+#
+# It also blocks dsx gate ship (and dsx gate verify) on corpus-completeness gaps
+# unrelated to the encoded defect — DSX-CLM-031 (evidence pointer does not
+# resolve), DSX-COH-031 (an unchecked, unwaived assumption), DSX-STA-041 (the
+# executed test falls outside the stats recommendation engine's acceptable set
+# for this outcome shape — the same class of incidental gap already measured for
+# the bayesian-continuous-monitoring fixture), DSX-NAR-001 (no narrative.path)
+# and DSX-REP-030 (no reproducibility.entrypoint) — the same measured pattern the
+# sibling fixtures carry; see tests/test_known_bad_corpus.py's
+# _INCIDENTAL_GAP_CODES. See the paired POSTMORTEM.md.
+#
+#   dsx validate --spec examples/known-bad/post-hoc-procedure-switch-ANALYSIS-SPEC.yaml
+#   dsx gate verify --spec examples/known-bad/post-hoc-procedure-switch-ANALYSIS-SPEC.yaml
+
+spec_version: 1
+title: "Does adding a trust badge to the checkout page raise completed-order rate, compared across five candidate badge designs?"
+spec_id: "post-hoc-procedure-switch"  # REQ-P11.2-05, D-08: top-level only.
+owner: "conversion-analytics"
+created: "2026-07-01"
+
+question_type: causal
+
+decision:
+  owner: "VP Conversion"
+  decision_rule: >
+    Roll out the winning badge design to 100% of checkout sessions if its 95%
+    CI lower bound on the completed-order-rate uplift, after a Holm correction
+    across the comparison family, exceeds +1.0pp. Otherwise hold at the
+    current checkout page.
+  action_if_null: "Keep the current checkout page; close the initiative and reallocate the squad."
+  minimum_practical_effect: 0.02
+  reversible: true
+  deadline: "2026-08-15"
+  revisit_when: "completed_order_rate uplift below +1.0pp at the 2026-Q4 review"
+
+metrics:
+  - name: completed_order_rate
+    type: ratio
+    definition: "Share of started checkout sessions that complete an order"
+    grain: session
+    numerator: "count(distinct session_id) where order_completed_at is not null"
+    denominator: "count(distinct session_id) where checkout_started_at is not null"
+    source: warehouse.fct_checkout_sessions
+    owner: conversion-analytics
+
+data:
+  - name: checkout_sessions
+    source: warehouse.fct_checkout_sessions
+    period: "2026-07-01..2026-07-21"
+    rows: 63104
+
+design:
+  kind: experiment
+  identification: randomized_experiment
+  randomization_unit: session
+  analysis_unit: session
+  arms: [control, treatment]
+  expected_allocation: [0.5, 0.5]
+  baseline_rate: 0.24
+  mde: 0.02
+  alpha: 0.05
+  power: 0.80
+  planned_n_per_arm: 7400
+  duration_days: 21
+  peeking_policy: fixed_horizon
+
+analysis:
+  outcome_type: proportion
+  n_groups: 2
+  paired: false
+  n_per_group: 7462
+  test: fishers_exact
+  normality_ok: true
+  equal_variance: true
+  independence_ok: true
+
+results:
+  observed_n: [7462, 7431]
+  interim_looks: 1
+  comparisons_looked_at: 5
+  overall_effect: 0.021
+
+claims:
+  - text: >
+      The fifth candidate trust-badge design increases completed-order rate by
+      2.1 percentage points among checkout sessions in the test window.
+    type: causal
+    evidence: "RESULTS.md#trust-badge-uplift"
+    population: "Checkout sessions, 2026-07-01 to 2026-07-21"
+    identification: randomized_experiment
+
+assumptions:
+  - assumption: "Bucketing is stable across a session for a given session_id."
+    rationale: "Assignment is hashed on session_id and persisted server-side."
+    impact_if_wrong: "Contamination between arms would bias the estimate toward zero."
+    checked: false
+
+limitations:
+  - "The declared fallback rule was triggered by the observed comparison count, and the executed procedure was substituted after that trigger fired; see inference and the paired POSTMORTEM.md."
+
+# ── Validity frame (REQ-P6-02) ───────────────────────────────────────────────
+# question_type: causal + design.kind: experiment, so all ten sub-blocks are
+# required from plan onward (R-01 / M-06). This block is clean — the encoded
+# defect lives entirely in inference/analysis below, not here.
+validity_frame:
+  estimand:
+    quantity: "difference in completed-order rate"
+    type: difference_in_proportions
+    population: "checkout sessions, 2026-07-01 to 2026-07-21"
+    contrast: "fifth candidate trust-badge design (treatment) vs current checkout page (control)"
+    time_window: "within-session, 2026-07-01 to 2026-07-21"
+    falsifier: "the Holm-corrected 95% CI on the completed-order-rate uplift includes zero, or its lower bound sits below +1.0pp"
+
+  units:
+    observation: session
+    assignment: session
+    analysis: session
+
+  identification:
+    strength: strong               # strong | moderate | weak
+    evidence: "Assignment is randomized per session at checkout start and persisted server-side."
+    constraint_source: none        # none | informative_priors | penalisation | design_restriction | hierarchical_pooling
+    constraint_justification: ""
+
+  dependence:
+    structure: none                # none | clustered | repeated_measures | temporal | spatial | hierarchical
+    cluster_var: ""
+    method_family_required: ""
+
+  interference:
+    risk: none                     # none | shared_budget | marketplace | geo_spillover | social_graph | shared_inventory
+    mechanism: ""
+    mitigation: none               # none | geo_split | cluster_randomisation | time_split | budget_isolation | modelled
+    residual_note: ""
+
+  triggering:
+    eligible_population: "all sessions that start checkout in the window"
+    triggered_definition: "reached the checkout payment step"
+    analysis_population: eligible  # eligible | triggered
+    expected_trigger_rate: 1.0
+    dilution_adjusted: false
+
+  stability:
+    window: "21 days"
+    novelty_primacy_assessed: true
+    evidence: "RESULTS.md#trust-badge-uplift-stability"
+
+  sampling_frame:
+    source: "warehouse.fct_checkout_sessions, all regions"
+    claim_population: "all sessions that start checkout in the window"
+    known_exclusions: []
+    selection_risk: "none identified"
+
+  missingness:
+    mechanism: not_assessed        # MCAR | MAR | MNAR | not_assessed
+    rate: 0.0
+    method_implied: complete_case
+
+  measurement:
+    construct: "checkout completion"
+    operationalisation: "an order recorded as completed within the same checkout session"
+    known_gaps: "none identified"
+
+# ── Inference plan (REQ-P6-04) ───────────────────────────────────────────────
+# The defect: fallback_rule pre-declares a Holm-adjusted two_proportion_z branch
+# once comparisons_looked_at passes four; results.comparisons_looked_at is five,
+# so the rule resolves cleanly to that branch (DSX-PRE-010 stays silent), but the
+# executed analysis.test is fishers_exact — a different label, so DSX-PRE-030
+# fires. See dsx/frame/prereg.py and the paired POSTMORTEM.md.
+inference:
+  paradigm: frequentist            # frequentist | bayesian
+  paradigm_justification: team_convention
+  declared_at: pre_data            # pre_data | post_data
+  primary_procedure: two_proportion_z
+  alpha_spending: null
+  fallback_rule: >
+    comparisons_looked_at > 4 -> two_proportion_z, Holm adjustment across the comparison family

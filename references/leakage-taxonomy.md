@@ -28,7 +28,14 @@ the prediction point, "next month" features.
 **3. Preprocessing leakage.** A scaler, imputer, encoder or feature selector
 fitted before the split. The test set's mean, its category vocabulary, or its
 correlation with the target has entered training. This is the most common bug and
-the least visible.
+the least visible. A wide candidate roster searched by grid or random search and
+then combined into a stacking or voting ensemble is this failure at
+model-selection scale: the search across candidates is a preprocessing decision
+surface, and folding the survivors into an ensemble is an iterative selection
+informed by whatever data produced the comparison scores. It is filed here,
+under type 3, with an explicit cross-reference to type 7 ("Test-set
+contamination through iteration") rather than given a type of its own, because
+it is both at once.
 
 **4. Group leakage.** The same entity in both train and test. The model memorises
 the entity rather than the pattern, so the score is an upper bound that will not
@@ -43,6 +50,19 @@ rows across the boundary.
 **7. Test-set contamination through iteration.** Every look at the test set that
 informs a modelling choice turns it into a validation set. After twenty
 iterations the final score is optimistic by an unknown amount.
+
+A related note on discretisation: binning a continuous column is information
+loss, not a neutral encoding choice. When the binning decision is made because a
+hypothesis test computed over the full, unsplit frame found a relationship, the
+choice compounds a target-adjacent feature decision (type 1, target leakage)
+with a preprocessing leak (type 3, preprocessing leakage) in a single step — the
+test that decided the resolution touched the frame the split exists to protect.
+`references/The AI Data Scientist.md` (Akimov, Nwadike, Iklassov & Takáč,
+arXiv:2508.18113v1, §2.3) states this directly: a continuous age column was
+kept continuous rather than bucketed because the paper's own hypothesis-testing
+stage found a strong numeric relationship, and the same section's Table 2 shows
+the binning idiom (`bucketed_Age` via `pd.cut`) in active use elsewhere in the
+pipeline.
 
 ## Detection signals
 

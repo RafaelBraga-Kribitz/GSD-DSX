@@ -15,6 +15,10 @@ spec_version: 1
 title: "<one line: the decision this analysis exists to support>"
 owner: "<analyst>"
 created: "<YYYY-MM-DD>"
+# spec_id is GATE-READ (DSX-PRE-040): required for prescriptive questions and
+# experiment designs. It is the stable, human-meaningful amendment-counter
+# identity that ties this spec to its DECISIONS.jsonl trail across revisions.
+spec_id: "<stable-human-id, e.g. activation-nudge-2026q3>"
 
 # ── What kind of question is this? ───────────────────────────────────────────
 # descriptive  — what happened (no inference beyond the sample)
@@ -34,8 +38,13 @@ decision:
     not just the direction.>
   action_if_null: "<what happens when no effect is detected>"
   minimum_practical_effect: null   # smallest effect that would change the decision
-  reversible: true
-  deadline: "<YYYY-MM-DD or null>"
+  # revisit_when is GATE-READ (DSX-COH-040): the re-open trigger evaluated at
+  # verify/ship for prescriptive questions and experiment designs. It must name a
+  # metric, a threshold, and a time anchor. It is DISTINCT from `deadline` in the
+  # documentation-only block below — `deadline` is a decide-by date that no gate
+  # reads, whereas `revisit_when` is the condition that reopens an already-made
+  # recommendation and IS enforced. Do not conflate the two temporal fields.
+  revisit_when: "activation_rate below +1.0pp at the 2026-Q4 review"
   # Structured replay — evaluated against results.tests at verify/ship (not NLP).
   # Required at ship when design.kind=experiment (or causal/prescriptive) with tests.
   # replay:
@@ -45,6 +54,16 @@ decision:
   #   # effect_min: null
   #   on_pass: rollout
   #   on_fail: hold
+
+  # ── Documentation-only — NOT gate-read ─────────────────────────────────────
+  # The two fields below are recorded for human readers only. NO dsx check reads
+  # them (grep-confirmed): setting `reversible` or `deadline` buys NO enforcement.
+  # They are kept, not deleted, because operator specs carry them as decision
+  # context — but do not mistake them for gate-enforced fields. `deadline` (a
+  # decide-by date) is in particular NOT the gate-read `revisit_when` above (a
+  # re-open trigger). See D-14 / REQ-P11.2-07.
+  reversible: true
+  deadline: "<YYYY-MM-DD or null>"
 
 # ── Metrics ──────────────────────────────────────────────────────────────────
 # One name, one definition. Ratios must declare both numerator and denominator —
@@ -86,6 +105,14 @@ data:
       max_gap_days: null
       banned_sentinels: []         # values that must not appear, e.g. [-1, 999, "1900-01-01"]
     known_gaps: "<outages, backfills, filters applied upstream>"
+    # Optional. Declares where each cleaning step's statistics were fitted.
+    # Leaving this block out fires nothing — it is not required, and a
+    # dataset entry with no cleaning key is treated exactly like one that
+    # declares it correctly.
+    # cleaning:
+    #   - column: <column>
+    #     method: <e.g. mean_impute, outlier_clip>
+    #     fit_on: train_only         # train_only | train_fold_only | none
 
 # ── Design ───────────────────────────────────────────────────────────────────
 # Required for causal and prescriptive questions. Delete for pure descriptive work.
@@ -137,6 +164,14 @@ analysis:
 #   task: binary_classification
 #   target: <column>
 #   algorithm: <e.g. gradient_boosting>
+#   # Optional. Owed once an algorithm is declared: a declared algorithm is a
+#   # declaration that a choice among candidates was made. Leaving this block
+#   # out fires DSX-ML-090 (HIGH); an out-of-vocabulary selected_on, including
+#   # a misspelling, fires it too.
+#   selection_ledger:
+#     candidates_evaluated: []
+#     configurations_tried: null
+#     selected_on: null                 # train | validation | nested_cv (accepted) | test (DSX-ML-091 CRITICAL) | cv_same_fold (DSX-ML-092 HIGH)
 #   split: temporal                     # random | stratified | temporal | grouped | grouped_temporal | nested_cv
 #   time_column: <column>
 #   entity_column: <column>             # set when entities repeat across rows
@@ -218,6 +253,8 @@ results:
   test_score: null
   model_score: null
   baseline_score: null
+  model_score_source: null       # cv_mean | holdout | nested_cv (best_fold and unknown are declared but disqualifying)
+  fold_scores: []                 # per-fold scores; the spread is derived from these at check time, never declared directly
   test_set_evaluations: null
   train_test_overlap_rows: null
   period_comparisons: []
@@ -252,7 +289,7 @@ narrative:
 # holds it to the evidence declared above.
 claims:
   - text: "<the claim exactly as it will appear>"
-    type: descriptive              # descriptive | association | predictive | causal
+    type: descriptive              # descriptive | association | predictive | causal | prescriptive
     evidence: "RESULTS.md#anchor"
     population: "<who this applies to>"
     # ci: [lower, upper]
@@ -282,19 +319,26 @@ limitations:
 validity_frame:
   estimand:
     quantity: "<the difference, rate or quantity being estimated>"
+    type: difference_in_proportions  # difference_in_proportions | difference_in_means | regression_coefficient | ratio_of_means
     population: "<who this covers>"
     contrast: "<treatment vs control, or before vs after>"
     time_window: "<the window over which the effect is measured>"
     falsifier: "<the observation that would prove this wrong>"
 
+  # The values below are an example to replace, not a default to keep: all
+  # three must name the same unit — the finest-grained row in the source
+  # data, the unit treatment/exposure is assigned at, and the unit the
+  # analysis is run at, all sitting at the same grain (e.g. "user_id").
   units:
-    observation: "<the finest-grained row in the source data>"
-    assignment: "<the unit treatment/exposure is assigned at>"
-    analysis: "<the unit the analysis is run at>"
+    observation: "<user_id>"
+    assignment: "<user_id>"
+    analysis: "<user_id>"
 
+  # strength below is an example to replace, not a default to keep: state the
+  # true strength of your own identification strategy.
   identification:
-    strength: weak                 # strong | moderate | weak
-    evidence: "<why this strength, e.g. randomisation or a VIF check>"
+    strength: strong                # strong | moderate | weak
+    evidence: "<the design-based support for this strength, e.g. randomisation at assignment>"
     constraint_source: none        # none | informative_priors | penalisation | design_restriction | hierarchical_pooling
     constraint_justification: "<required unless constraint_source is none>"
 
@@ -328,7 +372,7 @@ validity_frame:
     selection_risk: "<how the sample could differ systematically from the claim population>"
 
   missingness:
-    mechanism: not_assessed        # MCAR | MAR | MNAR | not_assessed
+    mechanism: MCAR                # MCAR | MAR | MNAR | not_assessed — example value to replace
     rate: null
     method_implied: "<how missing rows are handled, e.g. complete_case>"
 
@@ -347,9 +391,16 @@ inference:
     # decision_theoretic_loss_specified | small_sample_informative_prior
     # regulatory_requirement | team_convention | vendor_constraint
   declared_at: pre_data            # pre_data | post_data
-  primary_procedure: "<the test or model that will be run, e.g. two_proportion_z>"
+  primary_procedure: two_proportion_z  # the test or model that will be run
   alpha_spending: null
   fallback_rule: "<what happens if an assumption fails, e.g. switch to a bootstrap>"
+  # The next three fields clear DSX-PAR-010 (frequentist) / DSX-PAR-011 (bayesian)
+  # monitoring discipline when design.peeking_policy is uncontrolled_continuous —
+  # a non-blank text value clears; a number, a boolean, or an empty value does
+  # not. See references/paradigm-symmetry.md for the full clearing-condition table.
+  threshold_calibration: null       # DSX-PAR-010 / DSX-PAR-011: a non-blank text value clears either
+  prior_justification: null         # DSX-PAR-011: a non-blank text value clears the Bayesian check
+  decision_threshold: "<the posterior-probability decision rule, e.g. P(B>A) > 0.95 — recorded, never parsed>"
 
 # ── Suppressions (optional) ──────────────────────────────────────────────────
 # ADR/SPEC-backed waivers for known HIGH/CRITICAL findings. Each row removes

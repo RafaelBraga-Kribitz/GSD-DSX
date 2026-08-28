@@ -10,6 +10,7 @@ in prose — which is what makes agent output checkable instead of merely plausi
 
 from __future__ import annotations
 
+import re
 from typing import Any, Iterable
 
 from .findings import Report
@@ -46,16 +47,183 @@ IDENTIFICATION_STRATEGIES = {
     "none": {"strength": "none", "needs": []},
 }
 
-CLAIM_TYPES = {"descriptive", "association", "predictive", "causal"}
+CLAIM_TYPES = {"descriptive", "association", "predictive", "causal", "prescriptive"}
 
 # Verbs that assert causation. Used to catch a causal claim mislabelled as
 # association — the single most common analytical overreach.
-CAUSAL_VERBS = (
+#
+# Structural criterion: a claim's or decision rule's causal content is set by
+# communicative intent (is the sentence recommending an action believed to
+# change an outcome?), not by surface verb morphology (finite vs. gerund vs.
+# bare infinitive). Hernán, M. A. (2018), "The C-Word: Scientific Euphemisms
+# Do Not Improve Causal Inference From Observational Data", American Journal
+# of Public Health, 108(5):616-619, DOI 10.2105/AJPH.2018.304337. The exact
+# quotable sentence/page locator within this paper is unverified at time of
+# writing and is flagged for human confirmation (queued HQ-3, D-16); the
+# author/year/title/venue anchor itself is not in doubt and matches this
+# phase's D-05 provenance model.
+#
+# vocabulary_is_not_exhaustive: true — no published closed lexicon of
+# "causal action verbs" exists; closure here is this project's editorial
+# judgement, not anyone's published finding, and this file says so (the same
+# model 11-CONTEXT D-10 established for the assumption vocabulary).
+#
+# Two tiers (D-04), NOT an epistemic softener — HEDGE_TERMS (claims.py:30-34)
+# remains the sole epistemic softener:
+#   - CAUSAL_VERBS_ALWAYS_HIT: finite verbs plus gerunds — unambiguously
+#     verbal, fire on any \b-bounded occurrence regardless of context. A
+#     gerund reaches the MEDIUM path only through the pre-existing
+#     HEDGE_TERMS gate, exactly like any other verb hit here — it is never
+#     itself a softener.
+#   - CAUSAL_VERBS_PURPOSE_GATED: bare infinitives that double as nouns
+#     ("increase", "decrease", "reduce") — ambiguous out of context (compare
+#     "sales increase in Q4"), so they fire only inside a
+#     purpose/recommendation construction ("to reduce churn", "in order to
+#     increase..."), never as a bare substring.
+CAUSAL_VERBS_ALWAYS_HIT = (
     "causes", "caused", "causing", "drives", "drove", "driving", "leads to", "led to",
     "results in", "resulted in", "increases", "decreases", "improves", "improved",
-    "reduces", "reduced", "boosts", "boosted", "lifts", "lifted", "impact of",
-    "effect of", "because of", "due to", "thanks to", "responsible for",
-    "attributable to", "uplift from", "generates", "generated",
+    "improving", "reduces", "reduced", "reducing", "boosts", "boosted", "boosting",
+    "lifts", "lifted", "lifting", "impact of", "effect of", "because of", "due to",
+    "thanks to", "responsible for", "attributable to", "uplift from", "generates",
+    "generated", "generating", "increasing", "decreasing",
+)
+
+CAUSAL_VERBS_PURPOSE_GATED = ("reduce", "increase", "decrease")
+
+# Compatibility alias for any consumer still importing the flat name (grep at
+# plan 11.2-02 time found none outside dsx/checks/claims.py and
+# dsx/checks/coherence.py, both of which now call causal_verb_matches()
+# instead). Maps to the unambiguous always-hit tier only — the purpose-gated
+# tier is deliberately NOT flattened in here, since a naive `verb in lowered`
+# consumer of this alias would reintroduce the noun-homograph false positive
+# the two-tier split exists to prevent.
+CAUSAL_VERBS = CAUSAL_VERBS_ALWAYS_HIT
+
+# Multiword purpose/recommendation markers that license a purpose-gated bare
+# form. Unlike a bare "to" (handled separately below) these never introduce a
+# raising/control complement, so they license the verb unconditionally.
+_PURPOSE_MARKERS_MULTIWORD = ("in order to", "so as to", "aimed at", "designed to")
+
+# Governing heads whose bare-infinitive "to <verb>" complement expresses
+# tendency, aspect, failure or capacity — a raising/control infinitive, NOT a
+# purpose adjunct (CR-01, 11.2 code review, §4 persona round). When one sits
+# immediately before a bare "to <verb>", the purpose gate stays shut, so
+# ordinary descriptive prose no longer fires DSX-CLM-011/DSX-COH-010:
+# "usage tends to increase", "the pilot failed to reduce", "customers were
+# quick to increase" are descriptions, not recommendations. Purpose "to"
+# instead follows a noun object ("incentives to reduce churn"), a goal verb,
+# or opens the clause ("To reduce churn, ...").
+# INVARIANT — never add (a) a goal/intent head (aim, seek, intend, want, wish,
+# plan, hope, propose, mean, strive, aspire) or (b) an achievement head that
+# asserts the effect occurred (manage, prove, ensure, help): those license a
+# genuine causal/purpose reading and denying them would open a false negative.
+# The residual error therefore leans false-negative, the accepted direction at
+# this CRITICAL blocking gate (Statistician vote); an omitted catenative leaks
+# only a rare residual false positive, never a missed genuine recommendation.
+_NON_PURPOSE_TO_PRECEDERS = frozenset({
+    # tendency / aspect / state — a trend or phase, not a recommended effect
+    "tend", "tends", "tended", "seem", "seems", "seemed",
+    "appear", "appears", "appeared", "begin", "begins", "began", "begun",
+    "start", "starts", "started", "continue", "continues", "continued",
+    "cease", "ceases", "ceased", "remain", "remains", "remained",
+    "happen", "happens", "happened", "used", "going", "about",
+    # failure / resistance — the effect was not achieved
+    "fail", "fails", "failed", "decline", "declines", "declined",
+    "refuse", "refuses", "refused", "neglect", "neglects", "neglected",
+    "struggle", "struggles", "struggled", "hesitate", "hesitates", "hesitated",
+    # modal ability / propensity (raising adjectives) — capacity, not actuality
+    "able", "unable", "likely", "unlikely", "apt", "prone", "bound",
+    "ready", "willing", "reluctant", "eager", "keen", "hesitant",
+    "quick", "quicker", "slow", "slower", "fast", "faster",
+    "easy", "hard", "difficult", "impossible", "possible",
+})
+
+# Bounded, single-level quantifier only (mirrors _FALSIFIER_NUMBER_RE,
+# spec.py:466-473, named threat T-7-03): a fixed-width window of at most 30
+# characters between the marker and the verb. No `.*` chains, no nested
+# quantifier groups.
+_PURPOSE_GATE_WINDOW = r"[\s\w]{0,30}?"
+
+_CAUSAL_VERBS_ALWAYS_HIT_RE: dict[str, re.Pattern[str]] = {
+    verb: re.compile(rf"\b{re.escape(verb)}\b") for verb in CAUSAL_VERBS_ALWAYS_HIT
+}
+
+# Multiword marker + bounded window + bare verb — fires unconditionally.
+_CAUSAL_VERBS_MULTIWORD_GATE_RE: dict[str, re.Pattern[str]] = {
+    verb: re.compile(
+        rf"\b(?:{'|'.join(re.escape(m) for m in _PURPOSE_MARKERS_MULTIWORD)})\b"
+        rf"{_PURPOSE_GATE_WINDOW}\b{re.escape(verb)}\b"
+    )
+    for verb in CAUSAL_VERBS_PURPOSE_GATED
+}
+
+# Bare "to" + bounded window + bare verb. Each occurrence is validated against
+# its governing head (see _bare_to_is_purpose) before it counts as a hit.
+_CAUSAL_VERBS_BARE_TO_RE: dict[str, re.Pattern[str]] = {
+    verb: re.compile(rf"\bto\b{_PURPOSE_GATE_WINDOW}\b{re.escape(verb)}\b")
+    for verb in CAUSAL_VERBS_PURPOSE_GATED
+}
+
+
+def _bare_to_is_purpose(prefix: str) -> bool:
+    """True when a bare "to" at the end of ``prefix`` reads as a purpose marker
+    rather than a raising/control complement.
+
+    Clause-initial "to" (no governing head) is a purpose adjunct. Otherwise the
+    governing head must not be a ``_NON_PURPOSE_TO_PRECEDERS`` catenative or
+    raising adjective. A trailing ``-ly`` adverb or a ``not``/``never`` negator
+    is skipped first, so "failed repeatedly to reduce" and "chose not to
+    reduce" resolve to their real head ("failed"/"chose").
+    """
+    words = re.findall(r"[a-z]+", prefix)
+    while words and (words[-1] in {"not", "never"} or words[-1].endswith("ly")):
+        words.pop()
+    if not words:
+        return True
+    return words[-1] not in _NON_PURPOSE_TO_PRECEDERS
+
+
+def causal_verb_matches(lowered: str) -> list[str]:
+    """Return every causal-verb lexicon member found in ``lowered`` text.
+
+    The single shared matcher for both consumers (dsx/checks/claims.py
+    ``_check_causal_language`` and dsx/checks/coherence.py
+    ``_check_decision_language``) so the two cannot drift (D-04). Always-hit
+    members (finite verbs + gerunds) fire on any \\b-bounded occurrence.
+    Purpose-gated members (bare infinitives / noun-homographs) fire only
+    when preceded, within a small bounded window, by a purpose/
+    recommendation marker — a false-positive-conservative context gate, not
+    an epistemic softener.
+    """
+    hits = [
+        verb
+        for verb in CAUSAL_VERBS_ALWAYS_HIT
+        if _CAUSAL_VERBS_ALWAYS_HIT_RE[verb].search(lowered)
+    ]
+    for verb in CAUSAL_VERBS_PURPOSE_GATED:
+        if _CAUSAL_VERBS_MULTIWORD_GATE_RE[verb].search(lowered):
+            hits.append(verb)
+            continue
+        # A bare "to <verb>" fires only when its governing head reads as
+        # purpose, not as a raising/control complement (CR-01).
+        if any(
+            _bare_to_is_purpose(lowered[: m.start()])
+            for m in _CAUSAL_VERBS_BARE_TO_RE[verb].finditer(lowered)
+        ):
+            hits.append(verb)
+    return hits
+
+
+# Substrings that mark an estimand falsifier as discriminating — it names a concrete,
+# checkable observation that would prove the estimand wrong, not just a topic (D-05,
+# REQ-P7-01). The first eight members are fixed by D-05; the remainder (the two bare
+# comparison symbols) are the planner's discretion under D-05's explicit grant, chosen
+# to widen the accepted set rather than narrow it, because the accepted risk in D-05
+# runs toward false positives at the earliest and highest-friction gate.
+FALSIFIER_DISCRIMINATORS = (
+    "includes zero", "crosses", "below", "above", "exceeds", "does not exceed",
+    "falls below", "fails to", "greater than", "less than", "<", ">",
 )
 
 MULTIPLICITY_CORRECTIONS = {"bonferroni", "holm", "benjamini_hochberg", "bh", "fdr", "none"}
@@ -192,6 +360,58 @@ DEPENDENCE_STRUCTURES = {
     "hierarchical": "Observations are nested within multiple levels of grouping.",
 }
 
+# Phase 11 (REQ-P11-01, REQ-P11-04): the estimand axis the frequentist admissibility
+# adjudicator (dsx/frame/admissibility.py) keys on. Chosen over reusing
+# analysis.outcome_type + n_groups + paired because that shape is unreachable from
+# examples/known-bad/weak-identification-mmm-ANALYSIS-SPEC.yaml, which has no
+# analysis:/model: block at all. validity_frame.estimand is one of the six
+# always-required sub-blocks, so this field is reachable from every spec that has
+# passed the Phase 6 shape gate. Closed vocabulary compared by exact normalized
+# membership only — no fuzzy string match on free prose (11-CONTEXT.md Claude's
+# Discretion, binding constraint).
+ESTIMAND_TYPES = {
+    "difference_in_proportions": (
+        "The estimand is a difference between two or more group proportions or rates."
+    ),
+    "difference_in_means": "The estimand is a difference between two or more group means.",
+    "regression_coefficient": "The estimand is a coefficient from a fitted regression model.",
+    "ratio_of_means": (
+        "The estimand is a ratio of two quantities each estimated from the same units, "
+        "such as a per-user revenue rate or any metric whose numerator and denominator "
+        "are both random."
+    ),
+}
+
+# Dependence structure -> admissible variance-adjustment method family (D-04, REQ-P7-04).
+# Every method named below is drawn verbatim from VARIANCE_ADJUSTMENTS above — M-09
+# forbids inventing a parallel vocabulary. "none" has no entry: a declared independence
+# is the nothing-to-validate case, and the consuming check in plan 07-05 must handle it
+# before indexing this map. delta_method appears in no entry — it addresses
+# transformed-parameter variance, not correlated observations, so admitting it anywhere
+# here would let a spec satisfy a dependence declaration with a method that does not
+# address dependence.
+#
+# Citation: Cameron, A.C. and Miller, D.L. (2015), "A Practitioner's Guide to
+# Cluster-Robust Inference", Journal of Human Resources 50(2):317-372 — covers the
+# `clustered` and `repeated_measures` pairings directly.
+# The same Cameron and Miller (2015) paper is cited for `temporal` and `spatial`; the
+# exact section locator inside that paper for those two structures is UNVERIFIED —
+# author, year, title, journal, volume, issue and page range were confirmed, the
+# section number was not.
+# Citation: Gelman, A. and Hill, J. (2007), Data Analysis Using Regression and
+# Multilevel/Hierarchical Models, Cambridge University Press — covers `hierarchical`.
+# The exact chapter locator inside it is UNVERIFIED, for the same reason as above.
+# Conley, T.G. (1999) was considered as a second source for the `spatial` pairing and
+# deliberately NOT cited: only training-knowledge attribution was available for it, and
+# this project does not ship a citation it has not confirmed.
+DEPENDENCE_ADMISSIBLE_METHODS: "dict[str, frozenset[str]]" = {
+    "clustered": frozenset({"cluster_robust", "bootstrap_cluster", "mixed_effects"}),
+    "repeated_measures": frozenset({"mixed_effects", "cluster_robust"}),
+    "temporal": frozenset({"cluster_robust", "bootstrap_cluster", "mixed_effects"}),
+    "spatial": frozenset({"cluster_robust", "bootstrap_cluster", "mixed_effects"}),
+    "hierarchical": frozenset({"mixed_effects", "cluster_robust"}),
+}
+
 INTERFERENCE_RISKS = {
     "none": "Treatment of one unit does not plausibly affect another unit's outcome.",
     "shared_budget": (
@@ -229,6 +449,42 @@ MISSINGNESS_MECHANISMS = {
     "not_assessed": "The missingness mechanism has not been evaluated.",
 }
 
+# The closed vocabulary the missingness.method_implied sub-field may hold (D-04,
+# REQ-P11.3-03). Exactly seven locked members — do not shrink. multiple_imputation
+# must stay (the good fixture declares it) and single_imputation must stay (else the
+# DSX-VAL-060 CRITICAL block path in dsx/frame/val.py is unreachable). An unrecognised
+# method is a decidable error (DSX-SPEC-082 HIGH via the _VALIDITY_FRAME_MEMBERSHIP
+# loop), never a silent no-op. Whether a recognised method is LICENSED under the
+# declared mechanism is a separate, content-layer judgment (dsx/frame/val.py's
+# DSX-VAL-060) — this vocabulary only decides recognition, not licensing.
+MISSINGNESS_METHODS = {
+    "multiple_imputation": (
+        "Missing values are imputed multiple times and the between-imputation "
+        "variance is propagated into the standard errors (Rubin's rules)."
+    ),
+    "single_imputation": (
+        "Each missing value is filled once and thereafter treated as if observed, "
+        "which drops the missing-data variance component and understates uncertainty."
+    ),
+    "complete_case": "Only units with no missing values in the analysis are used.",
+    "available_case": (
+        "Each estimate uses whichever units have the values that estimate needs, "
+        "so the effective sample differs across estimates."
+    ),
+    "mechanism_model": (
+        "The missingness mechanism itself is modelled explicitly (e.g. a shared-parameter "
+        "or joint model of the outcome and the missingness process)."
+    ),
+    "selection_model": (
+        "Missingness is modelled as a selection process conditional on the (possibly "
+        "unobserved) outcome."
+    ),
+    "pattern_mixture_model": (
+        "The distribution is modelled separately within each missingness pattern and "
+        "then mixed over the patterns."
+    ),
+}
+
 ANALYSIS_POPULATIONS = {
     "eligible": "The population that met eligibility criteria, regardless of subsequent engagement.",
     "triggered": "The subset of the eligible population that actually triggered the analyzed event.",
@@ -240,6 +496,25 @@ DECLARATION_POINTS = {
         "The inference plan was declared after the data was observed — an unverifiable "
         "operator self-declaration (Phase 10 REQ-P10-02 documents this limit)."
     ),
+}
+
+# The closed namespace the fallback_rule mini-language (dsx/frame/prereg.py, Phase 10,
+# REQ-P10-01) may reference. (a) This is deliberately closed: a rule naming a fact
+# outside this dict is a decidable error (DSX-PRE-010), never a silent no-op (D-04).
+# (b) It coins no new contract field — every value is a dotted path to a field that
+# already exists and is already read by a shipped check: results.comparisons_looked_at
+# is read by dsx/checks/design.py::_check_exploratory_looks; results.interim_looks and
+# design.alpha are read by dsx/checks/design.py::_check_peeking. (Stable function-name
+# references, not line numbers, so this comment cannot drift on the next design.py edit —
+# D-03.) (c) results.observed_n is deliberately excluded — it is a list of per-arm
+# counts, not a scalar, and no Phase 10 requirement needs list-to-scalar semantics.
+# (d) brief.md's own worked example names a fact, `clusters`, that has never existed in
+# any spec in this repository — the brief binds structurally (fact -> number -> compare),
+# not at the token level.
+PREREG_FACTS: "dict[str, str]" = {
+    "alpha": "design.alpha",
+    "comparisons_looked_at": "results.comparisons_looked_at",
+    "interim_looks": "results.interim_looks",
 }
 
 PARADIGMS = {
@@ -266,9 +541,10 @@ PARADIGM_JUSTIFICATIONS = {
 
 # Single registry behind describe_vocabulary() (D-05, REQ-P6-06): the object each shape
 # validator imports is the exact object dumped here — one place to add a vocabulary, not two.
-# Deliberately excludes SPEC_VERSION, CAUSAL_VERBS, REQUIRED_TOP_LEVEL and
-# IMBALANCE_UNSAFE_METRICS — they are not vocabularies. chart_capabilities stays
-# special-cased in describe_vocabulary() below, exactly as before.
+# Deliberately excludes SPEC_VERSION, CAUSAL_VERBS, REQUIRED_TOP_LEVEL,
+# IMBALANCE_UNSAFE_METRICS, DEPENDENCE_ADMISSIBLE_METHODS and FALSIFIER_DISCRIMINATORS —
+# they are not vocabularies. chart_capabilities stays special-cased in
+# describe_vocabulary() below, exactly as before.
 _VOCABULARIES: "list[tuple[str, Any]]" = [
     ("question_types", QUESTION_TYPES),
     ("design_kinds", DESIGN_KINDS),
@@ -287,6 +563,7 @@ _VOCABULARIES: "list[tuple[str, Any]]" = [
     ("identification_strengths", IDENTIFICATION_STRENGTHS),
     ("constraint_sources", CONSTRAINT_SOURCES),
     ("dependence_structures", DEPENDENCE_STRUCTURES),
+    ("estimand_types", ESTIMAND_TYPES),
     ("interference_risks", INTERFERENCE_RISKS),
     ("interference_mitigations", INTERFERENCE_MITIGATIONS),
     ("missingness_mechanisms", MISSINGNESS_MECHANISMS),
@@ -333,6 +610,21 @@ def is_blank(value: Any) -> bool:
     return False
 
 
+def is_blank_text(value: Any) -> bool:
+    """Return True unless ``value`` is a string carrying non-whitespace text.
+
+    Deliberately not ``is_blank``'s general semantics: this is the predicate
+    for free-text declarations whose entire declared content is the text an
+    operator wrote — a bare number or boolean carries no declared content, so
+    every non-string type reads as blank here, even though ``is_blank`` itself
+    reads a declared ``0`` or ``False`` as present. ``is_blank`` is read by
+    138 call sites where a declared ``0`` or ``False`` is meaningful data, so
+    the tightening lives in this separate helper rather than in ``is_blank``.
+    ``references/paradigm-symmetry.md`` is the contract this predicate serves.
+    """
+    return not isinstance(value, str) or is_blank(value)
+
+
 def as_number(value: Any) -> "float | None":
     if isinstance(value, bool):
         return None
@@ -350,6 +642,139 @@ def as_number(value: Any) -> "float | None":
 
 def normalize(value: Any) -> str:
     return str(value).strip().lower().replace("-", "_").replace(" ", "_")
+
+
+# ── Falsifier lexicon helpers (D-05, REQ-P7-01) ─────────────────────────────
+
+# Whole-value equality after normalize(), never substring containment — that is what
+# keeps "none identified" (the good fixture's sampling_frame.selection_risk value, a
+# different field entirely) out of this set even though it starts with "none".
+_FALSIFIER_REFUSALS = frozenset(
+    {"n/a", "na", "tbd", "tba", "none", "unknown", "not assessed", "to be determined"}
+)
+
+# A whole value that opens with '<' and closes with '>' with no intervening '>' — the
+# angle-bracket placeholder shape every template ships (e.g. "<the observation that
+# would prove this wrong>"). Not multiline, not anchored on a line end, so the CRLF
+# checkout cannot change the result.
+_PLACEHOLDER_RE = re.compile(r"^<[^>]*>$")
+
+# Re-homed from the numeric-token idiom at dsx/checks/claims.py:340-375 (the pattern is
+# copied, not the import — D-03a forbids importing dsx.checks from dsx.spec). Bounded,
+# non-nested quantifiers only: a nested quantifier here would expose the gate to a
+# denial-of-service through catastrophic backtracking on adversarial free text
+# (threat T-7-03).
+_FALSIFIER_NUMBER_RE = re.compile(r"\d+(?:\.\d+)?\s*(?:%|pp)?")
+
+
+def is_placeholder_or_refusal(value: Any) -> bool:
+    """True when ``value`` is blank, an angle-bracket placeholder, or a refusal token.
+
+    Layered beside ``is_blank()``, never a replacement for it — ``is_blank()`` stays
+    unchanged because placeholder text still counts as present for the sampling-frame
+    and measurement checks (plan 07-06), which must treat placeholder text as present
+    so the template does not trip them.
+    """
+    if is_blank(value):
+        return True
+    if isinstance(value, str) and _PLACEHOLDER_RE.match(value.strip()):
+        return True
+    return normalize(value) in _FALSIFIER_REFUSALS
+
+
+def falsifier_is_discriminating(value: Any) -> bool:
+    """True when ``value`` names a concrete, checkable observation that would prove an
+    estimand wrong — carries a comparison predicate (`FALSIFIER_DISCRIMINATORS`) or a
+    numeric threshold, and is neither blank, a placeholder, nor a refusal token.
+    """
+    if is_placeholder_or_refusal(value):
+        return False
+    text = str(value).lower()
+    if any(token in text for token in FALSIFIER_DISCRIMINATORS):
+        return True
+    return bool(_FALSIFIER_NUMBER_RE.search(str(value)))
+
+
+# A bare number-of-units duration ("30 days", "8 weeks", "next quarter" is handled by
+# the recurring-token set below since it carries no digit). Bounded, non-nested
+# quantifiers only (mirrors _FALSIFIER_NUMBER_RE above, threat T-11.2-08 / T-7-03):
+# no `.*` chains.
+_WINDOW_DURATION_RE = re.compile(
+    r"\b\d+\s*(?:day|days|week|weeks|month|months|quarter|quarters|year|years)\b"
+)
+
+# A date/deadline: an ISO calendar date (2026-07-15) or a fiscal-quarter date
+# (2026-Q4 / 2026-q4). Bounded, non-nested quantifiers only.
+_WINDOW_DATE_RE = re.compile(r"\b\d{4}-(?:\d{2}-\d{2}|q[1-4])\b", re.IGNORECASE)
+
+# Named recurring checkpoints that anchor a re-visit in time without carrying a
+# digit (e.g. "at the next quarterly review"). Substring match, same idiom as
+# FALSIFIER_DISCRIMINATORS above — not a regex, so no backtracking surface at all.
+_WINDOW_RECURRING_TOKENS = (
+    "quarterly review", "annual review", "monthly review", "weekly review",
+    "next review", "review cycle",
+)
+
+
+def _has_window_token(text: str) -> bool:
+    """True when ``text`` carries a time anchor: a duration ("8 weeks"), a
+    date/deadline (an ISO date or a fiscal-quarter date like "2026-Q4"), or a named
+    recurring checkpoint ("quarterly review"). Bounded, non-nested quantifiers only
+    (mirrors ``_FALSIFIER_NUMBER_RE``, threat T-11.2-08 / T-7-03) — no `.*` chains.
+    """
+    lowered = str(text).lower()
+    if _WINDOW_DURATION_RE.search(lowered):
+        return True
+    if _WINDOW_DATE_RE.search(lowered):
+        return True
+    return any(token in lowered for token in _WINDOW_RECURRING_TOKENS)
+
+
+def _strip_window_tokens(text: str) -> str:
+    """Remove every time-anchor span from ``text``: the duration and
+    date/deadline regexes and the recurring-checkpoint substrings, using the
+    exact same patterns ``_has_window_token`` recognises so detection and
+    stripping cannot diverge.
+
+    Used only by ``revisit_when_is_discriminating`` so the discriminating
+    metric/threshold test runs on what is LEFT once the time anchor is removed.
+    Without it the anchor's own digits (the year "2026", the duration count
+    "30") satisfy ``falsifier_is_discriminating``'s numeric branch, and a bare
+    "revisit at the 2026-Q4 review" clears a check whose contract demands a
+    named metric AND a threshold AND a time anchor as three separate things
+    (WR-02, 11.2 code review, §4 persona round).
+    """
+    lowered = str(text).lower()
+    lowered = _WINDOW_DURATION_RE.sub(" ", lowered)
+    lowered = _WINDOW_DATE_RE.sub(" ", lowered)
+    for token in _WINDOW_RECURRING_TOKENS:
+        lowered = lowered.replace(token, " ")
+    return lowered
+
+
+def revisit_when_is_discriminating(value: Any) -> bool:
+    """True when ``value`` carries a time anchor — a duration, date/deadline, or
+    time-anchored recurring event — AND names a discriminating condition (a
+    comparison predicate or numeric threshold) in the text that REMAINS once the
+    time anchor is stripped out.
+
+    A NEW sibling, not an extension of ``falsifier_is_discriminating`` itself: its two
+    estimand callers (val.py:236, val.py:637) validate a logical falsifier with no
+    time anchor, and the ``good`` fixture's estimand falsifier (good-ANALYSIS-SPEC.yaml,
+    the ``validity_frame.estimand.falsifier`` field) carries none — extending the
+    shared predicate would regress DSX-VAL-011 on that fixture (D-07, RESEARCH
+    landmine b). ``falsifier_is_discriminating`` is called unchanged, never mutated;
+    the residual test lives here so the estimand path is provably untouched.
+
+    Known limit (WR-02): a threshold expressed in the same lexical shape as a
+    window — e.g. an SLA "within 30 days" as the metric itself — is stripped
+    with the anchor and reads as non-discriminating. This is genuinely ambiguous
+    ("revisit in 30 days" is indistinguishable) and does not occur in the corpus;
+    DSX-COH-040's remedy models the discriminating form with a comparison word.
+    """
+    return _has_window_token(str(value)) and falsifier_is_discriminating(
+        _strip_window_tokens(value)
+    )
 
 
 # ── Structural validation ────────────────────────────────────────────────────
@@ -688,7 +1113,10 @@ def _validate_claims_shape(spec: dict, report: Report) -> None:
                 "HIGH",
                 f"Claim {index} has no type",
                 detail="Allowed: " + ", ".join(sorted(CLAIM_TYPES)),
-                remedy="Label every claim descriptive, association, predictive or causal.",
+                remedy=(
+                    "Label every claim descriptive, association, predictive, "
+                    "causal or prescriptive."
+                ),
                 where=where,
             )
         elif ctype not in CLAIM_TYPES:
@@ -697,7 +1125,10 @@ def _validate_claims_shape(spec: dict, report: Report) -> None:
                 "HIGH",
                 f"Claim {index} has unrecognised type {claim.get('type')!r}",
                 detail="Allowed: " + ", ".join(sorted(CLAIM_TYPES)),
-                remedy="Use one of the four claim types.",
+                remedy=(
+                    "Use one of the five claim types: descriptive, association, "
+                    "predictive, causal or prescriptive."
+                ),
                 where=where,
             )
     report.ok(f"{len(claims)} claim(s) declared")
@@ -715,8 +1146,13 @@ _VALIDITY_FRAME_ALWAYS_REQUIRED = (
 _VALIDITY_FRAME_CAUSAL_REQUIRED = ("identification", "interference", "triggering", "stability")
 
 # (sub-block, sub-field, closed vocabulary). `dependence.method_family_required` reuses
-# VARIANCE_ADJUSTMENTS verbatim (M-09) — no parallel set is defined for it.
+# VARIANCE_ADJUSTMENTS verbatim (M-09) — no parallel set is defined for it. The
+# `estimand.type` row (Phase 11, REQ-P11-01/04) is the adjudication axis the
+# frequentist admissibility adjudicator (dsx/frame/admissibility.py) keys on; it is
+# deliberately optional — the membership loop below `continue`s on a blank value
+# before testing membership, so omitting it produces no finding.
 _VALIDITY_FRAME_MEMBERSHIP: "tuple[tuple[str, str, Any], ...]" = (
+    ("estimand", "type", ESTIMAND_TYPES),
     ("identification", "strength", IDENTIFICATION_STRENGTHS),
     ("identification", "constraint_source", CONSTRAINT_SOURCES),
     ("dependence", "structure", DEPENDENCE_STRUCTURES),
@@ -725,7 +1161,27 @@ _VALIDITY_FRAME_MEMBERSHIP: "tuple[tuple[str, str, Any], ...]" = (
     ("interference", "mitigation", INTERFERENCE_MITIGATIONS),
     ("triggering", "analysis_population", ANALYSIS_POPULATIONS),
     ("missingness", "mechanism", MISSINGNESS_MECHANISMS),
+    ("missingness", "method_implied", MISSINGNESS_METHODS),
 )
+
+
+def needs_causal_block(spec: dict) -> bool:
+    """The single condition deciding whether the causal ``validity_frame`` sub-blocks
+    (identification, interference, triggering, stability) apply — shared by the shape
+    validator and the frame checks so the two can never disagree (D-16)."""
+    return (
+        normalize(spec.get("question_type", "")) in ("causal", "prescriptive")
+        or normalize(get(spec, "design.kind", "")) == "experiment"
+    )
+
+
+# The closed key set for the validity_frame.exclusions sub-block (DSX-SPEC-083,
+# REQ-P11.3-04). Born strict on exclusions ONLY: a declared row-exclusion rule
+# carries exactly these four keys and nothing else, so a data-dependent row count
+# (n_excluded) cannot be smuggled into a content-locked frame. This strictness is
+# deliberately NOT retrofitted to the legacy tolerant validity_frame/inference
+# blocks below (D-09) — those still parse unknown keys silently.
+_EXCLUSIONS_ALLOWED_KEYS = {"rule", "action", "applied_before_split", "justification"}
 
 
 def _validate_validity_frame_shape(spec: dict, report: Report) -> None:
@@ -755,12 +1211,8 @@ def _validate_validity_frame_shape(spec: dict, report: Report) -> None:
     from .decisions import DecisionRecord
 
     frame = spec.get("validity_frame")
-    needs_causal_block = (
-        normalize(spec.get("question_type", "")) in ("causal", "prescriptive")
-        or normalize(get(spec, "design.kind", "")) == "experiment"
-    )
     required = list(_VALIDITY_FRAME_ALWAYS_REQUIRED) + (
-        list(_VALIDITY_FRAME_CAUSAL_REQUIRED) if needs_causal_block else []
+        list(_VALIDITY_FRAME_CAUSAL_REQUIRED) if needs_causal_block(spec) else []
     )
 
     report.context.setdefault("decisions", []).append(
@@ -834,24 +1286,77 @@ def _validate_validity_frame_shape(spec: dict, report: Report) -> None:
                 where=f"spec.validity_frame.{block_name}.{field_name}",
             )
 
+    # DSX-SPEC-083 (REQ-P11.3-04): the exclusions sub-block is closed-key. Scoped
+    # to frame.get("exclusions") ONLY — the membership loop above deliberately
+    # tolerates unknown keys in every other sub-block (and the inference block
+    # tolerates them too), and this guard does NOT widen that tolerance (D-09). The
+    # sub-block is accepted as either a single rule-dict or a list of rule-dicts;
+    # each entry's keys must fall inside _EXCLUSIONS_ALLOWED_KEYS so a data-dependent
+    # row count cannot be registered in a content-locked frame. A non-dict/list
+    # value is left to the content check's presence guard (T-11.3-10).
+    exclusions = frame.get("exclusions")
+    if isinstance(exclusions, (dict, list)):
+        entries = exclusions if isinstance(exclusions, list) else [exclusions]
+        for entry in entries:
+            if not isinstance(entry, dict):
+                continue
+            unexpected = set(entry.keys()) - _EXCLUSIONS_ALLOWED_KEYS
+            if not unexpected:
+                continue
+            report.add(
+                "DSX-SPEC-083",
+                "HIGH",
+                "unexpected key in the closed exclusions sub-block",
+                detail=(
+                    "validity_frame.exclusions carries key(s) outside the closed set "
+                    f"{sorted(_EXCLUSIONS_ALLOWED_KEYS)}: {sorted(unexpected)}. A "
+                    "data-dependent row count (e.g. n_excluded) has no place in the frame."
+                ),
+                remedy=(
+                    "Remove the unexpected key(s). Row counts belong in results/ or the "
+                    "data profile, not in validity_frame — the frame is content-locked at "
+                    "plan time, and a count that moves with the data would silently change "
+                    "the frame digest."
+                ),
+                where="spec.validity_frame.exclusions",
+            )
 
-# The six REQ-P6-04 field names — a machine-readable manifest pinning that requirement's
-# declared field list against drift. Its one consumer is the drift-guard test
-# tests/test_dsx.py::test_inference_fields_constant_matches_req_p6_04; the finding
-# catalogue does not read it.
+
+# The nine inference: field names this contract recognises, split across two
+# requirements. A machine-readable manifest pinning the declared field list against
+# drift; its one consumer is the drift-guard test
+# tests/test_dsx.py::test_inference_fields_constant_matches_req_p6_04, plus
+# describe_vocabulary()'s inference_fields key below.
+#
+# The first six are the REQ-P6-04 manifest. The last three —
+# threshold_calibration, prior_justification, decision_threshold — are REQ-P9's
+# monitoring-discipline clearing declarations (D-05): threshold_calibration and
+# prior_justification are DSX-PAR-011's disjunctive clearing pair (alongside
+# alpha_spending), and threshold_calibration alone is also DSX-PAR-010's
+# alternative to alpha_spending. decision_threshold is recorded and never parsed
+# by any check (T-9-01) — it exists so an operator's stated posterior-probability
+# decision rule (e.g. P(B>A) > 0.95) is on record next to the fields that gate on
+# it. All three new fields are deliberately free-text scalars, not a
+# {method:, sims:, fpr:} sub-dict: giving every clearing declaration on both
+# paradigms the same shape is what makes the brief-D-12 cost-symmetry argument
+# mechanically provable by one shared text-only blank-check predicate
+# (is_blank_text) instead of by inspection (references/paradigm-symmetry.md).
 #
 # This tuple is not an enforced closed set: _validate_inference_shape vocabulary-checks
-# only three of these six fields (paradigm, paradigm_justification, declared_at, via
+# only three of these nine fields (paradigm, paradigm_justification, declared_at, via
 # _INFERENCE_MEMBERSHIP below) and rejects exactly one non-member field, the one named by
 # _INFERENCE_REMOVED_FIELD. An unrecognised or misspelled key under inference: — e.g.
 # `inference: {paradgim: bayesian}` — is accepted silently today; there is no unknown-key
-# check for this block.
+# check for this block. `dsx vocab`'s inference_fields key and this template's scaffold
+# are therefore the only two mechanisms by which an operator can discover or correct a
+# misspelled field name (D-05).
 #
 # M-02 removes `stopping_rule`: the stopping-rule concept lives in design.peeking_policy,
 # not here.
 _INFERENCE_FIELDS = (
     "paradigm", "paradigm_justification", "declared_at",
     "primary_procedure", "alpha_spending", "fallback_rule",
+    "threshold_calibration", "prior_justification", "decision_threshold",
 )
 
 _INFERENCE_MEMBERSHIP: "tuple[tuple[str, Any], ...]" = (
@@ -947,6 +1452,16 @@ def describe_vocabulary() -> "dict[str, Any]":
     Registry-driven (D-05): a dict-backed vocabulary dumps as a key-sorted dict of its
     descriptions; a set-backed vocabulary dumps as a sorted list. `chart_capabilities` stays
     special-cased — it is not a vocabulary, it is a capability matrix keyed by vocabulary.
+    `inference_fields` is a second special case (D-05, REQ-P9): the flat, sorted list of
+    every `inference:` field name this contract recognises, not a vocabulary of values. It
+    exists because there is no unknown-key check under `inference:` — `dsx vocab` and the
+    template scaffold are the only two mechanisms by which an operator can discover or
+    correct a misspelled field name. `prereg_facts` is a third special case (Phase 10,
+    REQ-P10-01): the closed namespace of short fact names the `fallback_rule`
+    mini-language may reference, mapped to the dotted spec path each one reads — a
+    namespace of field *names*, not a vocabulary of values, and one of the two ways an
+    operator can discover a fact name the mini-language will accept (the other is
+    reading `PREREG_FACTS` itself, imported by `dsx/frame/prereg.py`).
     """
     out: "dict[str, Any]" = {}
     for name, obj in _VOCABULARIES:
@@ -954,4 +1469,6 @@ def describe_vocabulary() -> "dict[str, Any]":
     out["chart_capabilities"] = {
         key: sorted(values) for key, values in sorted(CHART_CAPABILITIES.items())
     }
+    out["inference_fields"] = sorted(_INFERENCE_FIELDS)
+    out["prereg_facts"] = {k: PREREG_FACTS[k] for k in sorted(PREREG_FACTS)}
     return out

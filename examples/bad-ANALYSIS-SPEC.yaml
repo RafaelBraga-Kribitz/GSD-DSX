@@ -8,6 +8,7 @@ spec_version: 1
 title: "Why is churn up?"
 owner: "someone"
 created: "2026-06-01"
+spec_id: "bad-churn-investigation"  # REQ-P11.2-05, D-08: top-level only.
 
 question_type: causal          # causal question, observational data, no strategy
 
@@ -16,6 +17,7 @@ decision:
   action_if_null: "TBD"          # placeholder — reframes nulls
   # decision_rule missing      -> any result can be rationalised after the fact
   # minimum_practical_effect missing while kind=experiment below → DSX-COH-020
+  revisit_when: "churn_rate above 5% for 8 weeks"  # not this fixture's target defect
   replay:
     metric: churn_rate
     ci_lower_min: 0.05            # CI missing / thresholds fail → DEC-020
@@ -205,6 +207,7 @@ assumptions:
 validity_frame:
   estimand:
     quantity: "change in churn rate"
+    type: difference_in_proportions
     population: "all customers"
     contrast: "before vs after some change"       # vague — no declared treatment
     time_window: "one quarter"
@@ -224,7 +227,7 @@ validity_frame:
   interference:
     risk: shared_budget         # both segments draw from one acquisition budget
     mechanism: "shared acquisition budget across the compared segments"
-    mitigation: none            # risk declared, no mitigation applied
+    mitigation: none            # risk declared, no mitigation applied → DSX-INT-010
     residual_note: ""
 
   # dependence, sampling_frame, missingness, measurement omitted entirely

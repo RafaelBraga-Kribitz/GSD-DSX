@@ -1,23 +1,25 @@
 # A known-bad ANALYSIS-SPEC (REQ-P6-13, D-06). This file is structurally valid —
-# it parses, and it accepts dsx validate and both CRITICAL-threshold gate points,
-# dsx gate plan and dsx gate execute (both exit 0) — but it encodes a real,
-# documented interference failure: a declared shared-budget interference risk with
-# no mitigation and no residual note. It currently also blocks dsx gate verify and
-# dsx gate ship (both exit 1), on five unrelated corpus-completeness gaps —
-# DSX-CLM-031 (evidence pointer does not resolve), DSX-COH-031 (an unchecked,
-# unwaived assumption), DSX-MET-040 (a warehouse-like metric with no sql),
-# DSX-NAR-001 (no narrative.path) and DSX-REP-030 (no reproducibility.entrypoint)
-# — none of which is the interference defect this fixture exists to encode; see
-# tests/test_known_bad_corpus.py's _INCIDENTAL_GAP_CODES for the full measured
-# list. Phase 8's DSX-INT-010 is the code that will block the interference
-# pattern itself once it ships; nothing in this repository adjudicates it
-# today, which is correct — Phase 6 checks shape, not semantics. See the
-# paired POSTMORTEM.md.
+# it parses and accepts dsx validate — and encodes a real, documented interference
+# failure: a declared shared-budget interference risk with no mitigation and no
+# residual note. Phase 8's DSX-INT-010 (dsx/frame/interference.py) is the code that
+# catches this pattern: it now blocks dsx gate plan with exit 1, naming DSX-INT-010.
+# It still clears dsx gate execute with exit 0, because the "interference" check is
+# deliberately absent from that gate profile (dsx/cli.py::GATE_PROFILES, D-03). It
+# also blocks dsx gate verify and dsx gate ship (both exit 1), on five unrelated
+# corpus-completeness gaps — DSX-CLM-031 (evidence pointer does not resolve),
+# DSX-COH-031 (an unchecked, unwaived assumption), DSX-MET-040 (a warehouse-like
+# metric with no sql), DSX-NAR-001 (no narrative.path) and DSX-REP-030 (no
+# reproducibility.entrypoint) — none of which is the interference defect this
+# fixture exists to encode; see tests/test_known_bad_corpus.py's
+# _INCIDENTAL_GAP_CODES for the full measured list. DSX-INT-010 is this fixture's
+# own target defect, recorded in tests/test_known_bad_corpus.py's
+# _TARGET_DEFECT_CODES map. See the paired POSTMORTEM.md.
 #
 #   dsx validate --spec examples/known-bad/interference-shared-budget-ANALYSIS-SPEC.yaml
 
 spec_version: 1
 title: "Does raising bid caps for the high-intent audience raise signups, when treatment and control draw from one shared daily ad budget?"
+spec_id: "interference-shared-budget"  # REQ-P11.2-05, D-08: top-level only.
 owner: "growth-marketing"
 created: "2026-04-01"
 
@@ -33,6 +35,7 @@ decision:
   minimum_practical_effect: 0.005
   reversible: true
   deadline: "2026-05-01"
+  revisit_when: "signup_rate lift below +0.5pp at the 2026-Q2 review"
 
 metrics:
   - name: signup_rate
@@ -99,11 +102,19 @@ limitations:
 # question_type: causal + design.kind: experiment, so all ten sub-blocks are
 # required from plan onward (R-01 / M-06). The defect: interference.risk is
 # declared as shared_budget with mitigation: none and an empty residual_note —
-# a declared, unaddressed interference risk. DSX-INT-010 (Phase 8) is the code
-# that will block this once it ships.
+# a declared, unaddressed interference risk. DSX-INT-010 (Phase 8,
+# dsx/frame/interference.py) is the code that blocks this at dsx gate plan.
+#
+# units.observation (impression) is finer than units.assignment (user), which
+# is a real, honestly-declared clustered dependence — impressions nest inside
+# users — so dependence.structure is clustered, cluster_var is user, and
+# method_family_required is cluster_robust (Phase 7 D-14). That combination
+# is exactly DSX-VAL-020's non-firing case: this fixture blocks on its own
+# encoded interference defect, not on pseudo-replication.
 validity_frame:
   estimand:
     quantity: "difference in 24-hour signup rate among ad-exposed users"
+    type: difference_in_proportions
     population: "users exposed to acquisition ads, 2026-04-01 to 2026-04-14"
     contrast: "raised bid caps (treatment) vs current bid caps (control)"
     time_window: "24 hours from first impression"
@@ -121,9 +132,9 @@ validity_frame:
     constraint_justification: ""
 
   dependence:
-    structure: none                # none | clustered | repeated_measures | temporal | spatial | hierarchical
-    cluster_var: ""
-    method_family_required: ""
+    structure: clustered           # none | clustered | repeated_measures | temporal | spatial | hierarchical
+    cluster_var: user
+    method_family_required: cluster_robust
 
   interference:
     risk: shared_budget            # none | shared_budget | marketplace | geo_spillover | social_graph | shared_inventory
@@ -146,8 +157,8 @@ validity_frame:
 
   stability:
     window: "14 days"
-    novelty_primacy_assessed: false
-    evidence: ""
+    novelty_primacy_assessed: true
+    evidence: "RESULTS.md#signup-rate-uplift-by-week"
 
   sampling_frame:
     source: "warehouse.fct_ad_exposures, all geos"

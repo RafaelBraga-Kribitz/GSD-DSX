@@ -31,14 +31,15 @@ residual interference note was recorded.
 ## Source
 
 Kohavi, R., Tang, D. & Xu, Y. (2020), *Trustworthy Online Controlled
-Experiments: A Practical Guide to A/B Testing*, Cambridge University Press —
-the book documents shared-resource interference (including shared
+Experiments: A Practical Guide to A/B Testing*, Cambridge University Press,
+Chapter 22 ("Leakage and Interference between Variants") — the chapter
+documents shared-resource interference (including shared
 advertising/marketing budgets) as a recurring, catastrophic threat to
-experiment trustworthiness and names it explicitly in the reference list
-this project anchors D-05 citations to (brief.md section 7). **The exact
-chapter number for this specific pattern could not be verified against the
-source text at authoring time and is flagged for human confirmation rather
-than invented** (per this plan's explicit instruction).
+experiment trustworthiness, and the book is named explicitly in the reference
+list this project anchors D-05 citations to (brief.md section 7). The chapter
+locator was confirmed against the published table of contents during Phase 6
+human verification; the authoring pass correctly declined to invent it rather
+than guessing.
 
 Imbens, G.W. & Rubin, D.B. (2015), *Causal Inference for Statistics, Social,
 and Biomedical Sciences*, Cambridge University Press, Chapter 1, Section 1.6
@@ -51,18 +52,20 @@ other's observed outcome.
 Vendor blogs, Medium posts and tool marketing are inadmissible under D-05 in
 either direction — neither cited source is one.
 
-## Which absent code would have caught it
+## Which code catches it
 
-`DSX-INT-010` (Phase 8) — no code in this codebase adjudicates
-`validity_frame.interference` today; Phase 6 only checks that the block is
-present and its fields are legal vocabulary members (`dsx/spec.py`'s
-`_validate_validity_frame_shape`), so nothing in this repository names the
-shared-budget interference defect today: the fixture clears `dsx validate`
-and both CRITICAL-threshold gate points, `dsx gate plan` and `dsx gate
-execute`, with no finding attributable to that defect. The fixture does
-block at `dsx gate verify` and `dsx gate ship` (both exit 1), on the
-corpus-completeness gaps named in the paired ANALYSIS-SPEC.yaml header —
-tracked as a corpus completeness gap, not as the documented interference
-defect. Phase 8 is scoped to block a declared `interference.risk` other than
-`none` when `interference.mitigation` is `none` and `residual_note` is
-blank — precisely the combination this fixture declares.
+`DSX-INT-010` (Phase 8, `dsx/frame/interference.py`) catches this pattern: it
+fires when `validity_frame.interference.risk` is a declared, recognised risk
+other than `none`, `interference.mitigation` is `none` or absent, and
+`interference.residual_note` is blank, a placeholder, or a refusal token —
+precisely the combination this fixture declares. `dsx gate plan` blocks with
+exit `1`, naming `DSX-INT-010`, because CRITICAL findings block from `plan`
+onward (`dsx/cli.py::GATE_THRESHOLDS`). `dsx gate execute` still clears with
+exit `0`: the `interference` check is deliberately absent from that gate
+profile (`dsx/cli.py::GATE_PROFILES`, D-03), so a fixture whose only defect
+is an unaddressed interference risk is not re-blocked a second time at
+`execute`. The fixture also blocks at `dsx gate verify` and `dsx gate ship`
+(both exit `1`), on the corpus-completeness gaps named in the paired
+ANALYSIS-SPEC.yaml header — tracked as corpus-completeness gaps, not as the
+documented interference defect. This target-defect mapping is recorded in
+`tests/test_known_bad_corpus.py`'s `_TARGET_DEFECT_CODES`.

@@ -6,6 +6,8 @@ spec_version: 1
 title: "Does the onboarding checklist raise 7-day activation?"
 owner: "r.braga"
 created: "2026-06-01"
+spec_id: "good-onboarding-activation"  # REQ-P11.2-05, D-08: top-level only, never inside
+                                        # validity_frame:/inference:, so frame_digest is unchanged.
 
 question_type: causal
 
@@ -19,6 +21,7 @@ decision:
   minimum_practical_effect: 0.02
   reversible: true
   deadline: "2026-07-15"
+  revisit_when: "activation_rate 95% CI lower bound below +1.0pp at the 2026-Q4 review"
   replay:
     metric: activation_rate
     ci_lower_min: 0.01
@@ -296,6 +299,7 @@ limitations:
 validity_frame:
   estimand:
     quantity: "difference in 7-day activation rate"
+    type: difference_in_proportions
     population: "new non-bot signups, 2026-06-01 to 2026-06-14"
     contrast: "onboarding checklist vs current onboarding"
     time_window: "7 days from signup"
@@ -344,7 +348,7 @@ validity_frame:
   missingness:
     mechanism: MAR                 # MCAR | MAR | MNAR | not_assessed
     rate: 0.0
-    method_implied: complete_case
+    method_implied: multiple_imputation
 
   measurement:
     construct: "activation"

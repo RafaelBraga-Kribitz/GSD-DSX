@@ -17,10 +17,11 @@ import argparse
 import json
 import sys
 from pathlib import Path
-from typing import Callable
+from typing import Any, Callable
 
 from . import __version__
 from .checks import (
+    chart_review,
     claims,
     code,
     coherence,
@@ -47,7 +48,7 @@ from .decisions import (
     read_all,
 )
 from .findings import EXIT_ERROR, CheckError, Report, Severity, emit, merge
-from .frame import paradigm
+from .frame import admissibility, interference, paradigm, prereg, val
 from .loader import SpecParseError, load
 from .spec import describe_vocabulary, validate_structure
 from .suppressions import apply_suppressions
@@ -76,6 +77,11 @@ CHECKS: dict[str, Callable] = {
     "code": code.check,
     "decision": decision.check,
     "paradigm": paradigm.check,
+    "val": val.check,
+    "interference": interference.check,
+    "prereg": prereg.check,
+    "admissibility": admissibility.check,
+    "chart_review": chart_review.check,
 }
 
 # Which checks each GSD loop point cares about. Keeping this here rather than in
@@ -85,18 +91,42 @@ CHECKS: dict[str, Callable] = {
 # "paradigm" (DSX-PAR-001, informational, REQ-P6-09) is registered at all four
 # points, not just verify/ship: it must be visible wherever a gate runs, and
 # INFO severity means it structurally cannot flip any gate's exit code.
+#
+# "prereg" is the first family whose gate points differ from the rest of the
+# table: it is registered at verify and ship only, and absent from plan and
+# execute. There is no executed procedure to reconcile the declared branch
+# against until the run has happened, so plan and execute have nothing for
+# this family to check — registration is the knob that keeps it off those two
+# points. Severity (CRITICAL, dsx/frame/prereg.py) is a separate knob from
+# registration: registration decides *where* the family runs at all, severity
+# decides whether a fired finding blocks once it does.
+#
+# "admissibility" (DSX-ADM-*, dsx/frame/admissibility.py) is registered at
+# plan, verify and ship, and absent from execute. It is registered at plan
+# because an underdetermined frame — a blank estimand type or dependence
+# structure, or a declared procedure the ontology cannot resolve — is a
+# planning-time defect an analyst can fix before touching data; it is absent
+# from execute for the same reason "prereg" is: there is nothing about a run
+# in progress for it to adjudicate. Whether the family applies at all to a
+# given spec is a third, separate knob from registration and severity: it is
+# computed by dsx/frame/paradigm.py::applies_to_frequentist_admissibility and
+# passed into run_checks's dedicated "admissibility" branch below, never
+# decided inside the adjudicator itself (D-22).
 GATE_PROFILES: dict[str, tuple[str, ...]] = {
-    "plan": ("spec", "design", "metrics", "coherence", "paradigm"),
+    "plan": (
+        "spec", "design", "metrics", "coherence", "paradigm", "val",
+        "interference", "admissibility",
+    ),
     "execute": ("spec", "ml", "repro", "dq", "code", "paradigm"),
     "verify": (
         "spec", "design", "stats", "ml", "metrics", "claims", "viz", "repro",
         "dq", "coherence", "smells", "figures", "narrative", "code", "decision",
-        "paradigm",
+        "paradigm", "val", "interference", "prereg", "admissibility", "chart_review",
     ),
     "ship": (
         "spec", "design", "stats", "ml", "metrics", "claims", "viz", "repro",
         "dq", "coherence", "smells", "figures", "narrative", "code", "decision",
-        "paradigm",
+        "paradigm", "val", "interference", "prereg", "admissibility", "chart_review",
     ),
 }
 
@@ -139,16 +169,22 @@ def run_checks(
     *,
     gate_point: "str | None" = None,
     resolve_root: "str | None" = None,
+    gate_invocation: bool = False,
 ) -> Report:
     """Run named checks.
 
     ``phase_dir`` is the GSD phase directory (entrypoint existence checks).
     ``resolve_root`` is where relative evidence/profile paths resolve — defaults
     to ``phase_dir``, then cwd. Callers typically pass the spec's parent so
-    ``--spec examples/good-….yaml`` finds sibling artifacts.
+    ``--spec examples/good-….yaml`` finds sibling artifacts. ``gate_invocation``
+    is ``True`` only for a real ``dsx gate`` run — it is what tells a check the
+    decision trail is a live gate input, rather than a file the read-only
+    inspection commands (``validate``/``check``/``audit``) happen to have
+    access to.
     """
     reports: list[Report] = []
     strict = gate_point in {"verify", "ship"}
+    reconcile_trail = gate_invocation and gate_point in {"verify", "ship"}
     root = resolve_root or phase_dir
     for name in names:
         if name == "repro":
@@ -161,6 +197,8 @@ def run_checks(
             reports.append(coherence.check(spec, strict=strict))
         elif name == "figures":
             reports.append(figures.check(spec, root, strict=strict))
+        elif name == "chart_review":
+            reports.append(chart_review.check(spec, root, strict=strict))
         elif name == "smells":
             reports.append(smells.check(spec))
         elif name == "narrative":
@@ -171,6 +209,26 @@ def run_checks(
             reports.append(design.check(spec, strict=strict))
         elif name == "decision":
             reports.append(decision.check(spec, gate_point=gate_point))
+        elif name == "prereg":
+            reports.append(prereg.check(spec, root, reconcile_trail=reconcile_trail))
+        elif name == "admissibility":
+            # The frequentist-only scoping decision this check needs is
+            # forbidden to the adjudicator itself: dsx/frame/admissibility.py
+            # is scanned by the D-11 boundary test and must never read
+            # inference.paradigm. dsx/frame/paradigm.py is the one module
+            # that scanner exempts, so the boolean is computed here, on the
+            # one line that both may see, and handed in as a plain parameter
+            # — the same shape `strict` and `reconcile_trail` already take.
+            # Computed inside this branch rather than once outside the loop
+            # alongside those two, so the call is paid only when the check
+            # actually runs and its helper and consumer stay on adjacent
+            # lines for a reader.
+            reports.append(
+                admissibility.check(
+                    spec,
+                    applies_to_frame=paradigm.applies_to_frequentist_admissibility(spec),
+                )
+            )
         elif name in CHECKS:
             reports.append(CHECKS[name](spec))
         else:
@@ -261,6 +319,7 @@ def cmd_gate(args: argparse.Namespace) -> int:
         args.phase_dir,
         gate_point=point,
         resolve_root=root,
+        gate_invocation=True,
     )
     report.check = f"gate:{point}"
     report.context["spec_path"] = str(path)
@@ -282,9 +341,23 @@ def _write_decision_trail(
 
     Wrapped in ``try/except Exception`` and swallowed on failure: this is the
     mirror of D-04, ``dsx explain``'s side of the same rule. A trail that
-    cannot be written is a missing trail, not a failed gate — the write is a
-    side channel, never part of the block contract, so it can never change
-    ``point``'s exit code. Surfaced only under ``--verbose``.
+    cannot be written is a missing trail, not a failed gate — the *write*
+    path this function implements is a side channel, never part of the block
+    contract, so it can never itself change ``point``'s exit code. Surfaced
+    only under ``--verbose``.
+
+    From Phase 10 this invariant is scoped to the write path only, not to the
+    file as a whole: once a plan-time header has been written here, it
+    becomes a *read* input for ``prereg`` (``dsx/frame/prereg.py::
+    _check_content_lock``) at verify and ship, where a missing header stops
+    the run at exit 2 rather than passing it. The two statements are
+    compatible because they describe opposite directions of the same file —
+    writing here stays unconditional and inert; reading it, at the gate
+    points that opt in via ``gate_invocation``, is conditional and can block.
+    Leaving this docstring saying only the old, unqualified half after the
+    read side went live would produce a comment that contradicts the code's
+    own behaviour, which is exactly the class of drift this project's
+    honesty controls exist to catch.
 
     The guard is deliberately ``Exception``, not ``OSError``: the invariant
     this function documents is unconditional, so naming one exception class
@@ -307,6 +380,7 @@ def _write_decision_trail(
                 gate_point=point,
                 dsx_version=__version__,
                 frame_digest=frame_digest(spec),
+                spec_id=spec.get("spec_id"),
             ),
         )
         for n, raw in enumerate(collect_from_report(report), start=1):
@@ -360,6 +434,8 @@ def cmd_profile(args: argparse.Namespace) -> int:
 
 def cmd_recommend(args: argparse.Namespace) -> int:
     from .checks.stats import recommend_test
+    from .frame.admissibility import admissible_families
+    from .frame.paradigm import applies_to_frequentist_admissibility
 
     recommendation = recommend_test(
         args.outcome_type,
@@ -370,7 +446,31 @@ def cmd_recommend(args: argparse.Namespace) -> int:
         n_per_group=args.n_per_group,
         overdispersed=_tri(args.overdispersed),
     )
-    print(json.dumps(recommendation, indent=2))
+    # Copy into a new dict so the four existing keys keep their insertion
+    # order — recommend_test()'s own return value is never mutated in place.
+    out = dict(recommendation)
+
+    # Composition is opt-in only: find_spec(None, None) would search the
+    # working directory, making this command's output depend on where the
+    # operator happens to be standing, which is exactly what the byte-
+    # identity requirement (REQ-P11-05) forbids. 11-RESEARCH.md's auto-
+    # discovery variant was considered and rejected for that reason — a
+    # spec is composed in only when the operator names one explicitly.
+    if args.spec is not None or args.phase_dir is not None:
+        path = find_spec(args.spec, args.phase_dir)
+        spec = load(path)
+        # Same frequentist-only scoping decision run_checks's "admissibility"
+        # branch applies (D-22/REQ-P11-05) — admissible_families() has no
+        # scoping of its own and always evaluates against the frequentist-only
+        # ontology, so a declared non-frequentist paradigm (e.g. bayesian)
+        # must never reach it here either, or this command would refuse a
+        # procedure the analyst never claimed was frequentist in the first
+        # place. Omit the key rather than emit a not-applicable marker,
+        # matching admissibility.check()'s own widen-never-penalise shape.
+        if applies_to_frequentist_admissibility(spec):
+            out["admissibility"] = admissible_families(spec)
+
+    print(json.dumps(out, indent=2))
     return 0
 
 
@@ -485,6 +585,7 @@ def cmd_explain(args: argparse.Namespace) -> int:
     contract a structural property of ``cmd_explain`` rather than an
     enumeration of the failure modes someone happened to test.
     """
+    path: "Path | None" = None
     try:
         path = find_spec(args.spec, args.phase_dir)
         root = args.phase_dir or str(path.parent)
@@ -494,6 +595,19 @@ def cmd_explain(args: argparse.Namespace) -> int:
     try:
         records = read_all(decisions_path(root))
         not_found_message = None
+
+        # The self-reported (taken-on-trust) section (D-13) is fed from this
+        # same spec load, guarded exactly like `root` above: a spec that
+        # cannot be found or parsed yields `spec_data = None`, and
+        # `_render_decision_trail` renders no self-reported section rather
+        # than raising — the returns-0-by-construction contract is
+        # unaffected by whether the spec is readable.
+        spec_data: "dict | None" = None
+        if path is not None:
+            try:
+                spec_data = load(path)
+            except Exception:
+                spec_data = None
 
         if args.invocation:
             selected = [r for r in records if r.get("invocation_id") == args.invocation]
@@ -515,7 +629,7 @@ def cmd_explain(args: argparse.Namespace) -> int:
         elif not_found_message:
             print(not_found_message)
         else:
-            print(_render_decision_trail(selected))
+            print(_render_decision_trail(selected, spec_data))
     except Exception as exc:
         print("dsx: no readable decision trail was found", file=sys.stdout)
         if args.verbose:
@@ -523,11 +637,206 @@ def cmd_explain(args: argparse.Namespace) -> int:
     return 0
 
 
-def _render_decision_trail(records: "list[dict]") -> str:
+def _discover_operator_trails(root: "str | Path") -> "list[Path]":
+    """Every ``DECISIONS.jsonl`` under ``root`` that counts as *operator*
+    history (D-13). Hard-**excludes** any trail whose path passes through an
+    ``examples/`` tree or a ``templates/`` tree — matched by path COMPONENT,
+    not a single hardcoded string literal, so ``examples/DECISIONS.jsonl``,
+    ``examples/known-bad/DECISIONS.jsonl`` and ``templates/DECISIONS.jsonl``
+    are all dropped.
+
+    The exclusion is the negative-source boundary the whole readout turns on:
+    ``examples/known-bad/DECISIONS.jsonl`` is a polluted test floor (~1,151
+    invocation records but only ~15 distinct ``frame_digest``, ~45.8%
+    raw-Bayesian) that, counted, would inflate the §6.5 item-4 "Bayesian >
+    15%" gate roughly four-fold on fixture re-runs. This has no analog in
+    ``cmd_explain`` (a single-root reader with no exclusion list at all).
+
+    D-13 is an ABSOLUTE boundary: the fixture floor must NEVER enter the split,
+    regardless of where ``--root`` is anchored. The excluded component is
+    therefore matched against the trail's RESOLVED path, not its root-relative
+    parts (CR-01, 12-REVIEW.md: computing parts as ``relative_to(root)`` stripped
+    the very ``examples``/``templates`` component the guard filters on whenever
+    ``--root`` pointed *at* or *inside* the fixture tree — e.g.
+    ``--root examples/known-bad`` counted the floor at 20% Bayesian). ``resolve()``
+    also collapses symlink aliasing, and the compare is case-folded for
+    case-insensitive filesystems (Windows: ``Examples`` == ``examples``). The one
+    residual — a repository checked out under an ancestor directory literally
+    named ``examples``/``templates`` — fails SAFE (the readout goes empty, never a
+    false promotion), an accepted known-limit of an absolute-boundary fix.
+    """
+    root_path = Path(root)
+    trails: "list[Path]" = []
+    excluded = {"examples", "templates"}
+    for trail in root_path.rglob("DECISIONS.jsonl"):
+        if excluded & {part.lower() for part in trail.resolve().parts}:
+            continue
+        trails.append(trail)
+    return trails
+
+
+def cmd_stats(args: argparse.Namespace) -> int:
+    """Report the operator's own paradigm split (REQ-P12-04, D-12). A pure
+    reader modelled on ``cmd_explain``'s structural safety: it never imports
+    the block-contract primitives (``Severity``/``GATE_THRESHOLDS``/
+    ``Report``), carries no ``--block-on``, is not registered in ``CHECKS`` or
+    ``GATE_PROFILES``, and ``return 0`` at the end by construction rather than
+    by enumeration — it is a readout, never a gate (D-18).
+
+    Root resolution has a defensive fallback (an unusable ``--root`` degrades
+    to ``.planning``), and everything from trail discovery through the final
+    print is wrapped in a guard over ``Exception`` — control-flow signals like
+    ``KeyboardInterrupt``/``SystemExit`` are deliberately left to propagate —
+    so no failure reachable from ``rglob``/``read_all``/the aggregation can
+    escape the "always returns 0" contract, exactly as ``cmd_explain`` does.
+    """
+    try:
+        root = args.root or ".planning"
+    except Exception:
+        root = ".planning"
+
+    result: "dict[str, Any]" = {"root": str(root)}
+    try:
+        # Dedup by distinct frame_digest (D-14): re-running the same spec
+        # collapses to one frame, so raw invocation volume cannot move the
+        # split. The frame_digest lives on the invocation header; the paradigm
+        # lives in a choice="paradigm=…" decision record tied back by
+        # invocation_id — so map invocation_id -> frame_digest per file (ids are
+        # only unique within one trail, WR-02) and read one paradigm per
+        # distinct frame. This multi-file aggregation is the deliberate
+        # divergence from cmd_explain's single-root read (RESEARCH landmine 3):
+        # reuse read_all() and the existing digest key, do not reparse trails.
+        digest_paradigm: "dict[str, str]" = {}
+        digests_seen: "set[str]" = set()
+        trails = 0
+        raw_invocations = 0
+        for trail in _discover_operator_trails(root):
+            trails += 1
+            records = read_all(trail)
+            local_inv: "dict[str, str]" = {}
+            for rec in records:
+                if rec.get("record_type") == "invocation":
+                    raw_invocations += 1
+                    digest = rec.get("frame_digest")
+                    if digest is None:
+                        continue
+                    digests_seen.add(digest)
+                    inv_id = rec.get("invocation_id")
+                    if inv_id is not None:
+                        local_inv[inv_id] = digest
+            for rec in records:
+                if rec.get("record_type") != "decision":
+                    continue
+                choice = rec.get("choice", "")
+                if not (isinstance(choice, str) and choice.startswith("paradigm=")):
+                    continue
+                digest = local_inv.get(rec.get("invocation_id"))
+                if digest is None:
+                    continue
+                value = choice.split("=", 1)[1]
+                if value not in ("frequentist", "bayesian"):
+                    value = "undeclared"
+                digest_paradigm[digest] = value
+
+        buckets = {"frequentist": 0, "bayesian": 0, "undeclared": 0}
+        for digest in digests_seen:
+            buckets[digest_paradigm.get(digest, "undeclared")] += 1
+        distinct = len(digests_seen)
+
+        result["trails_read"] = trails
+        result["distinct_frames"] = distinct
+        result["paradigm_split"] = buckets
+        # Secondary diagnostic only — the split's one unambiguous denominator
+        # is distinct_frames, never this raw count (D-14).
+        result["raw_invocation_count"] = raw_invocations
+        if distinct == 0:
+            result["message"] = "no operator history yet"
+        else:
+            result["shares"] = {k: v / distinct for k, v in buckets.items()}
+        _print_stats(args, result, distinct)
+    except Exception as exc:
+        result.setdefault("paradigm_split", {"frequentist": 0, "bayesian": 0, "undeclared": 0})
+        result.setdefault("distinct_frames", 0)
+        result.setdefault("raw_invocation_count", 0)
+        result["message"] = "no operator history yet"
+        _print_stats(args, result, 0)
+        if getattr(args, "verbose", False):
+            print(f"dsx: {exc}", file=sys.stderr)
+    return 0
+
+
+def _print_stats(args: argparse.Namespace, result: "dict[str, Any]", denom: int) -> None:
+    """Render the paradigm split. ``--json`` is deterministic
+    (``sort_keys=True``); the text form labels the raw invocation count as a
+    secondary diagnostic so the 15% predicate has one unambiguous
+    denominator."""
+    if args.json:
+        print(json.dumps(result, indent=2, sort_keys=True))
+        return
+    if denom == 0:
+        print(
+            "dsx: no operator history yet — no operator decision trails found "
+            f"under {result['root']!r} (examples/ and templates/ excluded)."
+        )
+        return
+    split = result["paradigm_split"]
+    shares = result["shares"]
+    print(f"paradigm split over {denom} distinct operator frame(s):")
+    for name in ("frequentist", "bayesian", "undeclared"):
+        print(f"  {name:<12} {split[name]:>4}  ({shares[name] * 100:.1f}%)")
+    print(
+        "raw invocation count (secondary diagnostic): "
+        f"{result.get('raw_invocation_count', 0)}"
+    )
+
+
+def _self_reported_fields(spec: "dict") -> "list[tuple[str, Any]]":
+    """The compared-but-never-computed field set (D-13, T-11.2-11): every
+    declared spec value the gate compares against but never itself computes
+    -- ``validity_frame.*`` and ``inference.*`` in full (including
+    ``inference.declared_at``), plus ``analysis.test`` alone. The rest of the
+    ``analysis:`` block (``outcome_type``, ``n_per_group``, etc.) is derived
+    from the data by the analyst's own tooling, not a declared trust input,
+    so it is deliberately excluded.
+
+    ``frame_digest`` is COMPUTED (lives on the invocation header, not the
+    spec) and is never a candidate here by construction -- there is no path
+    by which this function could emit it."""
+    fields: "list[tuple[str, Any]]" = []
+
+    def _flatten(prefix: str, value: Any) -> None:
+        if isinstance(value, dict):
+            for key, sub in value.items():
+                _flatten(f"{prefix}.{key}", sub)
+        elif isinstance(value, list):
+            fields.append((prefix, ", ".join(str(v) for v in value) if value else "[]"))
+        else:
+            fields.append((prefix, value))
+
+    for top in ("validity_frame", "inference"):
+        block = spec.get(top)
+        if isinstance(block, dict):
+            _flatten(top, block)
+
+    analysis = spec.get("analysis")
+    if isinstance(analysis, dict) and "test" in analysis:
+        fields.append(("analysis.test", analysis["test"]))
+
+    return fields
+
+
+def _render_decision_trail(records: "list[dict]", spec: "dict | None" = None) -> str:
     """Human-readable text: the invocation header line, then one block per
-    decision record. ``counterfactual`` is rendered prominently, not as a
-    footnote — 'what would have to be different for me to choose otherwise'
-    is the rule the record teaches, not just the instance it recorded."""
+    decision record, then (D-13) a separately-labelled self-reported section
+    listing every declared value the gate compared but never computed.
+    ``counterfactual`` is rendered prominently, not as a footnote — 'what
+    would have to be different for me to choose otherwise' is the rule the
+    record teaches, not just the instance it recorded.
+
+    ``frame_digest`` stays only in the computed header line above — it is
+    never passed into ``_self_reported_fields`` and never appears in the
+    self-reported block. Labelling a computed value "taken on trust" would be
+    the exact honesty inversion this project exists to prevent (T-11.2-11)."""
     if not records:
         return "no decision trail was found."
 
@@ -551,6 +860,14 @@ def _render_decision_trail(records: "list[dict]") -> str:
             lines.append(f"  citation:       {record['citation']}")
         if record.get("counterfactual"):
             lines.append(f"  counterfactual: {record['counterfactual']}")
+
+    if spec:
+        trust_fields = _self_reported_fields(spec)
+        if trust_fields:
+            lines.append("")
+            lines.append("self-reported (taken on trust, not verified by dsx):")
+            for field_path, value in trust_fields:
+                lines.append(f"  {field_path}: {value}")
 
     return "\n".join(lines) if lines else "no decision trail was found."
 
@@ -689,6 +1006,29 @@ def build_parser() -> argparse.ArgumentParser:
     p_explain.add_argument("--invocation", help="render only this invocation id's records")
     p_explain.set_defaults(func=cmd_explain)
 
+    p_stats = sub.add_parser(
+        "stats",
+        help="report the operator's own paradigm split — read-only, never blocks",
+    )
+    # Deliberately NOT add_common(...): that helper also adds --block-on, and
+    # this command always passes (D-12) — a blocking-severity flag on a reader
+    # that returns 0 by construction would be a lie in the help text, the same
+    # reasoning already recorded for `explain`/`recommend-test`. It is NOT
+    # registered in CHECKS or GATE_PROFILES; it is a readout, not a gate (D-18).
+    # --paradigm is the sole current `stats` report selector, reserved for
+    # forward compatibility (IN-01, 12-REVIEW.md): its help text is accurate —
+    # the split IS what the command reports — so a bare `dsx stats` reporting
+    # the same split is by-design, not a false contract. When a second `stats`
+    # sub-report is added, wire the report choice on this flag then, not now.
+    p_stats.add_argument("--paradigm", action="store_true",
+                         help="report the frequentist/bayesian/undeclared frame split")
+    p_stats.add_argument("--root", default=".planning",
+                         help="operator trail search root (default: %(default)s; D-13)")
+    p_stats.add_argument("--json", action="store_true", help="emit machine-readable JSON")
+    p_stats.add_argument("--verbose", action="store_true",
+                         help="surface read errors on stderr")
+    p_stats.set_defaults(func=cmd_stats)
+
     p_rec = sub.add_parser("recommend-test", help="derive the correct test from the data's shape")
     p_rec.add_argument("outcome_type", help="proportion | continuous | count | ordinal | time_to_event")
     p_rec.add_argument("--groups", type=int, default=2)
@@ -697,6 +1037,13 @@ def build_parser() -> argparse.ArgumentParser:
     p_rec.add_argument("--equal-variance", choices=["true", "false"])
     p_rec.add_argument("--overdispersed", choices=["true", "false"])
     p_rec.add_argument("--n-per-group", type=int)
+    # Deliberately not add_common(...): that helper also adds --block-on,
+    # and this command never blocks — a blocking-severity flag on a command
+    # that always exits 0 (once its spec resolves) would be a lie in the
+    # help text, the same reasoning already recorded for `explain` (D-04).
+    # Only the two spec-resolution flags are added, additively (D-04a).
+    p_rec.add_argument("--spec", help="path to ANALYSIS-SPEC (adds an admissibility section)")
+    p_rec.add_argument("--phase-dir", help="GSD phase directory to resolve --spec against")
     p_rec.set_defaults(func=cmd_recommend)
 
     p_power = sub.add_parser("power", help="sample size, achieved power and detectable effect")

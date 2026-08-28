@@ -58,7 +58,7 @@ from pathlib import Path
 from typing import Any
 
 DECISION_LAYERS = {"deterministic", "stochastic"}
-RECORD_TYPES = {"invocation", "decision"}
+RECORD_TYPES = {"invocation", "decision", "amendment"}
 
 
 @dataclass(frozen=True)
@@ -95,16 +95,70 @@ class InvocationHeader:
     The frame digest lives here, once per invocation — not on every decision
     record — because it is a property of the invocation (which spec, at which
     content), not of any individual choice made during it.
+
+    ``spec_id`` (REQ-P11.2-05, D-08) is a defaulted field, appended AFTER
+    ``frame_digest`` — never inserted earlier — because this is a
+    ``frozen=True`` dataclass with four required fields and no defaults, and
+    9 existing construction sites (``dsx/cli.py::_write_decision_trail``,
+    ``tests/_trail_seed.py::seed_plan_header``, and 7 more across
+    ``tests/test_frame_prereg.py``/``test_dsx.py``/``test_decisions.py``)
+    pass no ``spec_id`` today. Python requires every non-default dataclass
+    field to precede every defaulted one, so a no-default ``spec_id`` or one
+    inserted before ``frame_digest`` would break the class definition itself
+    or every one of those 9 call sites at construction time. It is the
+    operator's declared top-level spec identity — never placed inside
+    ``validity_frame:``/``inference:``, so it never enters ``frame_digest``'s
+    inputs (D-08) — used by ``dsx/frame/prereg.py``'s ``DSX-PRE-040``/
+    ``DSX-PRE-041`` to group invocation headers by the spec they belong to
+    and count how many distinct frame digests were recorded under one
+    identity.
     """
 
     invocation_id: str
     gate_point: str
     dsx_version: str
     frame_digest: str
+    spec_id: "str | None" = None
 
     def to_dict(self) -> "dict[str, Any]":
         out = asdict(self)
         out["record_type"] = "invocation"
+        return out
+
+
+@dataclass(frozen=True)
+class AmendmentRecord:
+    """A ``record_type: "amendment"`` decision-trail entry (REQ-P11.2-05, D-10).
+
+    The clearing half of the ``DSX-PRE-041`` amendment counter
+    (``dsx/frame/prereg.py::_check_amendment_ledger``): an operator-authored
+    record naming *when* (``invocation_id``, ``gate_point``, ``dsx_version``),
+    *which* spec (``spec_id``), *what* changed (``prev_frame_digest`` ->
+    ``new_frame_digest``) and *why* (``reason``) a locked plan was amended
+    after results existed. Mirrors ``DecisionRecord``'s exact
+    ``@dataclass(frozen=True)`` + ``to_dict()`` idiom: ``to_dict()`` hardcodes
+    the literal ``"amendment"`` rather than consulting ``RECORD_TYPES``,
+    because ``RECORD_TYPES`` is decorative documentation only, never
+    enforced — the same reason ``DecisionRecord.to_dict()`` hardcodes
+    ``"decision"`` instead of reading it back out of the module constant.
+
+    This is a committed-trail honesty signal, not a tamper-proof control
+    (D-12): the trail is a plain, unsigned, tolerant-read local file, and
+    ``reason`` is checkable for form (not a placeholder or refusal, via
+    ``dsx.spec.is_placeholder_or_refusal``) but never for truth.
+    """
+
+    spec_id: str
+    invocation_id: str
+    gate_point: str
+    dsx_version: str
+    prev_frame_digest: str
+    new_frame_digest: str
+    reason: str
+
+    def to_dict(self) -> "dict[str, Any]":
+        out = asdict(self)
+        out["record_type"] = "amendment"
         return out
 
 
@@ -113,7 +167,13 @@ def append(path: "str | Path", record: "DecisionRecord | InvocationHeader") -> N
     the reader (read_all) skips an unparseable tail line rather than failing
     the file."""
     line = json.dumps(record.to_dict(), sort_keys=True)
-    with Path(path).open("a", encoding="utf-8") as fh:
+    # newline="\n" pins the D-19 byte contract (one JSON object per line ending
+    # in a single \n). Default text mode translates \n -> \r\n on Windows, and
+    # Phase 10 made DECISIONS.jsonl a content-locked gate input (byte
+    # comparison), so trail fidelity now has to hold byte-for-byte across
+    # platforms — read_all()'s splitlines() tolerated \r\n on the read side, but
+    # the write must still honour the documented single-\n contract.
+    with Path(path).open("a", encoding="utf-8", newline="\n") as fh:
         fh.write(line + "\n")
         fh.flush()
         os.fsync(fh.fileno())
@@ -195,6 +255,30 @@ def decisions_path(root: "str | Path") -> Path:
     re-implement ``find_spec()``'s search: the caller already has the resolved
     root (``args.phase_dir or str(path.parent)``)."""
     return Path(root) / "DECISIONS.jsonl"
+
+
+def record_decision(report: Any, decision_record: "DecisionRecord") -> None:
+    """Append one decision record onto ``report.context["decisions"]``.
+
+    Phase 11.1 (REQ-P11.1-01): the shared write path for ``dsx/checks/*.py``
+    modules. ``tests/test_dsx.py::test_no_check_module_appends_to_a_decisions_list``
+    forbids any file under ``dsx/checks/`` from containing the literal
+    ``context.setdefault("decisions", ...)``/``context["decisions"]`` idiom
+    inline — that test predates this function and still passes unmodified,
+    because a check module calling this helper never spells that idiom itself.
+    This is not a relaxation of the boundary the test enforces; it is the one
+    sanctioned indirection through it, so a check module can still participate
+    in the milestone's standing per-phase decision-record deliverable (D-04)
+    without duplicating ``dsx/frame/*.py``'s inline-append pattern in a
+    package that test explicitly keeps free of it.
+
+    ``dsx/frame/*.py`` modules are unaffected and keep writing inline
+    (Phase 6-10 precedent) — this helper exists for callers outside that
+    package; nothing here changes how ``collect_from_report`` reads the
+    result back, since both paths leave the same shape under
+    ``report.context[<check-name>]["decisions"]``.
+    """
+    report.context.setdefault("decisions", []).append(decision_record.to_dict())
 
 
 def collect_from_report(report: Any) -> "list[dict]":

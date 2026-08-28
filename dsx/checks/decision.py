@@ -103,7 +103,9 @@ def check(spec: dict, *, gate_point: "str | None" = None) -> Report:
             verdict="fail",
         )
     else:
-        alpha = as_number(get(spec, "design.alpha")) or 0.05
+        alpha = as_number(get(spec, "design.alpha"))
+        if alpha is None:
+            alpha = 0.05
         p = as_number(matched.get("p_value"))
         if p is not None and p >= alpha:
             report.add(

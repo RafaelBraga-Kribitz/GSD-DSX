@@ -1,0 +1,192 @@
+# Clean control spec — good-side FPR corpus (REQ-P12-03 / D-04).
+# Paradigm: frequentist. Outcome shape: binary/proportion.
+
+spec_version: 1
+title: "Does the subject-line rewrite raise email open rate?"
+owner: "r.braga"
+created: "2026-08-05"
+spec_id: "freq-proportion-email-open"
+
+question_type: causal
+
+decision:
+  owner: "Lifecycle Marketing Lead"
+  decision_rule: >
+    Adopt the rewritten subject lines if the 95% CI lower bound on the open-rate
+    uplift exceeds +1.0pp and no guardrail degrades beyond tolerance. Otherwise
+    hold and iterate.
+  action_if_null: "Keep the current subject lines; close the initiative."
+  minimum_practical_effect: 0.02
+  reversible: true
+  deadline: "2026-09-18"
+  revisit_when: "open_rate 95% CI lower bound below +1.0pp at the 2026-Q4 review"
+  replay:
+    metric: open_rate
+    ci_lower_min: 0.01
+    on_pass: adopt
+    on_fail: hold
+
+metrics:
+  - name: open_rate
+    type: ratio
+    definition: "Share of delivered emails opened within 48 hours"
+    grain: recipient
+    numerator: "count(distinct recipient_id) where opened_at <= delivered_at + 48h"
+    denominator: "count(distinct recipient_id) where delivered_at in period"
+    timezone: UTC
+    source: lifecycle_marts.fct_email_sends
+    owner: lifecycle-analytics
+
+data:
+  - name: sends
+    source: lifecycle_marts.fct_email_sends
+    period: "2026-07-01..2026-07-14"
+    rows: 61240
+    snapshot_at: "2026-07-16T03:00:00Z"
+    known_gaps: "Hard-bounced addresses excluded upstream. No outages in window."
+
+design:
+  kind: experiment
+  identification: randomized_experiment
+  randomization_unit: recipient
+  analysis_unit: recipient
+  arms: [control, treatment]
+  expected_allocation: [0.5, 0.5]
+  baseline_rate: 0.34
+  mde: 0.02
+  alpha: 0.05
+  power: 0.80
+  planned_n_per_arm: 10500
+  duration_days: 14
+  guardrail_metrics: [open_rate]
+  peeking_policy: fixed_horizon
+
+analysis:
+  outcome_type: proportion
+  n_groups: 2
+  paired: false
+  n_per_group: 10600
+  test: two_proportion_z
+  normality_ok: true
+  equal_variance: true
+  independence_ok: true
+
+results:
+  observed_n: [10600, 10555]
+  interim_looks: 1
+  comparisons_looked_at: 1
+  overall_effect: 0.021
+  tests:
+    - metric: open_rate
+      p_value: 0.0007
+      effect: 0.021
+      standardized_effect: 0.045
+      effect_size_kind: h
+      ci: [0.013, 0.029]
+      interpretation: "Treatment raises open rate; the interval clears the practical floor."
+      minimum_practical_effect: 0.02
+
+claims:
+  - text: >
+      The subject-line rewrite raises email open rate by 2.1 percentage points
+      (95% CI 1.3 to 2.9pp) among delivered recipients in the test window.
+    type: causal
+    evidence: "examples/good-corpus/freq-proportion-email-open-NARRATIVE.md"
+    population: "Delivered email recipients, 2026-07-01 to 2026-07-14"
+    identification: randomized_experiment
+
+assumptions:
+  - assumption: "Assignment is stable for a given recipient_id across sends."
+    rationale: "Bucketing is hashed on recipient_id and persisted server-side."
+    impact_if_wrong: "Cross-arm contamination would bias the estimate toward zero."
+    checked: true
+
+limitations:
+  - "Measures opens, not downstream clicks or conversions."
+  - "Measured over two weeks; open behaviour varies by campaign calendar."
+
+reproducibility:
+  entrypoint: examples/good-corpus/_control_readout.py
+  language_version: "python 3.12.10"
+  package_versions: "numpy 2.1.0, statsmodels 0.14.2"
+  runs_clean_top_to_bottom: true
+  repro_lock:
+    schema_version: "1"
+    stochasticity_declaration: >
+      Analysis outputs depend on data extracts and library versions recorded
+      elsewhere in this block; this lock documents configuration, not
+      byte-identical replay.
+    dsx_version: "2.0.0"
+
+narrative:
+  path: examples/good-corpus/freq-proportion-email-open-NARRATIVE.md
+  audience: executive
+  lead_claim: 0
+
+validity_frame:
+  estimand:
+    quantity: "difference in email open rate"
+    type: difference_in_proportions
+    population: "delivered email recipients, 2026-07-01 to 2026-07-14"
+    contrast: "rewritten subject lines vs current subject lines"
+    time_window: "48 hours from delivery"
+    falsifier: "95% CI on the uplift includes zero, or its lower bound sits below +1.0pp"
+
+  units:
+    observation: recipient
+    assignment: recipient
+    analysis: recipient
+
+  identification:
+    strength: strong
+    evidence: "Assignment is hashed on recipient_id and persisted server-side; see design.identification"
+    constraint_source: none
+    constraint_justification: ""
+
+  dependence:
+    structure: none
+    cluster_var: ""
+
+  interference:
+    risk: none
+    mechanism: ""
+    mitigation: none
+    residual_note: ""
+
+  triggering:
+    eligible_population: "all delivered recipients in the test window"
+    triggered_definition: "received a delivered email"
+    analysis_population: eligible
+    expected_trigger_rate: 1.0
+    dilution_adjusted: true
+
+  stability:
+    window: "14 days"
+    novelty_primacy_assessed: true
+    evidence: "internal readout; the open-rate gap held flat after day 3"
+
+  sampling_frame:
+    source: "lifecycle_marts.fct_email_sends, no region filter"
+    claim_population: "all delivered recipients in the test window"
+    known_exclusions: ["hard-bounced addresses"]
+    selection_risk: "none identified"
+
+  missingness:
+    mechanism: MAR
+    rate: 0.0
+    method_implied: multiple_imputation
+
+  measurement:
+    construct: "email engagement"
+    operationalisation: "email opened within 48 hours of delivery"
+    known_gaps: "none identified"
+
+inference:
+  paradigm: frequentist
+  paradigm_justification: team_convention
+  declared_at: pre_data
+  primary_procedure: two_proportion_z
+  alpha_spending: null
+  fallback_rule: >
+    If any arm's observed n falls below 80% of planned_n_per_arm, extend to the
+    pre-declared duration_days ceiling before analysing; do not analyse early.

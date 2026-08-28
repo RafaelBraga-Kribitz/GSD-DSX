@@ -289,17 +289,30 @@ def cohens_d(mean1: float, mean2: float, sd1: float, sd2: float, n1: int, n2: in
     return (mean2 - mean1) / math.sqrt(pooled_var)
 
 
+# The effect-size kinds interpret_effect knows how to band. Hoisted to module
+# level as the single source of truth so dsx/checks/stats.py's membership guard
+# (DSX-STA-012) tests the same frozenset interpret_effect dispatches on, and the
+# recognised set on the two sides cannot drift.
+EFFECT_SIZE_KINDS = frozenset({"d", "h", "r"})
+
+
 def interpret_effect(kind: str, value: float) -> str:
-    """Conventional magnitude label. Deliberately conservative wording."""
+    """Conventional magnitude label. Deliberately conservative wording.
+
+    The recognised set is the module-level EFFECT_SIZE_KINDS, so the caller-side
+    membership guard and this dispatch share one source of truth and cannot drift.
+    """
     v = abs(value)
     table = {
         "d": ((0.2, "negligible"), (0.5, "small"), (0.8, "medium")),
         "h": ((0.2, "negligible"), (0.5, "small"), (0.8, "medium")),
         "r": ((0.1, "negligible"), (0.3, "small"), (0.5, "medium")),
     }
-    bands = table.get(kind)
-    if bands is None:
-        raise ValueError(f"unknown effect kind {kind!r}; expected one of {sorted(table)}")
+    if kind not in EFFECT_SIZE_KINDS:
+        raise ValueError(
+            f"unknown effect kind {kind!r}; expected one of {sorted(EFFECT_SIZE_KINDS)}"
+        )
+    bands = table[kind]
     for threshold, label in bands:
         if v < threshold:
             return label
@@ -411,9 +424,30 @@ def pocock_boundary(total_looks: int, alpha: float = 0.05) -> float:
 def inflation_from_peeking(total_looks: int, alpha: float = 0.05) -> float:
     """Approximate true type-I error when a fixed-horizon test is peeked ``n`` times.
 
-    Armitage's classic result: repeated naive testing at alpha=0.05 reaches roughly
-    0.08 at 2 looks, 0.11 at 3, 0.14 at 5, 0.19 at 10. Interpolated linearly in
-    log-looks between the tabulated anchors, then scaled by alpha/0.05.
+    Interpolated log-linearly between the tabulated anchor values below, then
+    scaled by alpha/0.05.
+
+    Citation: Armitage, P., McPherson, C. K. & Rowe, B. C. (1969), "Repeated
+    Significance Tests on Accumulating Data", Journal of the Royal Statistical
+    Society, Series A (General), volume 132, issue 2, pages 235-244,
+    DOI 10.2307/2343787. The anchors below correspond to the paper's normal,
+    known-variance, equal-group-size case at a two-sided nominal alpha of
+    0.05 — the paper tabulates three distributional cases (binomial, normal,
+    exponential), and this is not the only one.
+    The full text is subscriber-only at Oxford University Press, Wiley and
+    JSTOR. No table number and no page number within the paper was verified —
+    naming one would be the fabricated locator brief D-05 exists to prevent.
+    Jennison & Turnbull's table is equally unobtainable and is not cited
+    either.
+    Reference value: the six anchors below (0.083 at 2 looks, 0.107 at 3,
+    0.126 at 4, 0.142 at 5, 0.193 at 10, 0.248 at 20) are verified by
+    independent computation, not by citation: exact numerical quadrature by
+    recursive convolution over the continuation region, cross-checked against
+    a seeded Monte Carlo run of four million paths, reproducing 0.08314,
+    0.10728, 0.12620, 0.14171, 0.19338 and 0.24793 respectively. The
+    widely-circulated figure of 0.246 at twenty looks is wrong; this table's
+    0.248 is right — the two independent methods agree at 0.2479, more than
+    five Monte Carlo standard errors away from 0.246.
     """
     if total_looks < 1:
         raise ValueError("total_looks must be >= 1")
@@ -430,6 +464,66 @@ def inflation_from_peeking(total_looks: int, alpha: float = 0.05) -> float:
             weight = (math.log(total_looks) - math.log(lo)) / (math.log(hi) - math.log(lo))
             value = anchors[lo] + weight * (anchors[hi] - anchors[lo])
     return min(1.0, value * alpha / 0.05)
+
+
+def design_effect(m: float, icc: float) -> float:
+    """The factor by which the variance of an estimate is inflated when observations
+    inside a cluster are correlated and the analysis is run at a level finer than the
+    true dependence unit.
+
+    Citation: Kish, L. (1965), Survey Sampling, section 8.2, page 258
+    (design-effect definition) and pages 161-162 (intraclass correlation);
+    Higgins, J.P.T., Eldridge, S. and Li, T. (2024), Cochrane Handbook for
+    Systematic Reviews of Interventions version 6.5, sections 23.1.4 and
+    23.1.4.1.
+    Section 8.2 was confirmed for the design-effect definition; no section
+    number was confirmed for the design-effect formula itself, and that
+    locator is UNVERIFIED — do not invent one.
+    Reference value: an intraclass correlation of 0.02 and an average cluster size of
+    29.8 yield 1.576 — the Cochrane Handbook's own published worked example.
+    """
+    if m < 1:
+        raise ValueError(f"m (average cluster size) must be >= 1, got {m!r}")
+    if not 0.0 <= icc <= 1.0:
+        raise ValueError(f"icc (intraclass correlation) must be in [0, 1], got {icc!r}")
+    return 1.0 + (m - 1.0) * icc
+
+
+def diluted_effect(delta_triggered: float, user_trigger_rate: float) -> float:
+    """The naive all-up ("diluted") effect obtained by scaling a triggered-subgroup
+    effect by the share of the eligible population that triggered.
+
+    Citation: Deng, A. & Hu, V. (2015), "Diluted Treatment Effect Estimation for
+    Trigger Analysis in Online Controlled Experiments", WSDM '15, Formula (1) in
+    section 2.1, derived in section 3.2; camera-ready at
+    https://alexdeng.github.io/public/files/wsdm2015-dilution.pdf, ACM Digital
+    Library DOI 10.1145/2684822.2685307. The formula as printed:
+    ∆overall = ∆Tr × N_Tr/N. This identity holds under three preconditions
+    stated in the same section: the metric is additive, there is no treatment
+    effect for untriggered units, and the treatment has no effect on the
+    trigger complement.
+    Reference value: the paper's own time-to-success counterexample (section
+    2.1) publishes a true effect of -26 msec against a naive-formula value of
+    -18 msec for that example. Time-to-success is a ratio metric, and the
+    paper prints this pair precisely to show the additive formula above does
+    not hold there — this function is therefore scoped to additive metrics
+    only. The ratio case is Formula (3) in section 3.3; it sums over
+    individual users, has no closed-form scalar multiplier, and is
+    deliberately not implemented here. The exact triggered effect (∆Tr) and
+    user trigger rate (N_Tr/N) behind the published -18 msec are UNVERIFIED —
+    the -26/-18 msec pair itself was confirmed in the paper's own text, the
+    two individual inputs that multiply to -18 were not. Do not invent them,
+    and do not back-solve a pair that happens to multiply to -18.
+
+    ``user_trigger_rate`` is the paper's N_Tr/N — the share of the eligible
+    population that triggered. It is deliberately not named ``trigger_rate``:
+    the paper's own ``TR`` symbol means a different, per-user quantity
+    (section 3.3), and the contract field is
+    ``validity_frame.triggering.expected_trigger_rate``, not ``trigger_rate``.
+    """
+    if not 0.0 <= user_trigger_rate <= 1.0:
+        raise ValueError(f"user_trigger_rate must be in [0, 1], got {user_trigger_rate!r}")
+    return delta_triggered * user_trigger_rate
 
 
 # ── Sample ratio mismatch ────────────────────────────────────────────────────

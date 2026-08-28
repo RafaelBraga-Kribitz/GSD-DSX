@@ -1,0 +1,197 @@
+# Clean control spec — good-side FPR corpus (REQ-P12-03 / D-04).
+# Paradigm: bayesian. Outcome shape: count/ratio.
+# A per-user ratio metric (weekly sessions / active users), a ratio_of_means
+# estimand summarised by a Bayesian posterior.
+
+spec_version: 1
+title: "Does the streak widget raise weekly sessions per active user?"
+owner: "r.braga"
+created: "2026-08-12"
+spec_id: "bayes-count-sessions"
+
+question_type: causal
+
+decision:
+  owner: "Head of Engagement"
+  decision_rule: >
+    Ship the streak widget if the posterior probability that weekly sessions per
+    active user rise by more than +0.10 is at least 0.95 and the credible-interval
+    lower bound clears +0.10. Otherwise hold and iterate.
+  action_if_null: "Keep the current home screen; close the initiative."
+  minimum_practical_effect: 0.10
+  reversible: true
+  deadline: "2026-09-24"
+  revisit_when: "sessions_per_user credible-interval lower bound below +0.10 at the 2026-Q4 review"
+  replay:
+    metric: sessions_per_user
+    ci_lower_min: 0.10
+    on_pass: ship
+    on_fail: hold
+
+metrics:
+  - name: sessions_per_user
+    type: ratio
+    definition: "Sessions per active user per week in the period"
+    grain: user
+    numerator: "count(sessions) in period"
+    denominator: "count(distinct active user_id) in period"
+    timezone: UTC
+    source: engagement_marts.fct_sessions
+    owner: engagement-analytics
+
+data:
+  - name: sessions
+    source: engagement_marts.fct_sessions
+    period: "2026-07-01..2026-07-14"
+    rows: 45310
+    snapshot_at: "2026-07-16T03:00:00Z"
+    known_gaps: "Bot sessions excluded upstream. No outages in window."
+
+design:
+  kind: experiment
+  identification: randomized_experiment
+  randomization_unit: user
+  analysis_unit: user
+  arms: [control, treatment]
+  expected_allocation: [0.5, 0.5]
+  baseline_rate: 0.30
+  mde: 0.02
+  alpha: 0.05
+  power: 0.80
+  planned_n_per_arm: 9000
+  duration_days: 14
+  guardrail_metrics: [sessions_per_user]
+  peeking_policy: fixed_horizon
+
+analysis:
+  outcome_type: count
+  n_groups: 2
+  paired: false
+  n_per_group: 9100
+  normality_ok: true
+  equal_variance: true
+  independence_ok: true
+
+results:
+  observed_n: [9100, 9070]
+  interim_looks: 1
+  comparisons_looked_at: 1
+  overall_effect: 0.22
+  tests:
+    - metric: sessions_per_user
+      effect: 0.22
+      ci: [0.13, 0.31]
+      posterior_probability: 0.995
+      interpretation: "Posterior mass above the +0.10 floor is 0.99; the credible interval clears it."
+      minimum_practical_effect: 0.10
+
+claims:
+  - text: >
+      The streak widget raises weekly sessions by 0.22 per active user
+      (credible interval 0.13 to 0.31) in the test window.
+    type: causal
+    evidence: "examples/good-corpus/bayes-count-sessions-NARRATIVE.md"
+    population: "Active users, 2026-07-01 to 2026-07-14"
+    identification: randomized_experiment
+
+assumptions:
+  - assumption: "Assignment is stable across sessions for a given user_id."
+    rationale: "Bucketing is hashed on user_id and persisted server-side."
+    impact_if_wrong: "Cross-arm contamination would bias the posterior toward the null."
+    checked: true
+
+limitations:
+  - "Counts sessions, not time spent or actions taken per session."
+  - "The posterior is conditional on the priors declared below."
+
+reproducibility:
+  entrypoint: examples/good-corpus/_control_readout.py
+  random_seed: 42
+  language_version: "python 3.12.10"
+  package_versions: "numpy 2.1.0, pymc 5.16.2"
+  runs_clean_top_to_bottom: true
+  repro_lock:
+    schema_version: "1"
+    stochasticity_declaration: >
+      Posterior draws depend on the random seed and library versions recorded
+      here; this lock documents configuration, not byte-identical replay.
+    dsx_version: "2.0.0"
+
+narrative:
+  path: examples/good-corpus/bayes-count-sessions-NARRATIVE.md
+  audience: executive
+  lead_claim: 0
+
+validity_frame:
+  estimand:
+    quantity: "ratio of weekly sessions per active user between arms"
+    type: ratio_of_means
+    population: "active users, 2026-07-01 to 2026-07-14"
+    contrast: "streak widget vs current home screen"
+    time_window: "per week"
+    falsifier: "credible interval on the uplift includes zero, or its lower bound sits below +0.10"
+
+  units:
+    observation: user
+    assignment: user
+    analysis: user
+
+  identification:
+    strength: strong
+    evidence: "Assignment is hashed on user_id and persisted server-side; see design.identification"
+    constraint_source: none
+    constraint_justification: ""
+
+  dependence:
+    structure: none
+    cluster_var: ""
+
+  interference:
+    risk: none
+    mechanism: ""
+    mitigation: none
+    residual_note: ""
+
+  triggering:
+    eligible_population: "all active users in the test window"
+    triggered_definition: "was active in the period"
+    analysis_population: eligible
+    expected_trigger_rate: 1.0
+    dilution_adjusted: true
+
+  stability:
+    window: "14 days"
+    novelty_primacy_assessed: true
+    evidence: "internal readout; the sessions-per-user gap held flat after day 3"
+
+  sampling_frame:
+    source: "engagement_marts.fct_sessions, no region filter"
+    claim_population: "all active users in the test window"
+    known_exclusions: ["bot sessions"]
+    selection_risk: "none identified"
+
+  missingness:
+    mechanism: MAR
+    rate: 0.0
+    method_implied: multiple_imputation
+
+  measurement:
+    construct: "engagement frequency"
+    operationalisation: "sessions per active user per week in the period"
+    known_gaps: "none identified"
+
+inference:
+  paradigm: bayesian
+  paradigm_justification: small_sample_informative_prior
+  prior_justification: >
+    Weakly-informative Gamma priors on each arm's session rate, centred on the
+    historical level; a wider-variance sensitivity check did not move the decision.
+  threshold_calibration: >
+    The P(uplift > +0.10) >= 0.95 rule was fixed before data collection and
+    calibrated against the +0.10 practical floor.
+  declared_at: pre_data
+  primary_procedure: bayesian_rate_ratio
+  decision_threshold: 0.95
+  fallback_rule: >
+    If either arm's observed n falls below 80% of planned_n_per_arm, extend to
+    the pre-declared duration_days ceiling before summarising the posterior.

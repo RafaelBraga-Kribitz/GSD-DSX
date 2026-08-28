@@ -1,0 +1,185 @@
+# A known-bad ANALYSIS-SPEC (REQ-P12-01, Phase 12 D-01/D-02: operator-known-answer coverage class).
+#
+# Coverage class: an analysis whose answer is now known — a known-answer positive
+# control the operator holds the corrected result for (REQ-P12-01).
+#
+# The encoded defect is DELIBERATELY INVISIBLE to a declaration-only gate. The
+# headline stylised fact rests on (a) a set of country-year observations dropped
+# from the average and (b) a country-then-average weighting choice, neither
+# disclosed. This spec declares no exclusion rule (validity_frame.sampling_frame.
+# known_exclusions is empty) and no alternative-specification comparison, so the
+# shipped exclusion-justification catch (DSX-VAL-080) has nothing to fire on and
+# no other substantive check trips. It BLOCKS at verify/ship only on the shared
+# corpus-completeness incidental gaps (see _INCIDENTAL_GAP_CODES in
+# tests/test_known_bad_corpus.py).
+#
+# This is the point of the fixture: when the exclusions and the weighting are not
+# declared, a declaration-only gate cannot ask whether the conclusion survives
+# putting the dropped observations back or averaging the other way. Catching it
+# needs the unwritten frequentist specification-sensitivity check (brief.md §6.5
+# item 1's frequentist half) — does the conclusion survive alternative model
+# specifications. The catch-attribution is carried in the sidecar
+# operator-known-answer-selective-exclusion-ATTRIBUTION.yaml (D-06/D-07), never in
+# this spec, so frame_digest is unperturbed (11.2 D-08 placement precedent,
+# dsx/decisions.py:99-121). See the paired POSTMORTEM.md for the primary source
+# and the published re-analysis that fixed the answer.
+
+spec_version: 1
+title: "Is real GDP growth markedly lower in country-years where public debt exceeds 90% of GDP?"
+spec_id: "operator-known-answer-selective-exclusion"  # top-level only (11.2 D-08); never inside validity_frame/inference.
+owner: "macro-research"
+created: "2026-07-06"
+
+question_type: descriptive
+
+decision:
+  owner: "Chief Economist"
+  decision_rule: >
+    Publish the 90%-debt threshold as a fiscal guideline if the mean growth gap
+    between the above-90% regime and the below-90% regime exceeds 2.0 percentage
+    points with a 95% CI excluding zero. Otherwise report no threshold effect.
+  action_if_null: "Report no threshold effect; do not publish a 90% guideline."
+  minimum_practical_effect: 2.0
+  reversible: true
+  deadline: "2026-08-31"
+  revisit_when: "the mean growth gap falls below 2.0pp under an alternative weighting"
+
+metrics:
+  - name: real_gdp_growth
+    type: average
+    definition: "Annual real GDP growth rate for a country-year, in percentage points"
+    grain: country_year
+    source: warehouse.fct_country_year_macro
+    owner: macro-research
+
+data:
+  - name: country_year_macro
+    source: warehouse.fct_country_year_macro
+    period: "1946..2009"
+    rows: 1180
+
+design:
+  kind: observational
+  identification: regression_adjustment
+
+analysis:
+  outcome_type: continuous
+  n_groups: 2
+  paired: false
+  n_per_group: 96
+  test: welch_t
+  normality_ok: true
+  equal_variance: false
+  independence_ok: true
+
+results:
+  observed_n: [96, 1084]
+  interim_looks: 1
+  comparisons_looked_at: 1
+  overall_effect: 3.9
+  tests:
+    - metric: real_gdp_growth
+      p_value: 0.004
+      effect: 3.9
+      standardized_effect: 0.55
+      effect_size_kind: d
+      ci: [1.6, 6.2]
+      interpretation: "Mean growth is markedly lower in the above-90%-debt regime than below it, over the postwar sample."
+      minimum_practical_effect: 2.0
+
+claims:
+  - text: >
+      Mean annual real GDP growth in the high-debt regime is 3.9 percentage
+      points lower (95% CI 1.6 to 6.2pp) than in the lower-debt regime, across
+      the advanced economies in the postwar sample.
+    type: descriptive
+    evidence: "RESULTS.md#debt-threshold-gap"
+    population: "Advanced-economy country-years, 1946 to 2009"
+
+assumptions:
+  - assumption: "The postwar country-year panel used for the average is the full declared sample."
+    rationale: "The above- and below-threshold groups are formed from the same country-year table."
+    impact_if_wrong: "If some country-years are dropped from one regime, the reported gap is a property of the exclusion, not of the debt threshold."
+    checked: false
+
+limitations:
+  - "Reports a single threshold contrast; the sensitivity of the gap to the choice of included country-years and to country-vs-year weighting is not enumerated here. See the paired POSTMORTEM.md and the published re-analysis."
+
+# ── Validity frame (REQ-P6-02) ───────────────────────────────────────────────
+# Clean by construction: an observational threshold contrast with moderate,
+# regression-adjustment identification. The defect is not here — it is the
+# undisclosed exclusion of country-years and the undisclosed weighting choice,
+# neither visible as a declared exclusion rule or an alternative-specification
+# comparison.
+validity_frame:
+  estimand:
+    quantity: "difference in mean annual real GDP growth between debt regimes"
+    type: difference_in_means
+    population: "advanced-economy country-years, 1946 to 2009"
+    contrast: "public-debt-to-GDP above 90% vs at or below 90%"
+    time_window: "annual, 1946 to 2009"
+    falsifier: "the 95% CI on the mean growth gap includes zero, or the gap falls below 2.0pp under equal country-year weighting"
+
+  units:
+    observation: country_year
+    assignment: country_year
+    analysis: country_year
+
+  identification:
+    strength: moderate             # strong | moderate | weak
+    evidence: "Regression-adjusted contrast across debt regimes within the postwar panel; no design-based support."
+    constraint_source: none        # none | informative_priors | penalisation | design_restriction | hierarchical_pooling
+    constraint_justification: ""
+
+  dependence:
+    structure: none                # none | clustered | repeated_measures | temporal | spatial | hierarchical
+    cluster_var: ""
+    method_family_required: 
+
+  interference:
+    risk: none                     # none | shared_budget | marketplace | geo_spillover | social_graph | shared_inventory
+    mechanism: ""
+    mitigation: none               # none | geo_split | cluster_randomisation | time_split | budget_isolation | modelled
+    residual_note: ""
+
+  triggering:
+    eligible_population: "all advanced-economy country-years in the panel"
+    triggered_definition: "public-debt-to-GDP ratio recorded for the country-year"
+    analysis_population: eligible  # eligible | triggered
+    expected_trigger_rate: 1.0
+    dilution_adjusted: true
+
+  stability:
+    window: "1946 to 2009"
+    novelty_primacy_assessed: true
+    evidence: "RESULTS.md#debt-threshold-gap-stability"
+
+  sampling_frame:
+    source: "warehouse.fct_country_year_macro, advanced economies"
+    claim_population: "advanced-economy country-years, 1946 to 2009"
+    known_exclusions: []
+    selection_risk: "none identified"
+
+  missingness:
+    mechanism: not_assessed        # MCAR | MAR | MNAR | not_assessed
+    rate: 0.0
+    method_implied: complete_case
+
+  measurement:
+    construct: "public-debt burden and real growth"
+    operationalisation: "public-debt-to-GDP ratio and annual real GDP growth per country-year"
+    known_gaps: "none identified"
+
+# ── Inference plan (REQ-P6-04) ───────────────────────────────────────────────
+# Internally consistent: primary_procedure equals the executed analysis.test, so
+# no procedure-reconciliation finding fires. The exclusion and weighting choices
+# live outside every declared field.
+inference:
+  paradigm: frequentist            # frequentist | bayesian
+  paradigm_justification: team_convention
+  declared_at: pre_data            # pre_data | post_data
+  primary_procedure: welch_t
+  alpha_spending: null
+  fallback_rule: >
+    If the above-threshold group holds fewer than 40 country-years, report the
+    contrast as descriptive only; do not publish a threshold guideline.

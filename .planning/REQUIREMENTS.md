@@ -1,7 +1,6 @@
 # Requirements
 
 **Current milestone:** v2.0.0 DSX Validity Frame (Phases 6–12) — see below.
-**Queued:** v2.1 Analytic Surface (Phases 13–16) — queued after Phase 12; not in the 53-requirement map.
 **Shipped:** v1.1.0–v1.5.0 (Phases 1–5).
 
 ---
@@ -75,77 +74,111 @@ in either direction — they cannot justify a check and cannot excuse skipping o
 
 ## Phase 6 (M1) — Contract extension, decision record, paradigm manifest
 
-- [ ] REQ-P6-01 Bundled YAML fallback parser no longer treats the literal `none` as null; `dsx/loader.py` `_NULL` drops `"none"`, and a test asserts the bundled parser and PyYAML agree on `none` for scalars and sequences
-- [ ] REQ-P6-02 `ANALYSIS-SPEC.yaml` accepts a `validity_frame:` block with `estimand`, `units`, `identification`, `dependence`, `interference`, `triggering`, `stability`, `sampling_frame`, `missingness` and `measurement` sub-blocks, and the extended spec round-trips
-- [ ] REQ-P6-03 `validity_frame` sub-block requiredness is gated by `question_type`: `estimand`, `units` and `measurement` are always required; `interference`, `triggering` and `stability` are required only for causal and experimental question types (M-06)
-- [ ] REQ-P6-04 `ANALYSIS-SPEC.yaml` accepts an `inference:` block with `paradigm`, `paradigm_justification`, `declared_at`, `primary_procedure`, `alpha_spending` and `fallback_rule`; the stopping-rule concept is read from the existing `design.peeking_policy`, and no `inference.stopping_rule` field is introduced (M-02)
-- [ ] REQ-P6-05 `PEEKING_POLICIES` gains a value denoting continuous monitoring with no sequential correction, distinct from `always_valid` (M-03)
-- [ ] REQ-P6-06 Every new closed vocabulary is registered in `dsx/spec.py` and dumped by `dsx vocab`; `dependence.method_family_required` reuses `VARIANCE_ADJUSTMENTS` rather than defining a parallel set (M-09)
-- [ ] REQ-P6-07 A decision-record schema and emitter exist as a top-level module, carrying `id`, `layer`, `choice`, `inputs`, `rule`, `citation`, `counterfactual`, `alternatives_rejected`, `confidence` and `escalate`; records serialise append-only and survive a crashed run
-- [ ] REQ-P6-08 `dsx explain` renders a readable decision trail from emitted records and always exits `0`, never participating in the block contract (D-04)
-- [ ] REQ-P6-09 `DSX-PAR-001` emits an informational paradigm manifest naming which check families applied and which did not, at INFO severity, and cannot block at any gate threshold (D-10)
-- [ ] REQ-P6-10 A `dsx/frame/` package exists and an automated AST-based test asserts it never imports from `dsx/checks/`, failing the suite on violation (D-03a, M-04)
-- [ ] REQ-P6-11 `scripts/gen-finding-catalogue.py` fails the build when a check lacks a citation marker in its docstring, making D-05 mechanical rather than review-only (M-08)
-- [ ] REQ-P6-12 `examples/good-ANALYSIS-SPEC.yaml` still passes every gate at every threshold and `examples/bad-ANALYSIS-SPEC.yaml` is still blocked by every gate, both extended rather than replaced (D-08)
-- [ ] REQ-P6-13 At least three real known-bad analyses are committed as fixtures with documented post-mortems, including at least one interference case and one Bayesian continuous-monitoring case
-- [ ] REQ-P6-14 `.planning/REVERSALS.md` exists with the D-14 reversal-record template and the `SELF-001` convention documented (M-05)
-- [ ] REQ-P6-15 The README documents `suppressions[]` with its authority requirement as the migration path for pre-v2.0.0 specs, and states the known limit that a frame which lies passes (M-07, brief §8)
-- [ ] REQ-P6-16 Package version is 2.0.0 and the finding catalogue is regenerated
+- [x] REQ-P6-01 Bundled YAML fallback parser no longer treats the literal `none` as null; `dsx/loader.py` `_NULL` drops `"none"`, and a test asserts the bundled parser and PyYAML agree on `none` for scalars and sequences
+- [x] REQ-P6-02 `ANALYSIS-SPEC.yaml` accepts a `validity_frame:` block with `estimand`, `units`, `identification`, `dependence`, `interference`, `triggering`, `stability`, `sampling_frame`, `missingness` and `measurement` sub-blocks, and the extended spec round-trips
+- [x] REQ-P6-03 `validity_frame` sub-block requiredness is gated by `question_type`: `estimand`, `units` and `measurement` are always required; `interference`, `triggering` and `stability` are required only for causal and experimental question types (M-06)
+- [x] REQ-P6-04 `ANALYSIS-SPEC.yaml` accepts an `inference:` block with `paradigm`, `paradigm_justification`, `declared_at`, `primary_procedure`, `alpha_spending` and `fallback_rule`; the stopping-rule concept is read from the existing `design.peeking_policy`, and no `inference.stopping_rule` field is introduced (M-02)
+- [x] REQ-P6-05 `PEEKING_POLICIES` gains a value denoting continuous monitoring with no sequential correction, distinct from `always_valid` (M-03)
+- [x] REQ-P6-06 Every new closed vocabulary is registered in `dsx/spec.py` and dumped by `dsx vocab`; `dependence.method_family_required` reuses `VARIANCE_ADJUSTMENTS` rather than defining a parallel set (M-09)
+- [x] REQ-P6-07 A decision-record schema and emitter exist as a top-level module, carrying `id`, `layer`, `choice`, `inputs`, `rule`, `citation`, `counterfactual`, `alternatives_rejected`, `confidence` and `escalate`; records serialise append-only and survive a crashed run
+- [x] REQ-P6-08 `dsx explain` renders a readable decision trail from emitted records and always exits `0`, never participating in the block contract (D-04)
+- [x] REQ-P6-09 `DSX-PAR-001` emits an informational paradigm manifest naming which check families applied and which did not, at INFO severity, and cannot block at any gate threshold (D-10)
+- [x] REQ-P6-10 A `dsx/frame/` package exists and an automated AST-based test asserts it never imports from `dsx/checks/`, failing the suite on violation (D-03a, M-04)
+- [x] REQ-P6-11 `scripts/gen-finding-catalogue.py` fails the build when a check lacks a citation marker in its docstring, making D-05 mechanical rather than review-only (M-08)
+- [x] REQ-P6-12 `examples/good-ANALYSIS-SPEC.yaml` still passes every gate at every threshold and `examples/bad-ANALYSIS-SPEC.yaml` is still blocked by every gate, both extended rather than replaced (D-08)
+- [x] REQ-P6-13 At least three real known-bad analyses are committed as fixtures with documented post-mortems, including at least one interference case and one Bayesian continuous-monitoring case
+- [x] REQ-P6-14 `.planning/REVERSALS.md` exists with the D-14 reversal-record template and the `SELF-001` convention documented (M-05)
+- [x] REQ-P6-15 The README documents `suppressions[]` with its authority requirement as the migration path for pre-v2.0.0 specs, and states the known limit that a frame which lies passes (M-07, brief §8)
+- [x] REQ-P6-16 Package version is 2.0.0 and the finding catalogue is regenerated
 
 ## Phase 7 (M2a) — Validity frame checks (`DSX-VAL-*`)
 
-- [ ] REQ-P7-01 An estimand missing any of `quantity`, `population`, `contrast`, `time_window` or `falsifier` is blocked, and a falsifier that cannot discriminate any outcome is blocked
-- [ ] REQ-P7-02 An analysis unit finer than the assignment unit is blocked, with the design-effect consequence quantified in the finding via `DEFF = 1 + (m-1)·ICC` and a test asserting the published worked value
-- [ ] REQ-P7-03 `DSX-VAL-020` and the existing `DSX-EXP-021` do not both fire on the same defect; EXP-021 is unchanged and VAL-020 covers only the `observation` unit that EXP-021 structurally cannot see
-- [ ] REQ-P7-04 A declared dependence structure without a matching method family is blocked, using the `VARIANCE_ADJUSTMENTS` vocabulary
-- [ ] REQ-P7-05 `DSX-VAL-040` blocks weak identification declared with `constraint_source: none`, and `DSX-VAL-041` flags strong identification whose constraint carries parameter-scale information, both citing Gelman, Simpson & Betancourt (2017)
-- [ ] REQ-P7-06 A sampling frame that cannot represent the claim population is blocked, with known exclusions and selection risk declared
-- [ ] REQ-P7-07 A missingness mechanism inconsistent with the implied analysis method is blocked, against the Rubin MCAR/MAR/MNAR validity table
+- [x] REQ-P7-01 An estimand missing any of `quantity`, `population`, `contrast`, `time_window` or `falsifier` is blocked, and a falsifier that cannot discriminate any outcome is blocked
+- [x] REQ-P7-02 An analysis unit finer than the assignment unit is blocked, with the design-effect consequence quantified in the finding via `DEFF = 1 + (m-1)·ICC` and a test asserting the published worked value
+- [x] REQ-P7-03 `DSX-VAL-020` and the existing `DSX-EXP-021` do not both fire on the same defect; EXP-021 is unchanged and VAL-020 covers only the `observation` unit that EXP-021 structurally cannot see
+- [x] REQ-P7-04 A declared dependence structure without a matching method family is blocked, using the `VARIANCE_ADJUSTMENTS` vocabulary
+- [x] REQ-P7-05 `DSX-VAL-040` blocks weak identification declared with `constraint_source: none`, and `DSX-VAL-041` flags strong identification whose constraint carries parameter-scale information, both citing Gelman, Simpson & Betancourt (2017)
+- [x] REQ-P7-06 A sampling frame that cannot represent the claim population is blocked, with known exclusions and selection risk declared
+- [x] REQ-P7-07 A missingness mechanism inconsistent with the implied analysis method is blocked, against the Rubin MCAR/MAR/MNAR validity table
 - [ ] REQ-P7-08 A measurement construct with no operationalisation, or whose known gaps contradict the claim population, is blocked
-- [ ] REQ-P7-09 No `DSX-VAL-*` check reads `inference.paradigm` (D-11), asserted by test
+  > **Partial — deliberate D-06 scope decision, not a gap.** First clause (a blank measurement operationalisation is blocked, via `DSX-VAL-070`) is MET. Second clause (a measurement whose `known_gaps` contradict the claim population is blocked) is deliberately unadjudicated: `known_gaps` is read by no check in the phase (07-CONTEXT.md D-06). Scored PARTIAL, not MET, in 07-VERIFICATION.md (`status: passed`; 8/9 MET, 1/9 PARTIAL). Checkbox stays unchecked because the requirement text as worded asserts both clauses; traceability table reads `Partial`.
+- [x] REQ-P7-09 No `DSX-VAL-*` check reads `inference.paradigm` (D-11), asserted by test
 
 ## Phase 8 (M2b) — Interference, triggering, stability (`DSX-INT-*`)
 
-- [ ] REQ-P8-01 A declared interference risk other than `none` without either a mitigation or an explicit residual note is blocked, citing the SUTVA statement in Imbens & Rubin (2015)
-- [ ] REQ-P8-02 Shared-budget and marketplace interference patterns are recognised as distinct risks with distinct admissible mitigations
-- [ ] REQ-P8-03 `DSX-INT-030` blocks analysis of the eligible population when treatment reaches only the triggered subset and no dilution adjustment is declared, for additive metrics, asserting `delta_diluted = delta_triggered × trigger_rate`
-- [ ] REQ-P8-04 Ratio-metric dilution is explicitly out of scope for v2.0.0 and recorded in the gated backlog with the entry condition that the Deng & Hu (2015) ratio-metric equation is obtained from primary source (D-13)
-- [ ] REQ-P8-05 An unassessed novelty/primacy effect over the declared stability window is flagged, with the assessment method cited
-- [ ] REQ-P8-06 No `DSX-INT-*` check reads `inference.paradigm` (D-11), asserted by test
+- [x] REQ-P8-01 A declared interference risk other than `none` without either a mitigation or an explicit residual note is blocked, citing the SUTVA statement in Imbens & Rubin (2015)
+- [x] REQ-P8-02 Shared-budget and marketplace interference patterns are recognised as distinct risks with distinct admissible mitigations
+- [x] REQ-P8-03 `DSX-INT-030` blocks analysis of the eligible population when treatment reaches only the triggered subset and no dilution adjustment is declared, for additive metrics, asserting `delta_diluted = delta_triggered × trigger_rate`
+- [x] REQ-P8-04 Ratio-metric dilution is explicitly out of scope for v2.0.0 and recorded in the gated backlog with the entry condition naming the per-unit trigger and outcome data Formula (3) (Deng & Hu 2015, §3.3) requires reaching the gate, since that equation sums over individual users with no closed-form scalar multiplier and the item may be permanently out of scope for a declaration-only gate (corrected per 08-CONTEXT.md D-12 — the prior condition was already met and so was never a real blocker) (D-13)
+- [x] REQ-P8-05 An unassessed novelty/primacy effect over the declared stability window is flagged, with the assessment method cited
+- [x] REQ-P8-06 No `DSX-INT-*` check reads `inference.paradigm` (D-11), asserted by test
 
 ## Phase 9 (M2c) — Monitoring discipline, symmetric (`DSX-PAR-*`)
 
-- [ ] REQ-P9-01 `DSX-PAR-010` blocks a frequentist design declaring continuous or group-sequential monitoring with no alpha-spending or sequential method, reusing the existing `inflation_from_peeking()` table rather than introducing a second one
-- [ ] REQ-P9-02 `DSX-PAR-011` blocks a Bayesian design declaring continuous monitoring with neither threshold calibration nor a justified informative prior, asserting the prior-averaged Ville bound `1/(K+1)` — at the `P(B>A) > 0.95` threshold, `K=19` and the bound is `0.05` — citing Deng, Lu & Chen (2016) Theorem 1
-- [ ] REQ-P9-03 The `DSX-PAR-011` docstring states explicitly that it asserts the prior-averaged formulation and not the point-null/law-of-iterated-logarithm formulation, and the fixture traces to the specific theorem
-- [ ] REQ-P9-04 `DSX-PAR-002` validates `paradigm_justification` against the closed vocabulary, symmetric across both paradigms with no reason ranked above another
-- [ ] REQ-P9-05 Neither `DSX-PAR-010` nor `DSX-PAR-011` can be satisfied by switching the declared `paradigm` value, asserted by test in both directions
-- [ ] REQ-P9-06 A documented audit records that neither half of the pair has a cheaper dishonest escape than the other, and the disjunctive `prior_justification` path is no weaker than the sequential-method requirement (D-12)
-- [ ] REQ-P9-07 The `DSX-PAR-011` simulation lives under `tests/`, never on the gate path, and is seeded and reproducible (D-02)
+- [x] REQ-P9-01 `DSX-PAR-010` blocks a frequentist design declaring continuous or group-sequential monitoring with no alpha-spending or sequential method, reusing the existing `inflation_from_peeking()` table rather than introducing a second one
+- [x] REQ-P9-02 `DSX-PAR-011` blocks a Bayesian design declaring continuous monitoring with neither threshold calibration nor a justified informative prior, asserting the prior-averaged bound `1/(K+1)` — at the `P(B>A) > 0.95` threshold, `K=19` and the bound is `0.05` — citing Deng, Lu & Chen (2016) Theorem 1, whose likelihood-ratio argument is not Ville's inequality (Ville gives the different bound `1/k`)
+- [x] REQ-P9-03 The `DSX-PAR-011` docstring states explicitly that it asserts the prior-averaged formulation and not the point-null/law-of-iterated-logarithm formulation, and the fixture traces to the specific theorem
+- [x] REQ-P9-04 `DSX-PAR-002` requires `paradigm_justification` (presence/requiredness only); closed-vocabulary membership is owned by `DSX-SPEC-085`. Symmetric across both paradigms with no reason ranked above another (D-08)
+- [x] REQ-P9-05 Neither `DSX-PAR-010` nor `DSX-PAR-011` can be satisfied by switching the declared `paradigm` value, asserted by test in both directions
+- [x] REQ-P9-06 A documented audit records that neither half of the pair has a cheaper dishonest escape than the other, and the disjunctive `prior_justification` path is no weaker than the sequential-method requirement (D-12)
+- [x] REQ-P9-07 The `DSX-PAR-011` simulation lives under `tests/`, never on the gate path, and is seeded and reproducible (D-02)
 
 ## Phase 10 (M3) — Pre-registered inference plan (`DSX-PRE-*`)
 
-- [ ] REQ-P10-01 A fallback rule expressed in the mini-DSL parses to a decidable branch against observed facts, and an unparseable rule exits `2` rather than passing
-- [ ] REQ-P10-02 `declared_at` provenance is recorded and its limits are documented — an unverifiable self-declaration is named as such rather than presented as a guarantee
-- [ ] REQ-P10-03 A run whose executed procedure differs from the branch the declared rule selects is blocked, with the declared branch and the executed branch both named in the finding
-- [ ] REQ-P10-04 A procedure switched after seeing the data is blocked even when the substituted procedure is individually defensible
+- [x] REQ-P10-01 A fallback rule expressed in the mini-DSL parses to a decidable branch against observed facts, and an unparseable rule exits `2` rather than passing
+- [x] REQ-P10-02 `declared_at` provenance is recorded and its limits are documented — an unverifiable self-declaration is named as such rather than presented as a guarantee
+- [x] REQ-P10-03 A run whose executed procedure differs from the branch the declared rule selects is blocked, with the declared branch and the executed branch both named in the finding
+- [x] REQ-P10-04 A procedure switched after seeing the data is blocked even when the substituted procedure is individually defensible
 
 ## Phase 11 (M4) — Frequentist admissibility adjudicator (`DSX-ADM-*`)
 
-- [ ] REQ-P11-01 `references/families.yaml` holds 25–35 estimator families as data, keyed on estimand × family × inference method × dependence handling, parsed by the existing loader
-- [ ] REQ-P11-02 Named tests resolve as aliases into families rather than being enumerated as a test catalogue
-- [ ] REQ-P11-03 The admissibility function returns a ranked admissible set, naming for each entry the assumptions bought and charged
-- [ ] REQ-P11-04 An underdetermined frame returns `no_admissible_procedure` and escalates rather than guessing
-- [ ] REQ-P11-05 The adjudicator extends the existing `dsx recommend-test` rather than replacing it
-- [ ] REQ-P11-06 D-05 applies to `families.yaml` entries as it does to checks: each family carries a primary-source citation, enforced by the M1 catalogue check
+- [x] REQ-P11-01 `references/families.yaml` holds 14 estimator families as data, keyed on estimand × family × inference method × dependence handling, parsed by the existing loader
+  > **Amended from 25–35 to 14** during Phase 11 planning per `11-CONTEXT.md` D-01/D-02. Reason: ROADMAP Success Criterion 5 requires every family to trace to a case committed in the repository at the time Phase 11 lands; the committed corpus supplies six distinct procedure labels, and Phase 12 is the phase that grows the corpus. Sizing to the evidence keeps "a family is added when a real case needs it" literally true of the file that ships.
+
+- [x] REQ-P11-02 Named tests resolve as aliases into families rather than being enumerated as a test catalogue
+- [x] REQ-P11-03 The admissibility function returns a ranked admissible set, naming for each entry the assumptions bought and charged
+- [x] REQ-P11-04 An underdetermined frame returns `no_admissible_procedure` and escalates rather than guessing
+- [x] REQ-P11-05 The adjudicator extends the existing `dsx recommend-test` rather than replacing it
+- [x] REQ-P11-06 D-05 applies to `families.yaml` entries as it does to checks: each family carries a primary-source citation, enforced by the M1 catalogue check
+
+## Phase 11.1 (INSERTED) — Generated-pipeline reality
+
+- [x] REQ-P11.1-01 Entrypoint scan fires on full-frame pandas cleaning idioms before the split (`.fillna(` with `.mean()`/`.median()`/`.mode()`, row filters with `.std()`/`.quantile(`) and on `.fit`/`.fit_transform` at/after the split whose first argument is not a training frame
+- [x] REQ-P11.1-02 A statistical-test call whose argument list contains the declared model target fires — the marker no fit-scan can see
+- [x] REQ-P11.1-03 Optional per-dataset cleaning declaration (column, method, fit_on); fitted outside training rows CRITICAL; contradiction with `model.preprocessing_fit_on: train_only` HIGH; absence of the block alone fires nothing
+- [x] REQ-P11.1-04 `prediction_time_definition` checked unconditionally (no longer gated on the features list); undeclared positive rate under an imbalance-unsafe primary metric fires
+- [x] REQ-P11.1-05 Result scores carry source + fold-to-fold spread; blank/unknown/best-fold source in a baseline comparison HIGH; margin below the fold spread advisory
+- [x] REQ-P11.1-06 Selection ledger (candidates evaluated, configurations tried, selected_on) demanded when an algorithm is declared; test-set selection CRITICAL; same-fold selection without a nested protocol HIGH
+- [x] REQ-P11.1-07 Known-bad corpus case “full-frame cleaning” (spec + post-mortem + entrypoint, modelled on the 2026-08-20 reproduction) with catch-attribution tags, blocked by the new checks
+- [x] REQ-P11.1-08 Leakage-taxonomy ensemble sub-case (type 3, cross-ref from 7) + discretisation-is-information-loss note; ml-integrity-auditor gains the motivating-statistic question and the large-roster heuristic; fixtures/tests/catalogue current
+
+## Phase 11.2 (INSERTED) — Prescriptive claim layer
+
+- [x] REQ-P11.2-01 `prescriptive` in CLAIM_TYPES at rank 4 of the coherence ladder; a prescriptive claim under a weaker `question_type` is CRITICAL
+- [x] REQ-P11.2-02 A prescriptive claim with identification blank/none/weak fires HIGH — an intervention recommended on the strength of an association
+- [x] REQ-P11.2-03 Causal-verb lexicon extended in two tiers (unambiguous forms at full strength; gerunds via the hedging path) with per-member provenance; known-bad corpus re-run green
+- [x] REQ-P11.2-04 `decision.revisit_when` required for prescriptive questions/experiments, validated by the estimand falsifier predicate
+- [x] REQ-P11.2-05 Decision-trail headers carry a spec-identity hash; more than one distinct frame digest under one identity at verify/ship fires HIGH, clearable by an amendments entry recording when and why
+- [x] REQ-P11.2-06 `dsx explain` renders the self-reported-fields view (what the gate took on trust) without touching `escalate` semantics
+- [x] REQ-P11.2-07 Storyteller prompt repointed at gate-read fields; unread scaffold fields quarantined in a documentation-only template block; fixtures/tests/catalogue current
+
+## Phase 11.3 (INSERTED) — Reporting completeness and missing-data discipline
+
+- [x] REQ-P11.3-01 Multiplicity family counts max(declared family, reported tests); a non-empty family smaller than the reported set fires HIGH naming the absent metrics; the stale cross-reference comment is corrected
+- [x] REQ-P11.3-02 `comparisons_looked_at` exceeding reported results fires HIGH with the ratio quoted, independent of family presence
+- [x] REQ-P11.3-03 `missingness.method_implied` closed vocabulary registered in frame membership; the single-imputation-as-if-observed family under missing-at-random blocks at plan
+- [x] REQ-P11.3-04 `validity_frame.exclusions` sub-block (rule, action, applied_before_split, justification); a rule without justification HIGH; row counts live in results/profile, never in the frame
+- [x] REQ-P11.3-05 An unrecognised effect-size kind fires MEDIUM instead of silently skipping
+- [x] REQ-P11.3-06 Four structural conformance codes validate CHART-REVIEW.md against `references/chart-review-schema.md`; no stochastic agent verdict gates
+- [x] REQ-P11.3-07 Fixtures/tests/catalogue current; full corpus re-run green
 
 ## Phase 12 (M5) — Calibration
 
-- [ ] REQ-P12-01 The known-bad corpus is extended to full size with retracted papers carrying published post-mortems, documented p-hacking cases, and prior work whose answer is now known
-- [ ] REQ-P12-02 Corpus cases carry structured catch-attribution tags so backlog entry conditions are machine-countable rather than narrative judgements (D-13)
-- [ ] REQ-P12-03 A harness reports catch rate and false-positive rate across the corpus, producing a number
-- [ ] REQ-P12-04 `dsx stats --paradigm` reports the frequentist/Bayesian split across the operator's own frame history
-- [ ] REQ-P12-05 Each gated-backlog item in brief §6.5 is re-evaluated against its stated entry condition using the measured corpus, and items whose condition cannot be evaluated are removed rather than carried
+- [x] REQ-P12-01 The known-bad corpus is extended to full size with retracted papers carrying published post-mortems, documented p-hacking cases, and prior work whose answer is now known
+- [x] REQ-P12-02 Corpus cases carry structured catch-attribution tags so backlog entry conditions are machine-countable rather than narrative judgements (D-13); the harness also reports a per-family friction column (non-target blocking findings per fixture), computed from the live corpus — the hand-maintained attribution ledger is stale and must not be lifted
+- [x] REQ-P12-03 A harness reports catch rate and false-positive rate across the corpus, producing a number
+- [x] REQ-P12-04 `dsx stats --paradigm` reports the frequentist/Bayesian split across the operator's own frame history
+- [x] REQ-P12-05 Each gated-backlog item in brief §6.5 is re-evaluated against its stated entry condition using the measured corpus, and items whose condition cannot be evaluated are removed rather than carried
 
 ## Out of Scope — v2.0.0
 
@@ -156,13 +189,15 @@ in either direction — they cannot justify a check and cannot excuse skipping o
 | Prior justification and prior sensitivity (`DSX-PAR-020`/`-021`) | Deferred under D-12a — the frequentist specification-sensitivity mirror is not written |
 | Convergence declarations (`DSX-PAR-030`) | Deferred under D-12a — the frequentist estimation-convergence mirror is not written |
 | Prior predictive check (`DSX-PAR-022`) | Promoted only once its frequentist simulated-data mirror is drafted (REV-001) |
-| Ratio-metric dilution | Formula could not be obtained from primary source; shipping a plausible-looking equation would violate D-05 |
+| Ratio-metric dilution | Formula (3) (Deng & Hu 2015, §3.3) sums over individual users with no closed-form scalar multiplier, so it needs per-unit data a declaration-only gate never has; shipping a plausible-looking equation without it would violate D-05 (corrected per 08-CONTEXT.md D-12 — the equation itself was never unobtainable) |
 | Causal identification strategy checking | `DSX-CAU-*` owns this |
 | Survival, time-series and spatial estimation methods | Temporal and spatial dependence are declared types; the methods are out |
 | Reading a data warehouse from a gate | Breaks the determinism doctrine |
 | A catalogue of every named statistical test | Families, not tests |
 | `dsx quiz` fading mode | Entry condition: M5 ships |
-| Operator-surface playbooks, CUPED vocabulary, compounding, reproduce-skill (v2.1) | **Not rejected.** Queued as Phases 13–16 after Phase 12; see the Queued section below. Do not treat this row as an out-of-scope decision. |
+| Feature-provenance per-feature list | Gated backlog (brief §6.5); the leakage principle is already covered — this buys attribution, not a catch |
+| Magnitude-without-computed-effect residual claim check | Gated backlog (brief §6.5); the paper-shaped instances already fire `DSX-CLM-070` and the per-test effect-size finding |
+| Subgroup-harm declaration check | Gated backlog (brief §6.5); no admissible citation yet — lives as an agent-prompt guardrail until promoted |
 
 ## Open items — resolve at phase discuss, do not decide silently
 
@@ -170,11 +205,14 @@ in either direction — they cannot justify a check and cannot excuse skipping o
 |---|---|---|
 | `method_family_required` cannot express a disjunction under M-09's single-member reuse of `VARIANCE_ADJUSTMENTS`; the brief's example value is `cluster_robust_or_mixed` | 7 (M2a) | Reuse was chosen over a parallel vocabulary; whether the field becomes set-valued is a modelling call best made against real dependence declarations |
 | Final numeric code assignments within `DSX-VAL-*`, `DSX-INT-*`, `DSX-ADM-*` beyond those the brief fixes | 7, 8, 11 | D-06 makes numbering irreversible |
-| Whether the existing `inflation_from_peeking()` docstring is upgraded to a full D-05 citation (currently "Armitage's classic result", no year or paper) | 9 (M2c) | Pre-existing docstring held to a lower bar than the new checks it will support |
+| ~~Whether the existing `inflation_from_peeking()` docstring is upgraded to a full D-05 citation~~ | 9 (M2c) | **Resolved 2026-08-12 at discuss** — yes, with an explicit unverified-locator flag (09-CONTEXT D-13). |
+| Whether the adjudicator adjudicates per spec or per hypothesis — the one-row-per-hypothesis container from the 2026-08-20 paper evaluation is UNVERIFIED; run a verification spike before writing any requirement | 11 (M4) | The only candidate the adversarial verification pass never reached; adopting it unspiked would violate the verification-before-claiming agreement |
+| Missingness-rate reconciliation against the profile — redesign with tolerance + re-baseline the good fixture, or defer with an entry condition | 11.3 | Naive version fires on the canonical good fixture (declares 0, profile shows 1.2%) and would be the first check to cross the frame→profile layer boundary |
+| Final numeric code assignments within the Phase 11.1–11.3 families | 11.1–11.3 | D-06 makes numbering irreversible |
 
 ## Traceability
 
-Every v2.0.0 requirement maps to exactly one phase. 53/53 mapped; no orphans, no duplicates.
+Every v2.0.0 requirement maps to exactly one phase. 75/75 mapped (53 original + 22 from inserted Phases 11.1–11.3); no orphans, no duplicates.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
@@ -194,43 +232,65 @@ Every v2.0.0 requirement maps to exactly one phase. 53/53 mapped; no orphans, no
 | REQ-P6-14 | Phase 6 | Complete |
 | REQ-P6-15 | Phase 6 | Complete |
 | REQ-P6-16 | Phase 6 | Complete |
-| REQ-P7-01 | Phase 7 | Pending |
-| REQ-P7-02 | Phase 7 | Pending |
-| REQ-P7-03 | Phase 7 | Pending |
-| REQ-P7-04 | Phase 7 | Pending |
-| REQ-P7-05 | Phase 7 | Pending |
-| REQ-P7-06 | Phase 7 | Pending |
-| REQ-P7-07 | Phase 7 | Pending |
-| REQ-P7-08 | Phase 7 | Pending |
-| REQ-P7-09 | Phase 7 | Pending |
-| REQ-P8-01 | Phase 8 | Pending |
-| REQ-P8-02 | Phase 8 | Pending |
-| REQ-P8-03 | Phase 8 | Pending |
-| REQ-P8-04 | Phase 8 | Pending |
-| REQ-P8-05 | Phase 8 | Pending |
-| REQ-P8-06 | Phase 8 | Pending |
-| REQ-P9-01 | Phase 9 | Pending |
-| REQ-P9-02 | Phase 9 | Pending |
-| REQ-P9-03 | Phase 9 | Pending |
-| REQ-P9-04 | Phase 9 | Pending |
-| REQ-P9-05 | Phase 9 | Pending |
-| REQ-P9-06 | Phase 9 | Pending |
-| REQ-P9-07 | Phase 9 | Pending |
-| REQ-P10-01 | Phase 10 | Pending |
-| REQ-P10-02 | Phase 10 | Pending |
-| REQ-P10-03 | Phase 10 | Pending |
-| REQ-P10-04 | Phase 10 | Pending |
-| REQ-P11-01 | Phase 11 | Pending |
-| REQ-P11-02 | Phase 11 | Pending |
-| REQ-P11-03 | Phase 11 | Pending |
-| REQ-P11-04 | Phase 11 | Pending |
-| REQ-P11-05 | Phase 11 | Pending |
-| REQ-P11-06 | Phase 11 | Pending |
-| REQ-P12-01 | Phase 12 | Pending |
-| REQ-P12-02 | Phase 12 | Pending |
-| REQ-P12-03 | Phase 12 | Pending |
-| REQ-P12-04 | Phase 12 | Pending |
-| REQ-P12-05 | Phase 12 | Pending |
+| REQ-P7-01 | Phase 7 | Complete |
+| REQ-P7-02 | Phase 7 | Complete |
+| REQ-P7-03 | Phase 7 | Complete |
+| REQ-P7-04 | Phase 7 | Complete |
+| REQ-P7-05 | Phase 7 | Complete |
+| REQ-P7-06 | Phase 7 | Complete |
+| REQ-P7-07 | Phase 7 | Complete |
+| REQ-P7-08 | Phase 7 | Partial |
+| REQ-P7-09 | Phase 7 | Complete |
+| REQ-P8-01 | Phase 8 | Complete |
+| REQ-P8-02 | Phase 8 | Complete |
+| REQ-P8-03 | Phase 8 | Complete |
+| REQ-P8-04 | Phase 8 | Complete |
+| REQ-P8-05 | Phase 8 | Complete |
+| REQ-P8-06 | Phase 8 | Complete |
+| REQ-P9-01 | Phase 9 | Complete |
+| REQ-P9-02 | Phase 9 | Complete |
+| REQ-P9-03 | Phase 9 | Complete |
+| REQ-P9-04 | Phase 9 | Complete |
+| REQ-P9-05 | Phase 9 | Complete |
+| REQ-P9-06 | Phase 9 | Complete |
+| REQ-P9-07 | Phase 9 | Complete |
+| REQ-P10-01 | Phase 10 | Complete |
+| REQ-P10-02 | Phase 10 | Complete |
+| REQ-P10-03 | Phase 10 | Complete |
+| REQ-P10-04 | Phase 10 | Complete |
+| REQ-P11-01 | Phase 11 | Complete |
+| REQ-P11-02 | Phase 11 | Complete |
+| REQ-P11-03 | Phase 11 | Complete |
+| REQ-P11-04 | Phase 11 | Complete |
+| REQ-P11-05 | Phase 11 | Complete |
+| REQ-P11-06 | Phase 11 | Complete |
+| REQ-P11.1-01 | Phase 11.1 | Complete |
+| REQ-P11.1-02 | Phase 11.1 | Complete |
+| REQ-P11.1-03 | Phase 11.1 | Complete |
+| REQ-P11.1-04 | Phase 11.1 | Complete |
+| REQ-P11.1-05 | Phase 11.1 | Complete |
+| REQ-P11.1-06 | Phase 11.1 | Complete |
+| REQ-P11.1-07 | Phase 11.1 | Complete |
+| REQ-P11.1-08 | Phase 11.1 | Complete |
+| REQ-P11.2-01 | Phase 11.2 | Complete |
+| REQ-P11.2-02 | Phase 11.2 | Complete |
+| REQ-P11.2-03 | Phase 11.2 | Complete |
+| REQ-P11.2-04 | Phase 11.2 | Complete |
+| REQ-P11.2-05 | Phase 11.2 | Complete |
+| REQ-P11.2-06 | Phase 11.2 | Complete |
+| REQ-P11.2-07 | Phase 11.2 | Complete |
+| REQ-P11.3-01 | Phase 11.3 | Complete |
+| REQ-P11.3-02 | Phase 11.3 | Complete |
+| REQ-P11.3-03 | Phase 11.3 | Complete |
+| REQ-P11.3-04 | Phase 11.3 | Complete |
+| REQ-P11.3-05 | Phase 11.3 | Complete |
+| REQ-P11.3-06 | Phase 11.3 | Complete |
+| REQ-P11.3-07 | Phase 11.3 | Complete |
+| REQ-P12-01 | Phase 12 | Complete |
+| REQ-P12-02 | Phase 12 | Complete |
+| REQ-P12-03 | Phase 12 | Complete |
+| REQ-P12-04 | Phase 12 | Complete |
+| REQ-P12-05 | Phase 12 | Complete |
 
 ### Coverage summary
 
@@ -242,13 +302,17 @@ Every v2.0.0 requirement maps to exactly one phase. 53/53 mapped; no orphans, no
 | 9 | M2c — Monitoring discipline, symmetric (`DSX-PAR-*`) | REQ-P9-01 … REQ-P9-07 | 7 |
 | 10 | M3 — Pre-registered inference plan (`DSX-PRE-*`) | REQ-P10-01 … REQ-P10-04 | 4 |
 | 11 | M4 — Frequentist admissibility adjudicator (`DSX-ADM-*`) | REQ-P11-01 … REQ-P11-06 | 6 |
+| 11.1 | (INSERTED) Generated-pipeline reality | REQ-P11.1-01 … REQ-P11.1-08 | 8 |
+| 11.2 | (INSERTED) Prescriptive claim layer | REQ-P11.2-01 … REQ-P11.2-07 | 7 |
+| 11.3 | (INSERTED) Reporting completeness and missing-data discipline | REQ-P11.3-01 … REQ-P11.3-07 | 7 |
 | 12 | M5 — Calibration | REQ-P12-01 … REQ-P12-05 | 5 |
-| **Total** | — | — | **53** |
+| **Total** | — | — | **75** |
 
 See `.planning/ROADMAP.md` for each phase's goal, success criteria, dependencies and
 ordering constraints.
 
 ---
+*v2.0.0 requirements defined: 2026-08-07*
 
 # Queued — Milestone v2.1 Analytic Surface
 

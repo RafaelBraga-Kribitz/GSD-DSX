@@ -9,7 +9,7 @@ every time, because a p-value alone answers a question nobody asked.
 from __future__ import annotations
 
 from ..findings import Report
-from ..mathx import apply_correction, interpret_effect
+from ..mathx import EFFECT_SIZE_KINDS, apply_correction, interpret_effect
 from ..spec import as_number, get, is_blank, items, normalize, section
 
 OUTCOME_TYPES = {"proportion", "continuous", "count", "ordinal", "time_to_event"}
@@ -140,7 +140,9 @@ def check(spec: dict) -> Report:
     report = Report(check="stats")
     results = section(spec, "results")
     tests = items(results, "tests")
-    alpha = as_number(get(spec, "design.alpha")) or 0.05
+    alpha = as_number(get(spec, "design.alpha"))
+    if alpha is None:
+        alpha = 0.05
 
     if not tests:
         analysis = section(spec, "analysis")
@@ -252,6 +254,14 @@ def _check_reporting_contract(
 def _check_practical_significance(
     test: dict, p: float, label: str, where: str, alpha: float, report: Report
 ) -> None:
+    """Practical-significance and effect-magnitude guards (DSX-STA-010/011/012).
+
+    Structural criterion: the recognised effect_size_kind set is exactly the domain of
+    mathx.interpret_effect's band table, imported here as EFFECT_SIZE_KINDS so the
+    membership guard that PRECEDES interpret_effect cannot drift from the dispatch it
+    protects. A kind outside that set fires DSX-STA-012 (MEDIUM) rather than calling
+    interpret_effect, whose ValueError-on-unknown-kind must never reach the gate path.
+    """
     effect = as_number(test.get("effect"))
     standardized = as_number(test.get("standardized_effect"))
     practical = as_number(test.get("minimum_practical_effect"))
@@ -274,7 +284,7 @@ def _check_practical_significance(
 
     if p < alpha and standardized is not None:
         kind = normalize(test.get("effect_size_kind", "d"))
-        if kind in ("d", "h", "r"):
+        if kind in EFFECT_SIZE_KINDS:
             magnitude = interpret_effect(kind, standardized)
             if magnitude == "negligible":
                 report.add(
@@ -285,6 +295,23 @@ def _check_practical_significance(
                     remedy="Lead the write-up with the magnitude, not the p-value.",
                     where=where,
                 )
+        else:
+            report.add(
+                "DSX-STA-012",
+                "MEDIUM",
+                f"'{label}' declares an unrecognised effect_size_kind ({kind!r})",
+                detail=(
+                    f"effect_size_kind normalises to {kind!r}, which is not one of the "
+                    f"recognised kinds {sorted(EFFECT_SIZE_KINDS)}. The magnitude guard "
+                    "(DSX-STA-011) is silently skipped for this test, so a negligible "
+                    "effect could pass unflagged."
+                ),
+                remedy=(
+                    "Declare one of d (Cohen's d), h (Cohen's h) or r as the "
+                    "effect_size_kind so the magnitude guard applies."
+                ),
+                where=where,
+            )
 
 
 def _check_null_acceptance(

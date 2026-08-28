@@ -1,0 +1,194 @@
+# A known-bad ANALYSIS-SPEC (REQ-P7-05, ROADMAP Success Criterion 1, D-15). Opposite
+# polarity from its three siblings in this directory: this file is EXPECTED to exit
+# non-zero at `dsx gate plan`, naming DSX-VAL-040 among its CRITICAL findings, because
+# the code that fixture exists to demonstrate ships in the same phase (Phase 7) as the
+# fixture itself — the first fixture in this corpus for which that is true. It still
+# clears `dsx gate execute` (exits 0), because the "val" check that emits DSX-VAL-040
+# is registered in the plan, verify and ship gate profiles but not in execute
+# (dsx/cli.py::GATE_PROFILES) — half of the corpus's usual positive gate guarantee
+# survives untouched for this fixture too. It also passes `dsx validate`.
+#
+# The encoded defect: validity_frame.identification.strength is declared `weak` with
+# constraint_source `none` — a marketing-mix regression whose only source of
+# identifying variation is adjustment for observed covariates, with no design-based
+# support (no randomization, no instrument, no discontinuity) and no external
+# constraint (no informative prior, no penalisation, no design restriction, no
+# hierarchical pooling) anchoring the estimate. That is precisely DSX-VAL-040's
+# trigger (dsx/frame/val.py::_check_identification). Every other validity_frame
+# sub-block is populated with clean, non-defective values, so DSX-VAL-040 is the only
+# DSX-VAL-* code this fixture produces — see tests/test_frame_val.py's
+# _EXPECTED_VAL_CODES entry for this file.
+#
+# It also blocks `dsx gate ship` (and `dsx gate verify`) on corpus-completeness gaps
+# unrelated to the encoded defect — DSX-CLM-031 (evidence pointer does not resolve),
+# DSX-COH-031 (an unchecked, unwaived assumption), DSX-MET-040 (a warehouse-like
+# metric with no sql), DSX-NAR-001 (no narrative.path) and DSX-REP-030 (no
+# reproducibility.entrypoint) — the same measured incidental-gap pattern the sibling
+# fixtures carry; see tests/test_known_bad_corpus.py's _INCIDENTAL_GAP_CODES. See the
+# paired POSTMORTEM.md.
+#
+#   dsx validate --spec examples/known-bad/weak-identification-mmm-ANALYSIS-SPEC.yaml
+#   dsx gate plan --spec examples/known-bad/weak-identification-mmm-ANALYSIS-SPEC.yaml
+
+spec_version: 1
+title: "Does raising TV advertising spend increase weekly online revenue, when TV spend is not randomized and moves together with other unmeasured demand drivers?"
+owner: "marketing-analytics"
+created: "2026-08-01"
+
+question_type: causal
+
+decision:
+  owner: "VP Marketing"
+  decision_rule: >
+    Increase TV spend allocation by 15% if the estimated TV-spend coefficient's 95%
+    CI lower bound sits above +0.01 (revenue dollars per spend dollar), holding
+    other channels at their observed weekly levels. Otherwise hold current
+    allocation.
+  action_if_null: "Hold current TV spend allocation; commission a randomized geo-holdout experiment before reallocating budget."
+  minimum_practical_effect: 0.01
+  reversible: true
+  deadline: "2026-09-01"
+
+metrics:
+  - name: weekly_revenue
+    type: sum
+    definition: "Total online revenue recognized in the calendar week"
+    grain: week
+    source: warehouse.fct_weekly_revenue
+    owner: marketing-analytics
+
+data:
+  - name: media_spend_and_revenue
+    source: warehouse.fct_media_weekly
+    period: "2023-01-02..2025-12-28"
+    rows: 156
+
+design:
+  kind: observational
+  identification: regression_adjustment
+  covariates:
+    - price_promotions
+    - seasonality_index
+    - competitor_tv_spend
+    - search_spend
+    - social_spend
+    - display_spend
+  sensitivity_analysis: >
+    An omitted-variable-bias sensitivity analysis (Cinelli & Hazlett (2020),
+    "Making Sense of Sensitivity: Extending Omitted Variable Bias", Journal of the
+    Royal Statistical Society Series B 82(1):39-67) computed against the TV-spend
+    coefficient and reported alongside the point estimate.
+
+claims:
+  - text: >
+      Each additional dollar of weekly TV spend is associated with an increase in
+      weekly online revenue, estimated via a regression-adjusted marketing-mix
+      model.
+    type: causal
+    evidence: "RESULTS.md#tv-spend-coefficient"
+    population: "national online sales, 2023-01-02 to 2025-12-28"
+    identification: regression_adjustment
+
+assumptions:
+  - assumption: "TV spend is not set in anticipation of demand shocks that also drive revenue (no reverse causality running from expected revenue back into the marketing budget)."
+    rationale: "Budget is fixed on an annual planning cycle roughly six months ahead of the weeks it funds, before that week's demand shocks are observable."
+    impact_if_wrong: "The estimated TV coefficient would be confounded by whatever revenue-forecasting or seasonal-anticipation process drove both the budget and the outcome."
+    checked: false
+
+limitations:
+  - "The identification strategy rests on regression adjustment for observed covariates, with no design-based support (no randomization, instrument or discontinuity) and no external constraint informing the coefficient's scale; see validity_frame.identification."
+
+# ── Validity frame (REQ-P7-05) ───────────────────────────────────────────────
+# question_type: causal, so all ten sub-blocks are required from plan onward
+# (R-01 / M-06). The defect: identification.strength is declared weak with
+# constraint_source none — DSX-VAL-040's exact trigger
+# (dsx/frame/val.py::_check_identification). Every other sub-block is clean:
+# units.observation/assignment/analysis all name the same unit (week), so
+# DSX-VAL-020 does not fire; design declares no randomization_unit or
+# analysis_unit, so DSX-VAL-021 has nothing to compare against; dependence
+# names an admissible method family for its declared structure, so DSX-VAL-030
+# does not fire; sampling_frame, missingness and measurement are each complete
+# and internally consistent, so none of DSX-VAL-050/060/070 fire. See
+# tests/test_frame_val.py's _EXPECTED_VAL_CODES entry for this file: exactly
+# {"DSX-VAL-040"}.
+validity_frame:
+  estimand:
+    quantity: "elasticity of weekly online revenue with respect to weekly TV spend"
+    type: regression_coefficient
+    population: "national online sales, 2023-01-02 to 2025-12-28"
+    contrast: "marginal effect of one additional dollar of TV spend, other channels held at their observed weekly levels"
+    time_window: "same calendar week as the TV spend, with a two-week adstock carryover"
+    falsifier: "95% CI on the TV-spend coefficient includes zero, or its lower bound sits below +0.01"
+
+  units:
+    observation: week
+    assignment: week
+    analysis: week
+
+  identification:
+    strength: weak                 # strong | moderate | weak
+    evidence: >
+      TV spend varies with the annual marketing calendar and seasonal
+      promotions; there is no experimental or quasi-experimental source of
+      variation (no randomization, no instrument, no discontinuity) that
+      isolates TV's effect from the other channels or from unmeasured demand
+      shocks. The model relies entirely on regression adjustment for the
+      observed covariates listed in design.covariates.
+    constraint_source: none        # none | informative_priors | penalisation | design_restriction | hierarchical_pooling
+    constraint_justification: ""
+
+  dependence:
+    structure: temporal            # none | clustered | repeated_measures | temporal | spatial | hierarchical
+    cluster_var: ""
+    method_family_required: bootstrap_cluster
+
+  interference:
+    risk: none                     # none | shared_budget | marketplace | geo_spillover | social_graph | shared_inventory
+    mechanism: >
+      Weekly national TV spend is not a shared, capacity-limited resource split
+      between a treated and an untreated group in this data — there is no
+      control arm at all, unlike the interference fixture's shared paid-media
+      budget pattern. Nothing here is adjudicated by this field beyond its own
+      shape.
+    mitigation: none               # none | geo_split | cluster_randomisation | time_split | budget_isolation | modelled
+    residual_note: ""
+
+  triggering:
+    eligible_population: "all national online revenue weeks in the observed period"
+    triggered_definition: "every observed week is included; there is no eligibility gate below the full period"
+    analysis_population: eligible  # eligible | triggered
+    expected_trigger_rate: 1.0
+    dilution_adjusted: false
+
+  stability:
+    window: "156 weeks"
+    novelty_primacy_assessed: true
+    evidence: "RESULTS.md#tv-spend-coefficient-stability"
+
+  sampling_frame:
+    source: "warehouse.fct_media_weekly, all geos"
+    claim_population: "national online sales, 2023-01-02 to 2025-12-28"
+    known_exclusions: []
+    selection_risk: "none identified"
+
+  missingness:
+    mechanism: MCAR                # MCAR | MAR | MNAR | not_assessed
+    rate: 0.0
+    method_implied: complete_case
+
+  measurement:
+    construct: "weekly online revenue"
+    operationalisation: "sum of completed order revenue recognized within the calendar week, per warehouse.fct_weekly_revenue"
+    known_gaps: "none identified"
+
+# ── Inference plan (REQ-P6-04) ───────────────────────────────────────────────
+inference:
+  paradigm: frequentist            # frequentist | bayesian
+  paradigm_justification: team_convention
+  declared_at: pre_data            # pre_data | post_data
+  primary_procedure: linear_regression
+  alpha_spending: null
+  fallback_rule: >
+    If a data-quality break in any channel's weekly spend series is found
+    (missing week, duplicated week, backfilled aggregate), exclude the affected
+    week from the regression and note the exclusion rather than interpolate.

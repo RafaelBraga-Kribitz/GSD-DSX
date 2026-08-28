@@ -48,12 +48,20 @@ data, which is the result `dsx.mathx.inflation_from_peeking` tabulates.
 Reference value stated explicitly: **at a nominal alpha of 0.05 with 5 interim
 looks, the true Type-I error is approximately 0.142.**
 
-## Which absent code would have caught it
+## Which code catches it
 
-`DSX-PAR-010` (Phase 9) — no code in this codebase adjudicates the
-combination of `inference.paradigm: frequentist` with an uncontrolled
-continuous-monitoring `design.peeking_policy` today; Phase 6 only checks that
-both blocks are present and their fields are legal vocabulary members. Phase
-9 is scoped to block exactly this combination: a frequentist paradigm
-declared alongside continuous monitoring with no sequential correction and no
-anytime-valid method.
+`DSX-PAR-010` (CRITICAL) now blocks exactly this combination — a frequentist
+paradigm declared alongside continuous monitoring with no sequential
+correction and no anytime-valid method — at both CRITICAL-threshold gate
+points, `dsx gate plan` and `dsx gate execute`. It fires whenever
+`design.peeking_policy` normalizes to `uncontrolled_continuous` and neither
+`inference.alpha_spending` nor `inference.threshold_calibration` is declared;
+this fixture declares neither, and required no field change to trip the
+check the day it shipped. Phase 6 checked only that the `design:` and
+`inference:` blocks were present and their fields legal vocabulary members —
+it never adjudicated the combination itself.
+
+This is the frequentist half of the atomic pair; its Bayesian counterpart,
+`bayesian-continuous-monitoring-ANALYSIS-SPEC.yaml`, blocks the same two gate
+points on `DSX-PAR-011`, shipped in the same commit range at the same
+CRITICAL severity.

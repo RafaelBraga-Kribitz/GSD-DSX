@@ -1,0 +1,203 @@
+# Clean control spec — good-side FPR corpus (REQ-P12-03 / D-04).
+# Paradigm: frequentist. Outcome shape: binary/proportion.
+#
+# This is a genuinely clean analysis that should not block on any
+# statistical-validity concern. It references only artifacts that ARE committed
+# under examples/good-corpus/ and resolve from the repository root (cwd), so a
+# fresh-tempdir ship run fires none of the four artifact-stripping noise codes
+# (DSX-DQ-001, DSX-CLM-031, DSX-FIG-001, DSX-NAR-010). Data assertions, figure
+# artifact_paths and DATA-PROFILE references are omitted at the source rather
+# than seeded — the minimal-reference route. The one deliverable it must declare
+# (a narrative, because it makes a claim) is committed and resolves from cwd.
+
+spec_version: 1
+title: "Does one-click checkout raise cart-completion rate?"
+owner: "r.braga"
+created: "2026-08-01"
+spec_id: "freq-proportion-checkout"
+
+question_type: causal
+
+decision:
+  owner: "VP Commerce"
+  decision_rule: >
+    Roll out one-click checkout to 100% if the 95% CI lower bound on the
+    completion-rate uplift exceeds +1.0pp and no guardrail metric degrades
+    beyond its declared tolerance. Otherwise hold and iterate.
+  action_if_null: "Keep the multi-step checkout; close the initiative."
+  minimum_practical_effect: 0.02
+  reversible: true
+  deadline: "2026-09-15"
+  revisit_when: "completion_rate 95% CI lower bound below +1.0pp at the 2026-Q4 review"
+  replay:
+    metric: completion_rate
+    ci_lower_min: 0.01
+    on_pass: rollout
+    on_fail: hold
+
+metrics:
+  - name: completion_rate
+    type: ratio
+    definition: "Share of carts that reach a paid order within the session"
+    grain: cart
+    numerator: "count(distinct cart_id) where order_paid_at is not null"
+    denominator: "count(distinct cart_id) where started_at in period and is_bot = false"
+    timezone: UTC
+    source: commerce_marts.fct_carts
+    owner: commerce-analytics
+
+data:
+  - name: carts
+    source: commerce_marts.fct_carts
+    period: "2026-07-01..2026-07-14"
+    rows: 48498
+    snapshot_at: "2026-07-16T03:00:00Z"
+    known_gaps: "Bot traffic excluded upstream by the standard is_bot filter. No outages in window."
+
+design:
+  kind: experiment
+  identification: randomized_experiment
+  randomization_unit: user
+  analysis_unit: cart
+  variance_adjustment: cluster_robust
+  arms: [control, treatment]
+  expected_allocation: [0.5, 0.5]
+  baseline_rate: 0.42
+  mde: 0.02
+  alpha: 0.05
+  power: 0.80
+  planned_n_per_arm: 12000
+  duration_days: 14
+  guardrail_metrics: [completion_rate]
+  peeking_policy: fixed_horizon
+
+analysis:
+  outcome_type: proportion
+  n_groups: 2
+  paired: false
+  n_per_group: 12100
+  test: two_proportion_z
+  normality_ok: true
+  equal_variance: true
+  independence_ok: true
+
+results:
+  observed_n: [12100, 12050]
+  interim_looks: 1
+  comparisons_looked_at: 1
+  overall_effect: 0.022
+  tests:
+    - metric: completion_rate
+      p_value: 0.0006
+      effect: 0.022
+      standardized_effect: 0.044
+      effect_size_kind: h
+      ci: [0.014, 0.030]
+      interpretation: "Treatment raises completion; the interval clears the practical floor."
+      minimum_practical_effect: 0.02
+
+claims:
+  - text: >
+      The one-click checkout raises cart completion by 2.2 percentage points
+      (95% CI 1.4 to 3.0pp) among non-bot carts in the test window.
+    type: causal
+    evidence: "examples/good-corpus/freq-proportion-checkout-NARRATIVE.md"
+    population: "Non-bot carts started 2026-07-01 to 2026-07-14"
+    identification: randomized_experiment
+
+assumptions:
+  - assumption: "Bucketing is stable across sessions for a given user_id."
+    rationale: "Assignment is hashed on user_id and persisted server-side."
+    impact_if_wrong: "Contamination between arms would bias the estimate toward zero."
+    checked: true
+
+limitations:
+  - "Estimates the effect for active shoppers only; says nothing about dormant users."
+  - "Measured over two weeks; seasonal cohorts may respond differently."
+
+reproducibility:
+  entrypoint: examples/good-corpus/_control_readout.py
+  language_version: "python 3.12.10"
+  package_versions: "numpy 2.1.0, statsmodels 0.14.2"
+  runs_clean_top_to_bottom: true
+  repro_lock:
+    schema_version: "1"
+    stochasticity_declaration: >
+      Analysis outputs depend on data extracts and library versions recorded
+      elsewhere in this block; this lock documents configuration, not
+      byte-identical replay.
+    dsx_version: "2.0.0"
+
+narrative:
+  path: examples/good-corpus/freq-proportion-checkout-NARRATIVE.md
+  audience: executive
+  lead_claim: 0
+
+validity_frame:
+  estimand:
+    quantity: "difference in cart-completion rate"
+    type: difference_in_proportions
+    population: "non-bot carts started 2026-07-01 to 2026-07-14"
+    contrast: "one-click checkout vs multi-step checkout"
+    time_window: "within-session"
+    falsifier: "95% CI on the uplift includes zero, or its lower bound sits below +1.0pp"
+
+  units:
+    observation: cart
+    assignment: user
+    analysis: cart
+
+  identification:
+    strength: strong
+    evidence: "Assignment is hashed on user_id and persisted server-side; see design.identification"
+    constraint_source: none
+    constraint_justification: ""
+
+  dependence:
+    structure: clustered
+    cluster_var: user_id
+    method_family_required: cluster_robust
+
+  interference:
+    risk: none
+    mechanism: ""
+    mitigation: none
+    residual_note: ""
+
+  triggering:
+    eligible_population: "all carts started in the test window"
+    triggered_definition: "reached the checkout step"
+    analysis_population: eligible
+    expected_trigger_rate: 1.0
+    dilution_adjusted: true
+
+  stability:
+    window: "14 days"
+    novelty_primacy_assessed: true
+    evidence: "internal readout; the completion-rate gap held flat after day 3"
+
+  sampling_frame:
+    source: "commerce_marts.fct_carts, no region filter"
+    claim_population: "all carts started in the test window"
+    known_exclusions: ["bot-flagged traffic"]
+    selection_risk: "none identified"
+
+  missingness:
+    mechanism: MAR
+    rate: 0.0
+    method_implied: multiple_imputation
+
+  measurement:
+    construct: "cart completion"
+    operationalisation: "cart reaches a paid order within the session"
+    known_gaps: "none identified"
+
+inference:
+  paradigm: frequentist
+  paradigm_justification: team_convention
+  declared_at: pre_data
+  primary_procedure: two_proportion_z
+  alpha_spending: null
+  fallback_rule: >
+    If any arm's observed n falls below 80% of planned_n_per_arm, extend to the
+    pre-declared duration_days ceiling before analysing; do not analyse early.

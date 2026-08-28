@@ -1,36 +1,53 @@
 # A known-bad ANALYSIS-SPEC (REQ-P6-13, D-06). This is the Bayesian half of
-# Phase 9's atomic monitoring pair (DSX-PAR-010/DSX-PAR-011 ship together or not
-# at all). The file is structurally valid — it parses, and it accepts dsx
-# validate and both CRITICAL-threshold gate points, dsx gate plan and dsx gate
-# execute (both exit 0) — but it asserts that a weakly informative prior alone
-# controls the false-positive rate while the posterior is checked continuously,
-# with no threshold calibration declared. It currently also blocks dsx gate verify
-# and dsx gate ship (both exit 1), on seven unrelated corpus-completeness
-# gaps — DSX-STA-041 (declared test outside the stats recommendation engine's
-# acceptable set), DSX-CLM-031 (evidence pointer does not resolve), DSX-COH-031
-# (an unchecked, unwaived assumption), DSX-MET-040 (a warehouse-like metric
-# with no sql), DSX-NAR-001 (no narrative.path), DSX-REP-001 (a stochastic
-# method with no random_seed) and DSX-REP-030 (no reproducibility.entrypoint)
-# — none of which is the false-positive-control defect this fixture exists to
-# encode; see tests/test_known_bad_corpus.py's _INCIDENTAL_GAP_CODES for the
-# full measured list. DSX-PAR-011 (Phase 9) is the code that will block this
-# pattern itself once it ships; nothing in this repository adjudicates it
-# today. See the paired POSTMORTEM.md.
+# Phase 9's atomic monitoring pair (DSX-PAR-010/DSX-PAR-011 shipped together,
+# not one without the other). The file is structurally valid — it parses, and
+# it accepts dsx validate — but it asserts that a weakly informative prior
+# alone controls the false-positive rate while the posterior is checked
+# continuously, with no threshold calibration declared. DSX-PAR-011
+# (CRITICAL) now exits 1 at both CRITICAL-threshold gate points, dsx gate plan
+# and dsx gate execute — no field in this fixture was changed to make that
+# happen; the design this fixture already declared was always the defect, and
+# only the tool's ability to see it changed. The declaration that would have
+# cleared DSX-PAR-011 while keeping the uncontrolled-continuous policy is a
+# non-blank inference.prior_justification or inference.threshold_calibration;
+# this fixture declares neither. The honest fix is a controlled
+# design.peeking_policy (sequential_obf, sequential_pocock, or always_valid) —
+# the only fix that actually controls the error rate a peeked test
+# accumulates, versus typing a clearing declaration alongside an unchanged
+# design. It currently also blocks dsx gate verify and dsx gate ship (both
+# exit 1), on seven unrelated corpus-completeness gaps — DSX-STA-041
+# (declared test outside the stats recommendation engine's acceptable set),
+# DSX-CLM-031 (evidence pointer does not resolve), DSX-COH-031 (an unchecked,
+# unwaived assumption), DSX-MET-040 (a warehouse-like metric with no sql),
+# DSX-NAR-001 (no narrative.path), DSX-REP-001 (a stochastic method with no
+# random_seed) and DSX-REP-030 (no reproducibility.entrypoint) — none of which
+# is the false-positive-control defect this fixture exists to encode; see
+# tests/test_known_bad_corpus.py's _INCIDENTAL_GAP_CODES for the full measured
+# list. See the paired POSTMORTEM.md.
 #
 # ── Formulation note (T-6-17) ────────────────────────────────────────────────
-# This fixture's defect is stated relative to the PRIOR-AVERAGED bound: Ville's
-# martingale inequality caps the probability of a posterior-odds ratio ever
-# crossing a fixed threshold k at roughly 1/k. At the P(B>A) > 0.95 decision
-# threshold used below, k = 19 and the bound is 0.05. This is NOT the
-# point-null / law-of-iterated-logarithm formulation, under which the error
-# rate over an unbounded horizon grows without a useful ceiling — both are
-# correct statements about different quantities (brief.md section 6.5). See
-# the paired POSTMORTEM.md for the full derivation and citation.
+# This fixture's defect is stated relative to the PRIOR-AVERAGED bound. Deng,
+# Lu & Chen (2016) Theorem 1 states an optional-stopping equality under known
+# prior odds, for any proper stopping time — that is what licenses this
+# figure under continuous peeking, not a fixed final look. The bound itself,
+# that stopping at a posterior-odds threshold K caps the false-discovery risk
+# at 1/(K+1), is unnumbered prose immediately following Theorem 1 and again,
+# in its operational "at most" form, in the paper's Section 3.2; citing
+# Theorem 1 alone for the number 1/(K+1) would be a locator error. At the
+# P(B>A) > 0.95 decision threshold used below, K = 19 and the bound is
+# 1/20 = 0.05 exactly. Do not substitute Ville's inequality, which gives
+# the different bound 1/k (1/19 ~ 0.0526 here) — a separate result Deng,
+# Lu & Chen never cite. This is NOT the point-null / law-of-iterated-logarithm
+# formulation, under which the error rate over an unbounded horizon grows
+# without a useful ceiling — both are correct statements about different
+# quantities (brief.md section 6.5). See the paired POSTMORTEM.md for the
+# full derivation and citation.
 #
 #   dsx validate --spec examples/known-bad/bayesian-continuous-monitoring-ANALYSIS-SPEC.yaml
 
 spec_version: 1
 title: "Does a weakly informative prior keep the false-positive rate controlled while a Bayesian A/B test is monitored continuously?"
+spec_id: "bayesian-continuous-monitoring"  # REQ-P11.2-05, D-08: top-level only.
 owner: "experimentation-platform"
 created: "2026-04-10"
 
@@ -45,6 +62,7 @@ decision:
   minimum_practical_effect: 0.01
   reversible: true
   deadline: "2026-05-10"
+  revisit_when: "conversion_rate posterior P(treatment > control) below 0.95 at the 2026-Q2 review"
 
 metrics:
   - name: conversion_rate
@@ -102,7 +120,7 @@ claims:
 assumptions:
   - assumption: "A weakly informative prior on the effect size is sufficient to control the decision procedure's false-positive rate under continuous monitoring."
     rationale: "The posterior itself is a valid summary of belief at every look, regardless of the stopping rule."
-    impact_if_wrong: "The posterior being valid at every look does not make the stop-when-crossed decision rule's error rate controlled; see the post-mortem's prior-averaged Ville bound."
+    impact_if_wrong: "The posterior being valid at every look does not make the stop-when-crossed decision rule's error rate controlled; see the post-mortem's prior-averaged 1/(K+1) bound."
     checked: false
 
 limitations:
@@ -115,6 +133,7 @@ limitations:
 validity_frame:
   estimand:
     quantity: "difference in conversion rate"
+    type: difference_in_proportions
     population: "sessions in the experiment window, 2026-04-15 to 2026-05-10"
     contrast: "treatment variant vs control variant"
     time_window: "26 days, 2026-04-15 to 2026-05-10"
@@ -151,8 +170,8 @@ validity_frame:
 
   stability:
     window: "26 days"
-    novelty_primacy_assessed: false
-    evidence: ""
+    novelty_primacy_assessed: true
+    evidence: "RESULTS.md#conversion-rate-uplift-by-week"
 
   sampling_frame:
     source: "warehouse.fct_sessions, all regions"

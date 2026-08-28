@@ -1,11 +1,20 @@
 # A known-bad ANALYSIS-SPEC (REQ-P6-13, D-06). This is the frequentist half of
-# Phase 9's atomic monitoring pair (DSX-PAR-010/DSX-PAR-011 ship together or not
-# at all). The file is structurally valid — it parses, and it accepts dsx
-# validate and both CRITICAL-threshold gate points, dsx gate plan and dsx gate
-# execute (both exit 0) — but it declares design.peeking_policy:
+# Phase 9's atomic monitoring pair (DSX-PAR-010/DSX-PAR-011 shipped together,
+# not one without the other). The file is structurally valid — it parses, and
+# it accepts dsx validate — but it declares design.peeking_policy:
 # uncontrolled_continuous with no sequential correction and no anytime-valid
 # method, then reports the result from the look where the running p-value first
-# crossed 0.05. It currently also blocks dsx gate verify and dsx gate ship
+# crossed 0.05. DSX-PAR-010 (CRITICAL) now exits 1 at both CRITICAL-threshold
+# gate points, dsx gate plan and dsx gate execute — no field in this fixture
+# was changed to make that happen; the design this fixture already declared
+# was always the defect, and only the tool's ability to see it changed. The
+# declaration that would have cleared DSX-PAR-010 while keeping the
+# uncontrolled-continuous policy is a non-blank inference.alpha_spending or
+# inference.threshold_calibration; this fixture declares neither. The honest
+# fix is a controlled design.peeking_policy (sequential_obf, sequential_pocock,
+# or always_valid) — the only fix that actually controls the error rate a
+# peeked test accumulates, versus typing a clearing declaration alongside an
+# unchanged design. It currently also blocks dsx gate verify and dsx gate ship
 # (both exit 1), on six unrelated corpus-completeness gaps — DSX-EXP-007 (mde
 # exceeds decision.minimum_practical_effect), DSX-CLM-031 (evidence pointer
 # does not resolve), DSX-COH-031 (an unchecked, unwaived assumption),
@@ -13,15 +22,14 @@
 # narrative.path) and DSX-REP-030 (no reproducibility.entrypoint) — none of
 # which is the uncontrolled-peeking defect this fixture exists to encode; see
 # tests/test_known_bad_corpus.py's _INCIDENTAL_GAP_CODES for the full measured
-# list. DSX-PAR-010 (Phase 9) is the code that will block the peeking pattern
-# itself once it ships; nothing in this repository adjudicates it today. See
-# the paired POSTMORTEM.md, and note that DSX-EXP-060 does NOT fire on this
-# spec, by construction (M-01) — that is not a bug.
+# list. See the paired POSTMORTEM.md, and note that DSX-EXP-060 does NOT fire
+# on this spec, by construction (M-01) — that is not a bug.
 #
 #   dsx validate --spec examples/known-bad/frequentist-uncontrolled-continuous-ANALYSIS-SPEC.yaml
 
 spec_version: 1
 title: "Does the new checkout flow reduce cart abandonment, monitored continuously without a sequential correction?"
+spec_id: "frequentist-uncontrolled-continuous"  # REQ-P11.2-05, D-08: top-level only.
 owner: "ecommerce-analytics"
 created: "2026-04-01"
 
@@ -36,6 +44,7 @@ decision:
   minimum_practical_effect: 0.01
   reversible: true
   deadline: "2026-04-20"
+  revisit_when: "abandonment_rate reduction below +1.0pp at the 2026-Q2 review"
 
 metrics:
   - name: abandonment_rate
@@ -105,6 +114,7 @@ limitations:
 validity_frame:
   estimand:
     quantity: "difference in checkout abandonment rate"
+    type: difference_in_proportions
     population: "started checkout sessions, 2026-04-01 to 2026-04-20"
     contrast: "new checkout flow (treatment) vs current flow (control)"
     time_window: "within-session, 2026-04-01 to 2026-04-20"
@@ -141,8 +151,8 @@ validity_frame:
 
   stability:
     window: "20 days"
-    novelty_primacy_assessed: false
-    evidence: ""
+    novelty_primacy_assessed: true
+    evidence: "RESULTS.md#abandonment-rate-trend-by-day"
 
   sampling_frame:
     source: "warehouse.fct_checkout_sessions, all regions"

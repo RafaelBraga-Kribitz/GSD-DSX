@@ -1,0 +1,197 @@
+# Clean control spec — good-side FPR corpus (REQ-P12-03 / D-04).
+# Paradigm: bayesian. Outcome shape: binary/proportion.
+
+spec_version: 1
+title: "Does the guided tour raise feature-adoption rate?"
+owner: "r.braga"
+created: "2026-08-08"
+spec_id: "bayes-proportion-adoption"
+
+question_type: causal
+
+decision:
+  owner: "Head of Product"
+  decision_rule: >
+    Ship the guided tour if the posterior probability that the adoption uplift
+    exceeds +1.0pp is at least 0.95 and the credible-interval lower bound clears
+    +1.0pp. Otherwise hold and iterate.
+  action_if_null: "Keep the current onboarding; reallocate the squad."
+  minimum_practical_effect: 0.02
+  reversible: true
+  deadline: "2026-09-30"
+  revisit_when: "adoption_rate credible-interval lower bound below +1.0pp at the 2026-Q4 review"
+  replay:
+    metric: adoption_rate
+    ci_lower_min: 0.01
+    on_pass: ship
+    on_fail: hold
+
+metrics:
+  - name: adoption_rate
+    type: ratio
+    definition: "Share of new users adopting the target feature within 14 days"
+    grain: user
+    numerator: "count(distinct user_id) where feature_first_used_at <= signup_at + 14 days"
+    denominator: "count(distinct user_id) where signup_at in period and is_bot = false"
+    timezone: UTC
+    source: product_marts.fct_adoption
+    owner: product-analytics
+
+data:
+  - name: adoption
+    source: product_marts.fct_adoption
+    period: "2026-07-01..2026-07-14"
+    rows: 26110
+    snapshot_at: "2026-07-16T03:00:00Z"
+    known_gaps: "Bot traffic excluded upstream by the standard is_bot filter."
+
+design:
+  kind: experiment
+  identification: randomized_experiment
+  randomization_unit: user
+  analysis_unit: user
+  arms: [control, treatment]
+  expected_allocation: [0.5, 0.5]
+  baseline_rate: 0.29
+  mde: 0.02
+  alpha: 0.05
+  power: 0.80
+  planned_n_per_arm: 9000
+  duration_days: 14
+  guardrail_metrics: [adoption_rate]
+  peeking_policy: fixed_horizon
+
+analysis:
+  # No frequentist test declared; the procedure is the Bayesian posterior named
+  # in inference.primary_procedure. DSX-STA-041 does not apply.
+  outcome_type: proportion
+  n_groups: 2
+  paired: false
+  n_per_group: 9100
+  normality_ok: true
+  equal_variance: true
+  independence_ok: true
+
+results:
+  observed_n: [9100, 9070]
+  interim_looks: 1
+  comparisons_looked_at: 1
+  overall_effect: 0.026
+  tests:
+    - metric: adoption_rate
+      effect: 0.026
+      ci: [0.015, 0.037]
+      posterior_probability: 0.993
+      interpretation: "Posterior mass above the +1.0pp floor is 0.99; the credible interval clears it."
+      minimum_practical_effect: 0.02
+
+claims:
+  - text: >
+      The guided tour raises feature adoption by 2.6 percentage points
+      (credible interval 1.5 to 3.7pp) among non-bot new users in the test window.
+    type: causal
+    evidence: "examples/good-corpus/bayes-proportion-adoption-NARRATIVE.md"
+    population: "Non-bot new users, 2026-07-01 to 2026-07-14"
+    identification: randomized_experiment
+
+assumptions:
+  - assumption: "Assignment is stable across sessions for a given user_id."
+    rationale: "Bucketing is hashed on user_id and persisted server-side."
+    impact_if_wrong: "Cross-arm contamination would bias the posterior toward the null."
+    checked: true
+
+limitations:
+  - "Estimates adoption within 14 days only; says nothing about sustained use."
+  - "The posterior is conditional on the priors declared below."
+
+reproducibility:
+  entrypoint: examples/good-corpus/_control_readout.py
+  random_seed: 42
+  language_version: "python 3.12.10"
+  package_versions: "numpy 2.1.0, pymc 5.16.2"
+  runs_clean_top_to_bottom: true
+  repro_lock:
+    schema_version: "1"
+    stochasticity_declaration: >
+      Posterior draws depend on the random seed and library versions recorded
+      here; this lock documents configuration, not byte-identical replay.
+    dsx_version: "2.0.0"
+
+narrative:
+  path: examples/good-corpus/bayes-proportion-adoption-NARRATIVE.md
+  audience: executive
+  lead_claim: 0
+
+validity_frame:
+  estimand:
+    quantity: "difference in feature-adoption rate"
+    type: difference_in_proportions
+    population: "non-bot new users, 2026-07-01 to 2026-07-14"
+    contrast: "guided tour vs current onboarding"
+    time_window: "14 days from signup"
+    falsifier: "credible interval on the uplift includes zero, or its lower bound sits below +1.0pp"
+
+  units:
+    observation: user
+    assignment: user
+    analysis: user
+
+  identification:
+    strength: strong
+    evidence: "Assignment is hashed on user_id and persisted server-side; see design.identification"
+    constraint_source: none
+    constraint_justification: ""
+
+  dependence:
+    structure: none
+    cluster_var: ""
+
+  interference:
+    risk: none
+    mechanism: ""
+    mitigation: none
+    residual_note: ""
+
+  triggering:
+    eligible_population: "all new users in the test window"
+    triggered_definition: "signed up in the period"
+    analysis_population: eligible
+    expected_trigger_rate: 1.0
+    dilution_adjusted: true
+
+  stability:
+    window: "14 days"
+    novelty_primacy_assessed: true
+    evidence: "internal readout; the adoption gap held flat after day 3"
+
+  sampling_frame:
+    source: "product_marts.fct_adoption, no region filter"
+    claim_population: "all new users in the test window"
+    known_exclusions: ["bot-flagged traffic"]
+    selection_risk: "none identified"
+
+  missingness:
+    mechanism: MAR
+    rate: 0.0
+    method_implied: multiple_imputation
+
+  measurement:
+    construct: "feature adoption"
+    operationalisation: "target feature first used within 14 days of signup"
+    known_gaps: "none identified"
+
+inference:
+  paradigm: bayesian
+  paradigm_justification: small_sample_informative_prior
+  prior_justification: >
+    Weakly-informative Beta(2,5) priors per arm, centred on the historical base
+    rate; a flat Beta(1,1) sensitivity check did not move the decision.
+  threshold_calibration: >
+    The P(uplift > +1.0pp) >= 0.95 rule was fixed before data collection and
+    calibrated against the +1.0pp practical floor.
+  declared_at: pre_data
+  primary_procedure: beta_binomial_posterior
+  decision_threshold: 0.95
+  fallback_rule: >
+    If either arm's observed n falls below 80% of planned_n_per_arm, extend to
+    the pre-declared duration_days ceiling before summarising the posterior.

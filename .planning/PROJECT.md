@@ -46,10 +46,26 @@ written profile.
   decidable (DQ, evidence, coherence, viz/seals/smells, narrative/code, analytical
   logic / stats extensions including decision replay and repro_lock, plus scored
   CHART-REVIEW and ADR-authorised suppressions).
+- **v2.0.0 DSX Validity Frame — SHIPPED 2026-08-28.** All 11 phases (6, 7, 8, 9, 10,
+  11, 11.1, 11.1.1, 11.2, 11.3, 12) complete — 89 plans, 208 tasks. Every phase is
+  verified and Nyquist-validated; cross-phase integration INTEGRATED; the milestone
+  audit reached `passed` (75/75 requirements accounted, 0 unsatisfied, 0 orphaned).
+  The full validity-frame surface now gates: `validity_frame:` and paradigm-aware
+  `inference:` blocks in `ANALYSIS-SPEC.yaml`; the `DSX-VAL-*` (estimand, unit triad,
+  dependence, identification, sampling frame, missingness, measurement), `DSX-INT-*`
+  (interference/SUTVA, triggered-vs-eligible dilution, novelty/primacy), `DSX-PAR-*`
+  (paradigm manifest + symmetric monitoring pair), `DSX-PRE-*` (pre-registered
+  inference plan, declared-vs-executed branch reconciliation), `DSX-ADM-*` (frequentist
+  procedure admissibility over `references/families.yaml`), the prescriptive-claim
+  layer (`DSX-CLM-*`/`DSX-COH-040`), and reporting-completeness / missing-data
+  discipline families. Phase 12 delivered the calibration corpus with a measured catch
+  rate and false-positive rate and `dsx stats --paradigm`. Package version is 2.0.0.
+  The finding catalogue holds 256 codes. Full detail archived under
+  `.planning/milestones/v2.0.0-*`.
 
-## Current Milestone: v2.0.0 DSX Validity Frame
+## Shipped Milestone: v2.0.0 DSX Validity Frame (shipped 2026-08-28)
 
-**Goal:** Check the layer beneath every existing DSX check — that the estimand,
+**Goal (delivered):** Check the layer beneath every existing DSX check — that the estimand,
 unit triad, dependence structure, interference risk, triggering, sampling frame,
 missingness mechanism, measurement and declared inferential paradigm are coherent
 enough for any DSX finding to mean anything.
@@ -113,12 +129,26 @@ path that skips the plan gate.
 - ✓ Narrative discipline, forbidden-claim SSOT, SQL anti-patterns, entrypoint smell scan — v1.3.0
 - ✓ Assumption checkoffs/waivers, TOST/CI/MDE, multiplicity family, repro_lock, decision replay — v1.4.0
 - ✓ ANALYSIS-SPEC `suppressions[]` with authority, scored CHART-REVIEW.md — v1.5.0
+- ✓ `validity_frame:`/`inference:` contract blocks, decision records + `dsx explain`, `DSX-PAR-001` paradigm manifest, `dsx/frame/` package with enforced D-03a boundary, mechanical D-05 citation enforcement, known-bad corpus — Phase 6 (REQ-P6-01 … REQ-P6-16)
+- ✓ Symmetric monitoring pair `DSX-PAR-010`/`DSX-PAR-011` plus membership-free `DSX-PAR-002` (requiredness; `DSX-SPEC-085` owns vocabulary membership) — Phase 9 (REQ-P9-01 … REQ-P9-07)
+- ✓ Interference adjudication `DSX-INT-010`/`-011` (unaddressed risk; channel-inadmissible mitigation, disjoint on the mitigation dimension alone), triggered-versus-eligible dilution `DSX-INT-030` (additive metrics only, ratio metrics explicitly out of scope), novelty/primacy `DSX-INT-040`, and the no-paradigm-read invariant — Phase 8 (REQ-P8-01 … REQ-P8-06)
+- ✓ Validity-frame checks `DSX-VAL-*` — estimand completeness/falsifiability, unit triad, dependence method family, identification strength, sampling frame, missingness, measurement — Phase 7 (REQ-P7-01 … REQ-P7-09; REQ-P7-08 satisfied within its declared D-06 scope) — v2.0.0
+- ✓ Pre-registered inference plan `DSX-PRE-*` — fallback-rule DSL, `declared_at` provenance, declared-vs-executed branch reconciliation blocking on branch identity alone — Phase 10 (REQ-P10-01 … REQ-P10-04) — v2.0.0
+- ✓ Frequentist admissibility adjudicator `DSX-ADM-*` over `references/families.yaml` (14 cited families) — ranked admissible set, `no_admissible_procedure` escalation — Phase 11 (REQ-P11-01 … REQ-P11-06) — v2.0.0
+- ✓ Generated-pipeline reality — widened entrypoint fit-scan, cleaning-stage fit boundary, score/selection provenance, imbalance disclosure — Phase 11.1 — v2.0.0
+- ✓ Detection-code hardening — `ast.parse` primary path with text-scan fallback, closing false negatives and two false positives — Phase 11.1.1 — v2.0.0
+- ✓ Prescriptive claim layer — `prescriptive` claim type + coherence ladder, causal-verb lexicon tiers, `decision.revisit_when` (`DSX-COH-040`), amendment counting on the locked plan, self-reported-fields view — Phase 11.2 (REQ-P11.2-01 … -07) — v2.0.0
+- ✓ Reporting completeness and missing-data discipline — multiplicity over reported tests, examined-vs-reported gap, missingness method vocabulary + single-imputation denial, exclusion rules under the plan-time lock — Phase 11.3 (REQ-P11.3-01 … -07) — v2.0.0
+- ✓ Calibration — full known-bad corpus with measured catch rate and false-positive rate, `dsx stats --paradigm`, gated-backlog re-evaluation — Phase 12 (REQ-P12-01 … REQ-P12-05) — v2.0.0
 
 ### Active
 
-See `.planning/REQUIREMENTS.md` for the v2.0.0 requirement set (REQ-P6-* … REQ-P12-*).
-Queued v2.1 requirements (REQ-P13-* … REQ-P16-*) are recorded there under
-**Queued — Milestone v2.1** and are not Active until Phase 12 closes.
+(None — all v2.0.0 requirements (REQ-P6-* … REQ-P12-*) shipped and validated. The
+full v2.0.0 requirement set with final traceability is archived at
+`.planning/milestones/v2.0.0-REQUIREMENTS.md`.) Queued v2.1 requirements
+(REQ-P13-* … REQ-P16-*) are recorded in `.planning/REQUIREMENTS.md` under
+**Queued — Milestone v2.1** and are not Active until that milestone is started
+with `/gsd-new-milestone`.
 
 ### Out of Scope
 
@@ -164,24 +194,25 @@ Queued v2.1 requirements (REQ-P13-* … REQ-P16-*) are recorded there under
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| D-03 Extend DSX in place, one install/contract/gate/test suite/catalogue | Highest-value checks are cross-cutting; a check spanning two contracts cannot live cleanly in either of two plugins | — Pending |
-| D-03a Keep an extractable boundary: `dsx/frame/` imports only `Report`/`Finding` from `dsx/checks/` | If in six months there are no upward imports, extraction is a `git filter-repo` | — Pending |
-| D-04 Never block to teach — gates emit a decision record, `dsx explain` renders it | A gate that stops to explain is disabled on a deadline, losing guardrail and lesson both | — Pending |
-| D-05 Citation + published reference value per check | Prevents laundering model statistics knowledge into a blocking gate | — Pending |
-| D-10 An unsupported paradigm is never blocking on its own | Blocking on `paradigm: bayesian` makes typing `frequentist` the cheapest way past the gate | — Pending |
-| D-11 Frame-layer checks never read `paradigm` | A prior does not save you from pseudo-replication; if a frame check branches on paradigm it is in the wrong layer | — Pending |
-| D-12/D-12a Paradigm-specific checks ship in symmetric pairs, and symmetry is the scoping rule | Asymmetric enforcement is how a tool silently steers method choice | — Pending |
-| D-13 Deferred checks carry an entry condition, not a wish | A trigger tied to a measured catch rate is falsifiable; a priority is not | — Pending |
-| D-14 Reversing a D-table decision requires a reversal record; evidence-free reversal logs as `SELF-001` | "Here is what would change my mind" is stronger than "here is what I chose" | — Pending |
-| **M-01** `DSX-PAR-010` ships as a distinct code, `DSX-EXP-060` untouched | Triggers are disjoint — undeclared looks under a fixed horizon vs a declared continuous design with no sequential method. Widening EXP-060 would silently broaden existing suppressions, against the spirit of D-06 | — Pending |
-| **M-02** No `inference.stopping_rule` field; `DSX-PAR-010/011` read the existing `design.peeking_policy` | One concept, one field. Avoids a permanent consistency check between two vocabularies for the same thing. Deviates from brief §5.2, which specified a new field | — Pending |
-| **M-03** `PEEKING_POLICIES` gains a value for uncontrolled continuous monitoring | Consequence of M-02: the existing vocabulary has `always_valid` (disciplined) but no value for "peeking continuously with no correction" — precisely what `DSX-PAR-010` must fire on | — Pending |
-| **M-04** Automated import test enforces the D-03a boundary from M1 | Enforces the boundary without scaffolding an empty `families.yaml`, which brief §6.6 warns accumulates speculative structure | — Pending |
-| **M-05** `SELF-001` stays a convention for v2.0.0; `REVERSALS.md` template seeded in M1 | Enforcement is a planning-process concern, not a gate concern; a subcommand adjudicating planning docs is outside the gate path | — Pending |
-| **M-06** `validity_frame` sub-block requiredness is gated by `question_type` from M1 | Requiring the whole block for descriptive/BI work forces reflexive `none` answers — the exact incentive distortion D-10 exists to prevent. Far cheaper decided in M1 than retrofitted after M2a/M2b are written against the wrong requiredness | — Pending |
-| **M-07** Existing `suppressions[]` with its authority requirement is the grandfather path for pre-v2.0.0 specs | Zero new code, and the ADR/SPEC authority requirement makes grandfathering deliberate and attributable rather than silent | — Pending |
-| **M-08** D-05 citation enforcement is automated in M1 via `scripts/gen-finding-catalogue.py` | D-05 says "if velocity pressure arrives, cut checks, never this" — an unenforced constraint is the first thing velocity pressure removes. It was the only major constraint nothing checked | — Pending |
-| **M-09** `dependence.method_family_required` reuses `VARIANCE_ADJUSTMENTS` | Same reasoning as M-02: one concept, one vocabulary. Consequence: the field holds a single member, so the brief's example `cluster_robust_or_mixed` is not expressible — carried as an open item for the M2a discuss rather than silently modelled as a disjunction | — Pending |
+| D-03 Extend DSX in place, one install/contract/gate/test suite/catalogue | Highest-value checks are cross-cutting; a check spanning two contracts cannot live cleanly in either of two plugins | Delivered v2.0.0 — all `DSX-VAL/INT/PAR/PRE/ADM/CLM/COH` families ship in the one package, contract, gate profile set and catalogue (256 codes) |
+| D-03a Keep an extractable boundary: `dsx/frame/` imports only `Report`/`Finding` from `dsx/checks/` | If in six months there are no upward imports, extraction is a `git filter-repo` | Delivered Phase 6 — `dsx/frame/` exists; `tests/test_frame_boundary.py` fails the suite on any upward import |
+| D-04 Never block to teach — gates emit a decision record, `dsx explain` renders it | A gate that stops to explain is disabled on a deadline, losing guardrail and lesson both | Delivered Phase 6 — `dsx/decisions.py` emits, `dsx explain` renders, always exit 0; the gate-path write is a guarded side channel |
+| D-05 Citation + published reference value per check | Prevents laundering model statistics knowledge into a blocking gate | Delivered Phase 6 — `check_d05` in `gen-finding-catalogue.py --check` fails the build on a missing `Citation:` line |
+| D-10 An unsupported paradigm is never blocking on its own | Blocking on `paradigm: bayesian` makes typing `frequentist` the cheapest way past the gate | Delivered Phase 6 — `DSX-PAR-001` is INFO (10); every default `GATE_THRESHOLDS` value is 40 or 50 |
+| D-11 Frame-layer checks never read `paradigm` | A prior does not save you from pseudo-replication; if a frame check branches on paradigm it is in the wrong layer | Delivered Phase 7 — AST-enforced import boundary; `applies_to_frequentist_admissibility` is the one predicate allowed to read declared paradigm, tested |
+| D-12/D-12a Paradigm-specific checks ship in symmetric pairs, and symmetry is the scoping rule | Asymmetric enforcement is how a tool silently steers method choice | Delivered Phase 9 for the monitoring pair (`DSX-PAR-010`/`-011` at identical CRITICAL; `is_blank_text` as the single clearing predicate; committed symmetry audit). D-12a deferred codes (`DSX-PAR-020`/`-021`/`-030`) remain out of scope |
+| D-13 Deferred checks carry an entry condition, not a wish | A trigger tied to a measured catch rate is falsifiable; a priority is not | Delivered Phase 12 — the §6.5 gated backlog was re-evaluated against the measured catch rate/FPR (carry 8, remove 1 as structurally unevaluable) |
+| D-14 Reversing a D-table decision requires a reversal record; evidence-free reversal logs as `SELF-001` | "Here is what would change my mind" is stronger than "here is what I chose" | Delivered Phase 6 (template) + exercised — `REVERSALS.md` carries REV-001 and REV-002 (Phase 12 §6.5 relocate-not-delete) with all four template fields |
+| **M-01** `DSX-PAR-010` ships as a distinct code, `DSX-EXP-060` untouched | Triggers are disjoint — undeclared looks under a fixed horizon vs a declared continuous design with no sequential method. Widening EXP-060 would silently broaden existing suppressions, against the spirit of D-06 | Delivered Phase 9 — pair ships in `dsx/frame/paradigm.py`; `dsx/checks/design.py` untouched |
+| **M-02** No `inference.stopping_rule` field; `DSX-PAR-010/011` read the existing `design.peeking_policy` | One concept, one field. Avoids a permanent consistency check between two vocabularies for the same thing. Deviates from brief §5.2, which specified a new field | Delivered Phase 9 — both codes trigger on `peeking_policy: uncontrolled_continuous` |
+| **Phase 9 D-08** `DSX-PAR-002` is presence/requiredness only; `DSX-SPEC-085` owns closed-vocabulary membership | Two codes for one defect would violate one-stable-fact-per-code. UAT 2026-08-13 accepted the split; ROADMAP SC 4 / REQ-P9-04 amended to name both codes | Delivered Phase 9 |
+| **M-03** `PEEKING_POLICIES` gains a value for uncontrolled continuous monitoring | Consequence of M-02: the existing vocabulary has `always_valid` (disciplined) but no value for "peeking continuously with no correction" — precisely what `DSX-PAR-010` must fire on | Delivered Phase 6 — `uncontrolled_continuous` added (`dsx/spec.py:71`) |
+| **M-04** Automated import test enforces the D-03a boundary from M1 | Enforces the boundary without scaffolding an empty `families.yaml`, which brief §6.6 warns accumulates speculative structure | Delivered Phase 6 — AST scanner proven against three deliberately violating sources |
+| **M-05** `SELF-001` stays a convention for v2.0.0; `REVERSALS.md` template seeded in M1 | Enforcement is a planning-process concern, not a gate concern; a subcommand adjudicating planning docs is outside the gate path | Delivered Phase 6 — `REVERSALS.md` seeded with the four-field D-14 template; SELF-001 trigger stated. Human-validated (UAT 1) |
+| **M-06** `validity_frame` sub-block requiredness is gated by `question_type` from M1 | Requiring the whole block for descriptive/BI work forces reflexive `none` answers — the exact incentive distortion D-10 exists to prevent. Far cheaper decided in M1 than retrofitted after M2a/M2b are written against the wrong requiredness | Delivered Phase 6 — REQ-P6-03 |
+| **M-07** Existing `suppressions[]` with its authority requirement is the grandfather path for pre-v2.0.0 specs | Zero new code, and the ADR/SPEC authority requirement makes grandfathering deliberate and attributable rather than silent | Delivered Phase 6 — README states authority as a requirement (DSX-SPEC-070) and the "a frame that lies passes" known limit. Human-validated (UAT 2) |
+| **M-08** D-05 citation enforcement is automated in M1 via `scripts/gen-finding-catalogue.py` | D-05 says "if velocity pressure arrives, cut checks, never this" — an unenforced constraint is the first thing velocity pressure removes. It was the only major constraint nothing checked | Delivered Phase 6 — see D-05 |
+| **M-09** `dependence.method_family_required` reuses `VARIANCE_ADJUSTMENTS` | Same reasoning as M-02: one concept, one vocabulary. Consequence: the field holds a single member, so the brief's example `cluster_robust_or_mixed` is not expressible — carried as an open item for the M2a discuss rather than silently modelled as a disjunction | Delivered Phase 7 — the dependence check reads the reused vocabulary; resolved in M2a discuss |
 
 ## Non-goals
 
@@ -218,5 +249,5 @@ and does not authorise implementation of Phases 13–16 until Phase 12 closes.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-08-26 — queued milestone v2.1 Analytic Surface after v2.0.0;
-current milestone remains v2.0.0 DSX Validity Frame*
+*Last updated: 2026-08-28 — v2.0.0 DSX Validity Frame milestone complete and
+shipped; v2.1 Analytic Surface queued next (queued 2026-08-26, not yet started)*

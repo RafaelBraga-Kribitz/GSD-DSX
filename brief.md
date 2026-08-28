@@ -373,23 +373,90 @@ estimate about future workload, including the operator's own.
 | Convergence declarations (`DSX-PAR-030`) | Frequentist estimation convergence: mixed-model non-convergence, separation in logistic models. **Not written.** | Same, at least two cases |
 | Bayesian procedure admissibility (`DSX-ADM-*`, second axis) | The frequentist ontology (M4) | M4 ships, **and** `dsx stats --paradigm` shows Bayesian frames above 15% of the operator's history |
 | `dsx quiz` fading mode | n/a, not a check | M5 ships. Weekly, on a sample of past decisions, never inline. |
-| **v2.1 Analytic Surface** (Phases 13–16 as a milestone) | n/a, not a paradigm-specific check | **Phase 12 (M5) closed.** Does not reopen Phases 7–12. Comparison recorded in `.planning/research/SURFACE.md` (2026-08-26); README claims from those repos are not D-05 sources. |
-| Task playbooks: `dsx-cohort`, `dsx-funnel`, `dsx-root-cause`, `dsx-segment`; EDA hypothesis register; What / So What / Now What narrative; engagement-mode routing onto ceremony tiers; executor preference for `scripts/*.py` | n/a, skill-only — **no new `DSX-*` codes** | Phase 12 closed. Skill-only files may be *drafted* after Phase 6 in parallel; they do not gate v2.0.0 and they do not add finding codes. |
-| Compounding (`docs/dsx/learnings/`), portable `DATA-DICTIONARY.md`, optional AI-assistance disclosure when `dsx.domain` is `research`, slash-command aliases, file-drop hook → `dsx profile` (or a documented skip if GSD Core exposes no overlay hooks) | n/a, skill-only — **no new blocking codes** | Phase 12 closed. Same draft-after-Phase-6 rule as the row above. |
-| CUPED as a `VARIANCE_ADJUSTMENTS` member plus a check that CUPED covariates are declared pre-experiment (post-treatment covariate blocks) | n/a — variance reduction is paradigm-independent (D-11) | Phase 12 closed, **and** Deng, Xu, Kohavi and Walker (2013), *Improving the Sensitivity of Online Controlled Experiments by Utilizing Pre-Experiment Data*, WSDM '13, is cited in the check docstring naming the exact formulation, with a test against a published worked value. The Unified Framework playbook snippet is not an admissible citation. |
-| Cohort-grain and funnel-step fields on `ANALYSIS-SPEC.yaml`, with survivorship-bias and changing-denominator findings | n/a | Phase 12 closed, **and** each new code carries its own D-05 citation at implement time. A code whose citation is not in hand stays in this table rather than shipping on a plausible-sounding rule. |
-| `dsx-reproduce` skill writing `REPRO-REPORT.md`; gate checks the report exists and named numbers overlap; Phase 12 corpus tags gain `protocol_adherence` | n/a | Phase 12 closed. The skill may execute the entrypoint; the **gate path must not** (D-01/D-02). Does not replace catch rate / false-positive rate. |
+| Feature-provenance per-feature list (origin, method, fitted-on, motivating result) | Not a paradigm-paired item. | The M5 corpus contains at least one case whose target defect is attributable **only** through feature origin — no name pattern matches, no fit call is visible, and no declaration contradicts. Until then the leakage principle is covered elsewhere; this buys attribution, not a catch (2026-08-20 paper-evaluation integration) |
+| Magnitude-without-computed-effect residual (absolute magnitudes; relative % that declares its base) | Not a paradigm-paired item. | A corpus case passes all claims checks while asserting a magnitude no reported test computed. The paper-shaped instances all fire `DSX-CLM-070` and the per-test effect-size finding already (2026-08-20) |
+| Subgroup-harm declaration for prescriptive work | Not a paradigm-paired item. | A primary source with operationalisable criteria (D-05) **and** a corpus case where subgroup harm was the documented failure. Until promoted, the question lives in the architect and storyteller prompts as an agent guardrail (2026-08-20) |
+
+**v2.1 Analytic Surface backlog** (queued milestone, not individually numbered above — does not
+reopen or renumber items 1–9):
+
+| **v2.1 Analytic Surface** (Phases 13–16 as a milestone) | n/a, not a paradigm-specific check | **Phase 12 (M5) closed — satisfied.** Does not reopen Phases 7–12. Comparison recorded in `.planning/research/SURFACE.md` (2026-08-26); README claims from those repos are not D-05 sources. |
+| --- | --- | --- |
+| Task playbooks: `dsx-cohort`, `dsx-funnel`, `dsx-root-cause`, `dsx-segment`; EDA hypothesis register; What / So What / Now What narrative; engagement-mode routing onto ceremony tiers; executor preference for `scripts/*.py` | n/a, skill-only — **no new `DSX-*` codes** | Phase 12 closed — satisfied. Skill-only files may be *drafted* after Phase 6 in parallel; they do not gate v2.0.0 and they do not add finding codes. |
+| Compounding (`docs/dsx/learnings/`), portable `DATA-DICTIONARY.md`, optional AI-assistance disclosure when `dsx.domain` is `research`, slash-command aliases, file-drop hook → `dsx profile` (or a documented skip if GSD Core exposes no overlay hooks) | n/a, skill-only — **no new blocking codes** | Phase 12 closed — satisfied. Same draft-after-Phase-6 rule as the row above. |
+| CUPED as a `VARIANCE_ADJUSTMENTS` member plus a check that CUPED covariates are declared pre-experiment (post-treatment covariate blocks) | n/a — variance reduction is paradigm-independent (D-11) | Phase 12 closed — satisfied, **and** Deng, Xu, Kohavi and Walker (2013), *Improving the Sensitivity of Online Controlled Experiments by Utilizing Pre-Experiment Data*, WSDM '13, is cited in the check docstring naming the exact formulation, with a test against a published worked value. The Unified Framework playbook snippet is not an admissible citation. |
+| Cohort-grain and funnel-step fields on `ANALYSIS-SPEC.yaml`, with survivorship-bias and changing-denominator findings | n/a | Phase 12 closed — satisfied, **and** each new code carries its own D-05 citation at implement time. A code whose citation is not in hand stays in this table rather than shipping on a plausible-sounding rule. |
+| `dsx-reproduce` skill writing `REPRO-REPORT.md`; gate checks the report exists and named numbers overlap; Phase 12 corpus tags gain `protocol_adherence` | n/a | Phase 12 closed — satisfied. The skill may execute the entrypoint; the **gate path must not** (D-01/D-02). Does not replace catch rate / false-positive rate. |
 
 Note what D-12a does here: prior sensitivity is deferred **not** because Bayesian work is
 speculative, but because its frequentist mirror does not exist yet, so shipping it alone would
 violate D-12. That is a structural reason, not a forecast. It also means the cheapest route to
 promoting these items is writing the missing counterparts, which is honest work either way.
 
-The v2.1 rows are operator-surface work, not a silent rewrite of M2–M5. Brief §3 still
-ranks risk reduction first. Opening v2.1 before Phase 12 has a measured catch rate would
-trade the interference and paradigm-symmetry checks — which none of the comparison packs
-gate — for playbooks those packs already ship as markdown. Skill-only drafts after Phase 6
-are allowed; finding codes and vocabulary members are not.
+### Phase 12 re-evaluation of the gated backlog (REQ-P12-05, 2026-08-27)
+
+Phase 12 measured the numbers this section exists to wait for and re-evaluated
+every row against its own entry condition. **Disposition: carry eight, remove one.**
+Each carried item names the measured count, rate or split it rests on; nothing is
+promoted by manufacturing a case to hit a threshold (D-02/D-15).
+
+- **Prior justification / sensitivity** (item 1) — **carried.** Its frequentist
+  mirror (specification sensitivity) is still unwritten under D-12a, so no corpus
+  count can promote it; the cheapest route remains writing the mirror.
+- **Prior predictive check `DSX-PAR-022`** (item 2) — **already promoted** (REV-001);
+  the row records the reversal.
+- **Convergence declarations `DSX-PAR-030`** (item 3) — **carried,** same structural
+  reason as item 1: the frequentist convergence mirror is unwritten (D-12a).
+- **Bayesian procedure admissibility, second axis** (item 4) — **carried; explicitly
+  NOT auto-promoted.** Its condition needs M4 shipped **and** `dsx stats --paradigm`
+  above 15% Bayesian. The measured operator split (plan 12-02) is **empty — zero
+  distinct frames** across the operator's real `.planning` history (the polluted
+  `examples/**` and `templates/**` floors excluded by construction), so the honest
+  share is below 15%. That non-promotion is exactly what the number is for
+  (§6, "Done when: there is a number").
+- **`dsx quiz` fading mode** (item 5) — **carried, prerequisite-pending:** it ships
+  on M5, which has not shipped.
+- **Ratio-metric dilution** (item 6) — **removed as structurally unevaluable;** see
+  "Removed / permanently out of scope (D-14)" below and REV-002.
+- **Feature-provenance per-feature list** (item 7) — **carried.** Promotion needs a
+  corpus case whose target defect is attributable *only* through feature origin. The
+  three measured ABSENT-partition misses (plan 12-05: undisclosed forking, data
+  fabrication, undisclosed selective exclusion; miss-rate 3/3) are not that case —
+  data fabrication is a provenance-of-data miss, not a per-feature-origin attribution —
+  so the naming case has not appeared. Not manufactured.
+- **Magnitude-without-computed-effect residual** (item 8) — **carried; likely none.**
+  No corpus case passes all claims checks while asserting an uncomputed magnitude; the
+  paper-shaped instances already fire `DSX-CLM-070` and the per-test effect-size finding.
+- **Subgroup-harm declaration for prescriptive work** (item 9) — **carried.** Promotion
+  needs an admissible D-05 source with operationalisable criteria **and** a corpus case
+  where subgroup harm was the documented failure; neither is in the measured corpus.
+
+The calibration backdrop these dispositions read: the measured headline is
+**(miss-rate 1.0, FPR 0.0)** — zero false positives over the twelve-spec good-control
+corpus (plan 12-05, 0/12), a benign per-family friction column over the same corpus
+(plan 12-06, reported raw and net), and a 3/3 miss on the semantic-defect class a
+declaration-only gate structurally cannot catch. Those misses are what items 1/3/7/9
+would eventually address; none is promotable on today's measured evidence.
+
+### Removed / permanently out of scope (D-14)
+
+Phase 12's systematic re-evaluation (REQ-P12-05) recognised one item's entry condition
+as structurally unreachable rather than merely unmet, and removed it. It is relocated
+here verbatim — not deleted and not softened back to the access premise D-12 proved
+false — with the reversal recorded as REV-002.
+
+| Item | Symmetric counterpart (D-12a) | Entry condition |
+| --- | --- | --- |
+| **Ratio-metric dilution for trigger analysis** (Deng & Hu 2015 Formula (3), §3.3) | **Not a paradigm-paired item.** The additive case ships this milestone as `DSX-INT-030`; this is its unshipped extension, not a frequentist/Bayesian mirror under D-12a. | **A source of per-unit trigger and outcome data reaching the gate.** Formula (3) sums over individual users (`∆Overall(X) = (1/N) Σ_Tr TR_i × (TrX_iT − TrX_iC)`) and has no closed-form scalar multiplier, so it cannot be evaluated from a declaration alone the way the additive Formula (1) can. The paper itself is freely available and the equation is readable today — access was never the blocker. This item may be **permanently out of scope** for a declaration-only gate, not merely deferred: the determinism doctrine that keeps computation off the gate path (D-01/D-02) is what forbids evaluating it here, and that constraint does not lift with more time. |
+
+### v2.1 Analytic Surface backlog — scope guardrails
+
+The v2.1 rows above are operator-surface work, not a silent rewrite of M2–M5. Brief §3 still
+ranks risk reduction first. Opening v2.1 before Phase 12 had a measured catch rate would have
+traded the interference and paradigm-symmetry checks — which none of the comparison packs
+gate — for playbooks those packs already ship as markdown. Phase 12 has now shipped that
+measurement (see the re-evaluation above), so this trade-off is resolved: skill-only drafts
+and, per each row's own D-05 gate, the remaining v2.1 work may proceed.
 
 **Explicitly not entering this backlog** (anti-features from the 2026-08-26 comparison;
 see SURFACE.md §4): Docker as a required runtime; MLflow or Great Expectations on the
@@ -423,9 +490,11 @@ justify a check and they cannot excuse skipping one.
 **Set up the simulation deliberately, because the two natural setups give different numbers.**
 Against a *point null* (B and A identical, unbounded horizon), the error rate of "stop when
 P(B>A) > 0.95" grows without a useful ceiling: the law of the iterated logarithm guarantees
-eventual crossing. Averaged over the *prior*, a martingale bound (Ville's inequality) caps the
-probability of ever crossing a posterior-odds threshold k at roughly 1/k, so the inflation is
-bounded and much smaller. Both are correct statements about different quantities. Decide which
+eventual crossing. Averaged over the *prior*, Deng, Lu & Chen (2016) Theorem 1 caps the
+false-discovery risk of stopping at a posterior-odds threshold K at 1/(K+1) — at K = 19, exactly
+0.05 — so the inflation is bounded and much smaller. Do not substitute Ville's inequality here:
+it gives the different bound 1/k (1/19 ≈ 0.0526 at the same threshold) and is not the argument
+Theorem 1 makes. Both are correct statements about different quantities. Decide which
 one `DSX-PAR-011` is asserting before writing the fixture, state it in the docstring, and
 choose the reference value to match. A fixture built against one formulation and checked
 against the other will look like an implementation bug for a day.
@@ -452,23 +521,80 @@ These are unresolved, and the planner should not silently pick a side.
 Anchor D-05 citations here rather than sprawling.
 
 Kohavi, Tang and Xu, *Trustworthy Online Controlled Experiments* (triggering, dilution,
-interference, novelty and primacy, SRM). Imbens and Rubin, *Causal Inference for Statistics,
+interference, novelty and primacy, SRM; the shared-budget interference chapter locator is
+Chapter 22, *Leakage and Interference between Variants*, pages 226 to 234, verified — closing
+the unverified-locator flag recorded in `06-08-SUMMARY.md` and `06-VERIFICATION.md`). Imbens
+and Rubin, *Causal Inference for Statistics,
 Social, and Biomedical Sciences* (SUTVA, estimands). Hernan and Robins, *Causal Inference:
-What If* (estimands, identification). Gelman and Hill, *Data Analysis Using Regression and
-Multilevel/Hierarchical Models* (dependence, units). Lohr, *Sampling: Design and Analysis*
-(frames, selection). Little and Rubin, *Statistical Analysis with Missing Data* (mechanisms).
-Senn, *Statistical Issues in Drug Development* (design, units, multiplicity). Gelman et al.,
+What If* (estimands, identification). International Council for Harmonisation (2019), the
+E9(R1) addendum on estimands and sensitivity analysis, document reference
+EMA/CHMP/ICH/436221/2017 at Step 5, sections A.3.2 and A.3.3 (estimand completeness, the source
+for `DSX-VAL-010`). Hernan and Robins (2016), *American Journal of Epidemiology* volume 183
+issue 8, pages 758 to 764, Table 1 (a second, distinct publication by the same authors as the
+*What If* text above, anchoring `DSX-VAL-010` alongside the E9(R1) addendum). Popper (1959,
+2002 reissue), *The Logic of Scientific Discovery*, Part I Chapter 1 section 6 on falsifiability
+as a criterion of demarcation, pages 17 to 18 (the source for `DSX-VAL-011`). Gelman and Hill
+(2007), *Data Analysis Using Regression and Multilevel/Hierarchical Models*, Cambridge
+University Press (dependence, units; the exact chapter locator within it is unverified).
+Cameron and Miller (2015), "A Practitioner's Guide to Cluster-Robust Inference", *Journal of
+Human Resources* volume 50 issue 2, pages 317 to 372 (the source for `DSX-VAL-030`; Section VI,
+*Few Clusters*, is now the verified section locator for the few-clusters guidance, with Section
+II for the estimator and Section IV for the clustering dimension — partially closing the
+unverified-locator flag recorded in `07-01-SUMMARY.md`. Caveat: the accepted manuscript jumps
+from Section VIII to Section XI, so the typeset journal numbering may differ; the manuscript
+numbering is the verified object). Lohr (2021), *Sampling: Design and Analysis*, third edition,
+Chapter 1 sections 1.2, 1.3 and 1.3.4, and Chapter 16 section 16.1 (frames, selection, the
+source for `DSX-VAL-050`). Little and Rubin (2019), *Statistical Analysis with Missing Data*,
+third edition, Chapter 3 section 3.2 (mechanisms, the source for `DSX-VAL-060`). White and
+Carlin (2010), *Statistics in Medicine* volume 29 issue 28, pages 2920 to 2931, digital object
+identifier 10.1002/sim.3944 (the companion source establishing that complete-case analysis can
+be unbiased under missing-at-random, also anchoring `DSX-VAL-060`). Senn, *Statistical Issues
+in Drug Development* (design, units, multiplicity). Kish (1965), *Survey Sampling*, section 8.2
+and page 258 for the design-effect definition and pages 161 to 162 for the intraclass
+correlation (the source for `DSX-VAL-020`; section 8.2 was confirmed for the design-effect
+definition, and a section number for the design-effect formula itself is unverified). Higgins,
+Eldridge and Li (2024), the *Cochrane Handbook
+for Systematic Reviews of Interventions*, version 6.5, sections 23.1.4 and 23.1.4.1 (carrying
+the published design-effect worked value, also anchoring `DSX-VAL-020`). Gelman et al.,
 *Bayesian Data Analysis*, 3rd ed. (priors, sensitivity). Vehtari et al. (2021), "Rank-normalized
 R-hat" (convergence diagnostics and thresholds). Gelman et al. (2020), "Bayesian Workflow"
 (prior predictive checking, the workflow the guardrail framing informally describes). Gelman,
 Simpson and Betancourt (2017), "The Prior Can Often Only Be Understood in the Context of the
-Likelihood" (why prior strength is meaningless without identification, the source for
-`DSX-VAL-040/041`). Deng, Lu and Chen (2016), "Continuous Monitoring of A/B Tests without
-Pain" (error rates under optional stopping, the source for `DSX-PAR-011`). Deng, Xu,
-Kohavi and Walker (2013), "Improving the Sensitivity of Online Controlled Experiments by
-Utilizing Pre-Experiment Data," *WSDM '13* (CUPED; D-05 candidate for the queued v2.1
-variance-adjustment member — confirm the exact formulation and a published worked value
-from the paper before the check ships; comparison-repo playbooks are not a source).
+Likelihood", *Entropy* 19(10), 555, section 3.3 ("For complex models, certain aspects of the
+prior will always be relevant") and section 1.2 ("Existing methods for setting priors already
+depend on the likelihood") (why prior strength is meaningless without identification, the
+source for `DSX-VAL-040/041`; cited by section number and by title together because whether the
+typeset journal version uses the same section numbers as the arXiv preprint version is
+unverified). Deng, Lu and Chen (2016), "Continuous Monitoring of A/B Tests without
+Pain" (error rates under optional stopping, the source for `DSX-PAR-011`). Cronbach and Meehl
+(1955), "Construct Validity in Psychological Tests", *Psychological Bulletin* volume 52 issue
+4, pages 281 to 302, the nomological net discussion at page 290 (the source for
+`DSX-VAL-070`). Gelman, A. and Loken, E. (2014), "The Statistical Crisis in Science",
+*American Scientist*, volume 102, issue 6, pages 460-465 (the source for the `DSX-PRE-*`
+family — anchors the distinction between a test prechosen from a set of possible tests and a
+test computed from the data in an environment where a different test would have been
+performed given different data, which is the exact claim `DSX-PRE-010`/`-020`/`-030` enforce;
+page 460, unnumbered section "How to Test a Hypothesis", for rule resolution and the content
+lock, and page 463, the unnumbered section opening "Menstrual Cycles and Voting", for procedure
+reconciliation. The article carries no numbered sections, tables or theorems, so page plus
+unnumbered heading is the most precise locator available, and naming a section number would be
+the fabricated locator this citation rule exists to prevent. The Greek symbol the paper uses
+for the selection function is rendered unreliably by optical character recognition in both
+freely available scans — the prose was cross-verified word for word between two independent
+copies, but the symbol was not — so it is taken from the authors' unpublished 2013 Columbia
+working paper, which carries no digital object identifier, venue or pagination and is a
+notation source only, never the published record). Two secondary sources sit beside it, each
+scoped so neither is promoted into the primary anchor: Simmons, J. P., Nelson, L. D. and
+Simonsohn, U. (2011), "False-Positive Psychology", *Psychological Science*, volume 22, issue
+11, pages 1359-1366, digital object identifier 10.1177/0956797611417632, page 1365 (supports
+only the claim that a substituted procedure is itself a new researcher degree of freedom, the
+`DSX-PRE-030` remedy's no-merit-consultation rule — never the primary anchor). Nosek, B. A.,
+Ebersole, C. R., DeHaven, A. C. and Mellor, D. T. (2018), "The preregistration revolution",
+*PNAS*, volume 115, issue 11, pages 2600-2606, digital object identifier
+10.1073/pnas.1708274114, section "Preregistration in Practice" (supports only the rule that a
+declared deviation stays legal, the `post_data` branch of the content lock; section headings
+were verified and per-sentence page numbers were not, so no page may be cited for an individual
+sentence from it).
 
 ---
 
