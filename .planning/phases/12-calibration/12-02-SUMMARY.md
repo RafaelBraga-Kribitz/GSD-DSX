@@ -20,7 +20,7 @@ metrics:
   tasks: 2
   files: 2
   commits: 4
-requirements: [REQ-P12-04]
+requirements-completed: [REQ-P12-04]
 ---
 
 # Phase 12 Plan 02: dsx stats --paradigm Summary

@@ -3,7 +3,7 @@ phase: 12-calibration
 plan: 05
 subsystem: test-harness / calibration
 status: complete
-requirements: [REQ-P12-03]
+requirements-completed: [REQ-P12-03]
 tags: [catch-rate, fpr, stratified, miss-rate, headline-invariance, D-04, D-09, D-10, D-18]
 dependency_graph:
   requires:

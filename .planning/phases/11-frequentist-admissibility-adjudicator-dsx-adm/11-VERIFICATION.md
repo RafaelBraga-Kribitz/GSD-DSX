@@ -1,7 +1,7 @@
 ---
 phase: 11-frequentist-admissibility-adjudicator-dsx-adm
 verified: 2026-08-22T00:00:00Z
-status: human_needed
+status: passed
 score: 5/5 must-haves verified
 behavior_unverified: 0
 overrides_applied: 0
@@ -24,7 +24,7 @@ human_verification:
 
 **Phase Goal:** Given a coherent frame, the tool names which frequentist procedures are admissible and what each one costs in assumptions — and refuses rather than guesses when the frame is underdetermined.
 **Verified:** 2026-08-22
-**Status:** human_needed
+**Status:** passed
 **Re-verification:** No — initial verification
 
 ## Summary
@@ -139,3 +139,7 @@ The phase is routed to `human_needed` rather than `passed` solely because of fou
 
 _Verified: 2026-08-22_
 _Verifier: Claude (gsd-verifier)_
+
+---
+
+**S4-4 RECONCILIATION (2026-08-28):** Status reconciled `human_needed` → `passed`. The technical score was already full (`behavior_unverified: 0`, no gaps); `human_needed` was owed solely to the human D-05/veto/sign-off items in the `human_verification` list above, all of which are now answered by the operator: HQ-1 (operator verdict recorded 2026-08-26; 11-UAT.md `status: complete`, passed 4 / blocked 0) plus the HQ-1 follow-up ⚠Z Zimmerman citation fix closed at S4-1b (2026-08-28). REQ-P11-01..06 all satisfied. See `.planning/HUMAN-QUEUE.md` §“Answered” for the verbatim verdicts. This closes the phase's human bar; it does not re-open or weaken any automated gate.

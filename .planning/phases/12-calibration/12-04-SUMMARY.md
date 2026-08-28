@@ -3,7 +3,7 @@ phase: 12-calibration
 plan: 04
 subsystem: test-fixtures / calibration
 status: complete
-requirements: [REQ-P12-03]
+requirements-completed: [REQ-P12-03]
 tags: [good-corpus, fpr-denominator, control-specs, golden-file, D-04, D-18]
 dependency_graph:
   requires:

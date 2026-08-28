@@ -20,7 +20,7 @@ metrics:
   tasks: 2
   files: 1
   commits: 2
-requirements: [REQ-P12-02]
+requirements-completed: [REQ-P12-02]
 ---
 
 # Phase 12 Plan 03: Attribution Sidecar Validation Summary

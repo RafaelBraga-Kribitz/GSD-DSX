@@ -1,7 +1,7 @@
 ---
 phase: 12-calibration
 verified: 2026-08-27T00:00:00Z
-status: human_needed
+status: passed
 score: 5/5 must-haves verified
 behavior_unverified: 0
 overrides_applied: 0
@@ -24,7 +24,7 @@ human_verification:
 
 **Phase Goal:** There is a number. Measured catch rate and false-positive rate across a full-size known-bad corpus, a paradigm split across the operator's own frame history, and every gated-backlog entry condition either evaluated against measured evidence or removed.
 **Verified:** 2026-08-27
-**Status:** human_needed (5/5 requirements technically MET and test-backed; only the pre-registered D-05 human citation reads remain — non-blocking, mirrors 11.2/11.3)
+**Status:** passed (5/5 requirements technically MET and test-backed; only the pre-registered D-05 human citation reads remain — non-blocking, mirrors 11.2/11.3)
 **Re-verification:** No — initial verification
 
 ## Goal Achievement
@@ -104,3 +104,7 @@ human_verification:
 
 _Verified: 2026-08-27_
 _Verifier: Claude (gsd-verifier, opus/high, goal-backward)_
+
+---
+
+**S4-4 RECONCILIATION (2026-08-28):** Status reconciled `human_needed` → `passed`. The technical score was already full (`behavior_unverified: 0`, no gaps); `human_needed` was owed solely to the human D-05/veto/sign-off items in the `human_verification` list above, all of which are now answered by the operator: HQ-6 (operator verdict recorded 2026-08-27: “approve all citations + accept dispositions; security approved”). 3 D-05 corpus-case reads + §4 veto window + security sign-off all granted. See `.planning/HUMAN-QUEUE.md` §“Answered” for the verbatim verdicts. This closes the phase's human bar; it does not re-open or weaken any automated gate.

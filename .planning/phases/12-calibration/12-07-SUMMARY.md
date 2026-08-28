@@ -3,7 +3,7 @@ phase: 12-calibration
 plan: 07
 subsystem: planning-docs / backlog-hygiene
 status: complete
-requirements: [REQ-P12-05]
+requirements-completed: [REQ-P12-05]
 tags: [backlog-re-evaluation, reversal, self-001, D-14, D-15, D-16, D-17, closing-gate]
 dependency_graph:
   requires:

@@ -135,11 +135,11 @@ in either direction — they cannot justify a check and cannot excuse skipping o
 - [x] REQ-P11-01 `references/families.yaml` holds 14 estimator families as data, keyed on estimand × family × inference method × dependence handling, parsed by the existing loader
   > **Amended from 25–35 to 14** during Phase 11 planning per `11-CONTEXT.md` D-01/D-02. Reason: ROADMAP Success Criterion 5 requires every family to trace to a case committed in the repository at the time Phase 11 lands; the committed corpus supplies six distinct procedure labels, and Phase 12 is the phase that grows the corpus. Sizing to the evidence keeps "a family is added when a real case needs it" literally true of the file that ships.
 
-- [ ] REQ-P11-02 Named tests resolve as aliases into families rather than being enumerated as a test catalogue
-- [ ] REQ-P11-03 The admissibility function returns a ranked admissible set, naming for each entry the assumptions bought and charged
-- [ ] REQ-P11-04 An underdetermined frame returns `no_admissible_procedure` and escalates rather than guessing
-- [ ] REQ-P11-05 The adjudicator extends the existing `dsx recommend-test` rather than replacing it
-- [ ] REQ-P11-06 D-05 applies to `families.yaml` entries as it does to checks: each family carries a primary-source citation, enforced by the M1 catalogue check
+- [x] REQ-P11-02 Named tests resolve as aliases into families rather than being enumerated as a test catalogue
+- [x] REQ-P11-03 The admissibility function returns a ranked admissible set, naming for each entry the assumptions bought and charged
+- [x] REQ-P11-04 An underdetermined frame returns `no_admissible_procedure` and escalates rather than guessing
+- [x] REQ-P11-05 The adjudicator extends the existing `dsx recommend-test` rather than replacing it
+- [x] REQ-P11-06 D-05 applies to `families.yaml` entries as it does to checks: each family carries a primary-source citation, enforced by the M1 catalogue check
 
 ## Phase 11.1 (INSERTED) — Generated-pipeline reality
 
@@ -154,31 +154,31 @@ in either direction — they cannot justify a check and cannot excuse skipping o
 
 ## Phase 11.2 (INSERTED) — Prescriptive claim layer
 
-- [ ] REQ-P11.2-01 `prescriptive` in CLAIM_TYPES at rank 4 of the coherence ladder; a prescriptive claim under a weaker `question_type` is CRITICAL
-- [ ] REQ-P11.2-02 A prescriptive claim with identification blank/none/weak fires HIGH — an intervention recommended on the strength of an association
-- [ ] REQ-P11.2-03 Causal-verb lexicon extended in two tiers (unambiguous forms at full strength; gerunds via the hedging path) with per-member provenance; known-bad corpus re-run green
-- [ ] REQ-P11.2-04 `decision.revisit_when` required for prescriptive questions/experiments, validated by the estimand falsifier predicate
-- [ ] REQ-P11.2-05 Decision-trail headers carry a spec-identity hash; more than one distinct frame digest under one identity at verify/ship fires HIGH, clearable by an amendments entry recording when and why
-- [ ] REQ-P11.2-06 `dsx explain` renders the self-reported-fields view (what the gate took on trust) without touching `escalate` semantics
-- [ ] REQ-P11.2-07 Storyteller prompt repointed at gate-read fields; unread scaffold fields quarantined in a documentation-only template block; fixtures/tests/catalogue current
+- [x] REQ-P11.2-01 `prescriptive` in CLAIM_TYPES at rank 4 of the coherence ladder; a prescriptive claim under a weaker `question_type` is CRITICAL
+- [x] REQ-P11.2-02 A prescriptive claim with identification blank/none/weak fires HIGH — an intervention recommended on the strength of an association
+- [x] REQ-P11.2-03 Causal-verb lexicon extended in two tiers (unambiguous forms at full strength; gerunds via the hedging path) with per-member provenance; known-bad corpus re-run green
+- [x] REQ-P11.2-04 `decision.revisit_when` required for prescriptive questions/experiments, validated by the estimand falsifier predicate
+- [x] REQ-P11.2-05 Decision-trail headers carry a spec-identity hash; more than one distinct frame digest under one identity at verify/ship fires HIGH, clearable by an amendments entry recording when and why
+- [x] REQ-P11.2-06 `dsx explain` renders the self-reported-fields view (what the gate took on trust) without touching `escalate` semantics
+- [x] REQ-P11.2-07 Storyteller prompt repointed at gate-read fields; unread scaffold fields quarantined in a documentation-only template block; fixtures/tests/catalogue current
 
 ## Phase 11.3 (INSERTED) — Reporting completeness and missing-data discipline
 
-- [ ] REQ-P11.3-01 Multiplicity family counts max(declared family, reported tests); a non-empty family smaller than the reported set fires HIGH naming the absent metrics; the stale cross-reference comment is corrected
-- [ ] REQ-P11.3-02 `comparisons_looked_at` exceeding reported results fires HIGH with the ratio quoted, independent of family presence
-- [ ] REQ-P11.3-03 `missingness.method_implied` closed vocabulary registered in frame membership; the single-imputation-as-if-observed family under missing-at-random blocks at plan
-- [ ] REQ-P11.3-04 `validity_frame.exclusions` sub-block (rule, action, applied_before_split, justification); a rule without justification HIGH; row counts live in results/profile, never in the frame
-- [ ] REQ-P11.3-05 An unrecognised effect-size kind fires MEDIUM instead of silently skipping
-- [ ] REQ-P11.3-06 Four structural conformance codes validate CHART-REVIEW.md against `references/chart-review-schema.md`; no stochastic agent verdict gates
-- [ ] REQ-P11.3-07 Fixtures/tests/catalogue current; full corpus re-run green
+- [x] REQ-P11.3-01 Multiplicity family counts max(declared family, reported tests); a non-empty family smaller than the reported set fires HIGH naming the absent metrics; the stale cross-reference comment is corrected
+- [x] REQ-P11.3-02 `comparisons_looked_at` exceeding reported results fires HIGH with the ratio quoted, independent of family presence
+- [x] REQ-P11.3-03 `missingness.method_implied` closed vocabulary registered in frame membership; the single-imputation-as-if-observed family under missing-at-random blocks at plan
+- [x] REQ-P11.3-04 `validity_frame.exclusions` sub-block (rule, action, applied_before_split, justification); a rule without justification HIGH; row counts live in results/profile, never in the frame
+- [x] REQ-P11.3-05 An unrecognised effect-size kind fires MEDIUM instead of silently skipping
+- [x] REQ-P11.3-06 Four structural conformance codes validate CHART-REVIEW.md against `references/chart-review-schema.md`; no stochastic agent verdict gates
+- [x] REQ-P11.3-07 Fixtures/tests/catalogue current; full corpus re-run green
 
 ## Phase 12 (M5) — Calibration
 
-- [ ] REQ-P12-01 The known-bad corpus is extended to full size with retracted papers carrying published post-mortems, documented p-hacking cases, and prior work whose answer is now known
-- [ ] REQ-P12-02 Corpus cases carry structured catch-attribution tags so backlog entry conditions are machine-countable rather than narrative judgements (D-13); the harness also reports a per-family friction column (non-target blocking findings per fixture), computed from the live corpus — the hand-maintained attribution ledger is stale and must not be lifted
-- [ ] REQ-P12-03 A harness reports catch rate and false-positive rate across the corpus, producing a number
-- [ ] REQ-P12-04 `dsx stats --paradigm` reports the frequentist/Bayesian split across the operator's own frame history
-- [ ] REQ-P12-05 Each gated-backlog item in brief §6.5 is re-evaluated against its stated entry condition using the measured corpus, and items whose condition cannot be evaluated are removed rather than carried
+- [x] REQ-P12-01 The known-bad corpus is extended to full size with retracted papers carrying published post-mortems, documented p-hacking cases, and prior work whose answer is now known
+- [x] REQ-P12-02 Corpus cases carry structured catch-attribution tags so backlog entry conditions are machine-countable rather than narrative judgements (D-13); the harness also reports a per-family friction column (non-target blocking findings per fixture), computed from the live corpus — the hand-maintained attribution ledger is stale and must not be lifted
+- [x] REQ-P12-03 A harness reports catch rate and false-positive rate across the corpus, producing a number
+- [x] REQ-P12-04 `dsx stats --paradigm` reports the frequentist/Bayesian split across the operator's own frame history
+- [x] REQ-P12-05 Each gated-backlog item in brief §6.5 is re-evaluated against its stated entry condition using the measured corpus, and items whose condition cannot be evaluated are removed rather than carried
 
 ## Out of Scope — v2.0.0
 
@@ -259,11 +259,11 @@ Every v2.0.0 requirement maps to exactly one phase. 75/75 mapped (53 original + 
 | REQ-P10-03 | Phase 10 | Complete |
 | REQ-P10-04 | Phase 10 | Complete |
 | REQ-P11-01 | Phase 11 | Complete |
-| REQ-P11-02 | Phase 11 | Pending |
-| REQ-P11-03 | Phase 11 | Pending |
-| REQ-P11-04 | Phase 11 | Pending |
-| REQ-P11-05 | Phase 11 | Pending |
-| REQ-P11-06 | Phase 11 | Pending |
+| REQ-P11-02 | Phase 11 | Complete |
+| REQ-P11-03 | Phase 11 | Complete |
+| REQ-P11-04 | Phase 11 | Complete |
+| REQ-P11-05 | Phase 11 | Complete |
+| REQ-P11-06 | Phase 11 | Complete |
 | REQ-P11.1-01 | Phase 11.1 | Complete |
 | REQ-P11.1-02 | Phase 11.1 | Complete |
 | REQ-P11.1-03 | Phase 11.1 | Complete |
@@ -272,25 +272,25 @@ Every v2.0.0 requirement maps to exactly one phase. 75/75 mapped (53 original + 
 | REQ-P11.1-06 | Phase 11.1 | Complete |
 | REQ-P11.1-07 | Phase 11.1 | Complete |
 | REQ-P11.1-08 | Phase 11.1 | Complete |
-| REQ-P11.2-01 | Phase 11.2 | Pending |
-| REQ-P11.2-02 | Phase 11.2 | Pending |
-| REQ-P11.2-03 | Phase 11.2 | Pending |
-| REQ-P11.2-04 | Phase 11.2 | Pending |
-| REQ-P11.2-05 | Phase 11.2 | Pending |
-| REQ-P11.2-06 | Phase 11.2 | Pending |
-| REQ-P11.2-07 | Phase 11.2 | Pending |
-| REQ-P11.3-01 | Phase 11.3 | Pending |
-| REQ-P11.3-02 | Phase 11.3 | Pending |
-| REQ-P11.3-03 | Phase 11.3 | Pending |
-| REQ-P11.3-04 | Phase 11.3 | Pending |
-| REQ-P11.3-05 | Phase 11.3 | Pending |
-| REQ-P11.3-06 | Phase 11.3 | Pending |
-| REQ-P11.3-07 | Phase 11.3 | Pending |
-| REQ-P12-01 | Phase 12 | Pending |
-| REQ-P12-02 | Phase 12 | Pending |
-| REQ-P12-03 | Phase 12 | Pending |
-| REQ-P12-04 | Phase 12 | Pending |
-| REQ-P12-05 | Phase 12 | Pending |
+| REQ-P11.2-01 | Phase 11.2 | Complete |
+| REQ-P11.2-02 | Phase 11.2 | Complete |
+| REQ-P11.2-03 | Phase 11.2 | Complete |
+| REQ-P11.2-04 | Phase 11.2 | Complete |
+| REQ-P11.2-05 | Phase 11.2 | Complete |
+| REQ-P11.2-06 | Phase 11.2 | Complete |
+| REQ-P11.2-07 | Phase 11.2 | Complete |
+| REQ-P11.3-01 | Phase 11.3 | Complete |
+| REQ-P11.3-02 | Phase 11.3 | Complete |
+| REQ-P11.3-03 | Phase 11.3 | Complete |
+| REQ-P11.3-04 | Phase 11.3 | Complete |
+| REQ-P11.3-05 | Phase 11.3 | Complete |
+| REQ-P11.3-06 | Phase 11.3 | Complete |
+| REQ-P11.3-07 | Phase 11.3 | Complete |
+| REQ-P12-01 | Phase 12 | Complete |
+| REQ-P12-02 | Phase 12 | Complete |
+| REQ-P12-03 | Phase 12 | Complete |
+| REQ-P12-04 | Phase 12 | Complete |
+| REQ-P12-05 | Phase 12 | Complete |
 
 ### Coverage summary
 

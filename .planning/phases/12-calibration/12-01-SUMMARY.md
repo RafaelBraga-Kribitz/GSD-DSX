@@ -38,6 +38,7 @@ decisions:
 metrics:
   duration: "~25 min"
   completed: "2026-08-27"
+requirements-completed: [REQ-P12-01, REQ-P12-02]
 status: complete
 ---
 
