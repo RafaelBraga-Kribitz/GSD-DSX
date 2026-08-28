@@ -2,24 +2,24 @@
 gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: Analytic Surface
-current_phase: 13
-current_phase_name: task-playbooks-that-fill-the-spec
+current_phase: 14
+current_phase_name: compounding-and-data-onboarding
 status: executing
-stopped_at: "S1-5 COMPLETE — Phase 13 secure + validate both PASS; S1 (Phase 13 ceremony) fully complete. secure = SECURED, threats_open: 0 (14/14 closed, asvs1 L1 short-circuit, orchestrator re-gate — not auditor-trusted); validate = nyquist_compliant: true, 0 gaps (6/6 REQ COVERED). Loud op-decision: crystallised S1-4's hand-greps into a standing test tests/test_phase13_playbooks.py (8 tests) so REQ-P13-01..05 are automated-COVERED; REQ-P13-06 on test_finding_catalogue_invariant. Gate: sh scripts/check.sh = all checks passed (Ran 1230 tests OK, 1222→+8; catalogue 256; capability conformant; determinism). Human security sign-off (D-05/§4-cat-4) queued to HUMAN-QUEUE, non-blocking to S5-2. Artifacts: 13-SECURITY.md + 13-VALIDATION.md. RESUME at S2-1 (Phase 14 discuss — settle REQ-P14-05 overlay-hooks branch against installed GSD Core). See LOOP-LEDGER.md Log."
-last_updated: "2026-08-28T19:22:00.000Z"
+stopped_at: "S2-1 COMPLETE — Phase 14 discuss done; 14-CONTEXT.md written (375 lines, D-01..D-07). Architect+Auditor 2-persona round (opus/high, §4), converged no ties. FLAGGED OPEN ITEM SETTLED: REQ-P14-05 branch = DOCUMENTED SKIP (D-06), verified against installed GSD Core — only file-change hook is FileChanged (Claude-Code-family-only, runtime-descriptor-gated, filename-matched, config.json hot-reload only per runtime-hooks-surface.cjs:1656-1693); binding it breaches capability supported:[*] (silent no-op on non-CC runtimes, uncaught). Skip weakens no control (DSX-DQ-001 already forces the profile). Loud op-decision, not HUMAN-QUEUE (requirement disjunction pre-authorises skip; mints nothing). Orchestrator re-verified baseline: catalogue --check exit 0 / 256 codes / invariant 2 tests OK / no pandas·scipy in dsx/ / import csv only in profiler.py / hooks:[] supported:[*]. RESUME at S2-2 (Phase 14 plan; plan-checker must pass). See LOOP-LEDGER.md Log."
+last_updated: "2026-08-28T19:55:00.000Z"
 last_activity: 2026-08-28
-last_activity_desc: "S1-5 complete — Phase 13 secure(SECURED)+validate(nyquist_compliant); S1 done; resume at S2-1 (Phase 14 discuss)"
+last_activity_desc: "S2-1 complete — Phase 14 discuss; 14-CONTEXT.md written; REQ-P14-05 = documented-skip branch (D-06); resume at S2-2 (Phase 14 plan)"
 progress:
   total_phases: 4
   completed_phases: 1
-  total_plans: 5
-  completed_plans: 5
-  percent: 100
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project state
 
-**Status:** Phase 13 ceremony complete (S1-1..S1-5) — next: Phase 14 (S2-1 discuss)
+**Status:** Phase 14 discuss complete (S2-1); `14-CONTEXT.md` written — next: Phase 14 plan (S2-2)
 **Progress:** [█████░░░░░░░░░░░░░░░░] v2.2 — 1/4 phases (Phases 13 → 14 → 16 → 15, in that order)
 **Predecessor:** [████████████████████] v2.0.0 SHIPPED 2026-08-28 — 11/11 phases, 89 plans, 208 tasks, tag `v2.1.0`, merged to `main`. Full record: `.planning/MILESTONES.md`; artifacts archived under `.planning/milestones/v2.0.0-*` (phases, ROADMAP, REQUIREMENTS, MILESTONE-AUDIT, loop ledgers).
 
