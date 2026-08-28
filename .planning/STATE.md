@@ -2,24 +2,24 @@
 gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: Analytic Surface
+current_phase: 13
+current_phase_name: task-playbooks-that-fill-the-spec
 status: executing
 stopped_at: "S1-2 complete — Phase 13 planned; 5-plan set (13-01..05) passes the gsd-plan-checker gate (REVISE→1 repair B1→PASS, orchestrator re-verified). Requirements union = REQ-P13-01…06. Note: the S1-1 'ROADMAP repoint prerequisite' was corrected as false — /gsd-plan-phase uses `init.plan-phase` (resolves phase 13), not `init.phase-op`; no repoint was needed or done. Open for S1-3: verify /gsd-execute-phase's init verb resolves phase 13 before assuming a repoint. Next unblocked = S1-3 (execute all Phase 13 plans). See .planning/LOOP-LEDGER.md + LOOP-LEDGER-ARCHIVE.md#S1-2."
-last_updated: "2026-08-28T17:55:00.000Z"
+last_updated: "2026-08-28T18:20:09.061Z"
 last_activity: 2026-08-28
-last_activity_desc: "S1-2 — Phase 13 planned; 5-plan set authored (2 missing plans added, truncated 13-03 repaired), plan-checker PASS after 1 fix"
+last_activity_desc: Phase 13 execution started
 progress:
   total_phases: 4
   completed_phases: 0
   total_plans: 5
   completed_plans: 0
   percent: 0
-current_phase: 13
-current_phase_name: task-playbooks-that-fill-the-spec
 ---
 
 # Project state
 
-**Status:** v2.2 Analytic Surface — executing (S1 — Phase 13 planned, execution next)
+**Status:** Executing Phase 13
 **Progress:** [░░░░░░░░░░░░░░░░░░░░] v2.2 — 0/4 phases (Phases 13 → 14 → 16 → 15, in that order)
 **Predecessor:** [████████████████████] v2.0.0 SHIPPED 2026-08-28 — 11/11 phases, 89 plans, 208 tasks, tag `v2.1.0`, merged to `main`. Full record: `.planning/MILESTONES.md`; artifacts archived under `.planning/milestones/v2.0.0-*` (phases, ROADMAP, REQUIREMENTS, MILESTONE-AUDIT, loop ledgers).
 
@@ -30,14 +30,14 @@ current_phase_name: task-playbooks-that-fill-the-spec
 See: .planning/PROJECT.md (updated 2026-08-13; Key Decisions table there is the full decision log)
 
 **Core value:** Gate analytical work on validity before the data is touched.
-**Current focus:** Phase 13 — task playbooks that fill the spec (skill-only). Scope for all four v2.2 phases (23 requirements, REQ-P13-01 … REQ-P16-04) is already written: ROADMAP "Queued milestone — v2.2 Analytic Surface" and REQUIREMENTS "Queued — Milestone v2.2". This milestone needs execution, not a fresh scoping round.
+**Current focus:** Phase 13 — task-playbooks-that-fill-the-spec
 
 ## Current Position
 
-Phase: 13 (task-playbooks-that-fill-the-spec) — 1st of 4 in execution order; 0/4 complete
-Plan: 5 plans written (13-01..05), 0 executed — plan-checker gate PASSED; execution is next (S1-3)
-Status: S1 (Phase 13). S0 bootstrap + S1-1 discuss + S1-2 plan complete. Next unblocked = S1-3 (execute all 5 Phase 13 plans). No ROADMAP repoint was needed for planning (plan-phase uses `init.plan-phase`, which resolves phase 13); S1-3 should verify execute-phase's init verb before assuming one is needed.
-Last activity: 2026-08-28 — S1-2 complete: 5-plan set authored/repaired and passed the independent gsd-plan-checker gate after one fix (B1)
+Phase: 13 (task-playbooks-that-fill-the-spec) — EXECUTING
+Plan: 1 of 5
+Status: Executing Phase 13
+Last activity: 2026-08-28 — Phase 13 execution started
 
 Progress: [░░░░░░░░░░] 0%
 
