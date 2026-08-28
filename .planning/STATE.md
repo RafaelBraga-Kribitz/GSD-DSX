@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: Analytic Surface
 status: executing
-stopped_at: "S1-1 complete — Phase 13 discuss done, `13-CONTEXT.md` written (Architect+Auditor 2-persona round, §4; D-01..D-08 loud/vetoable). Orchestrator re-verified the 256-code catalogue baseline (`--check` exit 0). Next unblocked = S1-2 (plan Phase 13) — but S1-2 must FIRST repoint the ROADMAP active-milestone section (v2.2 phases still under `## Queued milestone`, so `init phase-op --phase 13`→phase_found:false; requirements unchanged, structural repoint only). See .planning/LOOP-LEDGER.md."
-last_updated: "2026-08-28T15:51:00.000Z"
+stopped_at: "S1-2 complete — Phase 13 planned; 5-plan set (13-01..05) passes the gsd-plan-checker gate (REVISE→1 repair B1→PASS, orchestrator re-verified). Requirements union = REQ-P13-01…06. Note: the S1-1 'ROADMAP repoint prerequisite' was corrected as false — /gsd-plan-phase uses `init.plan-phase` (resolves phase 13), not `init.phase-op`; no repoint was needed or done. Open for S1-3: verify /gsd-execute-phase's init verb resolves phase 13 before assuming a repoint. Next unblocked = S1-3 (execute all Phase 13 plans). See .planning/LOOP-LEDGER.md + LOOP-LEDGER-ARCHIVE.md#S1-2."
+last_updated: "2026-08-28T17:55:00.000Z"
 last_activity: 2026-08-28
-last_activity_desc: "S1-1 — Phase 13 discuss; 13-CONTEXT.md written via 2-persona round; 256-code baseline re-verified"
+last_activity_desc: "S1-2 — Phase 13 planned; 5-plan set authored (2 missing plans added, truncated 13-03 repaired), plan-checker PASS after 1 fix"
 progress:
   total_phases: 4
   completed_phases: 0
-  total_plans: 0
+  total_plans: 5
   completed_plans: 0
   percent: 0
 current_phase: 13
@@ -19,7 +19,7 @@ current_phase_name: task-playbooks-that-fill-the-spec
 
 # Project state
 
-**Status:** v2.2 Analytic Surface — executing (S0 bootstrap)
+**Status:** v2.2 Analytic Surface — executing (S1 — Phase 13 planned, execution next)
 **Progress:** [░░░░░░░░░░░░░░░░░░░░] v2.2 — 0/4 phases (Phases 13 → 14 → 16 → 15, in that order)
 **Predecessor:** [████████████████████] v2.0.0 SHIPPED 2026-08-28 — 11/11 phases, 89 plans, 208 tasks, tag `v2.1.0`, merged to `main`. Full record: `.planning/MILESTONES.md`; artifacts archived under `.planning/milestones/v2.0.0-*` (phases, ROADMAP, REQUIREMENTS, MILESTONE-AUDIT, loop ledgers).
 
@@ -35,9 +35,9 @@ See: .planning/PROJECT.md (updated 2026-08-13; Key Decisions table there is the 
 ## Current Position
 
 Phase: 13 (task-playbooks-that-fill-the-spec) — 1st of 4 in execution order; 0/4 complete
-Plan: none yet — discuss done (`13-CONTEXT.md`), planning is next (S1-2)
-Status: S1 (Phase 13). S0 bootstrap complete (S0-1/2/3). Next unblocked = S1-2 (plan Phase 13); S1-2 must repoint the ROADMAP active-milestone section first (`init phase-op --phase 13`→phase_found:false while v2.2 sits under `## Queued milestone`)
-Last activity: 2026-08-28 — S1-1 complete: `13-CONTEXT.md` written via Architect+Auditor persona round; 8 decisions D-01..D-08; 256-code baseline re-verified by orchestrator
+Plan: 5 plans written (13-01..05), 0 executed — plan-checker gate PASSED; execution is next (S1-3)
+Status: S1 (Phase 13). S0 bootstrap + S1-1 discuss + S1-2 plan complete. Next unblocked = S1-3 (execute all 5 Phase 13 plans). No ROADMAP repoint was needed for planning (plan-phase uses `init.plan-phase`, which resolves phase 13); S1-3 should verify execute-phase's init verb before assuming one is needed.
+Last activity: 2026-08-28 — S1-2 complete: 5-plan set authored/repaired and passed the independent gsd-plan-checker gate after one fix (B1)
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -74,6 +74,6 @@ Carried forward from v2.0.0 close (closeout_type=override_closeout) — captured
 
 ## Session Continuity
 
-Last session: 2026-08-28T15:51Z (autonomous firing)
-Stopped at: S1-1 complete — Phase 13 discuss; `13-CONTEXT.md` written.
-Resume file: None — the next firing takes S1-2 from LOOP-LEDGER.md (repoint ROADMAP active milestone, then `/gsd-plan-phase 13`).
+Last session: 2026-08-28T17:55Z (autonomous firing)
+Stopped at: S1-2 complete — Phase 13 planned; 5-plan set passes the plan-checker gate.
+Resume file: None — the next firing takes S1-3 from LOOP-LEDGER.md (`/gsd-execute-phase 13`, all 5 plans; wave 1 = 13-01..04, wave 2 = 13-05). Carry the 4 non-blocking verify-block nits in LOOP-LEDGER-ARCHIVE.md#S1-2 into execution.
