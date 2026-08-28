@@ -20,6 +20,10 @@ a persona round and records loudly):
 
 ## Open
 
+(none currently — HQ-8 is answered; see below.)
+
+## HQ-8-superseded — original evidence pack (answered; kept for the record)
+
 ### HQ-8 — Phase 15 D-05 citation evidence pack (filed early by design; non-blocking)
 
 **Status: ASSEMBLED 2026-08-28 (S0-3), awaiting the human read. DO NOT SIGN — the loop
@@ -105,3 +109,26 @@ colliding with it. The next free tag for this milestone is `v2.2.0`.
 (v2.0.0's answered items — HQ-1 … HQ-7 — are archived at
 `.planning/milestones/v2.0.0-HUMAN-QUEUE.md` and
 `.planning/milestones/v2.0.0-HUMAN-QUEUE-ARCHIVE.md`.)
+
+### HQ-8 — Phase 15 D-05 citation evidence pack (answered 2026-08-28)
+
+**Operator verdict (verbatim):** `cite1 confirmed at locator; cite2 does not transfer -- leave unshipped; cite3 confirmed at locator`
+
+**How this differs from HQ-1/4/5/6/7's pattern:** those were read by the *operator*, with an
+interactive session assembling evidence first. Here the interactive session itself downloaded
+and read all three primary sources directly (not a secondary corroboration pass) *before*
+presenting the choice, then the operator decided based on that direct read. This is a stronger
+evidentiary basis than a bibliographic-only pack, not a substitute for D-05 — the operator's
+decision is still the one that binds.
+
+| # | Citation | Result | Detail |
+|---|---|---|---|
+| 1 | CUPED (REQ-P15-02) | **Confirmed at locator** | Full text of Deng, Xu, Kohavi & Walker (2013) downloaded from its official host (exp-platform.com) and read directly. Byline verified against the actual PDF (a web-search summary along the way misattributed different authors; the primary source overrode it — exactly the failure mode D-05 exists to catch). The abstract states the ~50% Bing variance-reduction figure directly. The paper's linear model uses `θ` notation matching the docstring's planned formulation (`E(Yi\|Zi,Xi) = θ0 + δZi + θᵀXi`). The pre-experiment-only requirement is stated in the paper's own words: *"the pre-experiment information is guaranteed to be independent of the experiment's effect, which is crucial to avoid biased results."* Ready for Phase 15 to cite by page/section once implemented. |
+| 2 | Survivorship bias (REQ-P15-04, half A) | **Does not transfer — leave unshipped** | Full text of Brown, Goetzmann, Ibbotson & Ross (1992) read directly. Its actual result is a formal, fund-performance-persistence-specific finding (survivorship-truncated samples induce a spurious volatility–return correlation, proved via distributional lemmas) — the paper never uses the word "denominator," and its worked examples are mutual-fund-specific. It does not state, or straightforwardly imply, a general "a rate's denominator must exclude non-survivors" rule that would transfer to a cohort/funnel declaration check. Per `brief.md` §6.5's own rule, this stays **unshipped** rather than citing a source whose argument does not carry the weight being put on it. **This is a REQ-P15-04 scope note Phase 15's discuss (S4-1) must record loudly, not discover silently:** REQ-P15-04 as worded expects both the survivorship-bias and changing-denominator defects to ship; the honest outcome is that only the changing-denominator half does, with the survivorship half remaining a documented non-promotion in `brief.md` §6.5 pending a better-fitting source. |
+| 3 | Changing denominator (REQ-P15-04, half B) | **Confirmed at locator** | Full text of Crook, Frasca, Kohavi & Longbotham (2009) read directly from Kohavi's own site. Section 6, "Pitfall 4," states almost verbatim what the check needs: *"Combining metrics over periods where the proportions assigned to Control and Treatment vary, or over subpopulations sampled at different rates"* — with a fully worked Simpson's-paradox example (Table 1) and three named remedies (paired comparison within stable-proportion periods; weighted combination; or discard the unstable-proportion period). Confirmed cleanly distinct from ratio-metric dilution (already permanently out of scope elsewhere in `brief.md` — no overlap risk). Ready for Phase 15 to cite Section 6 by name. |
+
+**Requirement impact:** REQ-P15-02 has a D-05-confirmed citation, ready to implement. REQ-P15-04
+is satisfied by its changing-denominator half only — Phase 15's S4-1 discuss must record this as
+a loud, documented partial satisfaction (not a silent scope-narrowing) and confirm `brief.md`
+§6.5 still carries the survivorship-bias item as an open, unpromoted entry.
+
