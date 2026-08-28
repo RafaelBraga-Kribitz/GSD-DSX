@@ -20,7 +20,27 @@ a persona round and records loudly):
 
 ## Open
 
-(none currently — HQ-8 is answered; see below.)
+### HQ-9 — Phase 13 end-of-phase security sign-off + UAT (batched; non-blocking until S5-2)
+
+**Status: filed 2026-08-28 (S1-5). Technical gates PASS; awaiting operator sign-off.** Per brief §4
+category 4 (a `SECURITY.md` approval line is a human item) and the standing UAT batch. The loop
+completed the technical verification; the operator confirms the sign-off line at the close-out drain
+(S5-2). Nothing downstream blocks on this until then.
+
+**What the loop already verified (orchestrator re-gate, real commands — brief §5):**
+- **Security — SECURED, `threats_open: 0`** (`13-SECURITY.md`): 14/14 threats closed. Gate-path
+  purity (zero `dsx/`|`scripts/` edits), route-and-cite discipline (anti-parallel-advice grep 0 lines
+  ×5 files), zero-mint set-identity (catalogue 256, `added=[] removed=[]`, `--check` exit 0), D-05
+  advisory boundary (`dsx-scope-analysis` emits `gsd-tier.ps1`, no config mutation). Skill-only phase,
+  asvs_level 1 L1 short-circuit — no auditor spawn needed.
+- **Validation — `nyquist_compliant: true`, 0 gaps** (`13-VALIDATION.md`): 6/6 REQ-P13-01..06 COVERED
+  by green automated tests (`tests/test_phase13_playbooks.py` 8 tests + `test_finding_catalogue_invariant`
+  2 tests). Full gate `sh scripts/check.sh` = all passed (Ran 1230 tests OK).
+
+**Operator action at S5-2:** (1) confirm the `13-SECURITY.md` Sign-Off approval line as written (or
+flag any threat disposition), and (2) run/confirm the Phase 13 UAT for REQ-P13-01..06. There is **no
+D-05 primary-source read owed by Phase 13** (it mints no codes and cites only existing ones — all 28
+citations verified present). An interactive session records the verdict and checks this item off.
 
 ## HQ-8-superseded — original evidence pack (answered; kept for the record)
 

@@ -5,13 +5,13 @@ milestone_name: Analytic Surface
 current_phase: 13
 current_phase_name: task-playbooks-that-fill-the-spec
 status: executing
-stopped_at: "S1-4 COMPLETE — Phase 13 code review PASS (0 blocking, 0 auto-fix) + verification PASSED (6/6 REQ-P13-01..06 goal-backward). Orchestrator-direct at opus/high (§3), every gate re-run here not subagent-trusted. Artifacts: 13-.../REVIEW.md + 13-.../VERIFICATION.md. Key checks: 21/21 cited DSX-* codes real (0 dangling); 3/3 source locators accurate; docs/gsd-tiers.md+gsd-tier.ps1 exist & tier table matches; D-01 gate-path pure; D-07 zero-mint by set-identity diff (added=[] removed=[], 256); 4 carried S1-2 nits all resolved. Gate: sh scripts/check.sh = all checks passed (1222 tests OK). RESUME at S1-5 (/gsd-secure-phase 13 + /gsd-validate-phase 13; scope bound REQ-P13-06: catalogue must contain no new codes vs Phase 12 — assert by diff). See LOOP-LEDGER.md Log."
-last_updated: "2026-08-28T19:30:00.000Z"
+stopped_at: "S1-5 COMPLETE — Phase 13 secure + validate both PASS; S1 (Phase 13 ceremony) fully complete. secure = SECURED, threats_open: 0 (14/14 closed, asvs1 L1 short-circuit, orchestrator re-gate — not auditor-trusted); validate = nyquist_compliant: true, 0 gaps (6/6 REQ COVERED). Loud op-decision: crystallised S1-4's hand-greps into a standing test tests/test_phase13_playbooks.py (8 tests) so REQ-P13-01..05 are automated-COVERED; REQ-P13-06 on test_finding_catalogue_invariant. Gate: sh scripts/check.sh = all checks passed (Ran 1230 tests OK, 1222→+8; catalogue 256; capability conformant; determinism). Human security sign-off (D-05/§4-cat-4) queued to HUMAN-QUEUE, non-blocking to S5-2. Artifacts: 13-SECURITY.md + 13-VALIDATION.md. RESUME at S2-1 (Phase 14 discuss — settle REQ-P14-05 overlay-hooks branch against installed GSD Core). See LOOP-LEDGER.md Log."
+last_updated: "2026-08-28T19:22:00.000Z"
 last_activity: 2026-08-28
-last_activity_desc: "S1-4 complete — Phase 13 code review PASS + verification PASSED (6/6); resume at S1-5 (secure + validate)"
+last_activity_desc: "S1-5 complete — Phase 13 secure(SECURED)+validate(nyquist_compliant); S1 done; resume at S2-1 (Phase 14 discuss)"
 progress:
   total_phases: 4
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 5
   completed_plans: 5
   percent: 100
@@ -19,8 +19,8 @@ progress:
 
 # Project state
 
-**Status:** Executing Phase 13
-**Progress:** [░░░░░░░░░░░░░░░░░░░░] v2.2 — 0/4 phases (Phases 13 → 14 → 16 → 15, in that order)
+**Status:** Phase 13 ceremony complete (S1-1..S1-5) — next: Phase 14 (S2-1 discuss)
+**Progress:** [█████░░░░░░░░░░░░░░░░] v2.2 — 1/4 phases (Phases 13 → 14 → 16 → 15, in that order)
 **Predecessor:** [████████████████████] v2.0.0 SHIPPED 2026-08-28 — 11/11 phases, 89 plans, 208 tasks, tag `v2.1.0`, merged to `main`. Full record: `.planning/MILESTONES.md`; artifacts archived under `.planning/milestones/v2.0.0-*` (phases, ROADMAP, REQUIREMENTS, MILESTONE-AUDIT, loop ledgers).
 
 **Locked decisions (v2.2, carried from planning):** DQ = profile runner + hermetic gates; Glyph = hermetic svg_sha256 only (no MCP dep); forbidden claims = universal pack + optional phase YAML; repro_lock = ARS-style honest-null (not byte-replay); decision replay = structured thresholds only; suppressions = ADR/SPEC authority required (unknown codes → exit 2).
@@ -34,12 +34,12 @@ See: .planning/PROJECT.md (updated 2026-08-13; Key Decisions table there is the 
 
 ## Current Position
 
-Phase: 13 (task-playbooks-that-fill-the-spec) — EXECUTING (all plans done; review+verify PASSED; pending S1-5 secure/validate)
-Plan: 5 of 5 (execution complete)
-Status: Executing Phase 13
-Last activity: 2026-08-28 — Phase 13 code review PASS + verification PASSED (6/6); pending S1-5
+Phase: 13 (task-playbooks-that-fill-the-spec) — COMPLETE (all 5 plans; review+verify PASSED; secure SECURED; validate nyquist_compliant). Next: Phase 14 (S2-1 discuss).
+Plan: 5 of 5 (ceremony complete through secure + validate)
+Status: Phase 13 ceremony complete — next S2-1 (Phase 14 discuss)
+Last activity: 2026-08-28 — Phase 13 secure(SECURED)+validate(nyquist_compliant: true); S1 complete
 
-Progress: [██████████] 100% (5/5 plans executed; S1-4 review/verify done)
+Progress: [██████████] 100% (Phase 13 full ceremony complete; S1-1..S1-5 done)
 
 **Loop control:** the autonomous ceremony drives this milestone. Contract: `.planning/LOOP-BRIEF.md`; backlog + gates: `.planning/LOOP-LEDGER.md`; human-only items: `.planning/HUMAN-QUEUE.md`.
 
