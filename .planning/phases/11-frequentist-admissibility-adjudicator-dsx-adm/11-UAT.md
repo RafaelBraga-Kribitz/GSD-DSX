@@ -1,9 +1,9 @@
 ---
-status: testing
+status: complete
 phase: 11-frequentist-admissibility-adjudicator-dsx-adm
 source: [11-VERIFICATION.md]
 started: 2026-08-22T19:08:21Z
-updated: 2026-08-26T04:29:00Z
+updated: 2026-08-28T00:02:00Z
 ---
 
 ## Current Test
@@ -14,7 +14,7 @@ expected: |
   The cited work exists, actually supports the named estimator family, and locator_status
   (verified/unverified) matches whether the specific locator (chapter/section/page) was
   actually confirmed.
-awaiting: manual research on ⚠Z (Zimmerman 2004 citation — see test 1 result)
+awaiting: none — all four checks resolved; ⚠Z fixed 2026-08-27 (S4-1b, see test 1 result)
 
 ## Tests
 
@@ -26,7 +26,7 @@ expected: |
 why_human: No parser can confirm a citation string names a real, correctly-quoted source that
   supports the claim attached to it. Explicitly still-open per 11-04-SUMMARY.md ("has not yet
   been performed") and 11-VALIDATION.md's Manual-Only Verifications table.
-result: [blocked]
+result: [pass]
 human_verdict: |
   2026-08-26 — Operator review (HQ-1). Thirteen of fourteen family citations accepted at
   article level. ⚠Z (HIGH): Zimmerman (2004) *Journal of General Psychology* 131(2):142-160
@@ -35,7 +35,7 @@ human_verdict: |
   Likely candidate: Zimmerman (2004), *British Journal of Mathematical and Statistical
   Psychology* 57(1):173-181, DOI 10.1348/000711004849222 — operator has not confirmed.
   ⚠L accepted as noted (Lydersen §9 pointer loose for domination half; substance real in §5.4/§6.4).
-  Follow-up citation-fix unit required; do not treat Check 1 as passed until ⚠Z is resolved.
+  2026-08-27 — ⚠Z RESOLVED (S4-1b). Operator confirmed Zimmerman (2004), *British Journal of Mathematical and Statistical Psychology* 57(1):173-181, DOI 10.1348/000711004849222 (HUMAN-QUEUE ⚠Z; verified via Wiley, PubMed, Semantic Scholar) — no article exists at the former *Journal of General Psychology* 131(2):142-160 locator. references/families.yaml corrected at all five Zimmerman sites; gen-finding-catalogue.py --check exit 0 and the full suite (1221 tests) green. Check 1 passes and REQ-P11-01 is satisfied. The no_variance_pretesting token (Zimmerman-only) is now truly locator_status: verified; families #6/#7/#8 and ranking_rules carry the corrected locator but stay locator_status: unverified for their other caveated co-citations (Delacre superseded tables, Ruxton unconfirmed, Cameron D-29 numbering).
 
 ### 2. DSX-ADM-010 finding wording does not overstate ranking strength
 expected: |
@@ -80,19 +80,21 @@ human_verdict: |
 ## Summary
 
 total: 4
-passed: 3
+passed: 4
 issues: 0
 pending: 0
 skipped: 0
-blocked: 1
+blocked: 0
 
 ## Gaps
 
-- **⚠Z — Zimmerman (2004) citation (Check 1, HIGH):** `references/families.yaml` cites
-  *Journal of General Psychology* 131(2):142-160 for `no_variance_pretesting` as `verified`;
-  operator flagged for manual research. Blocks Check 1 pass and any REQ-P11-* row that depends
-  on the full fourteen-family read. Follow-up citation-fix unit: correct locator and
-  `locator_status` in `families.yaml`, `ranking_rules`, families #6/#7/#8 once confirmed.
+- **⚠Z — Zimmerman (2004) citation (Check 1, HIGH) — RESOLVED 2026-08-27 (S4-1b):** `references/families.yaml`
+  formerly cited a non-existent *Journal of General Psychology* 131(2):142-160 entry for
+  `no_variance_pretesting` (marked `verified`). Operator confirmed the real source and the loop
+  corrected the locator at all five Zimmerman sites to *British Journal of Mathematical and
+  Statistical Psychology* 57(1):173-181 (DOI 10.1348/000711004849222); catalogue gate + full
+  suite green. Check 1 now passes and REQ-P11-01 is satisfied — the last open item from Phase
+  11's original UAT round.
 - **⚠LR — Little & Rubin Ch.3 locator (adjacent Check 4, MEDIUM, accepted as noted):**
   `missing_at_random_given_covariates` cites Ch.3 §3.2; taxonomy is in Ch.1. Follow-up fix
   unit (also affects `brief.md` §7 / DSX-VAL-060).
