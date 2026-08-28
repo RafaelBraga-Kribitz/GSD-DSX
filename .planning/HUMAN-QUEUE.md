@@ -42,6 +42,30 @@ flag any threat disposition), and (2) run/confirm the Phase 13 UAT for REQ-P13-0
 D-05 primary-source read owed by Phase 13** (it mints no codes and cites only existing ones — all 28
 citations verified present). An interactive session records the verdict and checks this item off.
 
+### HQ-10 — Phase 14 end-of-phase security sign-off + UAT (batched; non-blocking until S5-2)
+
+**Status: filed 2026-08-28 (S2-5). Technical gates PASS; awaiting operator sign-off.** Per brief §4
+category 4 (a `SECURITY.md` approval line is a human item) and the standing UAT batch. The loop
+completed the technical verification; the operator confirms the sign-off line at the close-out drain
+(S5-2). Nothing downstream blocks on this until then.
+
+**What the loop already verified (orchestrator re-gate, real commands — brief §5):**
+- **Security — SECURED, `threats_open: 0`** (`14-SECURITY.md`): 16/16 register entries closed (15
+  threats + 1 supply-chain accept; 7 at high severity). Gate-path purity (empty `dsx/`+`scripts/`+
+  `capability.json` manifest diff over the 5 feature commits; `report.add` cli.py=0), zero-mint
+  set-identity (256, `added=[] removed=[]`, `--check` exit 0), gate-path hermeticity (`test_gate_path_hermetic`
+  2 OK), documented-skip honesty (`hooks:[]`, no `aliases` key, `supported:["*"]`, DSX-DQ-001 named),
+  disclosure guarded on literal `research`, Triggers on 13/13 skills, `data_storage` 0 in skills/shims.
+  Doc/skill/template phase, asvs_level 1 L1 short-circuit — no auditor spawn needed.
+- **Validation — `nyquist_compliant: true`, 0 gaps** (`14-VALIDATION.md`): 6/6 REQ-P14-01..06 COVERED
+  by green automated tests (`tests/test_phase14_onboarding.py` 11 tests + `test_gate_path_hermetic` 2 +
+  `test_finding_catalogue_invariant` 2). Full gate `sh scripts/check.sh` = all passed (Ran 1243 tests OK).
+
+**Operator action at S5-2:** (1) confirm the `14-SECURITY.md` Sign-Off approval line as written (or
+flag any threat disposition), and (2) run/confirm the Phase 14 UAT for REQ-P14-01..06. There is **no
+D-05 primary-source read owed by Phase 14** (it mints no codes and cites only the existing `DSX-DQ-001`
+— verified present). An interactive session records the verdict and checks this item off.
+
 ## HQ-8-superseded — original evidence pack (answered; kept for the record)
 
 ### HQ-8 — Phase 15 D-05 citation evidence pack (filed early by design; non-blocking)
