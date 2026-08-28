@@ -67,7 +67,7 @@ Verified SECURED by `gsd-security-auditor` (opus) and independently re-gated by 
 
 | Risk ID | Threat Ref | Rationale | Accepted By | Date |
 |---------|------------|-----------|-------------|------|
-| AR-12-SC | T-12-SC | Phase 12 introduces zero new third-party packages (D-01 hermeticity; 12-RESEARCH Package Legitimacy Audit). No install surface, so no supply-chain attack surface to mitigate. Design-time plan decision, not a fresh redisposition. | Persona round (S3-1, Auditor `dsx-ml-integrity-auditor`), pending human sign-off (HQ-6) | 2026-08-27 |
+| AR-12-SC | T-12-SC | Phase 12 introduces zero new third-party packages (D-01 hermeticity; 12-RESEARCH Package Legitimacy Audit). No install surface, so no supply-chain attack surface to mitigate. Design-time plan decision, not a fresh redisposition. | Persona round (S3-1, Auditor `dsx-ml-integrity-auditor`); human sign-off granted (HQ-6, 2026-08-27) | 2026-08-27 |
 
 *Accepted risks do not resurface in future audit runs.*
 
