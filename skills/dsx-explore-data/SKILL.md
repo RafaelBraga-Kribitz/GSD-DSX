@@ -749,6 +749,27 @@ evidence either way.
 *Skip:* only when no statistic touched any outcome or metric (pure trust
 profiling of a lookup table) → `comparisons_this_run: 0 (no outcome touched)`.
 
+## Hypothesis register
+The findings, comparisons and searched-not-found ledgers above ARE the hypothesis
+register — no new format and no new spec field. Every untested belief the analysis
+rests on is routed to a carrier a shipped check already reads, keyed on its shape:
+
+- **An untested belief the analysis leans on** (a load-bearing assumption — "the
+  join is one-to-one", "the pre-period is comparable") becomes a row in
+  `assumptions[]` (`{assumption, rationale, impact_if_wrong, checked, waiver}`).
+  `DSX-COH-030` requires the register present when the question is causal or
+  prescriptive; `DSX-COH-031` requires each row `checked: true` XOR a `waiver`.
+- **A belief promoted to a confirmatory test** is declared in
+  `design.multiplicity.family[]` at scope time and filled in `results.tests[]` at
+  execute, adjudicated by `DSX-EXP-050..053` (a test outside the declared family
+  is exploratory at verify). Promotion follows the §6 step-4 candidate handshake —
+  a spec amendment through `dsx-scope-analysis`; EDA never promotes a candidate
+  into `decision.replay`.
+
+This rule only says which existing carrier each hypothesis lands in so a
+deterministic check adjudicates it; it rides the EDA.md ledgers and declares no
+new spec field.
+
 </registers>
 
 <close_out>

@@ -32,6 +32,15 @@ decision-makers read for the answer first.
 3. **How confident, and why** — the design in plain language, and its limits.
 4. **What would change it** — the specific evidence that would flip the verdict.
 5. **Method** — last, for the reader who wants it.
+
+This five-part order carries an explicit **What / So What / Now What** shape:
+**What** = §1 the answer (the number and its interval); **So What** = §2 what it
+means (the action the pre-declared decision rule implies); **Now What** = §4 what
+would change it — for a prescriptive or experiment readout, name the gate-read
+`decision.revisit_when` trigger (`DSX-COH-040`) and the non-empty `limitations[]`
+(`DSX-CLM-080`). The shape is a template layered onto these existing sections and
+the codes they already ride; it mints no new narrative code and adds no
+heading-scanner gate.
 </structure>
 
 <discipline>
