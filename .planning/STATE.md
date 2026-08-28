@@ -2,25 +2,25 @@
 gsd_state_version: 1.0
 milestone: v2.0.0
 milestone_name: DSX Validity Frame
-current_phase: 12
-current_phase_name: calibration
-status: executing
-stopped_at: "S4-3 /gsd-extract-learnings DONE for the ceremony's 3 delivered phases (2026-08-27T23:34Z). Wrote 11.2-/11.3-/12-LEARNINGS.md via 3 parallel sonnet extractors, each independently verified (§5): frontmatter counts == actual ### item counts (11.2 7/7/6/6, 11.3 7/6/6/5, 12 7/7/7/6), all 4 categories present, every item Source-attributed, missing_artifacts:UAT.md confirmed absent, sample content matches artifacts. No tracked file modified by the extractors. Pre-ceremony phases 6–11.1.1 have no LEARNINGS.md — flagged for S4-4 to adjudicate any milestone-wide backfill (bounded follow-up). Next: S4-2 drain HUMAN-QUEUE (blocked on operator — HQ-4/5/6 open, ⚠Z under HQ-1); S4-4/5/6 transitively blocked."
-last_updated: "2026-08-27T23:34:45.803Z"
-last_activity: 2026-08-27
+status: completed
+stopped_at: "S4-5 /gsd-complete-milestone DONE (2026-08-28) — v2.0.0 DSX Validity Frame archived (11 phases, 89 plans, 208 tasks) to .planning/milestones/v2.0.0-* (ROADMAP + REQUIREMENTS + AUDIT + 11 phase dirs moved); MILESTONES.md + RETROSPECTIVE.md written; REQUIREMENTS.md git-rm'd; ROADMAP compacted; PROJECT.md evolved; tag v2.0.0 created. closeout_type=override_closeout (2 dormant seeds deferred). Next unblocked = S4-6 (/gsd-cleanup deletion approval via HUMAN-QUEUE + /gsd-ship)."
+last_updated: "2026-08-28T03:00:19.244Z"
+last_activity: 2026-08-28
+last_activity_desc: Milestone v2.0.0 completed and archived
 progress:
   total_phases: 11
-  completed_phases: 10
+  completed_phases: 11
   total_plans: 89
   completed_plans: 89
-  percent: 95
-last_activity_desc: S4-3 /gsd-extract-learnings — wrote 11.2-/11.3-/12-LEARNINGS.md (3 ceremony phases) via parallel extractors, each independently verified (counts match, 4 categories, Source-attributed). Pre-ceremony phases 6–11.1.1 have no LEARNINGS.md (flagged for S4-4). Next = S4-2 drain (blocked on operator)
+  percent: 100
+current_phase: 12
+current_phase_name: calibration
 ---
 
 # Project state
 
-**Status:** Ready to execute
-**Progress:** [███████████████████░] 60/63 plans (95%)  
+**Status:** v2.0.0 milestone complete
+**Progress:** [████████████████████] v2.0.0 SHIPPED 2026-08-28 — 11/11 phases, 89/89 plans (100%)  
 **Locked decisions:** DQ = profile runner + hermetic gates; Glyph = hermetic svg_sha256 only (no MCP dep); forbidden claims = universal pack + optional phase YAML; repro_lock = ARS-style honest-null (not byte-replay); decision replay = structured thresholds only; suppressions = ADR/SPEC authority required (unknown codes → exit 2)  
 **v2.0.0 locked decisions:** DSX-PAR-010 is a distinct code, DSX-EXP-060 untouched (M-01); no `inference.stopping_rule` — PAR-010/011 read the existing `design.peeking_policy` (M-02); PEEKING_POLICIES gains an uncontrolled-continuous-monitoring value (M-03); automated import test enforces the D-03a boundary from M1 (M-04); SELF-001 stays a convention, REVERSALS.md template seeded in M1 (M-05); `validity_frame` sub-block requiredness gated by `question_type` (M-06); existing `suppressions[]` is the pre-v2.0.0 grandfather path (M-07); D-05 citation enforcement automated via `gen-finding-catalogue.py` (M-08); `dependence.method_family_required` reuses `VARIANCE_ADJUSTMENTS` (M-09)
 
@@ -114,17 +114,17 @@ parity and visible-fallback criteria added).
 
 ## Current Position
 
-Phase: 12 (calibration, terminal) — EXECUTING. S3-1 (discuss) + S3-2 (plan, 7 plans/5 waves) closed. S3-3 (execute) CLOSED: all 7 plans (12-01..07) executed + gated across 5 waves.
-Plan: 7 of 7 (Waves 1-5 of 5) — S3-3 CLOSED
-Status: S3-3 Wave 5 (plan 12-07) executed + gated by the orchestrator directly (docs-only closing plan, the gate IS the plan) — §6.5 backlog re-evaluated against the measured evidence (carry 8, remove 1): item 6 (ratio-metric dilution) removed as structurally unevaluable and relocated verbatim into a new "Removed / permanently out of scope (D-14)" subsection with its three pinned substrings intact (pin test green, unmodified); per-item dispositions cite the measured (miss-rate 1.0, FPR 0.0) headline (12-05), the empty operator paradigm split (12-02, item 4 NOT auto-promoted), and the friction column (12-06). REV-002 filed in .planning/REVERSALS.md as an honest reclassification surviving SELF-001. Suite 1219 OK, catalogue 256 (D-18, zero minted), check.sh all checks passed. Next unblocked = S3-4 (catch-rate/FPR readout + Statistician adversarial review at high effort).
-Last activity: 2026-08-27 — S4-3 /gsd-extract-learnings: 11.2-/11.3-/12-LEARNINGS.md written + independently verified (3 ceremony phases); pre-ceremony 6–11.1.1 flagged for S4-4
+Phase: Milestone v2.0.0 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-08-28 — Milestone v2.0.0 completed and archived
 
 ## Project Reference
 
 See: .planning/PROJECT.md (updated 2026-08-13)
 
 **Core value:** Gate analytical work on validity before the data is touched.
-**Current focus:** Phase 11.2 — prescriptive-claim-layer
+**Current focus:** Planning the next milestone — v2.0.0 shipped and archived 2026-08-28; run `/gsd-new-milestone`
 
 ## Session
 
@@ -177,3 +177,20 @@ Phase 10 context was re-verified 2026-08-14 (assumptions mode). Six unexecuted p
 Last session: 2026-08-21T20:32:49.273Z
 Stopped at: Session resumed via /gsd-resume-work — context restored from the Phase 11.1.1 handoff; awaiting selection of next action (primary: execute Phase 11.1.1).
 Resume file: .planning/phases/11.1.1-detection-code-hardening-inserted/.continue-here.md
+
+## Operator Next Steps
+
+- Start the next milestone with /gsd-new-milestone
+
+## Deferred Items
+
+Items acknowledged and deferred at milestone close on 2026-08-28 (closeout_type=override_closeout):
+
+| Category | Item | Status |
+|----------|------|--------|
+| seed | SEED-001-deepen-dsx-explore-data-eda-protocol | dormant — carry to next milestone |
+| seed | SEED-002-grow-data-profile-hermetic-eda-artifacts | dormant — carry to next milestone |
+
+These are captured future ideas (deepen `dsx-explore-data` into a reusable EDA protocol;
+grow DATA-PROFILE / `dsx profile` into hermetic EDA artifacts), not v2.0.0 gaps — the
+milestone audit reached `passed` with all 75 requirements accounted. They do not block ship.
