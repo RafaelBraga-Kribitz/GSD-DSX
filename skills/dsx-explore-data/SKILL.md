@@ -1,6 +1,6 @@
 ---
 name: dsx-explore-data
-description: "Programmatic exploratory data analysis with a fixed protocol — profile, validate, then explore. Use before any modelling or inference, and whenever a dataset is new or has changed."
+description: "Programmatic exploratory data analysis with a fixed protocol — profile, validate, then explore. Use before any modelling or inference, and whenever a dataset is new or has changed. Triggers: 'profile this csv', 'explore extract.csv', 'eda' — CSV passed as an argument, no GSD phase names needed."
 argument-hint: "[dataset-path-or-table] [--target <column>] [--time <column>]"
 allowed-tools:
   - Read

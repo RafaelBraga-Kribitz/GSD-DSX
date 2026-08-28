@@ -1,6 +1,6 @@
 ---
 name: dsx-chart-audit
-description: "Standalone adversarial chart/figure audit: run deterministic viz/smells/figures checks, then spawn dsx-viz-critic to write CHART-REVIEW.md. Use for retroactive figure review without a full experiment/ML readout."
+description: "Standalone adversarial chart/figure audit: run deterministic viz/smells/figures checks, then spawn dsx-viz-critic to write CHART-REVIEW.md. Use for retroactive figure review without a full experiment/ML readout. Triggers: 'audit this figure', 'is this chart honest', 'review this chart' — routes intent without GSD phase names."
 argument-hint: "[--phase-dir <path>] [--publish-disposition]"
 allowed-tools:
   - Read

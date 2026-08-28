@@ -1,6 +1,6 @@
 ---
 name: dsx-narrate
-description: "Turn a verified analysis into a decision-ready narrative without overstating it. Use after the statistical review passes, for executive summaries, readouts and reports."
+description: "Turn a verified analysis into a decision-ready narrative without overstating it. Use after the statistical review passes, for executive summaries, readouts and reports. Triggers: 'write the readout', 'executive summary', 'narrate the results' — routes intent without GSD phase names."
 argument-hint: "[--audience executive|product|technical] [--format md|docx|pptx]"
 allowed-tools:
   - Read

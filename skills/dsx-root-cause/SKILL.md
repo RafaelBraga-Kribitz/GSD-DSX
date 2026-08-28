@@ -1,6 +1,6 @@
 ---
 name: dsx-root-cause
-description: "Route a 'why did this metric move' diagnostic question to the existing decomposition, Simpson-reversal and causal-guard gates that already adjudicate it. Use for diagnostic attribution work, not to author a new causal claim."
+description: "Route a 'why did this metric move' diagnostic question to the existing decomposition, Simpson-reversal and causal-guard gates that already adjudicate it. Use for diagnostic attribution work, not to author a new causal claim. Triggers: 'why did <metric> move', 'root cause' — routes intent without GSD phase names."
 argument-hint: "[metric-name] [--dimension <field>]"
 allowed-tools:
   - Read

@@ -1,6 +1,6 @@
 ---
 name: dsx-segment
-description: "Route a multi-cut 'who differs' segmentation question to the existing multiplicity, comparisons-ledger and Simpson-reversal gates that already adjudicate it. Use for segmentation and multi-cut comparison work, not to author a new correction rule."
+description: "Route a multi-cut 'who differs' segmentation question to the existing multiplicity, comparisons-ledger and Simpson-reversal gates that already adjudicate it. Use for segmentation and multi-cut comparison work, not to author a new correction rule. Triggers: 'segment analysis', 'which segment drove this' — routes intent without GSD phase names."
 argument-hint: "[segment-field] [--metrics <names>]"
 allowed-tools:
   - Read

@@ -1,6 +1,6 @@
 ---
 name: dsx-scope-analysis
-description: "Turn a business question into a checkable ANALYSIS-SPEC before touching data. Use at the start of any analytical phase, or whenever a request arrives as 'can you look into X'."
+description: "Turn a business question into a checkable ANALYSIS-SPEC before touching data. Use at the start of any analytical phase, or whenever a request arrives as 'can you look into X'. Triggers: 'scope this question', 'can you look into <x>', 'csv-first' — routes intent without GSD phase names."
 argument-hint: "[question] [--phase <N>] [--type descriptive|diagnostic|predictive|causal|prescriptive]"
 allowed-tools:
   - Read

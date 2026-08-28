@@ -1,6 +1,6 @@
 ---
 name: dsx-cohort
-description: "Route a retention / cohort-grid question to the existing metric, chart-matrix and coherence gates that already adjudicate it. Use when the question is 'what share of a cohort returns, by cohort and by period' — not to author new retention rules."
+description: "Route a retention / cohort-grid question to the existing metric, chart-matrix and coherence gates that already adjudicate it. Use when the question is 'what share of a cohort returns, by cohort and by period' — not to author new retention rules. Triggers: 'cohort analysis', 'retention by cohort' — routes intent without GSD phase names."
 argument-hint: "[cohort-field] [--metric <name>]"
 allowed-tools:
   - Read

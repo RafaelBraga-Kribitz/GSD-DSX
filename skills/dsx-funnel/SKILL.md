@@ -1,6 +1,6 @@
 ---
 name: dsx-funnel
-description: "Route an ordered step-conversion / drop-off question to the existing metric, chart-matrix and conversion-funnel gates that already adjudicate it. Use when the question is 'how many drop off between step N and step N+1', not to author new funnel rules."
+description: "Route an ordered step-conversion / drop-off question to the existing metric, chart-matrix and conversion-funnel gates that already adjudicate it. Use when the question is 'how many drop off between step N and step N+1', not to author new funnel rules. Triggers: 'funnel analysis', 'where do users drop off' — routes intent without GSD phase names."
 argument-hint: "[funnel-steps] [--event-field <name>]"
 allowed-tools:
   - Read

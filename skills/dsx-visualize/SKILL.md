@@ -1,6 +1,6 @@
 ---
 name: dsx-visualize
-description: "Choose and build charts whose encoding matches the relationship and whose geometry is proportional to the numbers. Use when producing any chart, dashboard or figure."
+description: "Choose and build charts whose encoding matches the relationship and whose geometry is proportional to the numbers. Use when producing any chart, dashboard or figure. Triggers: 'chart this', 'which chart for this', 'visualize this' — routes intent without GSD phase names."
 argument-hint: "[--relationship <type>] [--audit <file>]"
 allowed-tools:
   - Read
