@@ -93,3 +93,64 @@ catalogue certification) is wave 2, depends on the wave-1 plans.
 
 Agents: planner `aa1e8433ad6f1cdee` (author 13-04/05, repair 13-03, apply B1);
 checker `afceb3a3939e06940` (independent gate).
+
+## S2-2 — Phase 14 plan (full evidence)
+
+**Firing 2026-08-28 (S2-2).** Reconcile-first at HEAD `ba6a218` (branch up-to-date with
+origin) found ledger == repo — S2-1 (Phase 14 discuss) was the last landed commit, no
+correction owed.
+
+**Method.** Spawned `gsd-planner` (opus via adaptive, §3) to author the plan set from
+`14-CONTEXT.md` + ROADMAP §Phase 14 + REQUIREMENTS REQ-P14-01..06, then the independent
+`gsd-plan-checker` (opus) as the gate. Orchestrator re-verified every load-bearing claim
+itself (brief §5) — not trusted from either subagent — at both frontmatter and plan-body
+level.
+
+**Plan set (5 plans):**
+| Plan | Wave | requirements | Files (product) |
+|---|---|---|---|
+| 14-01 | 1 | REQ-P14-01 | `docs/dsx/learnings/{README.md,2026-08-28-<exemplar>.md}`, `skills/dsx-scope-analysis/SKILL.md` (plan:pre learnings search), `capabilities/dsx/fragments/researcher.md` |
+| 14-02 | 1 | REQ-P14-02 | `templates/DATA-DICTIONARY.md`, `skills/dsx-explore-data/SKILL.md` |
+| 14-03 | 1 | REQ-P14-03 | `templates/DISCLOSURE-research.md`, `skills/dsx-narrate/SKILL.md` |
+| 14-05 | 1 | REQ-P14-06 | `tests/test_gate_path_hermetic.py` |
+| 14-04 | 2 | REQ-P14-04, REQ-P14-05 | `docs/operating-guide.md`, all 13 DSX skills' `description` frontmatter, `.claude/commands/{dsx-scope,dsx-eda}.md` |
+
+**Planner discretion decisions (loud, §4 — no mint, no scope change, vetoable via daily summary):**
+- REQ-P14-01 producer = existing `gsd-extract-learnings` (referenced, never edited); DSX ships
+  only the dated home, fixed schema, one seeded exemplar. Keeps 14-01 off the `dsx-narrate`
+  file so wave-1 single-writer holds.
+- `.claude/commands/*.md` shims = shipped (2: `dsx-scope`, `dsx-eda`), explicitly optional /
+  Claude-Code-only / non-load-bearing sugar; alias table is the portable path.
+- `tests/test_gate_path_hermetic.py` = shipped (14-05): asserts no pandas/scipy/numpy/csv in
+  the import closure of any `GATE_PROFILES` module and `dsx.profiler` not in `dsx.checks.dq`'s
+  closure — a standing guard above the current implicit purity.
+
+**Gate = PASS (independent `gsd-plan-checker`), 0 blocking.** Orchestrator re-verified:
+- Requirements union == exactly {REQ-P14-01..06} (per-plan frontmatter extracted from disk).
+- Single-writer-per-wave holds: wave-1 plans (01/02/03/05) pairwise file-disjoint
+  (scope-analysis vs explore-data vs narrate vs tests); 14-04 sole wave-2 plan,
+  `depends_on: [14-01,14-02,14-03]`, re-edits the three shared skills' `description` only.
+- Gate-path purity: no `dsx/**/*.py` and no `capability.json` in any `files_modified`
+  (`researcher.md` is a prompt fragment, same class 13-04 edited). Every `report.add` mention
+  in the plans is a prohibition/explanation, never an ADD intent. `data_storage` appears only
+  inside a negative guardrail grep; no `capability.json aliases` key.
+- REQ-P14-05 documented-skip fidelity: 14-04 carries the four D-06 honesty claims in force
+  (`FileChanged`x5, `config.json`x3, `supported:["*"]`x8, `DSX-DQ-001`x13, "hooks stays []"x12);
+  no `FileChanged` binding.
+- 14-05 gate is real: `gen-finding-catalogue.py --check && unittest ...invariant &&
+  git status --porcelain -- dsx/ empty && grep -c report.add dsx/cli.py -eq 0`.
+
+**3 non-blocking nits carried to S2-3/S2-4 (from the checker; none blocks execution):**
+1. REQ-P14-03 "golden" (D-04) ships as a *by-construction* structural guarantee (guard on
+   the literal `research` value), not a runnable golden test — defensible for a prompt skill
+   (a real golden needs a non-deterministic LLM run). 14-03's verification block should state
+   the substitution explicitly at execute time.
+2. 14-04 Task 1 automated grep covers D-06 claims 2/3/4 + `DSX-DQ-001` but under-asserts
+   claim (1) (portable floor has no file-drop event) and the exact `--pk/--time` flags of the
+   analyst-invoked `dsx profile` command — the task *action* mandates both, so execution
+   produces them; only the machine-check is looser. Optional tighten at execute.
+3. 14-01 Task 2's `-e '- Grep'/'- Glob'` conjunct checks pre-existing tool grants (regression
+   guard) rather than the new search step; the `docs/dsx/learnings` + `searched dated
+   learnings` conjuncts carry the real positive assertion. Harmless.
+
+Agents: planner `a6082e0cfaaabaa6c`; checker `ab0e4c082146f3169`.
