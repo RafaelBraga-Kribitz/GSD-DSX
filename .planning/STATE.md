@@ -3,10 +3,10 @@ gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: Analytic Surface
 status: executing
-stopped_at: "S0-1 complete — GSD state reconciled onto v2.2 Analytic Surface: frontmatter already repointed at the milestone-transition commit (33dc7de), body brought into template shape (v2.0.0 history collapsed to archive pointers; STATE is a <100-line digest again). Gate green: `gsd-tools query init.milestone-op` exits 0 resolving milestone_version v2.2 / phase_count 4 / completed_phases 0; `.planning/phases/` holds only .gitkeep (v2.0.0 dirs archived, not deleted). Next unblocked = S0-2 (verify the inherited 23-requirement v2.2 scope against the shipped v2.0.0 tree before planning on it). See .planning/LOOP-LEDGER.md."
-last_updated: "2026-08-28T15:02:00.000Z"
+stopped_at: "S1-1 complete — Phase 13 discuss done, `13-CONTEXT.md` written (Architect+Auditor 2-persona round, §4; D-01..D-08 loud/vetoable). Orchestrator re-verified the 256-code catalogue baseline (`--check` exit 0). Next unblocked = S1-2 (plan Phase 13) — but S1-2 must FIRST repoint the ROADMAP active-milestone section (v2.2 phases still under `## Queued milestone`, so `init phase-op --phase 13`→phase_found:false; requirements unchanged, structural repoint only). See .planning/LOOP-LEDGER.md."
+last_updated: "2026-08-28T15:51:00.000Z"
 last_activity: 2026-08-28
-last_activity_desc: "S0-1 bootstrap — GSD state reconciled onto v2.2; init.milestone-op gate green"
+last_activity_desc: "S1-1 — Phase 13 discuss; 13-CONTEXT.md written via 2-persona round; 256-code baseline re-verified"
 progress:
   total_phases: 4
   completed_phases: 0
@@ -35,9 +35,9 @@ See: .planning/PROJECT.md (updated 2026-08-13; Key Decisions table there is the 
 ## Current Position
 
 Phase: 13 (task-playbooks-that-fill-the-spec) — 1st of 4 in execution order; 0/4 complete
-Plan: none yet (phase not planned)
-Status: S0 bootstrap. Next unblocked = S0-2 (verify inherited v2.2 scope against the shipped v2.0.0 tree)
-Last activity: 2026-08-28 — S0-1 complete: STATE reconciled onto v2.2, `init.milestone-op` gate green (exit 0), `.planning/phases/` empty
+Plan: none yet — discuss done (`13-CONTEXT.md`), planning is next (S1-2)
+Status: S1 (Phase 13). S0 bootstrap complete (S0-1/2/3). Next unblocked = S1-2 (plan Phase 13); S1-2 must repoint the ROADMAP active-milestone section first (`init phase-op --phase 13`→phase_found:false while v2.2 sits under `## Queued milestone`)
+Last activity: 2026-08-28 — S1-1 complete: `13-CONTEXT.md` written via Architect+Auditor persona round; 8 decisions D-01..D-08; 256-code baseline re-verified by orchestrator
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -74,6 +74,6 @@ Carried forward from v2.0.0 close (closeout_type=override_closeout) — captured
 
 ## Session Continuity
 
-Last session: 2026-08-28T15:02Z (autonomous firing)
-Stopped at: S0-1 complete — GSD state reconciled onto v2.2 Analytic Surface.
-Resume file: None — the next firing takes S0-2 from LOOP-LEDGER.md.
+Last session: 2026-08-28T15:51Z (autonomous firing)
+Stopped at: S1-1 complete — Phase 13 discuss; `13-CONTEXT.md` written.
+Resume file: None — the next firing takes S1-2 from LOOP-LEDGER.md (repoint ROADMAP active milestone, then `/gsd-plan-phase 13`).
