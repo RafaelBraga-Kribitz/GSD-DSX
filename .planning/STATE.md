@@ -5,16 +5,16 @@ milestone_name: Analytic Surface
 current_phase: 13
 current_phase_name: task-playbooks-that-fill-the-spec
 status: executing
-stopped_at: "S1-2 complete — Phase 13 planned; 5-plan set (13-01..05) passes the gsd-plan-checker gate (REVISE→1 repair B1→PASS, orchestrator re-verified). Requirements union = REQ-P13-01…06. Note: the S1-1 'ROADMAP repoint prerequisite' was corrected as false — /gsd-plan-phase uses `init.plan-phase` (resolves phase 13), not `init.phase-op`; no repoint was needed or done. Open for S1-3: verify /gsd-execute-phase's init verb resolves phase 13 before assuming a repoint. Next unblocked = S1-3 (execute all Phase 13 plans). See .planning/LOOP-LEDGER.md + LOOP-LEDGER-ARCHIVE.md#S1-2."
+stopped_at: "S1-3 IN PROGRESS (Phase 13 execution) — 2 of 5 plans done, verified, pushed: 13-01 (dsx-cohort+dsx-funnel skills + capability.json registers all 4 playbooks; 6c17955,716151c,b1bc21e) and 13-02 (dsx-root-cause+dsx-segment skills; e5e9a98,7c27aef,81eb538). RESUME at 13-03 → then 13-04 (rest of wave 1), then 13-05 (wave 2, depends on all wave-1). Ceremony execution model: executors run SEQUENTIALLY, no worktrees, commit directly to ceremony branch gsd/v2.2.0-analytic-surface, and DO NOT touch tracking files (orchestrator syncs STATE/ROADMAP). Resolve the phase with `node ~/.claude/gsd-core/bin/gsd-tools.cjs init execute-phase 13` — POSITIONAL arg, NOT --phase (--phase makes args[2]='--phase' → phase_found:false). phase_found:true, 5 plans; NO ROADMAP repoint needed — the S1-1/S1-2 'repoint' concern was a query-syntax artifact, now CLOSED. See LOOP-LEDGER.md Log."
 last_updated: "2026-08-28T18:20:09.061Z"
 last_activity: 2026-08-28
-last_activity_desc: Phase 13 execution started
+last_activity_desc: "S1-3 — Phase 13 execution: 13-01, 13-02 executed+verified+pushed (2/5); resume at 13-03"
 progress:
   total_phases: 4
   completed_phases: 0
   total_plans: 5
-  completed_plans: 0
-  percent: 0
+  completed_plans: 2
+  percent: 40
 ---
 
 # Project state
