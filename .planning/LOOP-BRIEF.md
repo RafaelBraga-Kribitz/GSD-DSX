@@ -1,14 +1,35 @@
-# LOOP-BRIEF — v2.0.0 completion ceremony (autonomous)
+# LOOP-BRIEF — autonomous milestone ceremony
+
+**Current milestone: v2.2 Analytic Surface** (Phases 13–16, 23 requirements).
+Branch `gsd/v2.2.0-analytic-surface`. Opened 2026-08-28.
 
 **Purpose:** This file is the standing contract for the **scheduled headless
-firings** that finish milestone v2.0.0 (DSX Validity Frame). The work backlog
-lives in `LOOP-LEDGER.md`; items only a human can answer live in
-`HUMAN-QUEUE.md`.
+firings** that drive the current milestone to completion. The work backlog lives in
+`LOOP-LEDGER.md`; items only a human can answer live in `HUMAN-QUEUE.md`.
 
-**Hard deadline:** 2026-09-01 end of day (buffer day 2026-09-02).
-**Definition of done:** every item in LOOP-LEDGER.md checked; milestone audit re-run
-and `passed` (not gaps-accepted); `/gsd-complete-milestone` archived; branch pushed;
-HUMAN-QUEUE.md empty or every remaining item explicitly accepted by the human.
+**Predecessor — v2.0.0 DSX Validity Frame: SHIPPED 2026-08-28** (merged to `main`,
+release tag `v2.1.0`, 11 phases / 89 plans / 208 tasks, milestone audit `passed`).
+This same brief drove it end to end; its ledger and queue are archived under
+`.planning/milestones/v2.0.0-LOOP-*` and `v2.0.0-HUMAN-QUEUE*`.
+
+**Target:** 2026-09-10, with slack. This is a target, not a guillotine — §5's rule
+holds: if the date is at risk, shrink scope through a recorded, consented re-scope,
+never by skipping a gate.
+
+**Definition of done:** every item in LOOP-LEDGER.md checked; milestone audit run and
+`passed` (not gaps-accepted); `/gsd-complete-milestone` archived; branch merged to
+`main` and tagged; HUMAN-QUEUE.md empty or every remaining item explicitly accepted
+by the operator.
+
+**Why this project's standard is high — read once, then hold it.** This repository is
+a portfolio artifact: it is expected to be read by technically capable, sceptical data
+scientists and statisticians who will check the claims. That makes the *defensible*
+route the required one, not the ambitious one. Concretely, and non-negotiably:
+a citation is confirmed at its locator or it does not ship; a gate is re-run by the
+orchestrator rather than trusted from a subagent's report; a number in a readout is
+measured, never estimated into existence; and an honest "this is unverified" or "this
+class is structurally uncatchable" is worth more than a claim that merely looks
+complete. Prefer the smaller, provable claim every time.
 
 ## 0. Execution model — READ THIS FIRST, every single firing
 
@@ -234,41 +255,42 @@ next unblocked unit rather than stalling the firing.
   the deadline is at risk, shrink new-feature scope via a recorded re-scope in
   HUMAN-QUEUE (consent required) — rigour is not the variable.
 
-## 6. Stages (execute in order; units within a stage may be reordered if unblocked)
+## 6. Stages (execute in stage order; units within a stage may be reordered if unblocked)
 
-- **S0 — Hygiene and open gates.** Close everything the 2026-08-23 milestone audit
-  found on already-executed phases before any new scope. Details in ledger.
-- **S1 — Phase 11.2** (prescriptive claim layer): full ceremony —
-  `/gsd-discuss-phase` (assumptions mode + persona rounds) → `/gsd-plan-phase` →
-  `/gsd-execute-phase` → code review + fix → verify → `/gsd-secure-phase` →
-  `/gsd-validate-phase`. Human-verification items go to HUMAN-QUEUE, work continues.
-  Prefer `/gsd-autonomous --only 11.2` as the carrier where it runs cleanly.
-- **S2 — Phase 11.3** (reporting completeness): same ceremony. The missingness-rate
-  reconciliation design (naive spec fires on the good fixture) is decided by a
-  Statistician-led persona round: tolerance + re-baseline vs entry-condition
-  deferral — decide with evidence from the fixture, record it.
-- **S3 — Phase 12** (calibration, terminal): full known-bad corpus with
-  catch-attribution tags, measured catch rate and false-positive rate,
-  `dsx stats --paradigm`, backlog re-evaluation. The readout is reviewed by the
-  Statistician persona at high effort before verification.
-- **S4 — Close-out:** `/gsd-audit-uat` sweep → drain HUMAN-QUEUE (this is the one
-  place the loop may block on the human) → `/gsd-extract-learnings` →
-  `/gsd-audit-milestone` (must reach `passed`) → `/gsd-complete-milestone` →
-  `/gsd-cleanup` (deletion approval via HUMAN-QUEUE) → `/gsd-ship`.
+The authoritative stage/unit list is `LOOP-LEDGER.md` — it carries each unit's gate
+and its open items. Summary for orientation only:
 
-## 7. Target schedule (slack included)
+- **S0 — Milestone bootstrap.** Point GSD state at v2.2; re-verify the inherited
+  scope against the shipped v2.0.0 tree before planning on it; prepare the Phase 15
+  D-05 citation evidence pack early so the operator can answer asynchronously.
+- **S1 — Phase 13** (task playbooks, skill-only) — full ceremony: discuss →
+  `/gsd-plan-phase` → `/gsd-execute-phase` → code review + fix → verify →
+  `/gsd-secure-phase` → `/gsd-validate-phase`.
+- **S2 — Phase 14** (compounding and data onboarding) — same ceremony.
+- **S3 — Phase 16** (re-run verification, off the gate path) — same ceremony.
+- **S4 — Phase 15** (CUPED + BI declaration checks) — same ceremony. **Last on
+  purpose:** it is the only phase minting new finding codes, so it is the only one
+  carrying a D-05 human read and a D-06 irreversible-numbering veto.
+- **S5 — Close-out:** `/gsd-audit-uat` (hand-checked — the CLI under-reports) →
+  drain HUMAN-QUEUE → `/gsd-extract-learnings` → `/gsd-audit-milestone` (must reach
+  `passed`) → `/gsd-complete-milestone` → ship by direct 3-way merge + `v2.2.0` tag.
 
-| Dates | Stage |
-|---|---|
-| Aug 23–24 | S0 |
-| Aug 25–26 | S1 (Phase 11.2) |
-| Aug 27–28 | S2 (Phase 11.3) |
-| Aug 29–30 | S3 (Phase 12) |
-| Aug 31 | S4 close-out |
-| Sep 1–2 | Buffer / human-queue drain |
+**Phases run 13 → 14 → 16 → 15, not in numeric order.** Every declared dependency is
+still satisfied; the reordering exists to maximise what completes without the
+operator, who is frequently remote. The ledger's "Ordering rationale" section carries
+the full reasoning — read it before reordering anything.
 
-If a stage has not started by its window's end, log a schedule-risk line in the
-daily summary and apply §5's re-scope rule rather than gate-skipping.
+## 7. Pacing
+
+There is no fixed per-stage calendar. Each phase is a full ceremony whose real cost
+is not knowable up front, and inventing a schedule the work then misses produces
+schedule-theatre rather than information. Instead:
+
+- Work the ledger in order; one firing does as much as §1's ceilings allow.
+- Log a **schedule-risk line** when a phase visibly overruns what its neighbours cost
+  — that is a real signal, unlike a missed invented date.
+- If the 2026-09-10 target is at risk, apply §5's re-scope rule (recorded, consented)
+  rather than skipping a gate. Rigour is not the variable.
 
 ## 8. Reporting
 

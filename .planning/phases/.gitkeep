@@ -1,0 +1,2 @@
+# Phase directories for the active milestone are created here by /gsd-plan-phase.
+# Completed milestones are archived to .planning/milestones/<version>-phases/.

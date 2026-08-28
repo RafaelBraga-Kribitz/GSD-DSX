@@ -1,26 +1,27 @@
 ---
 gsd_state_version: 1.0
-milestone: v2.0.0
-milestone_name: DSX Validity Frame
-status: completed
-stopped_at: "S4-5 /gsd-complete-milestone DONE (2026-08-28) — v2.0.0 DSX Validity Frame archived (11 phases, 89 plans, 208 tasks) to .planning/milestones/v2.0.0-* (ROADMAP + REQUIREMENTS + AUDIT + 11 phase dirs moved); MILESTONES.md + RETROSPECTIVE.md written; REQUIREMENTS.md git-rm'd; ROADMAP compacted; PROJECT.md evolved. tag v2.0.0 NOT created (pre-existing 2026-08-10 tag at old cb94015; not force-moved — release-tag placement deferred to S4-6/ship). closeout_type=override_closeout (2 dormant seeds deferred). Next unblocked = S4-6 (/gsd-cleanup deletion approval via HUMAN-QUEUE + /gsd-ship)."
-last_updated: "2026-08-28T03:00:19.244Z"
+milestone: v2.2
+milestone_name: Analytic Surface
+status: executing
+stopped_at: "v2.2 Analytic Surface opened 2026-08-28 on branch gsd/v2.2.0-analytic-surface. Predecessor v2.0.0 DSX Validity Frame SHIPPED — merged to main (c81fc6b) and tagged v2.1.0, both verified on origin; suite 1221 OK + scripts/check.sh green on the merged tree before push. Scope for v2.2 was written at v2.0.0 planning time and already carries goals, success criteria, dependencies and ordering constraints (ROADMAP 'Queued milestone — v2.2 Analytic Surface'; REQUIREMENTS 'Queued — Milestone v2.2', 23 requirements REQ-P13-01…REQ-P16-04), so this milestone needs execution rather than a fresh scoping round. Phases run 13 → 14 → 16 → 15: every declared dependency still holds, and Phase 15 (the only phase minting new finding codes, hence the only D-05/D-06 human gate) runs last so the loop maximises unattended progress. Next unblocked = S0-1 (point GSD state at the milestone; see LOOP-LEDGER.md)."
+last_updated: "2026-08-28T14:40:00.000Z"
 last_activity: 2026-08-28
-last_activity_desc: Milestone v2.0.0 completed and archived
+last_activity_desc: v2.0.0 shipped and tagged v2.1.0; v2.2 Analytic Surface opened
 progress:
-  total_phases: 11
-  completed_phases: 11
-  total_plans: 89
-  completed_plans: 89
-  percent: 100
-current_phase: 12
-current_phase_name: calibration
+  total_phases: 4
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
+current_phase: 13
+current_phase_name: task-playbooks-that-fill-the-spec
 ---
 
 # Project state
 
-**Status:** v2.0.0 milestone complete
-**Progress:** [████████████████████] v2.0.0 SHIPPED 2026-08-28 — 11/11 phases, 89/89 plans (100%)  
+**Status:** v2.2 Analytic Surface — executing (S0 bootstrap)
+**Progress:** [░░░░░░░░░░░░░░░░░░░░] v2.2 — 0/4 phases (Phases 13, 14, 16, 15 in that order)
+**Predecessor:** [████████████████████] v2.0.0 SHIPPED 2026-08-28 — 11/11 phases, 89/89 plans, tag `v2.1.0`  
 **Locked decisions:** DQ = profile runner + hermetic gates; Glyph = hermetic svg_sha256 only (no MCP dep); forbidden claims = universal pack + optional phase YAML; repro_lock = ARS-style honest-null (not byte-replay); decision replay = structured thresholds only; suppressions = ADR/SPEC authority required (unknown codes → exit 2)  
 **v2.0.0 locked decisions:** DSX-PAR-010 is a distinct code, DSX-EXP-060 untouched (M-01); no `inference.stopping_rule` — PAR-010/011 read the existing `design.peeking_policy` (M-02); PEEKING_POLICIES gains an uncontrolled-continuous-monitoring value (M-03); automated import test enforces the D-03a boundary from M1 (M-04); SELF-001 stays a convention, REVERSALS.md template seeded in M1 (M-05); `validity_frame` sub-block requiredness gated by `question_type` (M-06); existing `suppressions[]` is the pre-v2.0.0 grandfather path (M-07); D-05 citation enforcement automated via `gen-finding-catalogue.py` (M-08); `dependence.method_family_required` reuses `VARIANCE_ADJUSTMENTS` (M-09)
 
