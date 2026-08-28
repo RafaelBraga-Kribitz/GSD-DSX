@@ -17,7 +17,7 @@ Grow `DATA-PROFILE.yaml` / `dsx profile` so daily volume, structured missingness
 
 ## When to Surface
 
-**Trigger (entry condition D-13):** Phase 12 catch-rate is published AND real phases are producing `EDA.md` files that gates ignore. Both must hold — this changes fixtures that Phase 12 measures, so it must not land before calibration ships. The natural home is a v2.1-style milestone (exploratory protocol and profile depth), where extra DATA-PROFILE fields, an optional dsx CLI wrapping the correlation funnel *outside* the gate path, or a non-blocking EDA.md-exists check can be weighed. Revisit D-01/D-02 before any of those become blocking codes.
+**Trigger (entry condition D-13):** Phase 12 catch-rate is published AND real phases are producing `EDA.md` files that gates ignore. Both must hold — this changes fixtures that Phase 12 measures, so it must not land before calibration ships. The natural home is a v2.2-style milestone (exploratory protocol and profile depth), where extra DATA-PROFILE fields, an optional dsx CLI wrapping the correlation funnel *outside* the gate path, or a non-blocking EDA.md-exists check can be weighed. Revisit D-01/D-02 before any of those become blocking codes.
 
 ## Scope Estimate
 

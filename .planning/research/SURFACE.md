@@ -1,6 +1,6 @@
 # Analytic Surface Research: comparison against Claude Code data-science packs
 
-**Project:** gsd-dsx — queued milestone v2.1 Analytic Surface
+**Project:** gsd-dsx — queued milestone v2.2 Analytic Surface
 **Domain:** Operator surface (skills, playbooks, compounding, conversational start) around
 an existing declaration-adjudicating gate
 **Researched:** 2026-08-26
@@ -18,7 +18,7 @@ Binding constraints this research does not reopen: D-01 (stdlib-only gate path),
 D-02 (gates adjudicate declarations), D-03 (extend DSX in place), D-05 (citation
 plus published reference value per new check), D-12/D-12a (paradigm symmetry),
 D-13 (deferred work carries an entry condition). Brief §3 ranks risk reduction
-first and portfolio value last — v2.1 exists to close operator-surface gaps
+first and portfolio value last — v2.2 exists to close operator-surface gaps
 *after* v2.0.0 ships, not instead of it.
 
 ---
@@ -78,7 +78,7 @@ best practice.
 None of the comparison repos, on the text that was read, check shared-budget
 interference, triggered-versus-eligible dilution, or a Bayesian continuous-
 monitoring story against a published reference value. That is the v2.0.0 gap
-this project already owns. v2.1 must not delay it.
+this project already owns. v2.2 must not delay it.
 
 ---
 
@@ -152,7 +152,7 @@ numbers overlap. A `protocol_adherence` tag on the Phase 12 corpus so "the
 agent skipped the skill" is countable.
 
 **Do not steal.** Docker as a required runtime. Bundled education datasets.
-R as a co-equal execution lane (optional later; not v2.1). The six-dimension
+R as a co-equal execution lane (optional later; not v2.2). The six-dimension
 plan checker as a second GSD plan-check — GSD already has a plan-checker
 fragment. Putting pandas or R on the gate path to "really" re-run the analysis.
 
@@ -196,7 +196,7 @@ exposes hooks for this overlay (`capability.json` currently has `"hooks": []`).
 Document the skip if it does not.
 
 **Do not steal.** A `data_storage/` special folder. Multi-language code
-generation (R, SQL, JavaScript) as a v2.1 deliverable. Treating the advertised
+generation (R, SQL, JavaScript) as a v2.2 deliverable. Treating the advertised
 agent set as a design to copy — several of those agents are not in the repo
 yet.
 
@@ -216,7 +216,7 @@ the *user* environment — not into a gate.
 
 **Steal.** `docs/dsx/learnings/` with dated YAML frontmatter, searched at
 plan-pre. That is the compounding loop. Model-card *template* for predictive
-work can wait; it is not a Class A failure and is not in the v2.1 phase list.
+work can wait; it is not a Class A failure and is not in the v2.2 phase list.
 
 **Do not steal.** Great Expectations / dbt tests on the gate path (third-party;
 breaks D-01). Library-pattern skills that teach pandas APIs — out of overlay
@@ -261,9 +261,9 @@ are inadmissible as D-05 citations in either direction.
 
 ---
 
-## 6. Placement (locked for v2.1 planning)
+## 6. Placement (locked for v2.2 planning)
 
-v2.1 Analytic Surface is **queued after Phase 12**. It does not reopen Phases
+v2.2 Analytic Surface is **queued after Phase 12**. It does not reopen Phases
 7–12. Skill-only files that invent no new finding codes may be drafted after
 Phase 6 in parallel, but they do not gate v2.0.0.
 
@@ -325,6 +325,6 @@ fetched 2026-08-26.
 
 ---
 
-*Analytic-surface research for: gsd-dsx queued milestone v2.1*
+*Analytic-surface research for: gsd-dsx queued milestone v2.2*
 *Researched: 2026-08-26*
 *Does not authorise finding codes. Does not reopen D-01…D-14.*

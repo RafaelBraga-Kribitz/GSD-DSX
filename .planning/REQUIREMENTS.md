@@ -314,7 +314,7 @@ ordering constraints.
 ---
 *v2.0.0 requirements defined: 2026-08-07*
 
-# Queued — Milestone v2.1 Analytic Surface
+# Queued — Milestone v2.2 Analytic Surface
 
 **Defined:** 2026-08-26
 **Status:** Queued. Not Pending-in-v2.0.0. Not counted in the 53/53 map above.
@@ -323,7 +323,7 @@ ordering constraints.
 **Does not reopen:** Phases 6–12, D-01…D-14.
 
 Skill-only files (Phases 13–14) may be drafted after Phase 6. They do not gate
-v2.0.0 and they invent no finding codes. Phase 15 is the only v2.1 phase that
+v2.0.0 and they invent no finding codes. Phase 15 is the only v2.2 phase that
 extends the catalogue, and every new code is still subject to D-05.
 
 ## Phase 13 (queued) — Task playbooks that fill the spec (skill-only)
@@ -361,7 +361,7 @@ extends the catalogue, and every new code is still subject to D-05.
 - [ ] REQ-P16-03 Remaining Phase 12 corpus cases carry a `protocol_adherence` field so skipped-skill failures are countable; this extends REQ-P12-02 and does not replace catch rate or false-positive rate
 - [ ] REQ-P16-04 A test asserts no `dsx/checks/` or `dsx/frame/` module executes the analysis entrypoint
 
-## Traceability — queued v2.1 (not in the 53)
+## Traceability — queued v2.2 (not in the 53)
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
@@ -389,7 +389,7 @@ extends the catalogue, and every new code is still subject to D-05.
 | REQ-P16-03 | Phase 16 | Queued |
 | REQ-P16-04 | Phase 16 | Queued |
 
-### Coverage summary — queued v2.1
+### Coverage summary — queued v2.2
 
 | Phase | Milestone | Requirements | Count |
 |-------|-----------|--------------|-------|
@@ -397,12 +397,12 @@ extends the catalogue, and every new code is still subject to D-05.
 | 14 | Compounding and data onboarding | REQ-P14-01 … REQ-P14-06 | 6 |
 | 15 | CUPED and BI declaration checks | REQ-P15-01 … REQ-P15-07 | 7 |
 | 16 | Re-run verification (off the gate path) | REQ-P16-01 … REQ-P16-04 | 4 |
-| **Queued total** | v2.1 Analytic Surface | | **23** |
+| **Queued total** | v2.2 Analytic Surface | | **23** |
 
-v2.0.0 remains 53/53. Queued v2.1 is 23 requirements in a separate map. Do not add these 23 into the v2.0.0 total.
+v2.0.0 remains 53/53. Queued v2.2 is 23 requirements in a separate map. Do not add these 23 into the v2.0.0 total.
 
 See `.planning/ROADMAP.md` (Queued milestone section) for goals, success criteria and dependencies.
 
 ---
 *v2.0.0 requirements defined: 2026-08-07*
-*v2.1 Analytic Surface queued: 2026-08-26*
+*v2.2 Analytic Surface queued: 2026-08-26*

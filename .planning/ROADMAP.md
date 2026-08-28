@@ -1,7 +1,16 @@
 # Roadmap: gsd-dsx
 
 **Shipped:** v2.0.0 DSX Validity Frame — Phases 6–12 (2026-08-28); v1.1.0–v1.5.0 — Phases 1–5
-**Queued:** v2.1 Analytic Surface — Phases 13–16 (entry condition met, not started)
+**Queued:** v2.2 Analytic Surface — Phases 13–16 (entry condition met, not started)
+
+> **Milestone name vs. release tag.** The DSX Validity Frame is named **v2.0.0**
+> throughout planning (its archives are `v2.0.0-ROADMAP.md`, `v2.0.0-REQUIREMENTS.md`,
+> `v2.0.0-MILESTONE-AUDIT.md`), but it ships under the git tag **`v2.1.0`**. The
+> `v2.0.0` tag was already published on origin (2026-08-10) against an earlier,
+> partial merge of this same branch, and moving a published ref would silently break
+> anyone who had already fetched it — so the completed milestone got the next free
+> tag instead. The follow-on **Analytic Surface** milestone was correspondingly
+> renamed from v2.1 to **v2.2** so it does not collide with that release tag.
 
 ## Milestones
 
@@ -40,7 +49,7 @@ Full phase detail archived at `.planning/milestones/v2.0.0-ROADMAP.md`.
 
 </details>
 
-## Queued milestone — v2.1 Analytic Surface (Phases 13–16)
+## Queued milestone — v2.2 Analytic Surface (Phases 13–16)
 
 **Status:** Queued. Not started. Not part of the v2.0.0 53-requirement map.
 **Entry condition (D-13):** Phase 12 closed. Recorded in `brief.md` §6.5.
@@ -107,7 +116,7 @@ Every Phase 15 check that ships is still subject to **D-05**: a primary-source c
 
 ### Phase 15: CUPED and BI declaration checks (new codes, D-05)
 
-**Goal**: The only v2.1 phase that extends the gate catalogue. CUPED becomes a closed-vocabulary member with a pre-experiment covariate check. Thin spec fields for cohort grain and funnel steps catch survivorship and changing denominators as findings. Research-domain work may use an APA table template; marketing-domain stays with narrative + sealed figure + claim evidence. Shapiro–Wilk auto-switch is forbidden.
+**Goal**: The only v2.2 phase that extends the gate catalogue. CUPED becomes a closed-vocabulary member with a pre-experiment covariate check. Thin spec fields for cohort grain and funnel steps catch survivorship and changing denominators as findings. Research-domain work may use an APA table template; marketing-domain stays with narrative + sealed figure + claim evidence. Shapiro–Wilk auto-switch is forbidden.
 
 **Depends on**: Phase 12 (hard — D-13). Soft-depends on Phase 13 so the new fields have a skill that fills them. Does **not** wait on Phase 11's `families.yaml` — `cuped` is added to the existing `VARIANCE_ADJUSTMENTS` set in `dsx/spec.py`, not as a parallel vocabulary (same reasoning as M-09).
 **Blocks**: nothing in v2.0.0.
@@ -180,7 +189,7 @@ Every Phase 15 check that ships is still subject to **D-05**: a primary-source c
 
 **v2.0.0 totals:** 11 phases, 89 plans, 208 tasks. Milestone audit `passed` (`.planning/milestones/v2.0.0-MILESTONE-AUDIT.md`); all 11 phases verified and Nyquist-validated; cross-phase integration INTEGRATED.
 
-Queued (v2.1 Analytic Surface — not v2.0.0 work):
+Queued (v2.2 Analytic Surface — not v2.0.0 work):
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -196,9 +205,9 @@ coverage table are preserved at `.planning/milestones/v2.0.0-ROADMAP.md`. Two do
 seeds carry forward (deepen `dsx-explore-data` into a reusable EDA protocol; grow
 DATA-PROFILE into hermetic EDA artifacts) — see `.planning/STATE.md` Deferred Items.
 
-**v2.1 Analytic Surface's entry condition (D-13: Phase 12 closed) is now satisfied.**
+**v2.2 Analytic Surface's entry condition (D-13: Phase 12 closed) is now satisfied.**
 Start it with `/gsd-new-milestone`, or open the queued Phase 13/14 skill-only drafts
-directly — see `.planning/REQUIREMENTS.md` "Queued — Milestone v2.1" for requirements
+directly — see `.planning/REQUIREMENTS.md` "Queued — Milestone v2.2" for requirements
 and `brief.md` §6.5 for the entry condition record. Dependency shape (unchanged by
 v2.0.0's completion):
 

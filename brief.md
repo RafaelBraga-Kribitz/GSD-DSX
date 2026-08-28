@@ -377,10 +377,10 @@ estimate about future workload, including the operator's own.
 | Magnitude-without-computed-effect residual (absolute magnitudes; relative % that declares its base) | Not a paradigm-paired item. | A corpus case passes all claims checks while asserting a magnitude no reported test computed. The paper-shaped instances all fire `DSX-CLM-070` and the per-test effect-size finding already (2026-08-20) |
 | Subgroup-harm declaration for prescriptive work | Not a paradigm-paired item. | A primary source with operationalisable criteria (D-05) **and** a corpus case where subgroup harm was the documented failure. Until promoted, the question lives in the architect and storyteller prompts as an agent guardrail (2026-08-20) |
 
-**v2.1 Analytic Surface backlog** (queued milestone, not individually numbered above — does not
+**v2.2 Analytic Surface backlog** (queued milestone, not individually numbered above — does not
 reopen or renumber items 1–9):
 
-| **v2.1 Analytic Surface** (Phases 13–16 as a milestone) | n/a, not a paradigm-specific check | **Phase 12 (M5) closed — satisfied.** Does not reopen Phases 7–12. Comparison recorded in `.planning/research/SURFACE.md` (2026-08-26); README claims from those repos are not D-05 sources. |
+| **v2.2 Analytic Surface** (Phases 13–16 as a milestone) | n/a, not a paradigm-specific check | **Phase 12 (M5) closed — satisfied.** Does not reopen Phases 7–12. Comparison recorded in `.planning/research/SURFACE.md` (2026-08-26); README claims from those repos are not D-05 sources. |
 | --- | --- | --- |
 | Task playbooks: `dsx-cohort`, `dsx-funnel`, `dsx-root-cause`, `dsx-segment`; EDA hypothesis register; What / So What / Now What narrative; engagement-mode routing onto ceremony tiers; executor preference for `scripts/*.py` | n/a, skill-only — **no new `DSX-*` codes** | Phase 12 closed — satisfied. Skill-only files may be *drafted* after Phase 6 in parallel; they do not gate v2.0.0 and they do not add finding codes. |
 | Compounding (`docs/dsx/learnings/`), portable `DATA-DICTIONARY.md`, optional AI-assistance disclosure when `dsx.domain` is `research`, slash-command aliases, file-drop hook → `dsx profile` (or a documented skip if GSD Core exposes no overlay hooks) | n/a, skill-only — **no new blocking codes** | Phase 12 closed — satisfied. Same draft-after-Phase-6 rule as the row above. |
@@ -449,14 +449,14 @@ false — with the reversal recorded as REV-002.
 | --- | --- | --- |
 | **Ratio-metric dilution for trigger analysis** (Deng & Hu 2015 Formula (3), §3.3) | **Not a paradigm-paired item.** The additive case ships this milestone as `DSX-INT-030`; this is its unshipped extension, not a frequentist/Bayesian mirror under D-12a. | **A source of per-unit trigger and outcome data reaching the gate.** Formula (3) sums over individual users (`∆Overall(X) = (1/N) Σ_Tr TR_i × (TrX_iT − TrX_iC)`) and has no closed-form scalar multiplier, so it cannot be evaluated from a declaration alone the way the additive Formula (1) can. The paper itself is freely available and the equation is readable today — access was never the blocker. This item may be **permanently out of scope** for a declaration-only gate, not merely deferred: the determinism doctrine that keeps computation off the gate path (D-01/D-02) is what forbids evaluating it here, and that constraint does not lift with more time. |
 
-### v2.1 Analytic Surface backlog — scope guardrails
+### v2.2 Analytic Surface backlog — scope guardrails
 
-The v2.1 rows above are operator-surface work, not a silent rewrite of M2–M5. Brief §3 still
-ranks risk reduction first. Opening v2.1 before Phase 12 had a measured catch rate would have
+The v2.2 rows above are operator-surface work, not a silent rewrite of M2–M5. Brief §3 still
+ranks risk reduction first. Opening v2.2 before Phase 12 had a measured catch rate would have
 traded the interference and paradigm-symmetry checks — which none of the comparison packs
 gate — for playbooks those packs already ship as markdown. Phase 12 has now shipped that
 measurement (see the re-evaluation above), so this trade-off is resolved: skill-only drafts
-and, per each row's own D-05 gate, the remaining v2.1 work may proceed.
+and, per each row's own D-05 gate, the remaining v2.2 work may proceed.
 
 **Explicitly not entering this backlog** (anti-features from the 2026-08-26 comparison;
 see SURFACE.md §4): Docker as a required runtime; MLflow or Great Expectations on the

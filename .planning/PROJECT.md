@@ -95,7 +95,7 @@ paid-media budgets. The check set is weighted accordingly.
 required from plan (the `plan` gate point, at CRITICAL severity), so existing
 specs without it begin to block — a breaking contract change.
 
-## Queued Milestone: v2.1 Analytic Surface
+## Queued Milestone: v2.2 Analytic Surface
 
 **Status:** Queued. Not started. Does not reopen Phases 7–12.
 
@@ -145,9 +145,9 @@ path that skips the plan gate.
 
 (None — all v2.0.0 requirements (REQ-P6-* … REQ-P12-*) shipped and validated. The
 full v2.0.0 requirement set with final traceability is archived at
-`.planning/milestones/v2.0.0-REQUIREMENTS.md`.) Queued v2.1 requirements
+`.planning/milestones/v2.0.0-REQUIREMENTS.md`.) Queued v2.2 requirements
 (REQ-P13-* … REQ-P16-*) are recorded in `.planning/REQUIREMENTS.md` under
-**Queued — Milestone v2.1** and are not Active until that milestone is started
+**Queued — Milestone v2.2** and are not Active until that milestone is started
 with `/gsd-new-milestone`.
 
 ### Out of Scope
@@ -159,7 +159,7 @@ with `/gsd-new-milestone`.
 - Survival, time-series and spatial estimation *methods* — temporal/spatial dependence are declared types; the methods are out
 - Reading a data warehouse from a gate — breaks the determinism doctrine
 - A catalogue of every named statistical test — families, not tests
-- Operator-surface playbooks, CUPED, compounding, reproduce-skill — **queued as v2.1** after Phase 12, not this milestone. Not a rejection. See Queued Milestone above.
+- Operator-surface playbooks, CUPED, compounding, reproduce-skill — **queued as v2.2** after Phase 12, not this milestone. Not a rejection. See Queued Milestone above.
 
 ## Context
 
@@ -231,7 +231,7 @@ cheap, structured and repeatable, so it actually happens. To be stated in the RE
 
 This document evolves at phase transitions and milestone boundaries.
 
-**Queued work is not a phase transition.** Adding v2.1 Analytic Surface to the
+**Queued work is not a phase transition.** Adding v2.2 Analytic Surface to the
 roadmap (2026-08-26) does not move v2.0.0 requirements, does not close Phase 6,
 and does not authorise implementation of Phases 13–16 until Phase 12 closes.
 
@@ -250,4 +250,4 @@ and does not authorise implementation of Phases 13–16 until Phase 12 closes.
 
 ---
 *Last updated: 2026-08-28 — v2.0.0 DSX Validity Frame milestone complete and
-shipped; v2.1 Analytic Surface queued next (queued 2026-08-26, not yet started)*
+shipped; v2.2 Analytic Surface queued next (queued 2026-08-26, not yet started)*
