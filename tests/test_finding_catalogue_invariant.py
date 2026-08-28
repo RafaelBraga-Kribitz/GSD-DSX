@@ -22,6 +22,10 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 _CATALOGUE_PATH = ROOT / "references" / "finding-codes.md"
+# The frozen Phase-12 code-set snapshot (D-07): a byte-copy of the *generated*
+# catalogue, compared by set identity to catch a cardinality-preserving swap the
+# count invariant alone would pass.
+_SNAPSHOT_PATH = ROOT / "tests" / "fixtures" / "finding-codes-phase12.md"
 
 # The pinned count. Phase 12 ships no new code, so this must not move (D-18).
 _EXPECTED_TOTAL = 256
@@ -79,6 +83,39 @@ class TestCatalogueInvariant(unittest.TestCase):
             len(set(rows)), _EXPECTED_TOTAL,
             f"catalogue holds {len(rows) - len(set(rows))} duplicate row(s); expected "
             f"{_EXPECTED_TOTAL} unique codes",
+        )
+
+
+    def test_code_set_is_set_identical_to_phase12_snapshot(self):
+        """The current catalogue's DSX-* code SET is identical to the frozen
+        Phase-12 snapshot (REQ-P13-06, D-07).
+
+        The count invariant above pins cardinality, but a mint-one/drop-one swap
+        preserves the count and slips through it. A set-identity diff is strictly
+        stronger: it names any code added since Phase 12 and any code dropped. The
+        snapshot is a byte-copy of the generated ``references/finding-codes.md``;
+        both sides are parsed with the same CRLF-safe, non-line-anchored ``_ROW_RE``
+        the count invariant uses, so there is no parser drift and a CRLF checkout
+        cannot silently empty either side.
+        """
+        current_set = set(_ROW_RE.findall(_CATALOGUE_PATH.read_text(encoding="utf-8")))
+        snapshot_set = set(_ROW_RE.findall(_SNAPSHOT_PATH.read_text(encoding="utf-8")))
+
+        self.assertEqual(
+            len(snapshot_set), _EXPECTED_TOTAL,
+            f"frozen Phase-12 snapshot enumerates {len(snapshot_set)} distinct codes, "
+            f"expected {_EXPECTED_TOTAL} — the snapshot fixture is not a clean byte-copy "
+            "of the generated catalogue",
+        )
+
+        added = sorted(current_set - snapshot_set)
+        removed = sorted(snapshot_set - current_set)
+        self.assertEqual(
+            current_set, snapshot_set,
+            f"catalogue code SET drifted from the Phase-12 snapshot (D-07): "
+            f"added={added} removed={removed} — Phase 13 mints and drops ZERO codes, so "
+            "the sets must be identical; a cardinality-preserving swap the count "
+            "invariant passes is caught here",
         )
 
 
