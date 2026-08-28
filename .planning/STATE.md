@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: Analytic Surface
-current_phase: 14
-current_phase_name: compounding-and-data-onboarding
+current_phase: 16
+current_phase_name: re-run-verification-off-the-gate-path
 status: executing
-stopped_at: "S2-5 COMPLETE — Phase 14 secure + validate, both PASS; S2 (Phase 14) ceremony fully complete. Orchestrator-direct (opus/high, §3, S1-5 precedent), every gate re-run here (brief §5). SECURE = SECURED, threats_open: 0 (16/16 register entries closed = 15 threats + 1 SC-accept; 7 high; L1 short-circuit, no auditor). VALIDATE = nyquist_compliant: true, 0 gaps (6/6 REQ-P14-01..06 COVERED). Loud op-decision (§4, no scope/mint): crystallised S2-4's hand-greps into a standing test tests/test_phase14_onboarding.py (11 tests) so REQ-P14-01..06 are automated-COVERED; one naive assertion corrected during authoring (guide is exempt from the data_storage grep — rescoped to skills+shims). Gate: sh scripts/check.sh all checks passed (Ran 1243 tests OK, 1232→+11; catalogue current 256; capability conformant 13 skills; gate contract; determinism). D-05/§4-cat-4 human security sign-off + UAT queued to HUMAN-QUEUE HQ-10 (non-blocking to S5-2). Artifacts: 14-SECURITY.md, 14-VALIDATION.md, tests/test_phase14_onboarding.py. RESUME at S3-1 (Phase 16 discuss). See LOOP-LEDGER.md Log."
-last_updated: "2026-08-29T00:10:00.000Z"
+stopped_at: "S3-1 COMPLETE — Phase 16 discuss; 16-CONTEXT.md written (D-01..D-11). Architect (dsx-analysis-architect) + Auditor (dsx-ml-integrity-auditor) 2-persona round, both opus/high (§4), UNANIMOUS Option A on the S3-1 open item — no tie-break needed. THE DECISION: REQ-P16-02's reproduce-report gate check DOES need a new finding code (none of the 11 DSX-REP-* covers 'report missing' or 'numbers don't overlap'), minted IN PHASE 16 (not moved to 15, not reused). D-06 (irreversible numbering, §4): mint DSX-REP-060 (report declared but missing) + DSX-REP-061 (report present but numbers don't overlap), both HIGH (verify/ship blocks only at HIGH — cli.py:138-139); 06x band free (max was 053). D-07: ROADMAP 'only Phase 15 extends the catalogue' amended (recorded note applied, line 119) — no requirement dropped/reworded. Filed HQ-11 (D-06 veto window, non-blocking). No D-05 owed by Phase 16. Orchestrator re-verified all load-bearing facts (brief §5): catalogue 256/--check exit 0, repro.py pure declaration-check + already strict-gated w/ phase_dir, invariant snapshot hazard real (additive rebaseline 256→258, never mutate phase-12 anchor — D-08). RESUME at S3-2 (Phase 16 plan; plan-checker must pass). See LOOP-LEDGER.md Log + 16-CONTEXT.md."
+last_updated: "2026-08-28T23:56:00.000Z"
 last_activity: 2026-08-29
-last_activity_desc: "S2-5 complete — Phase 14 secure(SECURED, threats_open 0) + validate(nyquist_compliant); S2 complete; sh scripts/check.sh all passed (1243 tests); resume at S3-1 (Phase 16 discuss)"
+last_activity_desc: "S3-1 complete — Phase 16 discuss; 16-CONTEXT.md (D-01..D-11); persona round unanimous Option A; D-06 mint DSX-REP-060/061 (both HIGH) in Phase 16; D-07 ROADMAP 'only' claim amended; HQ-11 veto window filed; resume at S3-2 (Phase 16 plan)"
 progress:
   total_phases: 4
   completed_phases: 2
@@ -19,8 +19,8 @@ progress:
 
 # Project state
 
-**Status:** Phase 14 COMPLETE (S2-1..S2-5); secure SECURED (threats_open 0) + validate nyquist_compliant, `sh scripts/check.sh` all passed (1243 tests) — next: Phase 16 discuss (S3-1)
-**Progress:** [██████████░░░░░░░░░░] v2.2 — 2/4 phases (Phases 13 → 14 → 16 → 15, in that order)
+**Status:** Phase 16 discuss COMPLETE (S3-1); `16-CONTEXT.md` written (D-01..D-11); persona round unanimous Option A — **Phase 16 mints `DSX-REP-060`/`061` (D-06, both HIGH)**; next: Phase 16 plan (S3-2)
+**Progress:** [██████████░░░░░░░░░░] v2.2 — 2/4 phases complete; Phase 16 in progress (discuss done) (Phases 13 → 14 → 16 → 15, in that order)
 **Predecessor:** [████████████████████] v2.0.0 SHIPPED 2026-08-28 — 11/11 phases, 89 plans, 208 tasks, tag `v2.1.0`, merged to `main`. Full record: `.planning/MILESTONES.md`; artifacts archived under `.planning/milestones/v2.0.0-*` (phases, ROADMAP, REQUIREMENTS, MILESTONE-AUDIT, loop ledgers).
 
 **Locked decisions (v2.2, carried from planning):** DQ = profile runner + hermetic gates; Glyph = hermetic svg_sha256 only (no MCP dep); forbidden claims = universal pack + optional phase YAML; repro_lock = ARS-style honest-null (not byte-replay); decision replay = structured thresholds only; suppressions = ADR/SPEC authority required (unknown codes → exit 2).
@@ -30,16 +30,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-08-13; Key Decisions table there is the full decision log)
 
 **Core value:** Gate analytical work on validity before the data is touched.
-**Current focus:** Phase 14 — compounding-and-data-onboarding
+**Current focus:** Phase 16 — re-run-verification-off-the-gate-path
 
 ## Current Position
 
-Phase: 14 (compounding-and-data-onboarding) — discuss (S2-1) + plan (S2-2) + execute (S2-3) + review/verify (S2-4) + secure/validate (S2-5) COMPLETE. S2 done. Next: Phase 16 discuss (S3-1).
-Plan: 5 of 5 executed (14-01..05), reviewed (PASS) + verified (PASSED, 6/6) + secured (SECURED, threats_open 0) + validated (nyquist_compliant, 0 gaps); full suite green (1243 tests).
-Status: Phase 14 fully complete — next S3-1 (Phase 16 discuss, off the gate path)
-Last activity: 2026-08-29 — Phase 14 secure+validate (S2-5); orchestrator-direct opus/high, every gate re-run (brief §5); crystallised REQ-P14-01..06 into tests/test_phase14_onboarding.py (11 tests); zero-mint held at 256
+Phase: 16 (re-run-verification-off-the-gate-path) — discuss (S3-1) COMPLETE; 16-CONTEXT.md written. Next: plan (S3-2).
+Plan: 0 of ? — not opened yet. S3-1 locked D-01..D-11, incl. **D-06 (irreversible mint): DSX-REP-060/061, both HIGH, in Phase 16** (persona round unanimous Option A).
+Status: Phase 16 discuss done — unlike Phases 13/14 (zero-mint), Phase 16 extends the catalogue 256→258 (additive; phase-12 anchor untouched — D-08). Next S3-2 (plan; plan-checker must pass).
+Last activity: 2026-08-29 — Phase 16 discuss (S3-1); Architect+Auditor opus/high round, unanimous Option A; D-06 mint DSX-REP-060/061; D-07 ROADMAP 'only' amended; HQ-11 veto window filed; no D-05 owed
 
-Progress: [██████████] Phase 14 — 5 of 5 ceremony steps done (discuss + plan + execute + review/verify + secure/validate)
+Progress: [██░░░░░] Phase 16 — 1 of 5 ceremony steps done (discuss)
 
 **Loop control:** the autonomous ceremony drives this milestone. Contract: `.planning/LOOP-BRIEF.md`; backlog + gates: `.planning/LOOP-LEDGER.md`; human-only items: `.planning/HUMAN-QUEUE.md`.
 
@@ -51,7 +51,7 @@ No v2.2 plans executed yet. v2.0.0 velocity is archived with its milestone artif
 
 ### Decisions
 
-Full decision log: PROJECT.md Key Decisions. v2.2-specific decisions are recorded here and in each phase's CONTEXT.md as the loop reaches them — none minted yet this milestone.
+Full decision log: PROJECT.md Key Decisions. v2.2-specific decisions are recorded here and in each phase's CONTEXT.md as the loop reaches them. **First codes minted this milestone: Phase 16 S3-1 (D-06) assigns `DSX-REP-060`/`DSX-REP-061` (both HIGH) for the REQ-P16-02 reproduce-report gate check** — persona round unanimous Option A; catalogue moves 256→258 additively (D-08); ROADMAP "only Phase 15 extends the catalogue" amended (D-07); veto window HQ-11. Full rationale: `16-CONTEXT.md` D-01..D-11.
 
 Ordering (see LOOP-LEDGER "Ordering rationale"): phases run 13 → 14 → 16 → 15, not numeric order — every declared dependency still holds. Phase 15 runs last because it is the only phase minting new finding codes, hence the only one carrying a D-05 human-read gate and a D-06 irreversible-numbering veto; its citation evidence pack is filed early as HQ-8 so the operator can answer asynchronously.
 

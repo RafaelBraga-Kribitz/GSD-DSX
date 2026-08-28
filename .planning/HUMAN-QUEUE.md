@@ -20,6 +20,36 @@ a persona round and records loudly):
 
 ## Open
 
+### HQ-11 — Phase 16 D-06 numbering veto window: `DSX-REP-060` / `DSX-REP-061` (non-blocking; veto via daily summary or by S5-2)
+
+**Status: filed 2026-08-29 (S3-1). Decided by the loop's persona round; NOT a blocker.** Per brief §4,
+numeric finding-code assignments (D-06, irreversible) are decided by the loop using "next free number in
+family, catalogue-consistent" and recorded loudly — *not* escalated. This entry exists only so the operator
+has an explicit **veto window** before Phase 16 ships. The loop proceeds through S3-2..S3-5 unless vetoed.
+
+**What the loop decided (Architect + Auditor 2-persona round, both opus/high, unanimous Option A — full
+rationale in `.planning/phases/16-re-run-verification-off-the-gate-path/16-CONTEXT.md` D-06):**
+
+| Code | Severity | Finding (final text finalised at S3-3) |
+|---|---|---|
+| `DSX-REP-060` | HIGH | Reproduce report declared (`reproducibility.reproduce_report`) but `REPRO-REPORT.md` is missing — the reproduced verdict is unsubstantiated. |
+| `DSX-REP-061` | HIGH | `REPRO-REPORT.md` present but its declared re-run numbers do not overlap `results.tests` — the analysis does not reproduce. |
+
+- **Why mint (not reuse):** none of the 11 existing `DSX-REP-*` codes names "report missing" or "declared
+  numbers don't overlap"; reusing one emits false text and the catalogue dedupes by code, hiding the drift.
+- **Why in Phase 16 (not moved to Phase 15):** keeps the reproduce skill + its enforcing gate in one phase
+  (no trust-without-enforcement window); Phase 15's codes carry D-05 statistical citations — these are
+  engineering-hygiene checks with none.
+- **Band:** `06x` is the next free block in the REP family (max was `DSX-REP-053`), catalogue-consistent
+  (06x = reproduce-report). Both HIGH because verify/ship blocks only at HIGH.
+- **Consequence recorded:** ROADMAP's "Phase 15 is the only phase that extends the catalogue" was amended
+  (D-07) — Phase 15 **and** 16 extend it. No requirement dropped/reworded. Catalogue moves 256 → 258
+  additively; the frozen Phase-12 snapshot anchor is not mutated.
+- **No D-05 owed by Phase 16** (its codes cite no primary source; brief.md line 389 assigns none).
+
+**Operator action (optional):** veto or amend the numbering via the daily summary, or confirm at the S5-2
+drain. Silence = accept. Nothing downstream blocks on this.
+
 ### HQ-9 — Phase 13 end-of-phase security sign-off + UAT (batched; non-blocking until S5-2)
 
 **Status: filed 2026-08-28 (S1-5). Technical gates PASS; awaiting operator sign-off.** Per brief §4
