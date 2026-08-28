@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v2.0.0
 milestone_name: DSX Validity Frame
 status: completed
-stopped_at: "S4-5 /gsd-complete-milestone DONE (2026-08-28) — v2.0.0 DSX Validity Frame archived (11 phases, 89 plans, 208 tasks) to .planning/milestones/v2.0.0-* (ROADMAP + REQUIREMENTS + AUDIT + 11 phase dirs moved); MILESTONES.md + RETROSPECTIVE.md written; REQUIREMENTS.md git-rm'd; ROADMAP compacted; PROJECT.md evolved; tag v2.0.0 created. closeout_type=override_closeout (2 dormant seeds deferred). Next unblocked = S4-6 (/gsd-cleanup deletion approval via HUMAN-QUEUE + /gsd-ship)."
+stopped_at: "S4-5 /gsd-complete-milestone DONE (2026-08-28) — v2.0.0 DSX Validity Frame archived (11 phases, 89 plans, 208 tasks) to .planning/milestones/v2.0.0-* (ROADMAP + REQUIREMENTS + AUDIT + 11 phase dirs moved); MILESTONES.md + RETROSPECTIVE.md written; REQUIREMENTS.md git-rm'd; ROADMAP compacted; PROJECT.md evolved. tag v2.0.0 NOT created (pre-existing 2026-08-10 tag at old cb94015; not force-moved — release-tag placement deferred to S4-6/ship). closeout_type=override_closeout (2 dormant seeds deferred). Next unblocked = S4-6 (/gsd-cleanup deletion approval via HUMAN-QUEUE + /gsd-ship)."
 last_updated: "2026-08-28T03:00:19.244Z"
 last_activity: 2026-08-28
 last_activity_desc: Milestone v2.0.0 completed and archived
