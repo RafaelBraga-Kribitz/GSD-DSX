@@ -149,12 +149,14 @@ the significance level, usually making it worse) matches exactly what `families.
 for. No matching article exists at the previously-cited *Journal of General Psychology*
 131(2):142-160 locator.
 
-**New ledger unit needed (not yet executed):** edit `references/families.yaml` for families
-`students_t`, `welch_t`, `welch_t_cluster_robust` (#6/#7/#8 per 11-UAT.md's numbering) and
-`ranking_rules` — replace the *Journal of General Psychology* locator with the *British Journal
-of Mathematical and Statistical Psychology* one above, re-run the D-05 catalogue gate, and update
-`locator_status` accordingly. **Added to `LOOP-LEDGER.md` as S4-1b.**
+**Ledger unit — EXECUTED at S4-1b (commit dc65fc6, 2026-08-28):** `references/families.yaml`
+was edited for families `students_t`, `welch_t`, `welch_t_cluster_robust` (#6/#7/#8 per
+11-UAT.md's numbering) and `ranking_rules` — the *Journal of General Psychology* locator
+replaced with the *British Journal of Mathematical and Statistical Psychology* one above, the
+D-05 catalogue gate re-run green (`gen-finding-catalogue.py --check` exit 0), and `locator_status`
+reconciled (the Zimmerman-only `no_variance_pretesting` token → `verified`; the 4 co-cited
+multi-source entries kept `unverified` under their unchanged project caveats — honesty call at S4-1b).
 
-**Requirement impact:** once the fix unit executes and its gate passes, REQ-P11-01 moves from
-partial to satisfied — the last open item from Phase 11's original UAT round.
+**Requirement impact:** the fix unit executed and its gate passed; REQ-P11-01 is now **satisfied**
+— the last open item from Phase 11's original UAT round is closed.
 
