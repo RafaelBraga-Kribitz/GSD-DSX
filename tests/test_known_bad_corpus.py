@@ -340,10 +340,18 @@ _RETIRED_BOUND_MISATTRIBUTIONS = (
 # Documents outside the corpus that carried the same drift. brief.md section 6.5
 # is what a Phase 9 planner reads before drafting DSX-PAR-011, so leaving it
 # unguarded is how this error would return after the fixture was corrected.
+#
+# v2.0.0 milestone archived (2026-08-28, ceremony S4-5): /gsd-complete-milestone
+# removed .planning/REQUIREMENTS.md and replaced the detailed .planning/ROADMAP.md
+# with a compact milestone index. The requirements/roadmap prose that carried this
+# citation now lives — immutably and in its already-corrected form — under
+# .planning/milestones/. The guard follows the content to those archived copies so
+# it keeps asserting over real prose (a hard is_file() check, not an empty file);
+# brief.md stays live because it is still the source a future planner actually reads.
 _BOUND_CLAIM_DOCUMENTS = (
     ROOT / "brief.md",
-    ROOT / ".planning" / "REQUIREMENTS.md",
-    ROOT / ".planning" / "ROADMAP.md",
+    ROOT / ".planning" / "milestones" / "v2.0.0-REQUIREMENTS.md",
+    ROOT / ".planning" / "milestones" / "v2.0.0-ROADMAP.md",
 )
 
 # The two retired locator-error phrasings closed by plan 09-07 (REQ-P9-03):
