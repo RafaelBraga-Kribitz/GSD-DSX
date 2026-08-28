@@ -5,21 +5,21 @@ milestone_name: Analytic Surface
 current_phase: 14
 current_phase_name: compounding-and-data-onboarding
 status: executing
-stopped_at: "S2-2 COMPLETE — Phase 14 planned; 5-plan set (14-01..05) passes the plan-checker gate. gsd-planner (opus) authored; independent gsd-plan-checker (opus) = PASS, 0 blocking, 3 non-blocking nits (carried to S2-3/S2-4). Orchestrator re-verified all load-bearing claims at frontmatter+body level (brief §5): requirements union == {REQ-P14-01..06}; single-writer-per-wave holds (wave-1 01/02/03/05 file-disjoint; 14-04 sole wave-2, depends_on:[14-01,14-02,14-03], re-edits only the 3 shared skills' description); gate-path pure (no dsx/**.py or capability.json in any files_modified; every report.add mention is a prohibition; no data_storage, no capability.json aliases key); REQ-P14-05 documented-skip = 4 D-06 claims in force; 14-05 zero-mint gate real. Planner discretion (loud §4): REQ-P14-01 producer = existing gsd-extract-learnings; 2 optional .claude/commands shims + tests/test_gate_path_hermetic.py shipped. RESUME at S2-3 (execute all Phase 14 plans; wave 1 = 14-01/02/03/05, wave 2 = 14-04). See LOOP-LEDGER.md Log + LOOP-LEDGER-ARCHIVE.md#S2-2."
-last_updated: "2026-08-28T21:40:00.000Z"
+stopped_at: "S2-3 COMPLETE — Phase 14 executed; all 5 plans (14-01..05) executed directly as orchestrator (S1-3 precedent: surgical markdown/template/test edits, single-writer, every gate re-run here per brief §5), each atomically committed. 14-01 dated learnings compounding loop (38801a0); 14-02 DATA-DICTIONARY.md (6ddee4c); 14-03 opt-in research disclosure (5e54297); 14-04 CSV-first alias table + documented-skip file-drop hook, 13 skill Triggers descriptions, 2 shims (4d418b9); 14-05 zero-mint proof + gate-path hermeticity guard (720ba10). Every plan's verify block PASS. Phase-wide zero-mint proof: gen-finding-catalogue --check exit 0, two-leg invariant OK (256 + set-identity vs Phase-12), tests/test_gate_path_hermetic 2 tests OK, git status -- dsx/ empty, report.add in cli.py == 0, capability.json untouched (hooks stays []). 13 skill YAML frontmatters parse clean. RESUME at S2-4 (code review + verification; then S2-5 secure+validate). Full-suite scripts/check.sh is S2-4's gate. See LOOP-LEDGER.md Log."
+last_updated: "2026-08-28T23:06:00.000Z"
 last_activity: 2026-08-28
-last_activity_desc: "S2-2 complete — Phase 14 planned; 5-plan set (14-01..05) passes plan-checker (PASS, 0 blocking); resume at S2-3 (execute Phase 14 plans)"
+last_activity_desc: "S2-3 complete — Phase 14 all 5 plans executed + per-plan verify PASS + phase-wide zero-mint proof; resume at S2-4 (code review + verification)"
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 5
-  completed_plans: 0
+  completed_plans: 5
   percent: 0
 ---
 
 # Project state
 
-**Status:** Phase 14 planned (S2-2); 5-plan set (14-01..05) passes the plan-checker gate — next: Phase 14 execute (S2-3)
+**Status:** Phase 14 executed (S2-3); all 5 plans (14-01..05) executed + per-plan verify PASS + phase-wide zero-mint proof — next: Phase 14 code review + verification (S2-4)
 **Progress:** [█████░░░░░░░░░░░░░░░░] v2.2 — 1/4 phases (Phases 13 → 14 → 16 → 15, in that order)
 **Predecessor:** [████████████████████] v2.0.0 SHIPPED 2026-08-28 — 11/11 phases, 89 plans, 208 tasks, tag `v2.1.0`, merged to `main`. Full record: `.planning/MILESTONES.md`; artifacts archived under `.planning/milestones/v2.0.0-*` (phases, ROADMAP, REQUIREMENTS, MILESTONE-AUDIT, loop ledgers).
 
@@ -34,12 +34,12 @@ See: .planning/PROJECT.md (updated 2026-08-13; Key Decisions table there is the 
 
 ## Current Position
 
-Phase: 14 (compounding-and-data-onboarding) — discuss (S2-1) + plan (S2-2) COMPLETE; 5-plan set (14-01..05) passes the plan-checker gate (PASS, 0 blocking). Next: S2-3 execute.
-Plan: 0 of 5 executed (5 authored)
-Status: Phase 14 planned — next S2-3 (execute all Phase 14 plans; wave 1 = 14-01/02/03/05, wave 2 = 14-04)
-Last activity: 2026-08-28 — Phase 14 plan (S2-2); gsd-plan-checker PASS; orchestrator re-verified coverage/single-writer/gate-path purity
+Phase: 14 (compounding-and-data-onboarding) — discuss (S2-1) + plan (S2-2) + execute (S2-3) COMPLETE. Next: S2-4 code review + verification.
+Plan: 5 of 5 executed (14-01..05), each atomically committed + per-plan verify PASS; phase-wide zero-mint proof green.
+Status: Phase 14 executed — next S2-4 (code review + verification `passed`), then S2-5 (secure + validate)
+Last activity: 2026-08-28 — Phase 14 execute (S2-3); all 5 plans executed as orchestrator, every gate re-run (brief §5); catalogue held at 256, gate path hermetic
 
-Progress: [██░░░░░░░░] Phase 14 — 2 of 5 ceremony steps done (discuss + plan); execute/review/secure+validate remain
+Progress: [██████░░░░] Phase 14 — 3 of 5 ceremony steps done (discuss + plan + execute); review+verify and secure+validate remain
 
 **Loop control:** the autonomous ceremony drives this milestone. Contract: `.planning/LOOP-BRIEF.md`; backlog + gates: `.planning/LOOP-LEDGER.md`; human-only items: `.planning/HUMAN-QUEUE.md`.
 
