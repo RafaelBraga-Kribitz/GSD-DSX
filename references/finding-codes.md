@@ -13,7 +13,7 @@ a suppression or a reference in a review stays valid across versions.
 **Gate thresholds.** `plan` and `execute` block at CRITICAL; `verify` and
 `ship` block at HIGH.
 
-**Total: 258 codes.**
+**Total: 260 codes.**
 
 ## Contract structure — `DSX-SPEC-*`
 
@@ -85,6 +85,7 @@ Power, allocation, units, duration, multiplicity, peeking.
 | `DSX-EXP-052` | MEDIUM | Multiple tests with a declared family but comparisons_looked_at is missing |
 | `DSX-EXP-053` | HIGH | Multiplicity family declares <…> test(s) but <…> are reported |
 | `DSX-EXP-060` | CRITICAL | <…> interim looks were taken under a fixed-horizon design |
+| `DSX-EXP-070` | CRITICAL | CUPED declared with a covariate that is not pre-experiment |
 
 ## Causal identification — `DSX-CAU-*`
 
@@ -174,6 +175,7 @@ Definitions, reconciliation, drift, Simpson's paradox.
 | `DSX-MET-011` | HIGH | Metric <…> differs <…> across sources |
 | `DSX-MET-012` | MEDIUM | Unknown reconciliation class <…> for <…> |
 | `DSX-MET-020` | HIGH | Denominator for <…> moved <…> between periods |
+| `DSX-MET-021` | HIGH | metric pooled across buckets sampled at different rates with no reweighting declared |
 | `DSX-MET-030` | CRITICAL | Simpson's paradox: every segment moves opposite to the aggregate |
 | `DSX-MET-031` | HIGH | <…> of <…> segments move against the aggregate |
 | `DSX-MET-040` | HIGH | Warehouse-like source <…> has no sql definition |
