@@ -14,7 +14,7 @@ Coverage map (see 14-VALIDATION.md):
               copied verbatim; dsx-explore-data authors it
   REQ-P14-03  dsx-narrate offers the AI-assistance disclosure ONLY on literal
               dsx.domain == research; non-research paths unchanged
-  REQ-P14-04  CSV-first alias table routes all 13 DSX skills with no data_storage/
+  REQ-P14-04  CSV-first alias table routes all DSX skills with no data_storage/
               folder; every DSX skill carries a Triggers: clause
   REQ-P14-05  documented-skip of the file-drop hook: operating guide names the
               DSX-DQ-001 compensating control and hooks stays []
@@ -32,7 +32,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 
-# The 13 DSX skills (dsx-* dirs); must match capability.json's skill count.
+# The DSX skills (dsx-* dirs); must match capability.json's skill count. 13 at
+# Phase 14 + dsx-reproduce (Phase 16, REQ-P16-01) = 14.
 DSX_SKILLS = sorted(p.name for p in (ROOT / "skills").glob("dsx-*") if p.is_dir())
 
 DATED_LEARNING_RE = re.compile(r"^\d{4}-\d{2}-\d{2}-.+\.md$")
@@ -110,7 +111,10 @@ class TestPhase14Onboarding(unittest.TestCase):
         self.assertIn("aliases", g)
 
     def test_req04_all_dsx_skills_carry_triggers(self):
-        self.assertEqual(len(DSX_SKILLS), 13, f"expected 13 DSX skills, found {DSX_SKILLS}")
+        # Anti-vacuity / drop-detection anchor: 13 DSX skills existed at Phase 14;
+        # Phase 16 added dsx-reproduce (REQ-P16-01, registered in capability.json),
+        # so the live count is 14. The Triggers invariant below holds for all of them.
+        self.assertEqual(len(DSX_SKILLS), 14, f"expected 14 DSX skills, found {DSX_SKILLS}")
         missing = [name for name in DSX_SKILLS
                    if "Triggers:" not in read(f"skills/{name}/SKILL.md")]
         self.assertEqual(missing, [], f"DSX skills missing a Triggers: clause: {missing}")
