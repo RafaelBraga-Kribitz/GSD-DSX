@@ -22,7 +22,12 @@
 $ErrorActionPreference = 'Stop'
 
 $Repo   = 'C:\Users\Benutzer1\Dev\AI\gsd-dsx'
-$Branch = 'gsd/v2.0.0-dsx-validity-frame'
+# Milestone branch. Updated 2026-08-28 when v2.0.0 DSX Validity Frame shipped
+# (merged to main, tag v2.1.0) and the loop was repointed at v2.2 Analytic Surface.
+# The branch guard below deliberately ABORTS rather than checking out: if this value
+# and the working tree disagree, something unexpected has happened and a headless
+# firing must not guess.
+$Branch = 'gsd/v2.2.0-analytic-surface'
 $LogDir = Join-Path $Repo '.planning\loop-logs'
 $Lock   = Join-Path $LogDir '.firing.lock'
 $Stamp  = (Get-Date).ToUniversalTime().ToString('yyyyMMdd-HHmmss')

@@ -526,6 +526,41 @@ def diluted_effect(delta_triggered: float, user_trigger_rate: float) -> float:
     return delta_triggered * user_trigger_rate
 
 
+def cuped_theta(cov_xy: float, var_x: float) -> float:
+    """The CUPED coefficient θ = Cov(Y, X) / Var(X) for a pre-experiment covariate X.
+
+    Citation: Deng, A., Xu, Y., Kohavi, R. & Walker, T. (2013), "Improving the
+    Sensitivity of Online Controlled Experiments by Utilizing Pre-Experiment Data",
+    WSDM '13, pp. 123-132, DOI 10.1145/2433396.2433413. The adjusted metric is
+    Ŷ_cv = Ȳ − θ(X̄ − E[X]) with the variance-minimising θ = Cov(Y, X)/Var(X).
+    Reference value: Cov(Y,X)=0.5 and Var(X)=2.0 give θ=0.25.
+
+    This is reference arithmetic only — it is imported by no gate-path check.
+    """
+    if var_x == 0:
+        raise ValueError("var_x must be non-zero; θ is undefined for a degenerate covariate")
+    return cov_xy / var_x
+
+
+def cuped_variance_reduction(rho: float) -> float:
+    """The fractional variance reduction ρ² from a pre-experiment covariate correlated
+    ρ with the outcome: Var(Ŷ_cv) = Var(Ȳ)(1 − ρ²).
+
+    Citation: Deng, A., Xu, Y., Kohavi, R. & Walker, T. (2013), "Improving the
+    Sensitivity of Online Controlled Experiments by Utilizing Pre-Experiment Data",
+    WSDM '13, pp. 123-132, DOI 10.1145/2433396.2433413.
+    Reference value: the paper's own derived identity ρ=0.5 → variance reduction
+    ρ²=0.25 (a 25% reduction; variance ratio 1−ρ²=0.75). The paper's ~50% Bing
+    headline is EMPIRICAL (ρ ≈ 0.707), not a derived identity — kept as context only;
+    the pinned worked value is ρ²=0.25 at ρ=0.5.
+
+    This is reference arithmetic only — it is imported by no gate-path check.
+    """
+    if not -1.0 <= rho <= 1.0:
+        raise ValueError(f"rho (correlation) must be in [-1, 1], got {rho!r}")
+    return rho ** 2
+
+
 # ── Sample ratio mismatch ────────────────────────────────────────────────────
 
 

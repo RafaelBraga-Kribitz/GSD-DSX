@@ -1443,6 +1443,59 @@ class TestKnownBadCorpus(unittest.TestCase):
                     "'miss' (default) or 'caught'",
                 )
 
+    def test_protocol_adherence_is_additive_and_ignored(self):
+        """REQ-P16-03 / D-10: ``protocol_adherence`` is an additive,
+        accepted-but-ignored sidecar statistic — machine-countable, in a closed
+        vocabulary, and provably NOT wired into the calibration headline.
+
+        The field records whether the ``dsx-reproduce`` protocol was followed for
+        each hand-authored known-bad fixture — a third statistic reported BESIDE
+        catch rate and FPR, never inside them. This test pins three things: the value
+        is in the closed vocabulary on every sidecar; the field is neither a
+        parameter nor a local of ``_headline`` (the accepted-but-ignored form,
+        exactly as ``present`` is); and the headline pair stays ``(0.25, 0.3)``. The
+        two standalone headline anchor tests (``TestStratifiedHeadlineHelpers``) stay
+        byte-unedited — this test is purely additive.
+        """
+        vocabulary = {"adhered", "skipped", "not_applicable"}
+        paths = self._attribution_paths()
+        self.assertTrue(paths, "no attribution sidecars found to validate")
+        skipped = 0
+        for path in paths:
+            with self.subTest(sidecar=path.name):
+                data = load(str(path))
+                self.assertIn(
+                    "protocol_adherence", data,
+                    f"{path.name} is missing protocol_adherence (REQ-P16-03 / D-10)",
+                )
+                value = data["protocol_adherence"]
+                self.assertIn(
+                    value, vocabulary,
+                    f"{path.name} protocol_adherence {value!r} is outside the closed "
+                    f"vocabulary {sorted(vocabulary)}",
+                )
+                if value == "skipped":
+                    skipped += 1
+
+        # Accepted-but-ignored: the field is neither a parameter nor a local of
+        # _headline — the machine-checkable form of "reported beside, never inside"
+        # catch rate / FPR (D-10), exactly as `present` is accepted for symmetry.
+        self.assertNotIn(
+            "protocol_adherence", _headline.__code__.co_varnames,
+            "protocol_adherence leaked into _headline — it must stay outside the "
+            "calibration path (D-10)",
+        )
+        # Local re-pin that the field's introduction did not move the headline pair.
+        # The standalone anchor test stays the canonical, unedited guard.
+        self.assertEqual(_headline((2, 5), (1, 4), (3, 10)), (0.25, 0.3))
+
+        # Skipped-skill cases are machine-countable (the count REQ-P16-03 asks for).
+        self.assertGreaterEqual(
+            skipped, 1,
+            "no sidecar records protocol_adherence: skipped — the skipped-skill "
+            "count must be machine-countable (REQ-P16-03)",
+        )
+
     def test_attribution_tags_are_falsifiable_against_live_gate(self):
         """D-08 falsifiability (anti-laundering): each attribution tag is checked
         against a LIVE gate run, so it cannot lie. For every sidecar, build the

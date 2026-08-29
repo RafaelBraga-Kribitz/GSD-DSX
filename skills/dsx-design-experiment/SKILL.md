@@ -1,6 +1,6 @@
 ---
 name: dsx-design-experiment
-description: "Design an A/B test or quasi-experiment with the power arithmetic done first. Use before launching any experiment, and when reading out one that has finished."
+description: "Design an A/B test or quasi-experiment with the power arithmetic done first. Use before launching any experiment, and when reading out one that has finished. Triggers: 'design an A/B test', 'power calculation', 'read out the experiment' — routes intent without GSD phase names."
 argument-hint: "[--baseline <rate>] [--mde <effect>] [--readout] [--phase <N>]"
 allowed-tools:
   - Read

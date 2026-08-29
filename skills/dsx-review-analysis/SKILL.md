@@ -1,6 +1,6 @@
 ---
 name: dsx-review-analysis
-description: "Adversarial end-to-end review of an analysis before it ships. Use before any readout, and when reviewing someone else's work."
+description: "Adversarial end-to-end review of an analysis before it ships. Use before any readout, and when reviewing someone else's work. Triggers: 'review this analysis', 'check before it ships', 'sanity-check this work' — routes intent without GSD phase names."
 argument-hint: "[--phase <N>] [--report <file>]"
 allowed-tools:
   - Read

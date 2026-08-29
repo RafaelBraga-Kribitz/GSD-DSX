@@ -116,7 +116,7 @@ Every Phase 15 check that ships is still subject to **D-05**: a primary-source c
 
 ### Phase 15: CUPED and BI declaration checks (new codes, D-05)
 
-**Goal**: The only v2.2 phase that extends the gate catalogue. CUPED becomes a closed-vocabulary member with a pre-experiment covariate check. Thin spec fields for cohort grain and funnel steps catch survivorship and changing denominators as findings. Research-domain work may use an APA table template; marketing-domain stays with narrative + sealed figure + claim evidence. Shapiro–Wilk auto-switch is forbidden.
+**Goal**: The only v2.2 phase that extends the gate catalogue. *(Amended 2026-08-29 — Phase 16 S3-1 discuss, decisions D-06/D-07: **Phase 16 also extends the catalogue**, minting `DSX-REP-060`/`DSX-REP-061` for the REQ-P16-02 reproduce-report gate check. This corrects the "only" claim; it drops or rewords no requirement. Rationale + veto window: `.planning/phases/16-re-run-verification-off-the-gate-path/16-CONTEXT.md` D-06 and HUMAN-QUEUE HQ-11.)* CUPED becomes a closed-vocabulary member with a pre-experiment covariate check. Thin spec fields for cohort grain and funnel steps catch survivorship and changing denominators as findings. Research-domain work may use an APA table template; marketing-domain stays with narrative + sealed figure + claim evidence. Shapiro–Wilk auto-switch is forbidden.
 
 **Depends on**: Phase 12 (hard — D-13). Soft-depends on Phase 13 so the new fields have a skill that fills them. Does **not** wait on Phase 11's `families.yaml` — `cuped` is added to the existing `VARIANCE_ADJUSTMENTS` set in `dsx/spec.py`, not as a parallel vocabulary (same reasoning as M-09).
 **Blocks**: nothing in v2.0.0.

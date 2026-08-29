@@ -143,6 +143,16 @@ _D05_ALLOWLIST_PREFIXES = (
 # DSX-COH-040 lives in a brand-new function, `_check_revisit_completeness`,
 # that this plan wrote from scratch — naming it individually here obligates
 # only the new code, not the family's four legacy siblings.
+#
+# Phase 15 (REQ-P15-02, REQ-P15-04) adds DSX-EXP-070 and DSX-MET-021 here, by
+# exact code and NOT via `_D05_ALLOWLIST_PREFIXES`: each lives inside a
+# pre-existing family (DSX-EXP-*, DSX-MET-*) whose legacy siblings carry no
+# `Citation:`/`Structural criterion:` docstring line and no `# D-05:` marker, so a
+# prefix add would fail the build red on codes this phase never touched.
+# DSX-EXP-070 (`_check_cuped`) cites Deng et al. 2013 WSDM; DSX-MET-021
+# (`_check_cohort_denominator_shift`) cites Crook et al. 2009 KDD. Both live in
+# brand-new functions this phase wrote, so no legacy sibling is dragged in — the
+# same exact-code precedent as DSX-SPEC-080..086 and DSX-COH-040 above.
 _D05_ALLOWLIST_CODES = frozenset(
     {
         "DSX-SPEC-080", "DSX-SPEC-081", "DSX-SPEC-082", "DSX-SPEC-085", "DSX-SPEC-086",
@@ -150,6 +160,7 @@ _D05_ALLOWLIST_CODES = frozenset(
         "DSX-ML-023", "DSX-ML-024", "DSX-ML-043", "DSX-ML-052", "DSX-ML-053",
         "DSX-ML-090", "DSX-ML-091", "DSX-ML-092",
         "DSX-COH-040",
+        "DSX-EXP-070", "DSX-MET-021",
     }
 )
 

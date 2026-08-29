@@ -31,6 +31,7 @@ decision:
 metrics:
   - name: activation_rate
     type: ratio
+    cohort_grain: user_cohort
     definition: "Share of new signups completing >=1 key action within 7 days of signup"
     grain: user
     numerator: "count(distinct user_id) where key_action_at <= signup_at + 7 days"
@@ -141,6 +142,11 @@ design:
   duration_days: 14
   guardrail_metrics: [latency_p95, revenue_per_user]
   peeking_policy: fixed_horizon
+  variance_adjustment: cuped
+  cuped:
+    covariate: pre_period_activation_rate
+    covariate_timing: pre_experiment
+    covariate_source: warehouse.fct_signups_prior_28d
   multiplicity:
     family: [activation_rate, retention_d7, revenue_per_user]
     correction: benjamini_hochberg
@@ -231,6 +237,16 @@ results:
       base_denominator: 18512
       comparison_denominator: 18387
       denominator_tolerance: 0.05
+  cohort_comparisons:
+    - metric: activation_rate
+      reweighted: true
+      buckets:
+        - { name: control, sampling_rate: 0.5 }
+        - { name: treatment, sampling_rate: 0.5 }
+  funnel_steps:
+    - { name: signup, count: 18512 }
+    - { name: activated, count: 5817 }
+    - { name: retained_d7, count: 3402 }
   tests:
     - metric: activation_rate
       p_value: 0.0011

@@ -41,7 +41,12 @@
     "dsx-visualize",
     "dsx-chart-audit",
     "dsx-narrate",
-    "dsx-review-analysis"
+    "dsx-review-analysis",
+    "dsx-cohort",
+    "dsx-funnel",
+    "dsx-root-cause",
+    "dsx-segment",
+    "dsx-reproduce"
   ],
   "agents": [
     "dsx-analysis-architect",

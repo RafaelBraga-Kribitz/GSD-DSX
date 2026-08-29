@@ -319,3 +319,66 @@ flowchart TD
 
 For an existing repository, `/gsd-onboard` replaces `/gsd-new-project` and adds
 codebase mapping and document ingest first.
+
+---
+
+## 9. CSV-first aliases
+
+A CSV-first conversation should start as simply as with a data-analysis assistant —
+without knowing GSD phase names, and **without a `data_storage/` special folder**. The
+CSV is passed **as an argument** (`explore <extract.csv>`), not dropped into a watched
+directory.
+
+The **portable path** is this documented alias convention plus the CSV-first trigger
+phrases carried in each DSX skill's frontmatter `description`. It works on any host that
+reads skill descriptions, honouring the capability's `runtimeCompat.supported: ["*"]`
+contract. A `capability.json` `aliases` key is deliberately **not** used: it is not
+grounded in the installed GSD Core schema, and the repo's Tool Version Grounding rule
+forbids writing a key that may silently no-op. The `.claude/commands/*.md` shims are
+optional, Claude-Code-only sugar — non-load-bearing, never the sole path.
+
+| Alias | Skill | CSV-first example |
+|---|---|---|
+| `/dsx-scope` | dsx-scope-analysis | "scope this question", "can you look into churn" (csv-first framing) |
+| `/dsx-eda` | dsx-explore-data | `explore <extract.csv>`, "profile this csv", "eda" |
+| `/dsx-experiment` | dsx-design-experiment | "design an A/B test", "read out this experiment" |
+| `/dsx-metrics` | dsx-define-metrics | "define this metric", "why do these two numbers disagree" |
+| `/dsx-model` | dsx-build-model | "build a model to predict <y> from <extract.csv>" |
+| `/dsx-visualize` | dsx-visualize | "chart this", "which chart for this" |
+| `/dsx-chart-audit` | dsx-chart-audit | "audit this figure", "is this chart honest" |
+| `/dsx-narrate` | dsx-narrate | "write the readout", "executive summary" |
+| `/dsx-review` | dsx-review-analysis | "review this analysis before it ships" |
+| `/dsx-cohort` | dsx-cohort | "cohort analysis", "retention by cohort" |
+| `/dsx-funnel` | dsx-funnel | "funnel analysis", "where do users drop off" |
+| `/dsx-root-cause` | dsx-root-cause | "why did <metric> move" |
+| `/dsx-segment` | dsx-segment | "segment analysis", "which segment drove this" |
+
+All 13 DSX skills carry a `Triggers:` clause in their frontmatter `description`, so
+intent routes to the right skill on any description-reading host even without the alias.
+
+### Why there is no file-drop hook
+
+REQ-P14-05 asked for a "profile a CSV automatically when it appears" file-drop hook. It
+is satisfied by a **documented skip**, decided against the installed GSD Core — honestly,
+not for convenience:
+
+1. The portable hook floor — `{SessionStart, PreToolUse, PostToolUse, Stop,
+   SessionEnd}` — exposes **no "a file appeared" event**, and GSD Core exposes no
+   capability-declarable file-drop overlay hook to bind.
+2. The only file-change surface, **`FileChanged`**, is **Claude-Code-family only**,
+   runtime-descriptor-gated, filename-matched, and used solely for `config.json`
+   hot-reload; its firing on a **new arbitrary CSV is unverified** host behaviour.
+3. DSX ships `supported: ["*"]` and will **not** ship a hook that works on one runtime
+   and silently no-ops on every other — binding `FileChanged` would breach that
+   contract, uncaught (exactly the "config that silently no-ops" the Tool Version
+   Grounding rule forbids).
+4. So `dsx profile` stays **analyst-invoked**, with the exact command
+   `dsx profile <extract.csv> --out DATA-PROFILE.yaml --pk <key> --time <col>`.
+
+The compensating control is **`DSX-DQ-001`** (CRITICAL): it fires when a spec's
+`data[].assertions` declare a missing or unreadable `profile_path`, so the analyst is
+forced to produce the profile regardless of any hook — automation here was convenience,
+never a guardrail. Accordingly `capabilities/dsx/capability.json` `hooks` stays `[]`.
+
+**Reversal condition:** if GSD Core later exposes a runtime-neutral file-change overlay
+hook, REQ-P14-05 may flip from the documented-skip branch to the hook branch.

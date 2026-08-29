@@ -1,6 +1,6 @@
 ---
 name: dsx-define-metrics
-description: "Define, register and reconcile metrics so one number means one thing. Use when creating a metric, building a dashboard, or investigating why two sources disagree."
+description: "Define, register and reconcile metrics so one number means one thing. Use when creating a metric, building a dashboard, or investigating why two sources disagree. Triggers: 'define this metric', 'why do these two numbers disagree', 'metric definition' — routes intent without GSD phase names."
 argument-hint: "[metric-name] [--reconcile] [--sql <file>]"
 allowed-tools:
   - Read

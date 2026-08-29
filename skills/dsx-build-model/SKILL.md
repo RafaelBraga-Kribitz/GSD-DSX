@@ -1,6 +1,6 @@
 ---
 name: dsx-build-model
-description: "Build a predictive model with leakage prevention designed in rather than audited for. Use for any classification, regression or forecasting task."
+description: "Build a predictive model with leakage prevention designed in rather than audited for. Use for any classification, regression or forecasting task. Triggers: 'build a model', 'predict <y> from <extract.csv>', 'train a classifier' — routes intent without GSD phase names."
 argument-hint: "[--task <type>] [--target <column>] [--time <column>]"
 allowed-tools:
   - Read

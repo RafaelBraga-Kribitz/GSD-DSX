@@ -16,7 +16,8 @@ libraries.
 - **What is the grain of each source, and where does joining change it?** Fan-out
   is the single most common cause of numbers that disagree.
 - **Has this been analysed before?** A prior result that contradicts yours is
-  worth more than another week of modelling.
+  worth more than another week of modelling. Before concluding none exists, grep the
+  dated files in `docs/dsx/learnings/` on domain / question_type / metric.
 - **What is the baseline?** For prediction: the trivial rule to beat. For an
   experiment: the current rate and its natural week-to-week variance — if the
   metric swings 3pp on its own, a 2pp MDE is not detectable.
