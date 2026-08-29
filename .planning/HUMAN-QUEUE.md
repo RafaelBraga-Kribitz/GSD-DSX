@@ -20,6 +20,37 @@ a persona round and records loudly):
 
 ## Open
 
+### HQ-14 — Phase 15 end-of-phase security sign-off + UAT (batched; non-blocking until S5-2)
+
+**Status: filed 2026-08-29 (S4-5). Technical gates PASS; awaiting operator sign-off.** Per brief §4
+category 4 (a `SECURITY.md` approval line is a human item) and the standing UAT batch. The loop
+completed the technical verification; the operator confirms the sign-off line at the close-out drain
+(S5-2). Nothing downstream blocks on this until then. The Phase 15 D-06 numbering veto for the two
+new codes is tracked **separately** as HQ-13 (same drain).
+
+**What the loop already verified (orchestrator re-gate, real commands — brief §5):**
+- **Security — SECURED, `threats_open: 0`** (`15-SECURITY.md`): 23/23 register entries closed (22
+  threats + 1 supply-chain accept; 1 critical + 14 high + 7 medium). Gate-path purity (only
+  `design.py`/`metrics.py`/`mathx.py`/`spec.py` changed under `dsx/`; no pandas/scipy/numpy/exec
+  import; CUPED math stays off the gate path), CUPED gate-flip + CRITICAL severity (`test_cuped` 8 OK,
+  `dsx gate plan` 0→1), MET-020↔MET-021 disjointness (`test_cohort_denominator` 7 OK), good-fixture
+  silence (`test_good_fixture_phase15` 3 OK), no normality auto-switch (`test_no_shapiro_autoswitch`
+  4 OK), additive catalogue (invariant 2 OK = 260 + set-identity vs snapshot ∪ {REP-060,061,EXP-070,
+  MET-021}; `--check` exit 0; frozen anchor byte-unchanged). Declaration-only check phase, asvs_level
+  1 L1 short-circuit — no auditor spawn needed.
+- **Validation — `nyquist_compliant: true`, 0 gaps** (`15-VALIDATION.md`): 7/7 REQ-P15-01..07 COVERED
+  by green automated tests (6 behavioural modules + rebaselined `test_finding_catalogue_invariant` +
+  new `tests/test_phase15_bi_checks.py` 20-test coverage anchor). REQ-P15-04 is COVERED **PARTIAL**
+  (survivorship half unshipped, consented at S4-1 via answered HQ-8). Full gate `sh scripts/check.sh`
+  = all passed (**Ran 1312 tests OK** on a clean tree).
+
+**Operator action at S5-2:** (1) confirm the `15-SECURITY.md` Sign-Off approval line as written (or
+flag any threat disposition), and (2) run/confirm the Phase 15 UAT for REQ-P15-01..07 (REQ-P15-04
+PARTIAL). There is **no new D-05 primary-source read owed by Phase 15** — its two new codes
+(`DSX-EXP-070`/`DSX-MET-021`) cite HQ-8-confirmed sources (Deng et al. 2013 WSDM; Crook et al. 2009
+KDD §6); the survivorship code was not minted (Brown 1992 does-not-transfer). The D-06 numbering veto
+for those two codes is HQ-13. An interactive session records the verdict and checks this item off.
+
 ### HQ-13 — Phase 15 D-06 numbering veto window: `DSX-EXP-070` / `DSX-MET-021` (non-blocking; veto via daily summary or by S5-2)
 
 **Status: filed 2026-08-29 (S4-1). Decided by the loop's persona round; NOT a blocker.** Per brief §4,
@@ -252,6 +283,21 @@ instead — see ledger unit S5-6.
 origin against an earlier partial merge, so the completed milestone shipped as
 `v2.1.0` and the queued Analytic Surface milestone was renamed v2.1 → v2.2 to avoid
 colliding with it. The next free tag for this milestone is `v2.2.0`.
+
+**Run the full suite from a clean tree — a stray root `DECISIONS.jsonl` false-fails
+two `explain` tests.** Found 2026-08-29 (S4-5). `tests/test_dsx.py::test_explain_missing_spec_exits_zero_not_two`
+and `tests/test_explain_self_reported.py::test_returns_zero_when_spec_cannot_be_loaded`
+run `dsx explain --spec /nonexistent` from the repo-root CWD **without isolating it**
+(the sibling tests in those classes use `tempfile.TemporaryDirectory()`; these two
+don't). A **gitignored** `DECISIONS.jsonl` decision ledger (`.gitignore:7`), auto-written
+by any repo-root `dsx gate`/`dsx explain`, then makes `explain` read a real trail and the
+`"no decision trail"` assertion fails. On a clean checkout — the state the committed tree
+ships as — both pass; `scripts/check.sh` is green because it runs the suite **before** its
+own gate steps regenerate the ledger. Fix if desired: isolate CWD in those two tests (a
+tracked-source change, out of Phase-15 scope — left as recorded tech-debt, not patched).
+**At S5-1 and S5-4, if the full suite shows exactly these two failures, delete the
+gitignored `DECISIONS.jsonl` files and re-run before treating it as a real defect** —
+`rm -f DECISIONS.jsonl examples/DECISIONS.jsonl examples/known-bad/DECISIONS.jsonl templates/DECISIONS.jsonl`.
 
 ## Answered
 
