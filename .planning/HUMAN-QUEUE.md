@@ -423,6 +423,24 @@ not-confirmed. An interactive session records the verdict and checks HQ-17 off. 
 then, Phase 19 (S3) treats any code whose citation is not confirmed as **not in hand**
 (the S3-1 D-05 bar).
 
+### HQ-18 — Phase 17 discuss decisions (veto window; NON-BLOCKING; silence = accept)
+
+**Status: RECORDED 2026-08-29 (S1-1). Not a D-05/scope/ship escalation — a D-06-class
+persona decision recorded loudly with a veto window per brief §4. Nothing blocks on it.**
+Two decisions from `.planning/phases/17-foundation-repairs-and-spec-vocabulary/17-CONTEXT.md`
+that the operator may veto from a daily summary:
+
+1. **`estimand_kind` gains a 6th member `nominal_association`** (phi / Cramér's V on
+   unordered r×c) beyond REQ-P17-02's named five. Additive, within the requirement's "at
+   least" grant; both personas voted for it (Cramér's V is an unsigned dependence measure,
+   not a signed Pearson r — folding it into `linear_association` would mis-carve the
+   estimand space). Full 6-member set + rationale in 17-CONTEXT.md D-01.
+2. **D-06 range pre-allocation** — one DSX-STA decade per theme, 050–129, 130s reserve
+   (17-CONTEXT.md D-03). Codes are permanent (D-06); this reserves ranges so Phases 18/19
+   draw collision-free. Phase 17 assigns none.
+
+To veto either, reply in a session; otherwise silence accepts and Phase 18/19 build on them.
+
 ## Will be added by the loop when reached
 
 - ~~S0-3: Phase 18 D-05 evidence pack~~ — **FILED as HQ-16 above (2026-08-29).**

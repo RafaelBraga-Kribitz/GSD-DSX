@@ -4,9 +4,9 @@ milestone: v2.3
 milestone_name: Test Catalog
 status: executing
 stopped_at: "Milestone opened 2026-08-29 by operator direction (interactive session). Scope researched (6-agent workflow) and written: .planning/research/V2.3-V2.4-SCOPE.md; REQUIREMENTS.md REQ-P17-01..REQ-P20-04; ROADMAP.md Phases 17-20. Loop repointed: branch gsd/v2.3.0-test-catalog, LOOP-BRIEF/LOOP-LEDGER/HUMAN-QUEUE rewritten for v2.3, firing script updated (branch + usage-limit backoff). Next: the loop's S0-1 (verify state + scope recheck)."
-last_updated: "2026-08-29T21:30:00.000Z"
+last_updated: "2026-08-29T21:48:00.000Z"
 last_activity: 2026-08-29
-last_activity_desc: "v2.3 Test Catalog opened; scope, requirements, roadmap, and loop artifacts written; ceremony repointed"
+last_activity_desc: "S1-1 Phase 17 discuss complete — 17-CONTEXT.md settles estimand_kind (6-member), the D-12a disposition table, and the D-06 range pre-allocation"
 progress:
   total_phases: 4
   completed_phases: 0
@@ -43,10 +43,10 @@ See: .planning/PROJECT.md (updated 2026-08-29; Key Decisions table there is the 
 
 ## Current Position
 
-Phase: 17 (foundation-repairs-and-spec-vocabulary) — not started; next ledger unit is S0-1
-Plan: —
-Status: Executing (ceremony bootstrap)
-Last activity: 2026-08-29 — milestone opened, scope + loop artifacts written, ceremony repointed
+Phase: 17 (foundation-repairs-and-spec-vocabulary) — S0 bootstrap done, S1-1 discuss done; next ledger unit is S1-2 (plan)
+Plan: — (S1-2 will create 17-PLAN via /gsd-plan-phase; plan-checker must pass)
+Status: Executing — discuss complete (17-CONTEXT.md), planning next
+Last activity: 2026-08-29 — S1-1 Phase 17 discuss: estimand_kind vocab, D-12a dispositions, D-06 range pre-allocation settled
 
 ## Performance Metrics
 
