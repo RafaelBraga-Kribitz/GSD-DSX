@@ -2,25 +2,25 @@
 gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: Analytic Surface
-current_phase: 16
-current_phase_name: re-run-verification-off-the-gate-path
+current_phase: 15
+current_phase_name: cuped-and-bi-declaration-checks
 status: executing
-stopped_at: "S3-3 COMPLETE (recovered) — Phase 16 all 4 plans (16-01..04) executed + verified. A prior firing did the work but crashed before commit/gate/log; this firing reconciled the uncommitted tree against the 4 plans (§0.4 — repo is the fact) and re-ran EVERY gate itself (brief §5, NOT summary-trusted). All green: gen-finding-catalogue.py --check exit 0 (only S0-2 double-declare noise); test_finding_catalogue_invariant 2 OK (258 + set-identity vs snapshot∪{060,061}); test_reproduce_report 7 OK; test_no_entrypoint_execution 3 OK; test_known_bad_corpus 45 OK; test_gate_path_hermetic 2 OK. Gate-path pure (D-01): only dsx/checks/repro.py under dsx/, scripts/ clean, no forbidden imports, phase-12 snapshot byte-unchanged. Mint DSX-REP-060/061 (HIGH) 256→258 additive on disk; capability.json appended dsx-reproduce (14th), hooks:[] untouched. Committed ceremony artifacts ONLY (operator-local .claude/·.vscode/·graphify-out/·EDA_enhancement_BRIEF.md·references/The AI Data Scientist.md left untracked, explicit pathspec never -A) as 4 atomic commits in wave order: 16-01 1195d97, 16-02 71454f6, 16-03 e32f9e6, 16-04 0bd6a75. S3-4 now COMPLETE: code review PASS (1 auto-fix — tests/test_phase14_onboarding.py hard-coded 13 DSX skills, stale after P16's 14th skill dsx-reproduce; anchor bumped 13→14, REQ-P14-04 Triggers invariant now spans all 14) + verification PASSED 4/4 REQ-P16-01..04; hard constraint held (test_no_entrypoint_execution 3 OK + test_gate_path_hermetic 2 OK + repro.py stdlib-only); D-08 additive (258, snapshot byte-frozen); D-10 additive (0 corpus deletions, _headline pinned (0.25,0.3)); sh scripts/check.sh all passed (Ran 1254 tests OK, 1243→+11), capability conformant 14 skills. RESUME at S3-5 (/gsd-secure-phase 16 + /gsd-validate-phase 16). HQ-11 D-06 veto window still open (non-blocking). See LOOP-LEDGER.md Log."
-last_updated: "2026-08-29T05:35:00.000Z"
+stopped_at: "S3-5 COMPLETE — Phase 16 secure + validate, both PASS; S3 (Phase 16) fully complete (S3-1..S3-5). Ran secure+validate directly as orchestrator (opus/high, §3, S1-5/S2-5 precedent), every gate re-run (brief §5). SECURE = SECURED threats_open:0 (13-entry register consolidated from the 4 plans' threat_model blocks, 4 identical T-16-SC deduped to 1 accept = 12 threats + 1 SC; 3 critical + 8 high + 1 medium; asvs1 L1 short-circuit, no auditor). All closed by re-gate: gate-path purity (git diff ec216b2..HEAD -- dsx/ scripts/ = only dsx/checks/repro.py, stdlib math/re/pathlib only, no subprocess/runpy/os/exec); test_no_entrypoint_execution 3 OK; test_gate_path_hermetic 2 OK; test_reproduce_report 7 OK; test_known_bad_corpus 45 OK; invariant 2 OK (258 + set-identity vs snapshot∪{060,061}); frozen phase-12 anchor byte-unchanged; --check exit 0; both codes HIGH; no D-05 owed (engineering-hygiene codes). VALIDATE = nyquist_compliant:true, 0 gaps, 4/4 REQ-P16-01..04 COVERED. Crystallised S3-4's REQ-P16-01 hand-read into a standing test tests/test_phase16_reproduce.py (9 tests). sh scripts/check.sh all passed (Ran 1263 tests OK, 1254→+9), capability conformant 14 skills. Phase-16 security sign-off + UAT queued HQ-12 (non-blocking to S5-2); D-06 numbering veto stays HQ-11. Artifacts: 16-SECURITY.md, 16-VALIDATION.md, tests/test_phase16_reproduce.py. RESUME at S4-1 (Phase 15 discuss — mints new codes + D-05/D-06). See LOOP-LEDGER.md Log."
+last_updated: "2026-08-29T04:02:00.000Z"
 last_activity: 2026-08-29
-last_activity_desc: "S3-4 complete — Phase 16 code review PASS (1 auto-fix: bumped stale 13→14 DSX-skill anchor in test_phase14_onboarding after P16 added dsx-reproduce) + verification PASSED 4/4; sh scripts/check.sh all passed (1254 tests OK); resume at S3-5 (secure + validate Phase 16)"
+last_activity_desc: "S3-5 complete — Phase 16 secure (SECURED, threats_open:0, 13/13 closed) + validate (nyquist_compliant:true, 0 gaps, 4/4); standing test tests/test_phase16_reproduce.py (9); sh scripts/check.sh all passed (1263 tests OK); S3 (Phase 16) complete; resume at S4-1 (Phase 15 discuss)"
 progress:
   total_phases: 4
-  completed_phases: 2
-  total_plans: 4
-  completed_plans: 4
-  percent: 100
+  completed_phases: 3
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project state
 
-**Status:** Phase 16 EXECUTE COMPLETE (S3-3, recovered from a crashed prior firing's uncommitted tree); all 4 plans (16-01..04) executed + every gate re-run green — **`DSX-REP-060`/`061` (D-06, both HIGH) minted on disk, catalogue 256→258 additive**; next: Phase 16 code review + verification (S3-4; full-suite `scripts/check.sh`)
-**Progress:** [██████████████░░░░░░] v2.2 — 2/4 phases complete; Phase 16 in progress (discuss + plan + execute done) (Phases 13 → 14 → 16 → 15, in that order)
+**Status:** Phase 16 COMPLETE (S3-1..S3-5) — secure **SECURED** (`threats_open:0`, 13/13 closed) + validate **nyquist_compliant:true** (0 gaps, 4/4 REQ-P16-01..04 COVERED); standing test `tests/test_phase16_reproduce.py` (9); `sh scripts/check.sh` all passed (**1263 tests OK**). Next: Phase 15 (S4) — the last phase, mints new codes with D-05/D-06.
+**Progress:** [███████████████░░░░░] v2.2 — 3/4 phases complete (13, 14, 16); Phase 15 next (Phases 13 → 14 → 16 → 15, in that order)
 **Predecessor:** [████████████████████] v2.0.0 SHIPPED 2026-08-28 — 11/11 phases, 89 plans, 208 tasks, tag `v2.1.0`, merged to `main`. Full record: `.planning/MILESTONES.md`; artifacts archived under `.planning/milestones/v2.0.0-*` (phases, ROADMAP, REQUIREMENTS, MILESTONE-AUDIT, loop ledgers).
 
 **Locked decisions (v2.2, carried from planning):** DQ = profile runner + hermetic gates; Glyph = hermetic svg_sha256 only (no MCP dep); forbidden claims = universal pack + optional phase YAML; repro_lock = ARS-style honest-null (not byte-replay); decision replay = structured thresholds only; suppressions = ADR/SPEC authority required (unknown codes → exit 2).
@@ -30,14 +30,15 @@ progress:
 See: .planning/PROJECT.md (updated 2026-08-13; Key Decisions table there is the full decision log)
 
 **Core value:** Gate analytical work on validity before the data is touched.
-**Current focus:** Phase 16 — re-run-verification-off-the-gate-path
+**Current focus:** Phase 15 — cuped-and-bi-declaration-checks (next; S4-1 discuss)
 
 ## Current Position
 
-Phase: 16 (re-run-verification-off-the-gate-path) — execute (S3-3) COMPLETE (recovered); all 4 plans executed + verified. Next: code review + verification (S3-4).
-Plan: 4 of 4 executed + gated. 16-01 `1195d97` (REQ-P16-02 gate check + DSX-REP-060/061 mint + D-08 additive rebaseline 256→258); 16-02 `71454f6` (REQ-P16-01 dsx-reproduce skill + REPRO-REPORT template + capability register); 16-03 `e32f9e6` (REQ-P16-03 protocol_adherence sidecars); 16-04 `0bd6a75` (REQ-P16-04 no-entrypoint-execution AST guard).
-Status: Phase 16 executed — every gate re-run green by the orchestrator (brief §5): --check exit 0, invariant 2 OK (258 + set-identity), reproduce-report 7 OK, no-entrypoint 3 OK, known-bad corpus 45 OK, hermetic 2 OK; gate-path pure (only repro.py under dsx/). Catalogue extended 256→258 additively; phase-12 anchor byte-unchanged (D-08). Next S3-4 (code review + verification; full-suite scripts/check.sh).
-Last activity: 2026-08-29 — Phase 16 execute (S3-3, recovered from a crashed firing's uncommitted tree); reconciled against the 4 plans, re-ran every gate green, committed 4 atomic commits
+Phase: 16 (re-run-verification-off-the-gate-path) — COMPLETE (S3-1..S3-5): discuss + plan + execute + code-review/verify + secure/validate all PASS. Next phase: 15 (S4).
+Secure: **SECURED**, `threats_open:0` — 13-entry register (12 threats + 1 SC-accept; 3 critical + 8 high + 1 medium), all closed by orchestrator re-gate; asvs1 L1 short-circuit. Artifact `16-SECURITY.md`.
+Validate: **nyquist_compliant:true**, 0 gaps — 4/4 REQ-P16-01..04 COVERED by green automated tests (`test_phase16_reproduce` 9 + `test_reproduce_report` 7 + `test_no_entrypoint_execution` 3 + `test_known_bad_corpus` 45). Artifact `16-VALIDATION.md`.
+Gate: `sh scripts/check.sh` all passed (**Ran 1263 tests OK**, 1254→+9); catalogue current 258; capability conformant 14 skills; determinism identical. HQ-12 (Phase-16 security sign-off + UAT) + HQ-11 (D-06 veto) open, non-blocking to S5-2.
+Last activity: 2026-08-29 — Phase 16 secure + validate both PASS; S3 complete; resume at S4-1 (Phase 15 discuss)
 
 Progress: [████░░░] Phase 16 — 3 of 5 ceremony steps done (discuss + plan + execute)
 

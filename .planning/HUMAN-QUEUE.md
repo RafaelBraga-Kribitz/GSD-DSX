@@ -96,6 +96,36 @@ flag any threat disposition), and (2) run/confirm the Phase 14 UAT for REQ-P14-0
 D-05 primary-source read owed by Phase 14** (it mints no codes and cites only the existing `DSX-DQ-001`
 — verified present). An interactive session records the verdict and checks this item off.
 
+### HQ-12 — Phase 16 end-of-phase security sign-off + UAT (batched; non-blocking until S5-2)
+
+**Status: filed 2026-08-29 (S3-5). Technical gates PASS; awaiting operator sign-off.** Per brief §4
+category 4 (a `SECURITY.md` approval line is a human item) and the standing UAT batch. The loop
+completed the technical verification; the operator confirms the sign-off line at the close-out drain
+(S5-2). Nothing downstream blocks on this until then. The Phase 16 D-06 numbering veto is tracked
+**separately** as HQ-11 (same drain).
+
+**What the loop already verified (orchestrator re-gate, real commands — brief §5):**
+- **Security — SECURED, `threats_open: 0`** (`16-SECURITY.md`): 13/13 register entries closed (12
+  threats + 1 supply-chain accept; 3 critical + 8 high). Gate-path purity (`git diff ec216b2..HEAD
+  -- dsx/ scripts/` = only `dsx/checks/repro.py`, stdlib `math`/`re`/`pathlib` only — no execution
+  primitive), entrypoint-execution guard (`test_no_entrypoint_execution` 3 OK, AST scan + pos/neg
+  controls), gate-path hermeticity (`test_gate_path_hermetic` 2 OK), verdict-agnostic + honest-skip
+  (`test_reproduce_report` 7 OK), zero-drift catalogue (invariant 2 OK = 258 + set-identity vs
+  snapshot ∪ {060,061}; `--check` exit 0; frozen anchor byte-unchanged), additive calibration
+  (`test_known_bad_corpus` 45 OK; known-bad `ANALYSIS-SPEC.yaml` diff empty). Skill/template/test
+  phase, asvs_level 1 L1 short-circuit — no auditor spawn needed.
+- **Validation — `nyquist_compliant: true`, 0 gaps** (`16-VALIDATION.md`): 4/4 REQ-P16-01..04 COVERED
+  by green automated tests (`tests/test_phase16_reproduce.py` 9 + `test_reproduce_report` 7 +
+  `test_no_entrypoint_execution` 3 + `test_known_bad_corpus` 45). Full gate `sh scripts/check.sh` =
+  all passed (Ran 1263 tests OK).
+
+**Operator action at S5-2:** (1) confirm the `16-SECURITY.md` Sign-Off approval line as written (or
+flag any threat disposition), and (2) run/confirm the Phase 16 UAT for REQ-P16-01..04. There is **no
+D-05 primary-source read owed by Phase 16** — its two new codes (`DSX-REP-060`/`061`) are
+engineering-hygiene checks that cite no primary source (brief.md line 389 assigns none). The D-06
+numbering veto for those codes is HQ-11. An interactive session records the verdict and checks this
+item off.
+
 ## HQ-8-superseded — original evidence pack (answered; kept for the record)
 
 ### HQ-8 — Phase 15 D-05 citation evidence pack (filed early by design; non-blocking)
