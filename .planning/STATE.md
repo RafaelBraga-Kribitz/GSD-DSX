@@ -5,10 +5,10 @@ milestone_name: Analytic Surface
 current_phase: 15
 current_phase_name: cuped-and-bi-declaration-checks
 status: executing
-stopped_at: "S3-5 COMPLETE — Phase 16 secure + validate, both PASS; S3 (Phase 16) fully complete (S3-1..S3-5). Ran secure+validate directly as orchestrator (opus/high, §3, S1-5/S2-5 precedent), every gate re-run (brief §5). SECURE = SECURED threats_open:0 (13-entry register consolidated from the 4 plans' threat_model blocks, 4 identical T-16-SC deduped to 1 accept = 12 threats + 1 SC; 3 critical + 8 high + 1 medium; asvs1 L1 short-circuit, no auditor). All closed by re-gate: gate-path purity (git diff ec216b2..HEAD -- dsx/ scripts/ = only dsx/checks/repro.py, stdlib math/re/pathlib only, no subprocess/runpy/os/exec); test_no_entrypoint_execution 3 OK; test_gate_path_hermetic 2 OK; test_reproduce_report 7 OK; test_known_bad_corpus 45 OK; invariant 2 OK (258 + set-identity vs snapshot∪{060,061}); frozen phase-12 anchor byte-unchanged; --check exit 0; both codes HIGH; no D-05 owed (engineering-hygiene codes). VALIDATE = nyquist_compliant:true, 0 gaps, 4/4 REQ-P16-01..04 COVERED. Crystallised S3-4's REQ-P16-01 hand-read into a standing test tests/test_phase16_reproduce.py (9 tests). sh scripts/check.sh all passed (Ran 1263 tests OK, 1254→+9), capability conformant 14 skills. Phase-16 security sign-off + UAT queued HQ-12 (non-blocking to S5-2); D-06 numbering veto stays HQ-11. Artifacts: 16-SECURITY.md, 16-VALIDATION.md, tests/test_phase16_reproduce.py. RESUME at S4-1 (Phase 15 discuss — mints new codes + D-05/D-06). See LOOP-LEDGER.md Log."
-last_updated: "2026-08-29T04:02:00.000Z"
+stopped_at: "S4-1 COMPLETE — Phase 15 discuss; 15-CONTEXT.md written (D-01..D-09, 6 sections). Architect+Statistician 2-persona round (opus/high, §4). D-06 mint (irreversible, decided by loop, next-free-in-family): DSX-EXP-070 CRITICAL in dsx/checks/design.py (_check_cuped, keyed on variance_adjustment==cuped, reads design.cuped.covariate_timing, computes nothing; cite Deng/Xu/Kohavi/Walker 2013 WSDM) + DSX-MET-021 HIGH in dsx/checks/metrics.py (_check_cohort_denominator_shift, reads NEW results.cohort_comparisons, cite Crook 2009 KDD §6 Pitfall 4). 258→260 additive; frozen phase-12 snapshot (256) untouched. Two tie-breaks (rigour>reliability>flexibility): changing-denom family MET not INT (INT causal-gated → skips descriptive BI specs); severity HIGH not CRITICAL (declaration-only evidences shift not proven reversal; sibling MET-020 is HIGH; REQ-P15-04 block-bad-fixture met at verify/ship; the CRITICAL lean conflated REQ-P15-02's plan-block). CRITICAL RECONCILE FIND for S4-2: DSX-MET-020 already exists (reads results.period_comparisons by count) — MET-021 must read results.cohort_comparisons by definition/share, proven disjoint by test. Survivorship NOT minted (HQ-8 does-not-transfer → brief.md §6.5 + D-13 entry cond); REQ-P15-04 ships PARTIAL, REQUIREMENTS.md reword queued S4-4. No new D-05 owed (both shipping cites confirmed in answered HQ-8). Baseline re-verified (§5): gen-finding-catalogue.py --check exit 0 @ 258; EXP-070+MET-021 both free. D-06 veto filed HQ-13 (non-blocking). Also did §5 Log-archive hygiene: 5 oldest Log entries moved to LOOP-LEDGER-ARCHIVE.md. RESUME at S4-2 (Phase 15 plan; plan-checker must pass). See LOOP-LEDGER.md Log."
+last_updated: "2026-08-29T04:27:00.000Z"
 last_activity: 2026-08-29
-last_activity_desc: "S3-5 complete — Phase 16 secure (SECURED, threats_open:0, 13/13 closed) + validate (nyquist_compliant:true, 0 gaps, 4/4); standing test tests/test_phase16_reproduce.py (9); sh scripts/check.sh all passed (1263 tests OK); S3 (Phase 16) complete; resume at S4-1 (Phase 15 discuss)"
+last_activity_desc: "S4-1 complete — Phase 15 discuss; 15-CONTEXT.md (D-01..D-09); D-06 mint DSX-EXP-070 (CRITICAL, CUPED covariate) + DSX-MET-021 (HIGH, changing-denominator), 258→260 additive; survivorship not shipped (§6.5, D-13); D-06 veto HQ-13; resume at S4-2 (Phase 15 plan)"
 progress:
   total_phases: 4
   completed_phases: 3
@@ -19,8 +19,8 @@ progress:
 
 # Project state
 
-**Status:** Phase 16 COMPLETE (S3-1..S3-5) — secure **SECURED** (`threats_open:0`, 13/13 closed) + validate **nyquist_compliant:true** (0 gaps, 4/4 REQ-P16-01..04 COVERED); standing test `tests/test_phase16_reproduce.py` (9); `sh scripts/check.sh` all passed (**1263 tests OK**). Next: Phase 15 (S4) — the last phase, mints new codes with D-05/D-06.
-**Progress:** [███████████████░░░░░] v2.2 — 3/4 phases complete (13, 14, 16); Phase 15 next (Phases 13 → 14 → 16 → 15, in that order)
+**Status:** Phase 15 IN PROGRESS (S4) — **S4-1 discuss COMPLETE**: `15-CONTEXT.md` written (D-01..D-09). D-06 mint decided (loud, irreversible): **`DSX-EXP-070`** CRITICAL (CUPED post-treatment-covariate) + **`DSX-MET-021`** HIGH (changing-denominator); catalogue 258→260 additive; survivorship **not** shipped (§6.5, D-13 entry cond). D-06 veto window HQ-13 (non-blocking). Next: S4-2 (plan; plan-checker must pass).
+**Progress:** [███████████████░░░░░] v2.2 — 3/4 phases complete (13, 14, 16); Phase 15 in progress (S4-1 of 5 done); order 13 → 14 → 16 → 15
 **Predecessor:** [████████████████████] v2.0.0 SHIPPED 2026-08-28 — 11/11 phases, 89 plans, 208 tasks, tag `v2.1.0`, merged to `main`. Full record: `.planning/MILESTONES.md`; artifacts archived under `.planning/milestones/v2.0.0-*` (phases, ROADMAP, REQUIREMENTS, MILESTONE-AUDIT, loop ledgers).
 
 **Locked decisions (v2.2, carried from planning):** DQ = profile runner + hermetic gates; Glyph = hermetic svg_sha256 only (no MCP dep); forbidden claims = universal pack + optional phase YAML; repro_lock = ARS-style honest-null (not byte-replay); decision replay = structured thresholds only; suppressions = ADR/SPEC authority required (unknown codes → exit 2).
@@ -30,17 +30,15 @@ progress:
 See: .planning/PROJECT.md (updated 2026-08-13; Key Decisions table there is the full decision log)
 
 **Core value:** Gate analytical work on validity before the data is touched.
-**Current focus:** Phase 15 — cuped-and-bi-declaration-checks (next; S4-1 discuss)
+**Current focus:** Phase 15 — cuped-and-bi-declaration-checks (S4-1 discuss done; next S4-2 plan)
 
 ## Current Position
 
-Phase: 16 (re-run-verification-off-the-gate-path) — COMPLETE (S3-1..S3-5): discuss + plan + execute + code-review/verify + secure/validate all PASS. Next phase: 15 (S4).
-Secure: **SECURED**, `threats_open:0` — 13-entry register (12 threats + 1 SC-accept; 3 critical + 8 high + 1 medium), all closed by orchestrator re-gate; asvs1 L1 short-circuit. Artifact `16-SECURITY.md`.
-Validate: **nyquist_compliant:true**, 0 gaps — 4/4 REQ-P16-01..04 COVERED by green automated tests (`test_phase16_reproduce` 9 + `test_reproduce_report` 7 + `test_no_entrypoint_execution` 3 + `test_known_bad_corpus` 45). Artifact `16-VALIDATION.md`.
-Gate: `sh scripts/check.sh` all passed (**Ran 1263 tests OK**, 1254→+9); catalogue current 258; capability conformant 14 skills; determinism identical. HQ-12 (Phase-16 security sign-off + UAT) + HQ-11 (D-06 veto) open, non-blocking to S5-2.
-Last activity: 2026-08-29 — Phase 16 secure + validate both PASS; S3 complete; resume at S4-1 (Phase 15 discuss)
+Phase: 15 (cuped-and-bi-declaration-checks-new-codes-d-05) — IN PROGRESS. **S4-1 discuss COMPLETE**; S4-2..S4-5 pending. Phases 13/14/16 complete.
+S4-1: Architect+Statistician 2-persona round (opus/high, §4). **D-06 mint (irreversible):** `DSX-EXP-070` CRITICAL (`dsx/checks/design.py`, CUPED post-treatment covariate; cite Deng et al. 2013 WSDM) + `DSX-MET-021` HIGH (`dsx/checks/metrics.py`, changing-denominator; cite Crook 2009 KDD §6). 258→260 additive; frozen snapshot untouched. Tie-breaks (rigour): changing-denom family MET not INT (INT causal-gated); severity HIGH not CRITICAL. Survivorship NOT minted (HQ-8 does-not-transfer → §6.5+D-13); REQ-P15-04 PARTIAL, reword queued S4-4. **S4-2 trap:** `DSX-MET-020` already reads `results.period_comparisons` — MET-021 reads NEW `results.cohort_comparisons`, prove disjoint. Artifact `15-CONTEXT.md`. D-06 veto HQ-13; HQ-9/10/12 (phase security sign-offs + UAT) + HQ-11 (P16 veto) open, all non-blocking to S5-2.
+Last activity: 2026-08-29 — S4-1 Phase 15 discuss complete; D-06 mint recorded loudly; resume at S4-2 (Phase 15 plan)
 
-Progress: [████░░░] Phase 16 — 3 of 5 ceremony steps done (discuss + plan + execute)
+Progress: [██░░░░░░░░] Phase 15 — 1 of 5 ceremony steps done (discuss)
 
 **Loop control:** the autonomous ceremony drives this milestone. Contract: `.planning/LOOP-BRIEF.md`; backlog + gates: `.planning/LOOP-LEDGER.md`; human-only items: `.planning/HUMAN-QUEUE.md`.
 
@@ -75,6 +73,6 @@ Carried forward from v2.0.0 close (closeout_type=override_closeout) — captured
 
 ## Session Continuity
 
-Last session: 2026-08-29T03:27Z (autonomous firing)
-Stopped at: S3-3 complete (recovered) — Phase 16 all 4 plans executed + verified; catalogue 256→258 additive (DSX-REP-060/061). Commits 1195d97/71454f6/e32f9e6/0bd6a75.
-Resume file: None — the next firing takes S3-4 from LOOP-LEDGER.md (code review + auto-fix; verification `passed`). S3-4's hard constraint (REQ-P16-02/-04, D-01/D-02): the gate path must never import pandas/scipy or execute the analysis entrypoint — `tests/test_no_entrypoint_execution.py` + `tests/test_gate_path_hermetic.py` already assert this; re-run them as part of the full `scripts/check.sh`. Note for review: 16-01's `report.add` messages are FIXED plain-string literals (verified — catalogue row text renders exactly; `--check` exit 0). The three carried S3-2 nits (N1 git-bash executor, N2 glob pathspec, N3 single-string-literal msg) were all handled during execution — none outstanding.
+Last session: 2026-08-29T04:27Z (autonomous firing)
+Stopped at: S4-1 complete — Phase 15 discuss; `15-CONTEXT.md` written (D-01..D-09). D-06 mint DSX-EXP-070 (CRITICAL) + DSX-MET-021 (HIGH), 258→260 additive; survivorship not shipped (§6.5). D-06 veto HQ-13. No new commit to code yet (discuss artifact + ledger/state/queue only).
+Resume file: None — the next firing takes S4-2 from LOOP-LEDGER.md (Phase 15 plan; plan-checker must pass). **S4-2 must honour the 15-CONTEXT.md traps**, above all: (1) MET-021 reads NEW `results.cohort_comparisons` (NOT `results.period_comparisons` = the pre-existing DSX-MET-020) and must be proven disjoint by test; (2) both new checks are declaration-only (no pandas/scipy/numpy on the gate path; CUPED θ/ρ reference impl in `dsx/mathx.py`, never imported by the check); (3) additive rebaseline in `tests/test_finding_catalogue_invariant.py` only (`_EXPECTED_TOTAL` 258→260, `_MINTED_CODES` += EXP-070,MET-021; frozen snapshot `finding-codes-phase12.md` @256 NOT mutated); (4) D-05 allow-list by exact code (`_D05_ALLOWLIST_CODES`), NOT family prefix; (5) REQ-P15-01 (cuped ∈ VARIANCE_ADJUSTMENTS) lands before REQ-P15-02. Ordering: plan-checker per brief §3 = opus (override the profile's haiku checker_model).

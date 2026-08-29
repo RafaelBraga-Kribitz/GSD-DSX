@@ -20,6 +20,43 @@ a persona round and records loudly):
 
 ## Open
 
+### HQ-13 — Phase 15 D-06 numbering veto window: `DSX-EXP-070` / `DSX-MET-021` (non-blocking; veto via daily summary or by S5-2)
+
+**Status: filed 2026-08-29 (S4-1). Decided by the loop's persona round; NOT a blocker.** Per brief §4,
+D-06 numeric finding-code assignments are decided by the loop ("next free number in family,
+catalogue-consistent") and recorded loudly — not escalated. This entry is the operator's **veto window**
+before Phase 15 ships. The loop proceeds through S4-2..S4-5 unless vetoed.
+
+**What the loop decided (Architect + Statistician 2-persona round, both opus/high; full rationale in
+`.planning/phases/15-cuped-and-bi-declaration-checks-new-codes-d-05/15-CONTEXT.md` D-02/D-03):**
+
+| Code | Severity | Finding (fixed plain text; finalised at S4-3) | Citation (D-05, confirmed via HQ-8) |
+|---|---|---|---|
+| `DSX-EXP-070` | CRITICAL | CUPED declared with a covariate that is not pre-experiment. | Deng, Xu, Kohavi & Walker (2013), WSDM '13, pp.123-132. |
+| `DSX-MET-021` | HIGH | Metric pooled across buckets sampled at different rates with no reweighting declared. | Crook, Frasca, Kohavi & Longbotham (2009), KDD '09, §6 Pitfall 4. |
+
+- **Why these numbers:** `EXP-070` is the next free EXP band (design-correctness, not the SPEC-044 vocab
+  question); `MET-021` is the free slot adjacent to its closest sibling `DSX-MET-020` in the 02x
+  denominator band. Catalogue moves **258 → 260** additively; the frozen Phase-12 snapshot (256) is not
+  mutated.
+- **Why MET not INT for changing-denominator:** the DSX-INT family lives in the causal-gated
+  `dsx/frame/interference.py` (runs only for causal/prescriptive/experiment specs) and would silently
+  skip the descriptive/diagnostic cohort/funnel BI specs REQ-P15-03 targets. MET runs unconditionally.
+- **Why MET-021 is HIGH not CRITICAL** (the one persona split, orchestrator tie-break rigour>reliability):
+  a declaration-only check can only evidence that the bucket allocation *shifted*, not that the pooled
+  result's sign *reversed*; CRITICAL would overstate. HIGH matches the sibling HIGH `DSX-MET-020`
+  denominator code and still blocks the bad fixture at verify/ship. **Open item for the operator:** if you
+  intended the changing-denominator bad fixture to block at `dsx gate plan` (not just verify/ship), that
+  forces CRITICAL — say so in the daily summary and the loop re-numbers before S4-2 locks.
+- **Survivorship-bias code is NOT minted** — its citation (Brown et al. 1992) does not transfer (your
+  answered HQ-8); it stays in `brief.md` §6.5 with a falsifiable D-13 entry condition. REQ-P15-04 therefore
+  ships PARTIAL (changing-denominator half only); the REQUIREMENTS.md wording change is queued to S4-4.
+- **No D-05 primary-source read owed at discuss** — both shipping citations were read and confirmed by you
+  at their locators in answered HQ-8.
+
+**Operator action (optional):** veto or amend the numbering/severity via the daily summary, or confirm at
+the S5-2 drain. Silence = accept. Nothing downstream blocks on this.
+
 ### HQ-11 — Phase 16 D-06 numbering veto window: `DSX-REP-060` / `DSX-REP-061` (non-blocking; veto via daily summary or by S5-2)
 
 **Status: filed 2026-08-29 (S3-1). Decided by the loop's persona round; NOT a blocker.** Per brief §4,
