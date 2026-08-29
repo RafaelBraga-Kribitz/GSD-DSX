@@ -261,7 +261,13 @@ IMBALANCE_UNSAFE_METRICS = {
     "error_rate": "pr_auc or balanced_accuracy",
 }
 
-VARIANCE_ADJUSTMENTS = {"cluster_robust", "delta_method", "bootstrap_cluster", "mixed_effects"}
+VARIANCE_ADJUSTMENTS = {"cluster_robust", "delta_method", "bootstrap_cluster", "mixed_effects", "cuped"}
+
+# Closed vocabulary for design.cuped.covariate_timing — the always-run CUPED design
+# check (dsx/checks/design.py::_check_cuped) keys on it. Strictly two-valued;
+# pre_experiment is the only passing value (a post-treatment covariate reintroduces
+# the bias CUPED exists to remove).
+CUPED_COVARIATE_TIMINGS = {"pre_experiment", "post_treatment"}
 
 METRIC_TYPES = {"ratio", "count", "sum", "average", "rate", "percentile", "index"}
 
@@ -555,6 +561,7 @@ _VOCABULARIES: "list[tuple[str, Any]]" = [
     ("ml_tasks", ML_TASKS),
     ("split_strategies", SPLIT_STRATEGIES),
     ("variance_adjustments", VARIANCE_ADJUSTMENTS),
+    ("cuped_covariate_timings", CUPED_COVARIATE_TIMINGS),
     ("metric_types", METRIC_TYPES),
     ("data_input_types", DATA_INPUT_TYPES),
     ("renderers", RENDERERS),
@@ -1146,7 +1153,11 @@ _VALIDITY_FRAME_ALWAYS_REQUIRED = (
 _VALIDITY_FRAME_CAUSAL_REQUIRED = ("identification", "interference", "triggering", "stability")
 
 # (sub-block, sub-field, closed vocabulary). `dependence.method_family_required` reuses
-# VARIANCE_ADJUSTMENTS verbatim (M-09) — no parallel set is defined for it. The
+# VARIANCE_ADJUSTMENTS verbatim (M-09) — no parallel set is defined for it. As of
+# Phase 15 that shared set includes `cuped`, so `method_family_required: cuped` now
+# passes membership here too; this is the intended M-09 reuse, NOT a defect to "fix"
+# by forking the set. The
+
 # `estimand.type` row (Phase 11, REQ-P11-01/04) is the adjudication axis the
 # frequentist admissibility adjudicator (dsx/frame/admissibility.py) keys on; it is
 # deliberately optional — the membership loop below `continue`s on a blank value
