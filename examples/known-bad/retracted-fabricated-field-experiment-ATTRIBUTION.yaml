@@ -7,11 +7,18 @@
 # absent_code REFERENCES an existing shipped catalogue code.
 #
 # Schema (D-07): absent_code (required), promotes_backlog_item (required),
-# rationale? (optional), kind? (optional, default "miss").
+# rationale? (optional), kind? (optional, default "miss"),
+# protocol_adherence? (optional, additive — Phase 16 REQ-P16-03/D-10), reported
+# beside catch rate / FPR, never inside them.
 
 absent_code: DSX-REP-020
 promotes_backlog_item: "6.5-item-7-feature-provenance"
 kind: miss
+# Whether the dsx-reproduce protocol was followed for this hand-authored fixture.
+# Vocabulary: adhered | skipped | not_applicable. These fixtures never ran the
+# reproduce skill, so 'skipped' is the honest value — accepted-but-ignored by
+# calibration (REQ-P16-03 / D-10).
+protocol_adherence: skipped
 rationale: >
   The reported effect rests on fabricated data. A plausible warehouse source and
   period are declared, so the nearest shipped provenance code DSX-REP-020 (source

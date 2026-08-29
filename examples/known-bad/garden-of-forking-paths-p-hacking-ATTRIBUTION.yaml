@@ -10,12 +10,19 @@
 # decision).
 #
 # Schema (D-07): absent_code (required), promotes_backlog_item (required),
-# rationale? (optional), kind? (optional, default "miss"). No DSX-* code is minted
-# here (D-18): absent_code REFERENCES an existing shipped catalogue code.
+# rationale? (optional), kind? (optional, default "miss"),
+# protocol_adherence? (optional, additive — Phase 16 REQ-P16-03/D-10). No DSX-*
+# code is minted here (D-18): absent_code REFERENCES an existing shipped catalogue
+# code, and protocol_adherence is reported BESIDE catch rate / FPR, never inside them.
 
 absent_code: DSX-EXP-051
 promotes_backlog_item: "6.5-item-1-prior-justification-and-sensitivity"
 kind: miss
+# Whether the dsx-reproduce protocol was followed for this hand-authored fixture.
+# Vocabulary: adhered | skipped | not_applicable. These fixtures never ran the
+# reproduce skill, so 'skipped' is the honest value — accepted-but-ignored by
+# calibration (REQ-P16-03 / D-10).
+protocol_adherence: skipped
 rationale: >
   The undisclosed specification search is reported as a single comparison, so the
   shipped undisclosed-multiplicity catch DSX-EXP-051 has no signal to fire on
