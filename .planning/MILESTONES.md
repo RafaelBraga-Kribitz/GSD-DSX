@@ -1,5 +1,54 @@
 # Milestones
 
+## v2.2 Analytic Surface (Shipped: 2026-08-29)
+
+**Phases completed:** 4 phases (13–16), 20 plans
+
+**Delivered:** the operator-surface gap closed without turning DSX into a prompt pack —
+four new router skills (`dsx-cohort`, `dsx-funnel`, `dsx-root-cause`, `dsx-segment`)
+that point marketing cohort/funnel/diagnostic work at existing gates instead of
+restating them; a compounding-learnings search step and a portable data dictionary
+for onboarding; CUPED as a declared, gated variance adjustment with a post-treatment-
+covariate check (`DSX-EXP-070`, CRITICAL) and a changing-denominator BI check
+(`DSX-MET-021`, HIGH), both under full D-05 primary-source citation discipline; and
+off-gate-path re-run verification via the new `dsx-reproduce` skill (`DSX-REP-060`/
+`061`, both HIGH). Milestone audit `passed` (23/23 requirements, 0 unsatisfied/orphaned);
+finding catalogue grows 256 → 260 codes, additively, with the frozen Phase-12 snapshot
+unmutated.
+
+**Closeout:** verified_closeout — all 4 phases technically verified (`threats_open: 0`
+per phase) and human-signed-off (HUMAN-QUEUE HQ-9/10/12/14); 0 real gaps. REQ-P15-04
+is satisfied **as worded**, via its own stated escape clause: the survivorship-bias
+citation (Brown, Goetzmann, Ibbotson & Ross 1992) was read directly and found not to
+transfer to a declaration-checkable rule, so only the changing-denominator half ships
+— a documented, loud partial, not a silent scope cut (see HQ-8). 2 dormant seeds
+(SEED-001, SEED-002) carried forward again, unchanged from v2.0.0's close.
+
+**Key accomplishments:**
+
+- Two new router `SKILL.md` files (`dsx-cohort`, `dsx-funnel`) that point marketing cohort/funnel work at the existing metric, chart-matrix, and coherence gates instead of restating them, plus a four-name append to `capability.json` registering all four Phase 13 playbooks.
+- Two more router playbooks — `dsx-root-cause` routes diagnostic decomposition to `DSX-MET-030/031` and the causal-honesty guard; `dsx-segment` routes multi-cut segmentation to the multiplicity gate (`DSX-SPEC-043`, `DSX-EXP-050..053`) — both citing existing gates with zero authored thresholds.
+- `dsx-explore-data` gains a hypothesis register mapping untested beliefs to `assumptions[]` and promoted beliefs to `results.tests[]`; `dsx-narrate` gains an explicit What / So What / Now What shape. Neither mints a code or a schema field.
+- `dsx-scope-analysis` routes lookup/ad-hoc/full-pipeline work to GSD tiers 0/1/2, advisory-only (prints the tier command, mutates nothing); the executor fragment now prefers a `scripts/*.py` entrypoint over a notebook, framed as ordering fidelity (`DSX-REP-040`), not a leakage claim.
+- Wave-2 certification that Phase 13 mints zero new `DSX-*` codes — a set-identity diff (D-07), not just a count, closing the mint-one/drop-one swap hole a count alone leaves open.
+- Compounding loop: `dsx-explore-data` now searches dated learnings under `docs/dsx/learnings/` before framing a new analysis (REQ-P14-01).
+- A portable `DATA-DICTIONARY.md` template sits next to `DATA-PROFILE.yaml` so later sessions do not re-guess grain and join keys (REQ-P14-02).
+- Research-domain AI-assistance disclosure: when `dsx.domain == research`, `dsx-narrate` offers an optional, opt-in disclosure block; the marketing-domain default is unchanged (REQ-P14-03).
+- CSV-first slash-command aliases across the DSX skills, plus a documented, honest skip of the file-drop hook — no GSD Core overlay hooks exist to wire it to (REQ-P14-04/P14-05).
+- Zero-mint proof for Phase 14 by catalogue diff, plus a gate-path hermeticity guard keeping the check surface stdlib-pure and profiler-free (REQ-P14-06).
+- CUPED lands in `dsx/spec.py`'s closed vocabulary — `design.variance_adjustment: cuped` no longer draws a stray `DSX-SPEC-044` — as the phase's trap-12 keystone. No mint.
+- `DSX-MET-021` (HIGH): a metric pooled across cohort-comparison buckets sampled at different rates with no reweighting declared — the changing-denominator half of REQ-P15-04.
+- An optional APA-style research results table (`templates/APA-TABLE-research.md`) plus a test proving the gate never silently auto-switches statistical tests on normality grounds.
+- `DSX-EXP-070` (CRITICAL): CUPED declared with a covariate that is not pre-experiment now blocks at the gate, backed by θ = Cov/Var and ρ² variance-reduction helpers citing Deng, Xu, Kohavi & Walker (2013) WSDM by DOI, computed off the gate path.
+- The good-fixture example spec extended to declare CUPED correctly and well-behaved cohort comparisons, proven silent at every threshold Phase 15 adds. No mint.
+- Finding catalogue regenerated to 260 codes — `DSX-EXP-070` and `DSX-MET-021` added to the D-05 citation allowlist as exact strings; the invariant test rebaselined additively (258→260) without touching the frozen Phase-12 snapshot at 256.
+- `DSX-REP-060`/`DSX-REP-061` (both HIGH) — a declared `reproduce_report` with a missing `REPRO-REPORT.md`, or one present whose re-run numbers don't overlap `results.tests`, now blocks at the gate. Phase 16's only catalogue mint.
+- The `dsx-reproduce` skill and its `REPRO-REPORT.md` contract template, registered as the capability's 14th skill.
+- `protocol_adherence` sidecars added to the three known-bad `ATTRIBUTION.yaml` fixtures, plus an additive test proving the new field changes no existing verdict.
+- A static AST no-entrypoint-execution guard — the execution-detecting complement to the existing gate-path-hermeticity test, flagging the full subprocess/`os.system`/exec/spawn family anywhere in the check surface.
+
+---
+
 ## v2.0.0 DSX Validity Frame (Shipped: 2026-08-28)
 
 **Phases completed:** 11 phases, 89 plans, 208 tasks

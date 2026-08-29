@@ -46,22 +46,38 @@ written profile.
   decidable (DQ, evidence, coherence, viz/seals/smells, narrative/code, analytical
   logic / stats extensions including decision replay and repro_lock, plus scored
   CHART-REVIEW and ADR-authorised suppressions).
-- **v2.0.0 DSX Validity Frame — SHIPPED 2026-08-28.** All 11 phases (6, 7, 8, 9, 10,
-  11, 11.1, 11.1.1, 11.2, 11.3, 12) complete — 89 plans, 208 tasks. Every phase is
-  verified and Nyquist-validated; cross-phase integration INTEGRATED; the milestone
-  audit reached `passed` (75/75 requirements accounted, 0 unsatisfied, 0 orphaned).
-  The full validity-frame surface now gates: `validity_frame:` and paradigm-aware
-  `inference:` blocks in `ANALYSIS-SPEC.yaml`; the `DSX-VAL-*` (estimand, unit triad,
-  dependence, identification, sampling frame, missingness, measurement), `DSX-INT-*`
-  (interference/SUTVA, triggered-vs-eligible dilution, novelty/primacy), `DSX-PAR-*`
-  (paradigm manifest + symmetric monitoring pair), `DSX-PRE-*` (pre-registered
-  inference plan, declared-vs-executed branch reconciliation), `DSX-ADM-*` (frequentist
-  procedure admissibility over `references/families.yaml`), the prescriptive-claim
-  layer (`DSX-CLM-*`/`DSX-COH-040`), and reporting-completeness / missing-data
-  discipline families. Phase 12 delivered the calibration corpus with a measured catch
-  rate and false-positive rate and `dsx stats --paradigm`. Package version is 2.0.0.
-  The finding catalogue holds 256 codes. Full detail archived under
+- **v2.0.0 DSX Validity Frame — SHIPPED 2026-08-28** (tag `v2.1.0`). All 11 phases
+  (6, 7, 8, 9, 10, 11, 11.1, 11.1.1, 11.2, 11.3, 12) complete — 89 plans, 208 tasks.
+  Every phase is verified and Nyquist-validated; cross-phase integration INTEGRATED;
+  the milestone audit reached `passed` (75/75 requirements accounted, 0 unsatisfied,
+  0 orphaned). The full validity-frame surface gates: `validity_frame:` and
+  paradigm-aware `inference:` blocks in `ANALYSIS-SPEC.yaml`; the `DSX-VAL-*`
+  (estimand, unit triad, dependence, identification, sampling frame, missingness,
+  measurement), `DSX-INT-*` (interference/SUTVA, triggered-vs-eligible dilution,
+  novelty/primacy), `DSX-PAR-*` (paradigm manifest + symmetric monitoring pair),
+  `DSX-PRE-*` (pre-registered inference plan, declared-vs-executed branch
+  reconciliation), `DSX-ADM-*` (frequentist procedure admissibility over
+  `references/families.yaml`), the prescriptive-claim layer (`DSX-CLM-*`/
+  `DSX-COH-040`), and reporting-completeness / missing-data discipline families.
+  Phase 12 delivered the calibration corpus with a measured catch rate and
+  false-positive rate and `dsx stats --paradigm`. Full detail archived under
   `.planning/milestones/v2.0.0-*`.
+- **v2.2 Analytic Surface — SHIPPED 2026-08-29** (tag `v2.2.0`). All 4 phases
+  (13, 14, 15, 16) complete — 20 plans. Every phase is verified (`threats_open: 0`)
+  and human-signed-off; the milestone audit reached `passed` (23/23 requirements,
+  10/10 cross-phase integration seams, Nyquist compliant, 0 unsatisfied/orphaned).
+  Delivered: four operator-facing router skills (`dsx-cohort`, `dsx-funnel`,
+  `dsx-root-cause`, `dsx-segment`) that point marketing work at existing gates
+  instead of restating them; a compounding-learnings search step and a portable
+  `DATA-DICTIONARY.md` for onboarding; CUPED as a declared, gated variance
+  adjustment (`DSX-EXP-070`, CRITICAL, post-treatment-covariate guard) and a
+  changing-denominator BI check (`DSX-MET-021`, HIGH), both under full D-05
+  primary-source citation discipline; and off-gate-path re-run verification via
+  the new `dsx-reproduce` skill (`DSX-REP-060`/`061`, both HIGH). Package version
+  is still 2.0.0 (v2.2 is additive, not a breaking contract change — see Version
+  rationale below). The finding catalogue now holds **260 codes**, grown
+  additively from 256 with the frozen Phase-12 snapshot unmutated. Full detail
+  archived under `.planning/milestones/v2.2-*`.
 
 ## Shipped Milestone: v2.0.0 DSX Validity Frame (shipped 2026-08-28)
 
@@ -95,11 +111,9 @@ paid-media budgets. The check set is weighted accordingly.
 required from plan (the `plan` gate point, at CRITICAL severity), so existing
 specs without it begin to block — a breaking contract change.
 
-## Queued Milestone: v2.2 Analytic Surface
+## Shipped Milestone: v2.2 Analytic Surface (shipped 2026-08-29)
 
-**Status:** Queued. Not started. Does not reopen Phases 7–12.
-
-**Goal:** Close the operator-surface gaps that Claude Code data-science packs
+**Goal (delivered):** Close the operator-surface gaps that Claude Code data-science packs
 cover with playbooks — cohort/funnel/root-cause skills, knowledge compounding,
 CUPED as a declared variance adjustment, a CSV-first start, file-first scripts,
 and off-gate re-run verification — without turning DSX into a prompt pack and
@@ -108,17 +122,29 @@ without computing statistics on the gate path.
 **Why after v2.0.0:** Brief §3 ranks risk reduction first. The comparison packs
 do not gate shared-budget interference, triggering dilution, or Bayesian
 continuous monitoring. Folding their playbooks into Phases 7–12 would delay
-that work. Entry condition is Phase 12 closed (`brief.md` §6.5). Skill-only
-drafts may begin after Phase 6; they do not gate v2.0.0.
+that work. Entry condition was Phase 12 closed (`brief.md` §6.5).
 
-**Target features:** Phases 13–16 in `.planning/ROADMAP.md`. Requirements
-REQ-P13-* … REQ-P16-* in `.planning/REQUIREMENTS.md` under **Queued**, outside
-the 53/53 v2.0.0 map. Comparison evidence: `.planning/research/SURFACE.md`.
+**Delivered features:** Phases 13–16, archived at `.planning/milestones/v2.2-ROADMAP.md`.
+All 23 requirements (REQ-P13-* … REQ-P16-*) satisfied — archived traceability at
+`.planning/milestones/v2.2-REQUIREMENTS.md`. Comparison evidence:
+`.planning/research/SURFACE.md`.
 
-**Anti-features (explicitly not queued):** Docker as a required runtime; MLflow
+**Anti-features held (not built, by design):** Docker as a required runtime; MLflow
 or Great Expectations on the gate path; notebooks as the shipped artifact;
 Shapiro–Wilk auto-switch; SEM/HLM/IRT; bundled education datasets; a batch
 path that skips the plan gate.
+
+**What did not ship as originally worded:** REQ-P15-04 named two defects
+(survivorship bias and changing denominator). A direct primary-source read
+(not just bibliographic corroboration) found the candidate survivorship-bias
+citation (Brown, Goetzmann, Ibbotson & Ross 1992) does not transfer to a
+declaration-checkable rule — it is a narrower, fund-performance-persistence
+result that never states a general "exclude non-survivors from the
+denominator" criterion. Per the requirement's own stated escape clause ("a
+code without a citation does not ship and remains in `brief.md` §6.5"), only
+the changing-denominator half shipped (`DSX-MET-021`, HIGH); survivorship bias
+stays an open, unpromoted item in `brief.md` §6.5. This was a loud, recorded
+decision (HUMAN-QUEUE HQ-8/HQ-13), not a silent scope cut.
 
 ## Requirements
 
@@ -140,15 +166,18 @@ path that skips the plan gate.
 - ✓ Prescriptive claim layer — `prescriptive` claim type + coherence ladder, causal-verb lexicon tiers, `decision.revisit_when` (`DSX-COH-040`), amendment counting on the locked plan, self-reported-fields view — Phase 11.2 (REQ-P11.2-01 … -07) — v2.0.0
 - ✓ Reporting completeness and missing-data discipline — multiplicity over reported tests, examined-vs-reported gap, missingness method vocabulary + single-imputation denial, exclusion rules under the plan-time lock — Phase 11.3 (REQ-P11.3-01 … -07) — v2.0.0
 - ✓ Calibration — full known-bad corpus with measured catch rate and false-positive rate, `dsx stats --paradigm`, gated-backlog re-evaluation — Phase 12 (REQ-P12-01 … REQ-P12-05) — v2.0.0
+- ✓ Four router skills (`dsx-cohort`, `dsx-funnel`, `dsx-root-cause`, `dsx-segment`) filling `ANALYSIS-SPEC.yaml` fields against existing gates, a hypothesis register, What/So What/Now What narrative shape, advisory-only tier routing, and a `scripts/*.py` entrypoint preference — Phase 13 (REQ-P13-01 … REQ-P13-06) — v2.2
+- ✓ Compounding-learnings search, `DATA-DICTIONARY.md` onboarding artifact, opt-in research-domain AI-assistance disclosure, CSV-first slash aliases, and a documented file-drop-hook skip — Phase 14 (REQ-P14-01 … REQ-P14-06) — v2.2
+- ✓ CUPED as a closed-vocabulary variance adjustment with a post-treatment-covariate gate check (`DSX-EXP-070`), a changing-denominator BI check (`DSX-MET-021`), an optional APA research table, and a Shapiro–Wilk auto-switch prohibition — Phase 15 (REQ-P15-01 … REQ-P15-07; REQ-P15-04 satisfied as-worded via its own escape clause — see Shipped Milestone note below) — v2.2
+- ✓ Off-gate-path reproduce verification (`dsx-reproduce` skill, `DSX-REP-060`/`061`), corpus `protocol_adherence` tagging, and a static no-entrypoint-execution guard — Phase 16 (REQ-P16-01 … REQ-P16-04) — v2.2
 
 ### Active
 
-(None — all v2.0.0 requirements (REQ-P6-* … REQ-P12-*) shipped and validated. The
-full v2.0.0 requirement set with final traceability is archived at
-`.planning/milestones/v2.0.0-REQUIREMENTS.md`.) Queued v2.2 requirements
-(REQ-P13-* … REQ-P16-*) are recorded in `.planning/REQUIREMENTS.md` under
-**Queued — Milestone v2.2** and are not Active until that milestone is started
-with `/gsd-new-milestone`.
+(None — all v2.0.0 requirements (REQ-P6-* … REQ-P12-*) and all v2.2 requirements
+(REQ-P13-* … REQ-P16-*) shipped and validated. Full requirement sets with final
+traceability are archived at `.planning/milestones/v2.0.0-REQUIREMENTS.md` and
+`.planning/milestones/v2.2-REQUIREMENTS.md`.) No milestone is currently queued;
+the next one starts with `/gsd-new-milestone`.
 
 ### Out of Scope
 
@@ -159,7 +188,8 @@ with `/gsd-new-milestone`.
 - Survival, time-series and spatial estimation *methods* — temporal/spatial dependence are declared types; the methods are out
 - Reading a data warehouse from a gate — breaks the determinism doctrine
 - A catalogue of every named statistical test — families, not tests
-- Operator-surface playbooks, CUPED, compounding, reproduce-skill — **queued as v2.2** after Phase 12, not this milestone. Not a rejection. See Queued Milestone above.
+- The Unified Framework playbook's `r>0.3` heuristic as a CUPED admissibility rule — not admissible under D-05 (`SURFACE.md` §8); Phase 15 cites the WSDM primary source directly instead.
+- Ratio-metric dilution (Deng & Hu 2015, Formula (3)) as a "changing-denominator" check — permanently out of scope for the declaration-only gate (no closed-form scalar, D-01/D-02); Phase 15's `DSX-MET-021` is scoped to a different defect (Simpson's-paradox-style allocation-rate shifts, Crook et al. 2009) and must not be confused with it.
 
 ## Context
 
@@ -173,14 +203,19 @@ with `/gsd-new-milestone`.
   - `DSX-EXP-060` already fires on undeclared interim looks under a fixed horizon.
   - `DSX-EXP-020/021` already reconciles `randomization_unit` vs `analysis_unit`.
   - `PEEKING_POLICIES` in `dsx/spec.py` already covers the stopping-rule concept.
-  - `VARIANCE_ADJUSTMENTS` overlaps the proposed `dependence.method_family_required`.
-    On 2026-08-26 the set is `{cluster_robust, delta_method, bootstrap_cluster,
-    mixed_effects}` — CUPED is absent; adding it is queued Phase 15, not a v2.0.0
-    vocabulary change.
-  - `dsx explain` and `dsx stats` do not exist yet — new subcommands.
-  - No `dsx/frame/` package; `references/families.yaml` absent (correct until M4).
+  - `VARIANCE_ADJUSTMENTS` overlaps `dependence.method_family_required`. As of
+    v2.2, the set is `{cluster_robust, delta_method, bootstrap_cluster,
+    mixed_effects, cuped}` — CUPED landed in Phase 15 (REQ-P15-01).
+  - `dsx explain` and `dsx stats` shipped in v2.0.0; `dsx-reproduce` (skill, not
+    a subcommand) shipped in v2.2 Phase 16, re-running `reproducibility.entrypoint`
+    off the gate path and writing `REPRO-REPORT.md`.
+  - `dsx/frame/` package and `references/families.yaml` shipped in v2.0.0 (M2a/M4).
   - Analytic-surface comparison against five Claude Code packs: `.planning/research/SURFACE.md`
     (2026-08-26). That file does not authorise finding codes.
+  - The capability now registers 14 skills (v2.2 added `dsx-cohort`, `dsx-funnel`,
+    `dsx-root-cause`, `dsx-segment`, `dsx-reproduce`); the finding catalogue holds
+    260 codes (v2.0.0 shipped 256; Phase 15 added `DSX-EXP-070`/`DSX-MET-021`,
+    Phase 16 added `DSX-REP-060`/`061`).
 
 ## Constraints
 
@@ -213,6 +248,8 @@ with `/gsd-new-milestone`.
 | **M-07** Existing `suppressions[]` with its authority requirement is the grandfather path for pre-v2.0.0 specs | Zero new code, and the ADR/SPEC authority requirement makes grandfathering deliberate and attributable rather than silent | Delivered Phase 6 — README states authority as a requirement (DSX-SPEC-070) and the "a frame that lies passes" known limit. Human-validated (UAT 2) |
 | **M-08** D-05 citation enforcement is automated in M1 via `scripts/gen-finding-catalogue.py` | D-05 says "if velocity pressure arrives, cut checks, never this" — an unenforced constraint is the first thing velocity pressure removes. It was the only major constraint nothing checked | Delivered Phase 6 — see D-05 |
 | **M-09** `dependence.method_family_required` reuses `VARIANCE_ADJUSTMENTS` | Same reasoning as M-02: one concept, one vocabulary. Consequence: the field holds a single member, so the brief's example `cluster_robust_or_mixed` is not expressible — carried as an open item for the M2a discuss rather than silently modelled as a disjunction | Delivered Phase 7 — the dependence check reads the reused vocabulary; resolved in M2a discuss |
+| **v2.2-01** REQ-P15-04's survivorship-bias half ships unminted; only the changing-denominator half (`DSX-MET-021`) ships | A direct primary-source read of the candidate citation (Brown, Goetzmann, Ibbotson & Ross 1992) found it does not transfer to a declaration-checkable "denominator must exclude non-survivors" rule — it is a narrower, fund-performance-persistence-specific result. D-05 and brief §6.5: an honest non-promotion beats a stretched citation | Delivered Phase 15 — `DSX-MET-021` (HIGH) ships citing Crook, Frasca, Kohavi & Longbotham (2009) §6; survivorship bias stays an open item in `brief.md` §6.5. Decided via direct-read (not corroboration-only), recorded HUMAN-QUEUE HQ-8/HQ-13 |
+| **v2.2-02** `DSX-REP-060`/`DSX-REP-061` mint in Phase 16, not Phase 15 | Keeps the `dsx-reproduce` skill and its enforcing gate check in one phase (no window where the skill exists but nothing enforces it). Phase 15's codes all carry D-05 statistical citations; these are engineering-hygiene checks (report missing / numbers don't overlap) with none — mixing the two would blur the citation discipline | Delivered Phase 16 — both HIGH, in `dsx/checks/repro.py`; catalogue moved 256→258 here, then 258→260 in Phase 15. Decided by Architect+Auditor persona round, unanimous, recorded HUMAN-QUEUE HQ-11 |
 
 ## Non-goals
 
@@ -231,10 +268,6 @@ cheap, structured and repeatable, so it actually happens. To be stated in the RE
 
 This document evolves at phase transitions and milestone boundaries.
 
-**Queued work is not a phase transition.** Adding v2.2 Analytic Surface to the
-roadmap (2026-08-26) does not move v2.0.0 requirements, does not close Phase 6,
-and does not authorise implementation of Phases 13–16 until Phase 12 closes.
-
 **After each phase transition** (via `/gsd-transition`):
 1. Requirements invalidated? → Move to Out of Scope with reason
 2. Requirements validated? → Move to Validated with phase reference
@@ -249,5 +282,5 @@ and does not authorise implementation of Phases 13–16 until Phase 12 closes.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-08-28 — v2.0.0 DSX Validity Frame milestone complete and
-shipped; v2.2 Analytic Surface queued next (queued 2026-08-26, not yet started)*
+*Last updated: 2026-08-29 — v2.2 Analytic Surface milestone complete and shipped
+(tag `v2.2.0`). No milestone is currently queued.*

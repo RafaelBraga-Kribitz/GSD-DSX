@@ -2,77 +2,77 @@
 gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: Analytic Surface
-current_phase: 15
-current_phase_name: cuped-and-bi-declaration-checks
-status: executing
-stopped_at: "S5-4 COMPLETE — /gsd-audit-milestone v2.2 → status **passed** (23/23 req satisfied, 4/4 phases verified, 10/10 cross-phase integration seams WIRED, Nyquist compliant, 0 unsatisfied/orphaned). Written to .planning/v2.2-MILESTONE-AUDIT.md. Unblocked despite S5-2 being operator-gated because the audit-milestone workflow reads only VERIFICATION/SUMMARY/REQUIREMENTS + spawns an integration checker — it never reads HUMAN-QUEUE sign-offs, so pending HQ-9/10/12/14 do not gate it. Orchestrator re-gate (brief §5, real cmds): sh scripts/check.sh all passed Ran 1312 OK on a clean tree (4 gitignored DECISIONS.jsonl confirmed absent first); catalogue 260 = frozen snapshot 256 + comm set-identity exactly {DSX-EXP-070,MET-021,REP-060,REP-061}; 14 skills conformant; VALIDATION 4/4 status:validated+nyquist_compliant:true. 3-source cross-ref: 23/23 VERIFICATION passed; REQ-P13-01 SUMMARY-frontmatter gap (13-01/13-02 omit requirements: key) → mechanical partial → manually verified satisfied; all 23 REQUIREMENTS.md still [ ]/Queued (matrix=satisfied/update-checkbox; S5-5 transition resolves). gsd-integration-checker (haiku) PASS 10/10 corroborates (corrected its inaccurate 'REQUIREMENTS.md reworded' claim — line 352 byte-unchanged). DoD 'milestone audit run and passed' condition now MET. RESUME at S5-2 (drain HUMAN-QUEUE) = OPERATOR-GATED (HQ-9/10/12/14 SECURITY.md sign-offs + per-phase UAT; HQ-11/13 non-blocking D-06 veto). S5-2/5/6 are ALL operator-gated — a firing that finds them still all-blocked should log+hold per brief §9, not spin. Housekeeping: active LEDGER Log ~23 entries > §5 ~20, trim oldest ~5 to LOOP-LEDGER-ARCHIVE.md pending. See LOOP-LEDGER.md Log + .planning/v2.2-MILESTONE-AUDIT.md."
-last_updated: "2026-08-29T09:38:00.000Z"
+status: completed
+stopped_at: "S5-6 SHIPPED — merged gsd/v2.2.0-analytic-surface into main (c0656b1, --no-ff, explicit branch name), tagged v2.2.0, pushed. /gsd-complete-milestone archival done (MILESTONES.md entry, PROJECT.md full evolution review, ROADMAP.md reorganized, REQUIREMENTS.md archived+removed, RETROSPECTIVE.md updated). Milestone fully closed."
+last_updated: "2026-08-29T15:10:00.000Z"
 last_activity: 2026-08-29
-last_activity_desc: "S5-4 complete — /gsd-audit-milestone v2.2 = PASSED (23/23 req, 4/4 phases, 10/10 integration seams, Nyquist compliant). Orchestrator re-gate: check.sh Ran 1312 OK clean tree; catalogue 260=256+4 set-identity; 14 skills conformant. Report: .planning/v2.2-MILESTONE-AUDIT.md. DoD milestone-audit-passed now MET. Resume at S5-2 (operator-gated drain); S5-2/5/6 all operator-gated."
+last_activity_desc: "v2.2 Analytic Surface shipped to main, tagged v2.2.0, and archived. HUMAN-QUEUE HQ-15 (ship approval) answered and closed."
 progress:
   total_phases: 4
   completed_phases: 4
-  total_plans: 6
-  completed_plans: 6
-  percent: 97
+  total_plans: 20
+  completed_plans: 20
+  percent: 100
+current_phase: null
+current_phase_name: null
 ---
 
 # Project state
 
-**Status:** Phase 15 COMPLETE (S4-1..S4-5) — **all four milestone phases (13,14,16,15) done; now in S5 close-out.** S4-5: secure = **SECURED** `threats_open:0` (23/23 closed, asvs1 L1 short-circuit, orchestrator re-gate); validate = **nyquist_compliant:true** 0 gaps (7/7 REQ-P15-01..07 COVERED, P15-04 PARTIAL consented). Coverage anchor `tests/test_phase15_bi_checks.py` (20 tests) crystallised. Reconcile find: 2 `explain` full-suite failures root-caused to a stray gitignored root `DECISIONS.jsonl` (CWD-isolation gap, not a P15 defect, not committed) — removed the 4 gitignored ledgers, standing note added to HUMAN-QUEUE. Full suite `sh scripts/check.sh` all passed, **Ran 1312 tests OK** (1292→+20) on a clean tree. Phase-15 security sign-off + UAT queued HQ-14; D-06 veto HQ-13. Next: **S5-1** (`/gsd-audit-uat`).
-**Progress:** [███████████████████░] v2.2 — 4/4 phase ceremonies complete (13, 14, 16, 15); S5 close-out pending; order 13 → 14 → 16 → 15
-**Predecessor:** [████████████████████] v2.0.0 SHIPPED 2026-08-28 — 11/11 phases, 89 plans, 208 tasks, tag `v2.1.0`, merged to `main`. Full record: `.planning/MILESTONES.md`; artifacts archived under `.planning/milestones/v2.0.0-*` (phases, ROADMAP, REQUIREMENTS, MILESTONE-AUDIT, loop ledgers).
-
-**Locked decisions (v2.2, carried from planning):** DQ = profile runner + hermetic gates; Glyph = hermetic svg_sha256 only (no MCP dep); forbidden claims = universal pack + optional phase YAML; repro_lock = ARS-style honest-null (not byte-replay); decision replay = structured thresholds only; suppressions = ADR/SPEC authority required (unknown codes → exit 2).
+**Status:** v2.2 Analytic Surface SHIPPED — tag `v2.2.0`, merged to `main`
+**Progress:** [████████████████████] v2.2 — 4/4 phases, S5 close-out complete (S5-1..S5-6 all done)
+**Predecessor:** [████████████████████] v2.0.0 SHIPPED 2026-08-28 — 11/11 phases, 89 plans, 208 tasks, tag `v2.1.0`, merged to `main`. Full record: `.planning/MILESTONES.md`; artifacts archived under `.planning/milestones/v2.0.0-*`.
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-08-13; Key Decisions table there is the full decision log)
+See: .planning/PROJECT.md (updated 2026-08-29 — v2.2 milestone complete; Key Decisions table there is the full decision log)
 
 **Core value:** Gate analytical work on validity before the data is touched.
-**Current focus:** S5 close-out — all four phase ceremonies (13,14,16,15) complete; next S5-1 `/gsd-audit-uat` cross-phase sweep
+**Current focus:** Awaiting the next milestone. No milestone is currently queued — start one with `/gsd-new-milestone`.
 
 ## Current Position
 
-Phase: 15 (cuped-and-bi-declaration-checks-new-codes-d-05) — **CEREMONY COMPLETE (S4-1..S4-5)**. All four milestone phases done. Now at **S5 close-out** (S5-1 `/gsd-audit-uat` → S5-2 drain HUMAN-QUEUE → S5-3 extract-learnings → S5-4 audit-milestone → S5-5 complete-milestone → S5-6 ship). Phases 13/14/16 complete.
-S4-2: 6-plan set (15-01..06) authored by `gsd-planner` (opus); independent `gsd-plan-checker` (opus, §3 override of profile haiku) verdict **REVISE (1 blocker) → 1 repair → PASS**. Blocker: 15-02 Task-1 verify's `ast.get_source_segment` scan included the docstring → tripped its own `period_comparisons`-not-in-body assert; fixed by scoping the negative scan to code (docstring excluded by node identity), re-verified empirically (OLD fails / NEW passes on a faithful synthetic impl). Orchestrator re-verified all PASS claims (§5): coverage union == exactly {REQ-P15-01..07}; single-writer waves (`spec.py`→15-01, `metrics.py`→15-02, `design.py`→15-04; every depends_on → earlier wave); trap #12 ordering; 2 mints (EXP-070 CRITICAL 15-04, MET-021 HIGH 15-02, disjoint from MET-020); D-08 additive + D-09 exact-code allowlist confined to 15-06; catalogue-staleness window safe. **S4-3 wave plan:** wave 1 = 15-01/02/03, wave 2 = 15-04, wave 3 = 15-05/06 (performs the 2 mints + additive 258→260 rebaseline). Artifacts `15-0{1..6}-PLAN.md`. D-06 veto HQ-13; HQ-9/10/12 (phase security sign-offs + UAT) + HQ-11 (P16 veto) open, all non-blocking to S5-2.
-Last activity: 2026-08-29 — S4-5 Phase 15 secure (SECURED, threats_open:0) + validate (nyquist_compliant, 7/7 COVERED); S4 fully complete, all 4 phases done; full suite Ran 1312 tests OK (clean tree); resume at S5-1 close-out
-
-Progress: [██████████] Phase 15 — 5 of 5 ceremony steps done (discuss, plan, execute, review/verify, secure/validate)
-
-**Loop control:** the autonomous ceremony drives this milestone. Contract: `.planning/LOOP-BRIEF.md`; backlog + gates: `.planning/LOOP-LEDGER.md`; human-only items: `.planning/HUMAN-QUEUE.md`.
+Phase: — (no active milestone)
+Plan: —
+Status: Between milestones
+Last activity: 2026-08-29 — v2.2 Analytic Surface shipped (tag `v2.2.0`, merge `c0656b1` into `main`) and archived under `.planning/milestones/v2.2-*`
 
 ## Performance Metrics
 
-No v2.2 plans executed yet. v2.0.0 velocity is archived with its milestone artifacts.
+v2.2 velocity is archived with its milestone artifacts (`.planning/milestones/v2.2-*`). v2.0.0 velocity is archived under `.planning/milestones/v2.0.0-*`.
 
 ## Accumulated Context
 
 ### Decisions
 
-Full decision log: PROJECT.md Key Decisions. v2.2-specific decisions are recorded here and in each phase's CONTEXT.md as the loop reaches them. **First codes minted this milestone: Phase 16 S3-1 (D-06) assigns `DSX-REP-060`/`DSX-REP-061` (both HIGH) for the REQ-P16-02 reproduce-report gate check** — persona round unanimous Option A; catalogue moves 256→258 additively (D-08); ROADMAP "only Phase 15 extends the catalogue" amended (D-07); veto window HQ-11. Full rationale: `16-CONTEXT.md` D-01..D-11.
+Full decision log: PROJECT.md Key Decisions. v2.2's phase-level decisions are archived in each phase's `CONTEXT.md` under `.planning/milestones/v2.2-phases/`. Two new finding codes minted this milestone beyond Phase 16's REP-060/061 (recorded when queued, HQ-11): Phase 15 minted `DSX-EXP-070` (CRITICAL) and `DSX-MET-021` (HIGH), both accepted without veto at HQ-13. Catalogue moved 256 → 260 additively across the milestone; the frozen Phase-12 snapshot (256) was never mutated.
 
-Ordering (see LOOP-LEDGER "Ordering rationale"): phases run 13 → 14 → 16 → 15, not numeric order — every declared dependency still holds. Phase 15 runs last because it is the only phase minting new finding codes, hence the only one carrying a D-05 human-read gate and a D-06 irreversible-numbering veto; its citation evidence pack is filed early as HQ-8 so the operator can answer asynchronously.
+**Ship-tooling lesson (recorded for the next milestone's S5-6):** this repo carries several stale `gsd/*` branches from prior milestones (`gsd/v1.1.0-milestone`, `gsd/v2.0.0-dsx-validity-frame`, `gsd/v2.0.0-milestone`). `/gsd-complete-milestone`'s `handle_branches` step auto-detects "the milestone branch" via `git branch --list "gsd/*" | head -1` (alphabetically first), which would silently pick the wrong branch. v2.2 shipped by an explicit, hand-verified `git merge --no-ff gsd/v2.2.0-analytic-surface` into `main` instead of trusting that auto-detect — verified first on a throwaway branch (full suite + `scripts/check.sh` green) before touching `main`. Future milestones should do the same, and ideally delete a shipped milestone's branch (locally and on `origin`) once merged, to shrink this stale-branch list.
 
 ### Pending Todos
 
-None active for v2.2.
+None. No milestone is active.
 
 ### Blockers/Concerns
 
-None open. HQ-8 (Phase 15 D-05 citation evidence pack) is filed early and is non-blocking — it only gates close-out (S5-2).
+None open.
 
 ## Deferred Items
 
-Carried forward from v2.0.0 close (closeout_type=override_closeout) — captured future ideas, not gaps:
+Carried forward from v2.0.0 close (closeout_type=override_closeout), still open — captured future ideas, not gaps:
 
 | Category | Item | Status | Deferred At |
 |----------|------|--------|-------------|
-| seed | SEED-001-deepen-dsx-explore-data-eda-protocol | dormant — carry into v2.2 | 2026-08-28 |
-| seed | SEED-002-grow-data-profile-hermetic-eda-artifacts | dormant — carry into v2.2 | 2026-08-28 |
+| seed | SEED-001-deepen-dsx-explore-data-eda-protocol | dormant — carry into next milestone | 2026-08-28 |
+| seed | SEED-002-grow-data-profile-hermetic-eda-artifacts | dormant — carry into next milestone | 2026-08-28 |
 
 ## Session Continuity
 
-Last session: 2026-08-29T06:30Z (autonomous firing)
-Stopped at: S4-2 complete — Phase 15 planned; 6-plan set (15-01..06) passes the plan-checker gate (REVISE→1 repair→PASS). Plans authored + gated + orchestrator-re-verified; ledger/state/queue synced. No code committed yet (S4-3 executes the plans). D-06 veto HQ-13 stays open (non-blocking).
-Resume file: None — the next firing takes S4-3 from LOOP-LEDGER.md (execute all Phase 15 plans). **S4-3 wave plan:** wave 1 = 15-01 (`cuped`→VARIANCE_ADJUSTMENTS + `CUPED_COVARIATE_TIMINGS`) / 15-02 (mint MET-021 HIGH in `metrics.py`) / 15-03 (APA template + Shapiro negative-assertion tests); wave 2 = 15-04 (mint EXP-070 CRITICAL in `design.py` + θ/ρ² ref in `mathx.py`); wave 3 = 15-05 (extend good fixture, silent at every threshold) / 15-06 (regen catalogue → 260 + D-08 additive rebaseline + D-09 exact-code allowlist). **Honour the traps at execute:** (1) MET-021 reads ONLY `results.cohort_comparisons`, proven disjoint from MET-020 both directions; (2) declaration-only, no pandas/scipy/numpy on the gate path, CUPED θ/ρ ref impl in `mathx.py` never imported by the check; (3) additive rebaseline in `test_finding_catalogue_invariant.py` only (`_EXPECTED_TOTAL` 258→260, `_MINTED_CODES` += EXP-070,MET-021; frozen snapshot @256 NOT mutated); (4) D-09 exact-code allowlist not prefix; (5) do NOT run `gen-finding-catalogue.py --check`/the invariant in 15-02/04/05 (catalogue intentionally stale until 15-06 regenerates once). 3 non-blocking checker nits carried (see LOOP-LEDGER-ARCHIVE.md#S4-2; nit1 already fixed). Model routing: S4-3 executor = profile default (sonnet-class), medium (brief §3); orchestrator re-runs every plan's own verify block (§5).
+Last session: 2026-08-29 (interactive session, ship + close-out)
+Stopped at: v2.2 fully shipped and archived. Nothing in-flight.
+Resume file: None — the next unit of work is starting a new milestone with `/gsd-new-milestone`, or promoting SEED-001/SEED-002 from the Deferred Items backlog.
+
+## Operator Next Steps
+
+- Start the next milestone with `/gsd-new-milestone`, or
+- Promote SEED-001 / SEED-002 from Deferred Items into a scoped milestone
