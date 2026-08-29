@@ -33,13 +33,14 @@ are conventions, never thresholds.
   `current_phase: 17`, progress 0/4) and `gsd-tools query init.milestone-op`
   resolves it (4 phases, 0 complete); `.planning/phases/` is empty (v2.2 dirs
   archived). Gate: command output pasted. → evidence in LOOP-LEDGER-ARCHIVE.md `## S0-1`
-- [ ] S0-2 Re-verify the inherited scope against the live tree before planning on
+- [x] S0-2 Re-verify the inherited scope against the live tree before planning on
   it: per-requirement verdict table (still-valid / already-satisfied /
   contradicted) written to `.planning/v2.3-SCOPE-RECHECK.md`. Key premises to
   re-confirm: `fisher_exact` still at `dsx/checks/stats.py:65` and `boschloo_exact`
   absent from `NONPARAMETRIC_TESTS`; `QUESTION_TYPES` still the closed 5-key list;
   the `time_to_event` fallthrough still unconditional; live catalogue count
   re-measured (do NOT assume 260). Gate: the recheck file with evidence.
+  → `.planning/v2.3-SCOPE-RECHECK.md`: all 5 premises CONFIRMED at locators, count re-measured = 260, all 22 reqs still-valid.
 - [ ] S0-3 File the **Phase 18 D-05 citation evidence pack** to HUMAN-QUEUE
   (correlation + agreement codes and effect-size band sources: Cohen 1960/1968,
   Fleiss 1971, Hayes & Krippendorff 2007 worked value, Shrout & Fleiss 1979,
@@ -132,5 +133,6 @@ are conventions, never thresholds.
 (append one line per firing: `YYYY-MM-DDTHH:MMZ | unit | outcome | evidence`.
 Keep the most recent ~15–20; archive older entries to `LOOP-LEDGER-ARCHIVE.md`.)
 
+2026-08-29T22:10Z | S0-2 | PASS — inherited scope re-verified against live tree; `.planning/v2.3-SCOPE-RECHECK.md` written. All 5 load-bearing premises CONFIRMED at locators: fisher_exact fallback at stats.py:65; boschloo_exact absent from NONPARAMETRIC_TESTS (stats.py:23-26); doc side still names Boschloo (test-selection.md:10 + [^1] Lydersen-Fagerland-Laake 2009) — divergence genuinely live; QUESTION_TYPES closed 5-key (spec.py:22-28) + estimand_kind absent everywhere; time_to_event fallthrough unconditional (stats.py:128-129). Catalogue RE-MEASURED = 260 codes (matches checked-in finding-codes.md; = REQ-P17-05 baseline). All 22 reqs still-valid, none satisfied/contradicted — execution, not re-scoping. Next = S0-3. | .planning/v2.3-SCOPE-RECHECK.md
 2026-08-29T22:00Z | S0-1 | PASS — GSD state points at v2.3: STATE.md frontmatter milestone v2.3 / current_phase 17 / progress 0/4; `node gsd-tools.cjs query init.milestone-op` resolves (phase_count 4, completed_phases 0, all_phases_complete false, exit 0); .planning/phases/ empty (only .gitkeep, v2.2 dirs archived). Note: gsd-tools not on Bash PATH — invoke via `node ~/.claude/gsd-core/bin/gsd-tools.cjs`. Next = S0-2. | LOOP-LEDGER-ARCHIVE.md `## S0-1`
 2026-08-29T21:30Z | milestone-open | v2.3 opened by operator direction in an interactive session: scope researched (6-agent workflow: 2 repo mappers, 3 domain researchers, 1 adversarial critic — journal preserved), .planning/research/V2.3-V2.4-SCOPE.md + REQUIREMENTS.md (REQ-P17-01..P20-04) + ROADMAP.md (Phases 17-20 active, 21-24 queued) written; STATE.md repointed (v2.3, phase 17, 0/4); v2.2 loop artifacts archived to .planning/milestones/v2.2-LOOP-*, v2.2-HUMAN-QUEUE.md; this ledger + LOOP-BRIEF + HUMAN-QUEUE rewritten for v2.3; branch gsd/v2.3.0-test-catalog created from main; firing script repointed + usage-limit backoff added (weekly reset Wednesday 13:00 UTC = 10:00 São Paulo; 5h-window = 60-min hold). Operator directive of record: token limits WILL hit this week — firings log one line and stop on limit errors, the wrapper owns pacing and self-resumes. Next = S0-1. | .planning/research/V2.3-V2.4-SCOPE.md; scripts/run-ceremony-firing.ps1
