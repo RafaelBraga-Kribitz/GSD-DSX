@@ -17,6 +17,7 @@ from ..mathx import (
     srm_test,
 )
 from ..spec import (
+    CUPED_COVARIATE_TIMINGS,
     IDENTIFICATION_STRATEGIES,
     as_number,
     get,
@@ -82,6 +83,7 @@ def check(spec: dict, *, strict: bool = False) -> Report:
     _check_multiplicity(design, spec, report, strict=strict)
     _check_peeking(design, spec, report)
     _check_identification(design, spec, report)
+    _check_cuped(design, spec, report)
     return report
 
 
@@ -603,3 +605,63 @@ def _check_identification(design: dict, spec: dict, report: Report) -> None:
             ),
             where="spec.design.identification",
         )
+
+
+# ── CUPED covariate timing ───────────────────────────────────────────────────
+
+
+def _check_cuped(design: dict, spec: dict, report: Report) -> None:
+    """CUPED is only valid with a strictly pre-experiment covariate.
+
+    Citation: Deng, A., Xu, Y., Kohavi, R. & Walker, T. (2013), "Improving the
+    Sensitivity of Online Controlled Experiments by Utilizing Pre-Experiment Data",
+    WSDM '13, pp. 123-132, DOI 10.1145/2433396.2433413 — the adjustment covariate
+    must be independent of the treatment effect, i.e. measured strictly before
+    treatment. NOT the Unified Framework playbook snippet. A post-treatment covariate
+    reintroduces exactly the bias CUPED exists to remove.
+
+    Structural criterion: runs only when normalize(design.variance_adjustment) ==
+    "cuped". Fires DSX-EXP-070 (CRITICAL) when design.cuped.covariate_timing is not
+    "pre_experiment" (a recognised "post_treatment", an unrecognised value, or an
+    absent one); "pre_experiment" → report.ok. Computes nothing — the θ/ρ/variance
+    reference arithmetic lives in dsx/mathx.py and is imported by no check.
+    """
+    if not design:
+        return
+    adjustment = normalize(design.get("variance_adjustment", ""))
+    if adjustment != "cuped":
+        return
+    raw = get(design, "cuped.covariate_timing")
+    timing = normalize(raw) if not is_blank(raw) else ""
+    if timing == "pre_experiment":
+        report.ok("CUPED covariate is declared pre-experiment")
+        return
+    if timing in CUPED_COVARIATE_TIMINGS:
+        detail = (
+            "design.cuped.covariate_timing is declared 'post_treatment'. A covariate measured "
+            "after treatment is affected by the treatment, so adjusting on it biases the effect "
+            "estimate — the opposite of what CUPED is for."
+        )
+    elif not timing:
+        detail = (
+            "design.cuped.covariate_timing is absent. CUPED requires a covariate measured "
+            "strictly before treatment; an undeclared timing cannot be assumed pre-experiment."
+        )
+    else:
+        detail = (
+            f"design.cuped.covariate_timing is {raw!r}, not a recognised covariate timing "
+            f"(expected one of {sorted(CUPED_COVARIATE_TIMINGS)}). Only 'pre_experiment' is valid."
+        )
+    report.add(
+        "DSX-EXP-070",
+        "CRITICAL",
+        "CUPED declared with a covariate that is not pre-experiment",
+        detail=detail,
+        remedy=(
+            "Use a covariate measured strictly before treatment (e.g. the same metric from the "
+            "pre-experiment period) and declare design.cuped.covariate_timing: pre_experiment; "
+            "otherwise drop the CUPED adjustment."
+        ),
+        where="spec.design.cuped.covariate_timing",
+        declared_timing=str(raw),
+    )
