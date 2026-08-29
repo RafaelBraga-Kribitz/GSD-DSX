@@ -13,7 +13,7 @@ a suppression or a reference in a review stays valid across versions.
 **Gate thresholds.** `plan` and `execute` block at CRITICAL; `verify` and
 `ship` block at HIGH.
 
-**Total: 256 codes.**
+**Total: 258 codes.**
 
 ## Contract structure — `DSX-SPEC-*`
 
@@ -305,6 +305,8 @@ Seeds, environment, data identity, entrypoint, repro_lock.
 | `DSX-REP-051` | MEDIUM | repro_lock is null (honest opt-out) |
 | `DSX-REP-052` | HIGH | repro_lock incomplete (schema_version / stochasticity_declaration) |
 | `DSX-REP-053` | MEDIUM | repro_lock.dsx_version missing or mismatched |
+| `DSX-REP-060` | HIGH | Reproduce report declared (`reproducibility.reproduce_report`) but `REPRO-REPORT.md` is missing — the reproduced verdict is unsubstantiated. |
+| `DSX-REP-061` | HIGH | `REPRO-REPORT.md` present but its declared re-run numbers do not overlap `results.tests` — the analysis does not reproduce. |
 
 ## Data quality — `DSX-DQ-*`
 

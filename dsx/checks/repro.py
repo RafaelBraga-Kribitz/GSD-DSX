@@ -8,6 +8,8 @@ and a pointer to the code that produced the numbers.
 
 from __future__ import annotations
 
+import math
+import re
 from pathlib import Path
 
 from ..findings import Report
@@ -37,6 +39,7 @@ def check(
     _check_notebook_hygiene(repro, report)
     if strict:
         _check_repro_lock(spec, repro, report)
+        _check_reproduce_report(spec, repro, report, phase_dir)
     return report
 
 
@@ -277,3 +280,109 @@ def _check_repro_lock(spec: dict, repro: dict, report: Report) -> None:
         )
     else:
         report.ok(f"repro_lock present (dsx_version={dsx_version})")
+
+
+def _check_reproduce_report(
+    spec: dict, repro: dict, report: Report, phase_dir: "str | None"
+) -> None:
+    """Declaration-only reproduce-report check (DSX-REP-060/061, strict-only).
+
+    The DAAF "reproduced" verdict, stolen onto the gate as a pure declaration
+    check: when the spec opts in via ``reproducibility.reproduce_report``, assert
+    that the named ``REPRO-REPORT.md`` EXISTS (else DSX-REP-060) and that its
+    declared lead-metric number OVERLAPS ``results.tests`` (else DSX-REP-061).
+    The gate re-runs nothing, imports no tabular library, and never executes the
+    entrypoint — the ``dsx-reproduce`` skill produces the report off the gate
+    path; this check only reads it.
+
+    Opt-in and strict-only exactly like ``_check_repro_lock``: an absent field or
+    an empty ``results.tests`` is silent, and an honest ``status: skipped`` /
+    ``unable`` short-circuits DSX-REP-061 so a missing interpreter is not a gate
+    exit 1 (the analog of DSX-REP-051's null-lock opt-out). The overlap is judged
+    on the numeric block alone — never a PASS/FAIL verdict line — so a report
+    whose status claims success but whose numbers disagree still fails.
+    """
+    declared = repro.get("reproduce_report")
+    if is_blank(declared):
+        return  # opt-in: keyed on the field, never on entrypoint-presence
+
+    tests = items(section(spec, "results"), "tests")
+    if not tests:
+        return  # nothing declared to reproduce — mirrors _check_repro_lock
+
+    # Locate the report exactly as _check_code_pointer locates the entrypoint.
+    if phase_dir:
+        candidate = Path(phase_dir) / str(declared)
+        alt = Path(str(declared))
+        path = candidate if candidate.exists() else (alt if alt.exists() else None)
+    else:
+        alt = Path(str(declared))
+        path = alt if alt.exists() else None
+
+    if path is None:
+        report.add(
+            "DSX-REP-060",
+            "HIGH",
+            "Reproduce report declared (`reproducibility.reproduce_report`) but "
+            "`REPRO-REPORT.md` is missing — the reproduced verdict is unsubstantiated.",
+            detail=f"Declared reproduce_report {str(declared)!r}; no such file found.",
+            remedy=(
+                "Run the dsx-reproduce skill to produce the report, or remove "
+                "reproducibility.reproduce_report to opt out."
+            ),
+            where="spec.reproducibility.reproduce_report",
+        )
+        return
+
+    # Parse the FIRST fenced ```yaml block, CRLF-safe (\r?\n, never a bare \n).
+    text = path.read_text(encoding="utf-8")
+    fence = "`" * 3
+    match = re.search(fence + r"yaml\r?\n(.*?)\r?\n" + fence, text, re.DOTALL)
+    block = (
+        dict(re.findall(r"(?m)^\s*([\w.\-]+)\s*:\s*(.+?)\s*$", match.group(1)))
+        if match
+        else {}
+    )
+
+    # Honest opt-out (D-11): an explicit skipped/unable status carries no fresh
+    # numbers, so there is nothing to overlap — no DSX-REP-061.
+    status = str(block.get("status", "")).strip().lower()
+    if status in {"skipped", "unable"}:
+        report.ok(f"reproduce report present, status={status} (honest skip)")
+        return
+
+    # Overlap on the lead metric (results.tests[0]). The gate recomputes nothing
+    # and reads no verdict line — only the numeric block and the status field.
+    lead_metric = str(tests[0].get("metric"))
+    spec_value = as_number(tests[0].get("effect"))
+    if spec_value is None:
+        spec_value = as_number(tests[0].get("p_value"))
+    report_value = as_number(block.get(lead_metric))
+
+    # Tolerance is deliberately weaker than equality: a rounding-level difference
+    # overlaps; a gross disagreement (e.g. a 10x error) does not. A missing report
+    # number fails outright. A spec with no numeric lead value is uncomparable —
+    # a spec defect other checks catch, not a reproduction failure — so it is not
+    # flagged here.
+    disagrees = report_value is None or (
+        spec_value is not None
+        and not math.isclose(report_value, spec_value, rel_tol=1e-2, abs_tol=1e-9)
+    )
+    if disagrees:
+        report.add(
+            "DSX-REP-061",
+            "HIGH",
+            "`REPRO-REPORT.md` present but its declared re-run numbers do not "
+            "overlap `results.tests` — the analysis does not reproduce.",
+            detail=(
+                f"Lead metric {lead_metric!r}: spec declares {spec_value}, "
+                f"report declares {block.get(lead_metric)!r}."
+            ),
+            remedy=(
+                "Re-run the entrypoint and reconcile the reported number with "
+                "results.tests, or record status: skipped if it cannot be run."
+            ),
+            where="spec.reproducibility.reproduce_report",
+        )
+    else:
+        report.ok(f"reproduce report overlaps results.tests on {lead_metric}")
