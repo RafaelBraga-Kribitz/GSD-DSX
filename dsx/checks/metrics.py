@@ -32,6 +32,7 @@ def check(spec: dict) -> Report:
     _check_definition_collisions(metrics, report)
     _check_reconciliation(metrics, report)
     _check_denominator_drift(spec, report)
+    _check_cohort_denominator_shift(spec, report)
     _check_simpsons_paradox(spec, report)
     _check_time_semantics(metrics, report)
     _check_warehouse_sql(metrics, report)
@@ -215,6 +216,78 @@ def _check_denominator_drift(spec: dict, report: Report) -> None:
             )
         else:
             report.ok(f"denominator stable for {comparison.get('metric', 'metric')}")
+
+
+def _check_cohort_denominator_shift(spec: dict, report: Report) -> None:
+    """Changing-denominator / bucket mix-shift on a declared cohort comparison.
+
+    Citation: Crook, Frasca, Kohavi & Longbotham (2009), "Seven Pitfalls to Avoid
+    when Running Controlled Experiments on the Web", KDD '09, pp. 1105-1114,
+    DOI 10.1145/1557019.1557139, Section 6 "Pitfall 4" (Table 1, Simpson's paradox
+    from combining metrics over subpopulations sampled at different rates). This is
+    DISTINCT from ratio-metric dilution (Deng & Hu 2015, Formula (3)), which is
+    permanently out of scope for the declaration gate (brief.md:450), and from
+    INT-030 triggered-vs-eligible dilution: this check reads declared allocation
+    shares only and sums no per-unit data.
+
+    Structural criterion: fires DSX-MET-021 (HIGH) when a declared
+    results.cohort_comparisons entry's bucket sampling_rate spread (or, as a
+    fallback, treatment_share spread) exceeds the declared-or-0.10-default
+    tolerance AND `reweighted` is not the literal boolean True. It reads
+    results.cohort_comparisons, never results.period_comparisons.
+    """
+    comparisons = items(section(spec, "results"), "cohort_comparisons")
+    for index, comparison in enumerate(comparisons):
+        if not isinstance(comparison, dict):
+            continue
+        where = f"spec.results.cohort_comparisons[{index}]"
+        buckets = comparison.get("buckets")
+        if not isinstance(buckets, list):
+            continue
+        axis = "sampling_rate"
+        values = [
+            v
+            for v in (as_number(b.get("sampling_rate")) for b in buckets if isinstance(b, dict))
+            if v is not None
+        ]
+        if len(values) < 2:
+            axis = "treatment_share"
+            values = [
+                v
+                for v in (
+                    as_number(b.get("treatment_share")) for b in buckets if isinstance(b, dict)
+                )
+                if v is not None
+            ]
+        if len(values) < 2:
+            continue  # nothing declared to compare
+        spread = max(values) - min(values)
+        tolerance = as_number(comparison.get("sampling_tolerance"))
+        if tolerance is None:
+            tolerance = 0.10
+        reweighted = comparison.get("reweighted")
+        metric_name = comparison.get("metric", "metric")
+        if spread > tolerance and reweighted is not True:
+            report.add(
+                "DSX-MET-021",
+                "HIGH",
+                "metric pooled across buckets sampled at different rates with no reweighting declared",
+                detail=(
+                    f"{metric_name!r}: bucket {axis} values {values} span {spread:.4g}, above the "
+                    f"declared-or-default tolerance of {tolerance:.4g}, with no reweighting declared. "
+                    "Pooling across buckets sampled at different rates makes the aggregate a mix "
+                    "artifact, not a performance change."
+                ),
+                remedy=(
+                    "Declare reweighted: true after reweighting each bucket to a fixed allocation, "
+                    "compare within stable-allocation epochs, or hold the sampling rate constant."
+                ),
+                where=where,
+                spread=round(spread, 4),
+                tolerance=tolerance,
+            )
+        else:
+            report.ok(f"cohort allocation stable for {metric_name}")
 
 
 # ── Simpson's paradox ────────────────────────────────────────────────────────
