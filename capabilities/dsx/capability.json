@@ -45,7 +45,8 @@
     "dsx-cohort",
     "dsx-funnel",
     "dsx-root-cause",
-    "dsx-segment"
+    "dsx-segment",
+    "dsx-reproduce"
   ],
   "agents": [
     "dsx-analysis-architect",
