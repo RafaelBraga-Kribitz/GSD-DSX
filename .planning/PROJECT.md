@@ -146,6 +146,48 @@ the changing-denominator half shipped (`DSX-MET-021`, HIGH); survivorship bias
 stays an open, unpromoted item in `brief.md` §6.5. This was a loud, recorded
 decision (HUMAN-QUEUE HQ-8/HQ-13), not a silent scope cut.
 
+## Active Milestone: v2.3 Test Catalog (opened 2026-08-29)
+
+**Goal:** Expand the analyst-facing test-selection surface as close to
+exhaustion as stays manageable and citable: the `recommend_test` decision table
+grows ~15 → ~75 rows across 11 categories (correlation/association, agreement/
+reliability, repeated measures, trend, categorical, resampling, variance/scale,
+proportions, counts, post-hoc, power conventions), plus 8±1 new declaration-only
+gate checks and the effect-size band growth — every row cited, every check under
+full D-05 discipline. Ships as tag `v2.3.0`.
+
+**Why tests before charts:** both subjects write the same single-writer files
+(finding-codes, spec template, shared skills) and D-06 makes range collisions
+permanent, so the milestones run strictly sequentially; tests carry the heavier
+D-05 read burden (~15–20 human reads) and begin with mandatory repairs (the
+Boschloo doc/code divergence; the missing `estimand_kind` vocabulary), so they
+go first while the operator queue is fresh.
+
+**Scope boundary:** the gate does not become a per-test catalog. `families.yaml`
+remains the admissibility ontology; what expands is the routing surface plus
+declaration-only checks. See `.planning/research/V2.3-V2.4-SCOPE.md`.
+
+**Requirements:** REQ-P17-01 … REQ-P20-04 in `.planning/REQUIREMENTS.md`
+(Phases 17–20: foundation repairs → correlation/agreement → RM/trend/categorical/
+resampling/post-hoc → calibration).
+
+## Queued Milestone: v2.4 Visual Excellence
+
+**Status:** Queued. Entry condition (D-13): v2.3 shipped.
+
+**Goal:** The exhaustive-but-manageable chart catalog (~80 entries on the FT
+Visual Vocabulary spine + Wilke's uncertainty family + rigour staples, three
+citable axes per entry), the 5-layer question→chart selection heuristic
+(Munzner → FT function → data signature → shortlist → Cleveland-McGill
+tie-break), the license-audited publication style layer (dsx-urban default,
+dsx-538, dsx-econ/dsx-bbc reimplemented from published doctrine), the SVG
+determinism recipe, and a portfolio exemplar capstone that exercises both
+milestones end-to-end. Phases 21–24; requirements REQ-P21-* … REQ-P24-* queued
+in `.planning/REQUIREMENTS.md`. Pre-agreed contingency: split style/exemplar
+off as v2.5 if v2.3's D-05 queue outruns the ceremony cadence.
+
+**v3.0 (models) remains future scope** — nothing here touches it.
+
 ## Requirements
 
 ### Validated

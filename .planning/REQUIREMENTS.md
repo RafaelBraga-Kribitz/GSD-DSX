@@ -1,0 +1,189 @@
+# Requirements
+
+**Current milestone:** v2.3 Test Catalog (Phases 17–20) — see below.
+**Shipped:** v1.1.0–v1.5.0 (Phases 1–5, archived); v2.0.0 DSX Validity Frame
+(Phases 6–12, archived at `.planning/milestones/v2.0.0-REQUIREMENTS.md`);
+v2.2 Analytic Surface (Phases 13–16, archived at
+`.planning/milestones/v2.2-REQUIREMENTS.md`).
+
+**Scope source:** `.planning/research/V2.3-V2.4-SCOPE.md` (2026-08-29) — carries
+the full research provenance, citations per row, doctrine dispositions, and the
+critique register these requirements answer. Binding constraints: D-01 (stdlib
+gate path), D-02 (declarations only), D-05 (citation + published reference value
+per check), D-06 (additive codes only), D-12a (paradigm pairs), D-13 (entry
+conditions on deferrals).
+
+---
+
+## Phase 17 — Foundation: repairs and spec vocabulary
+
+- [ ] REQ-P17-01 **Boschloo reconciliation.** `recommend_test`'s small-expected-cell
+  fallback emits `boschloo_exact` (matching `references/test-selection.md`
+  footnote 1, Lydersen–Fagerland–Laake 2009 §9); `boschloo_exact` joins
+  `NONPARAMETRIC_TESTS`; a pinned regression test locks doc and code together so
+  this divergence class cannot recur silently.
+- [ ] REQ-P17-02 **`estimand_kind` closed vocabulary** (final name decided at
+  discuss) covering at least: `linear_association`, `monotone_association`,
+  `agreement`, `method_comparison`, `ordered_trend` — additive to
+  `ANALYSIS-SPEC.yaml`, absence allowed (D-10-style: never blocking on its own);
+  both canonical fixtures extended, not replaced (D-08); `dsx vocab` dumps it.
+- [ ] REQ-P17-03 **D-12a disposition table** recorded (CONTEXT.md + brief §6.5)
+  for every gate check planned in Phases 18–19 BEFORE implementation: each check
+  classified paradigm-neutral (ships) or paradigm-specific (ships paired, or
+  defers with a falsifiable D-13 entry condition). The observed-power ban's
+  Bayesian sibling (post-hoc Bayes-factor "power") is explicitly dispositioned.
+- [ ] REQ-P17-04 **D-06 range pre-allocation + fallthrough guard.** The live
+  catalogue count is re-measured (never assumed); new code ranges are
+  pre-allocated per category in a committed note; a regression test pins
+  `recommend_test`'s unconditional `time_to_event` fallthrough position so new
+  outcome-type rows cannot silently change routing.
+- [ ] REQ-P17-05 **Zero new codes this phase** — asserted by catalogue
+  set-identity diff against the live baseline, not by review.
+
+## Phase 18 — Correlation, association and agreement
+
+- [ ] REQ-P18-01 Decision-table rows (doc + `recommend_test`, kept in lockstep):
+  Pearson (with Fisher-z CI convention), Spearman, Kendall tau-b, point-biserial,
+  phi — keyed on DECLARED `estimand_kind` (linear vs monotone), never on data
+  inspection; effect size and primary citation per row. Distance correlation and
+  partial correlation ship as catalog/pointer rows only (D-13 entry conditions).
+- [ ] REQ-P18-02 Agreement/reliability rows: Cohen's kappa, weighted kappa
+  (declared weights), Fleiss kappa, Krippendorff alpha, ICC declared as the
+  (model, type, definition) triple, Bland-Altman for `method_comparison`;
+  Cronbach-alpha→McDonald-omega pointer row with the deprecation citations.
+- [ ] REQ-P18-03 Gate check: **correlation scale/kind match** — Pearson declared
+  against a declared-ordinal variable blocks; a correlation declared for a
+  declared `agreement`/`method_comparison` estimand blocks (routes to kappa/ICC/
+  Bland-Altman). Declaration-only; D-05 citation + published reference value.
+- [ ] REQ-P18-04 Gate check: **agreement declaration completeness** — ICC without
+  the full declared triple blocks; weighted kappa without declared weights blocks;
+  kappa without declared companion reporting (raw agreement + prevalence, per
+  Feinstein & Cicchetti 1990) blocks at verify/ship.
+- [ ] REQ-P18-05 Effect-size vocabulary growth in `dsx/mathx.py` (Kendall's W,
+  kappa and ICC interpretation bands) with per-band citations, bands labeled as
+  *conventions* (Landis & Koch 1977; Koo & Li 2016) never as blocking thresholds;
+  wired into `templates/APA-TABLE-research.md`; existing effect-size tests extended.
+- [ ] REQ-P18-06 The no-autoswitch invariant extends to this category: no routing
+  key anywhere reads "inspect the data, then pick" — asserted by test, in the
+  style of `tests/test_no_shapiro_autoswitch.py`.
+
+## Phase 19 — Repeated measures, trend, categorical, resampling, post-hoc
+
+- [ ] REQ-P19-01 RM rows: one-way RM-ANOVA with **unconditional Greenhouse-Geisser**
+  (the RM analog of always-Welch; Maxwell & Delaney 2004 ch. 11–12), Friedman,
+  Cochran's Q, Page's L; mixed-model and GEE pointer rows. Gate check: a
+  **two-stage sphericity procedure** (Mauchly-then-correct-if-significant)
+  declared as the plan blocks.
+- [ ] REQ-P19-02 Trend rows: Cochran-Armitage (declared dose scores required),
+  Jonckheere-Terpstra, Mann-Kendall + Sen's slope (declared autocorrelation
+  handling required, per Hamed & Rao 1998). Gate checks on the two declared-field
+  requirements.
+- [ ] REQ-P19-03 Categorical rows: N-1 chi-square replacing Yates (Campbell 2007;
+  Yates ships as a DEPRECATED row), CMH with declared stratification, Fisher-
+  Freeman-Halton (with the honesty footnote that no practical unconditional r×c
+  test exists — D-13 entry condition to revisit), G-test, exact multinomial /
+  chi-square GOF, log-linear pointer row.
+- [ ] REQ-P19-04 Resampling rows: permutation, percentile bootstrap, BCa (house
+  default). Gate check: any declared resampling procedure must declare the
+  **seed + B + resampling-unit + method quadruple** (B conventions cited to
+  Davidson & MacKinnon 2000).
+- [ ] REQ-P19-05 Post-hoc rows: Games-Howell (house default after Welch ANOVA),
+  Tukey/Kramer, Dunnett (+T3), Dunn, Nemenyi, Scheffé; DEPRECATED rows for SNK and
+  unprotected LSD at k>3 (Hayter 1986). Gate check: the declared post-hoc must
+  match the declared omnibus family (declaration matching only).
+- [ ] REQ-P19-06 Negative gates: (a) a variance test (Levene/Brown-Forsythe/
+  Bartlett/Fligner-Killeen) declared as a **precondition to location-test choice**
+  blocks (Zimmerman 2004 two-stage reasoning; scale tests remain fully available
+  when scale is the declared estimand); (b) **observed/post-hoc power** declared
+  in a readout blocks (Hoenig & Heisey 2001), with the sanctioned MDE-sensitivity
+  substitute row (Lakens 2022) in the catalog.
+- [ ] REQ-P19-07 Proportion/count extras: Wilson CI as house default (a declared
+  Wald interval for a proportion blocks — Brown, Cai & DasGupta 2001),
+  Clopper-Pearson, one-sample exact binomial, RD/RR/OR with named interval
+  methods (Newcombe; Woolf), NNT with mandatory CI; count-data gate: declared
+  exposure/time-at-risk with no declared offset blocks (McCullagh & Nelder §6.2);
+  ZIP/hurdle pointer rows; Vuong-for-zero-inflation as a DEPRECATED row (Wilson 2015).
+
+## Phase 20 — Calibration and reporting close
+
+- [ ] REQ-P20-01 Known-bad test-choice fixtures exist for every new blocking code;
+  `tests/test_known_bad_corpus.py` extended; the stratified catch rate and
+  false-positive rate are re-measured and re-baselined (Phase 12 discipline).
+- [ ] REQ-P20-02 The good fixture is extended (not replaced) and stays silent at
+  every threshold (D-08); catalogue regen is additive with frozen snapshots
+  unmutated; new codes enter the D-05 allowlist as exact strings.
+- [ ] REQ-P20-03 The no-autoswitch test covers every new category; the
+  fallthrough-position regression test is green after all row additions.
+- [ ] REQ-P20-04 A doc/code agreement test binds `references/test-selection.md`
+  to `recommend_test` (generated mirror or cross-check) so the Boschloo
+  divergence class is structurally prevented, not just repaired.
+
+---
+
+## Queued — Milestone v2.4 Visual Excellence (Phases 21–24; not started)
+
+Entry condition (D-13): v2.3 shipped. Full research: `.planning/research/V2.3-V2.4-SCOPE.md` §3.
+
+### Phase 21 (queued) — Viz vocabulary reconciliation
+
+- [ ] REQ-P21-01 An **every-mark-has-a-home invariant test**: every chart type
+  named anywhere (RELATIONSHIP_CHARTS, CHART_CAPABILITIES, smells sets,
+  input-type extras) is reachable through at least one relationship AND one
+  capability family; the current orphans (histogram, density, ecdf, strip,
+  diverging_bar, waterfall, dumbbell, bump, sankey, kde, population_pyramid,
+  butterfly) are homed.
+- [ ] REQ-P21-02 Banned/excluded types become first-class refusal entries
+  cross-referencing their banning code and perception citation — present and
+  routed-to-refusal, never silently absent.
+- [ ] REQ-P21-03 Zero new codes this phase, by set-identity diff.
+
+### Phase 22 (queued) — Catalog spine, uncertainty family, selection heuristic
+
+- [ ] REQ-P22-01 A merged chart catalog (~80 entries, band 75–90) with three axes
+  per entry (function; data signature; Cleveland–McGill perceptual rank) and a
+  per-entry citation (FT Visual Vocabulary spine; Wilke chapters; DVC stable URLs;
+  Datawrapper cardinality bands).
+- [ ] REQ-P22-02 The **uncertainty** function family enters the vocabulary (fan
+  chart, quantile dot plot, half-eye, gradient CI band — Wilke ch. 16), with the
+  vocabulary decision (11th relationship key vs new input-type ids) made at
+  discuss and rippled across viz.py, skills, references, templates. D-12a-clean
+  (covers frequentist CIs and Bayesian posteriors symmetrically).
+- [ ] REQ-P22-03 Faceting ships as an orthogonal `facet_by` declaration, not a
+  chart type; smells remedies route to it.
+- [ ] REQ-P22-04 The 5-layer question→chart heuristic ships as edits to
+  `references/question-taxonomy.md` / `chart-selection.md` plus skill pointers —
+  route-and-cite, no parallel decision tree.
+- [ ] REQ-P22-05 Gates extended for the new vocabulary; every new code carries a
+  D-05 citation; the perceptual tie-break ordering is asserted against the
+  published Cleveland–McGill ranking as a named structural criterion (pure
+  ordering assertion, no computation).
+
+### Phase 23 (queued) — Style and snippet layer
+
+- [ ] REQ-P23-01 `styles/*.mplstyle` set: dsx-538 (forked from matplotlib, BSD),
+  dsx-urban (Apache-2.0 palette, vendored OFL Lato — house default), dsx-econ and
+  dsx-bbc reimplemented from published doctrine only (no GPL port, no unlicensed
+  PDF embedding); per-file license/attribution headers; license audit as an
+  explicit plan-review item.
+- [ ] REQ-P23-02 `templates/dsx_plotstyle.py` analyst-side helper (matplotlib-only,
+  off the gate path): `finalise_figure()`, `direct_label()`, `save_deterministic()`.
+- [ ] REQ-P23-03 Determinism recipe proven: vendored OFL font registered via
+  font_manager, `svg.fonttype: path`, `svg.hashsalt`, metadata date stripped,
+  pinned matplotlib recorded in the manifest — verified by a double-render
+  hash-equality test kept off the gate path (skipIf matplotlib absent);
+  `test_gate_path_hermetic` stays true.
+- [ ] REQ-P23-04 A per-chart-type snippet catalog that imports the helper and
+  routes to finding codes — snippets never restate gate thresholds.
+- [ ] REQ-P23-05 WCAG AA contrast-verified palettes ship in the style files with
+  per-palette citations; any palette *gate* defers with a D-13 entry condition.
+
+### Phase 24 (queued) — Portfolio exemplar and viz calibration
+
+- [ ] REQ-P24-01 One end-to-end portfolio exemplar: question → ANALYSIS-SPEC →
+  tests via the v2.3 catalog → figures via the style layer → sealed
+  FIGURE-MANIFEST → What/So What/Now What narrative → REPRO-REPORT — passing
+  every gate at ship threshold.
+- [ ] REQ-P24-02 Known-bad chart-choice fixtures per new code; catch rate and FPR
+  re-baselined.
+- [ ] REQ-P24-03 Milestone audit prerequisites: catalogue current, snapshots
+  unmutated, doc/code agreement tests green for both selection surfaces.
