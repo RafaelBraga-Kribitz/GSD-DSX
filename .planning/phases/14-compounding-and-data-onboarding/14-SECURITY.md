@@ -106,4 +106,4 @@ high+ count toward `threats_open`.*
 - [x] `threats_open: 0` confirmed
 - [x] `status: verified` set in frontmatter
 
-**Approval:** verified (technical) 2026-08-28 — gate **SECURED**, `threats_open: 0`, 16/16 closed by orchestrator re-gate. **Human sign-off is a D-05/§4-category-4 operator item and is NOT yet granted** — queued to `HUMAN-QUEUE.md` (HQ-10) as the batched Phase 14 end-of-phase security + UAT round. Per brief §4 this is non-blocking until close-out (S5-2); the technical gate for ledger unit S2-5 is met.
+**Approval:** verified (technical) 2026-08-28 — gate **SECURED**, `threats_open: 0`, 16/16 closed by orchestrator re-gate. **Human sign-off granted 2026-08-29 (operator verdict recorded in HUMAN-QUEUE.md, item HQ-10):** the sign-off line above is approved as written, REQ-P14-01..06's UAT is confirmed, and the REQ-P14-05 documented-skip disposition (no GSD Core overlay hooks exist) is confirmed. Phase 14 is now both technically verified and human-approved.

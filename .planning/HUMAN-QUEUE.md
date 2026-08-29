@@ -20,187 +20,10 @@ a persona round and records loudly):
 
 ## Open
 
-### HQ-14 — Phase 15 end-of-phase security sign-off + UAT (batched; non-blocking until S5-2)
-
-**Status: filed 2026-08-29 (S4-5). Technical gates PASS; awaiting operator sign-off.** Per brief §4
-category 4 (a `SECURITY.md` approval line is a human item) and the standing UAT batch. The loop
-completed the technical verification; the operator confirms the sign-off line at the close-out drain
-(S5-2). Nothing downstream blocks on this until then. The Phase 15 D-06 numbering veto for the two
-new codes is tracked **separately** as HQ-13 (same drain).
-
-**What the loop already verified (orchestrator re-gate, real commands — brief §5):**
-- **Security — SECURED, `threats_open: 0`** (`15-SECURITY.md`): 23/23 register entries closed (22
-  threats + 1 supply-chain accept; 1 critical + 14 high + 7 medium). Gate-path purity (only
-  `design.py`/`metrics.py`/`mathx.py`/`spec.py` changed under `dsx/`; no pandas/scipy/numpy/exec
-  import; CUPED math stays off the gate path), CUPED gate-flip + CRITICAL severity (`test_cuped` 8 OK,
-  `dsx gate plan` 0→1), MET-020↔MET-021 disjointness (`test_cohort_denominator` 7 OK), good-fixture
-  silence (`test_good_fixture_phase15` 3 OK), no normality auto-switch (`test_no_shapiro_autoswitch`
-  4 OK), additive catalogue (invariant 2 OK = 260 + set-identity vs snapshot ∪ {REP-060,061,EXP-070,
-  MET-021}; `--check` exit 0; frozen anchor byte-unchanged). Declaration-only check phase, asvs_level
-  1 L1 short-circuit — no auditor spawn needed.
-- **Validation — `nyquist_compliant: true`, 0 gaps** (`15-VALIDATION.md`): 7/7 REQ-P15-01..07 COVERED
-  by green automated tests (6 behavioural modules + rebaselined `test_finding_catalogue_invariant` +
-  new `tests/test_phase15_bi_checks.py` 20-test coverage anchor). REQ-P15-04 is COVERED **PARTIAL**
-  (survivorship half unshipped, consented at S4-1 via answered HQ-8). Full gate `sh scripts/check.sh`
-  = all passed (**Ran 1312 tests OK** on a clean tree).
-
-**Operator action at S5-2:** (1) confirm the `15-SECURITY.md` Sign-Off approval line as written (or
-flag any threat disposition), and (2) run/confirm the Phase 15 UAT for REQ-P15-01..07 (REQ-P15-04
-PARTIAL). There is **no new D-05 primary-source read owed by Phase 15** — its two new codes
-(`DSX-EXP-070`/`DSX-MET-021`) cite HQ-8-confirmed sources (Deng et al. 2013 WSDM; Crook et al. 2009
-KDD §6); the survivorship code was not minted (Brown 1992 does-not-transfer). The D-06 numbering veto
-for those two codes is HQ-13. An interactive session records the verdict and checks this item off.
-
-### HQ-13 — Phase 15 D-06 numbering veto window: `DSX-EXP-070` / `DSX-MET-021` (non-blocking; veto via daily summary or by S5-2)
-
-**Status: filed 2026-08-29 (S4-1). Decided by the loop's persona round; NOT a blocker.** Per brief §4,
-D-06 numeric finding-code assignments are decided by the loop ("next free number in family,
-catalogue-consistent") and recorded loudly — not escalated. This entry is the operator's **veto window**
-before Phase 15 ships. The loop proceeds through S4-2..S4-5 unless vetoed.
-
-**What the loop decided (Architect + Statistician 2-persona round, both opus/high; full rationale in
-`.planning/phases/15-cuped-and-bi-declaration-checks-new-codes-d-05/15-CONTEXT.md` D-02/D-03):**
-
-| Code | Severity | Finding (fixed plain text; finalised at S4-3) | Citation (D-05, confirmed via HQ-8) |
-|---|---|---|---|
-| `DSX-EXP-070` | CRITICAL | CUPED declared with a covariate that is not pre-experiment | Deng, Xu, Kohavi & Walker (2013), WSDM '13, pp.123-132. |
-| `DSX-MET-021` | HIGH | metric pooled across buckets sampled at different rates with no reweighting declared | Crook, Frasca, Kohavi & Longbotham (2009), KDD '09, §6 Pitfall 4. |
-
-**Finalised text (S4-4, 2026-08-29):** both rows above now carry the **exact shipped**
-`references/finding-codes.md` text (verbatim from the `report.add(...)` titles) — note
-`DSX-MET-021` ships lower-case "metric pooled…", no trailing period. Both codes landed
-at S4-3 exactly as decided here (`DSX-EXP-070` CRITICAL in `design.py::_check_cuped`,
-`DSX-MET-021` HIGH in `metrics.py::_check_cohort_denominator_shift`); catalogue is
-258 → 260 additive, frozen Phase-12 snapshot (256) unmutated. Still non-blocking; still
-silence = accept.
-
-- **Why these numbers:** `EXP-070` is the next free EXP band (design-correctness, not the SPEC-044 vocab
-  question); `MET-021` is the free slot adjacent to its closest sibling `DSX-MET-020` in the 02x
-  denominator band. Catalogue moves **258 → 260** additively; the frozen Phase-12 snapshot (256) is not
-  mutated.
-- **Why MET not INT for changing-denominator:** the DSX-INT family lives in the causal-gated
-  `dsx/frame/interference.py` (runs only for causal/prescriptive/experiment specs) and would silently
-  skip the descriptive/diagnostic cohort/funnel BI specs REQ-P15-03 targets. MET runs unconditionally.
-- **Why MET-021 is HIGH not CRITICAL** (the one persona split, orchestrator tie-break rigour>reliability):
-  a declaration-only check can only evidence that the bucket allocation *shifted*, not that the pooled
-  result's sign *reversed*; CRITICAL would overstate. HIGH matches the sibling HIGH `DSX-MET-020`
-  denominator code and still blocks the bad fixture at verify/ship. **Open item for the operator:** if you
-  intended the changing-denominator bad fixture to block at `dsx gate plan` (not just verify/ship), that
-  forces CRITICAL — say so in the daily summary and the loop re-numbers before S4-2 locks.
-- **Survivorship-bias code is NOT minted** — its citation (Brown et al. 1992) does not transfer (your
-  answered HQ-8); it stays in `brief.md` §6.5 with a falsifiable D-13 entry condition. REQ-P15-04 therefore
-  ships PARTIAL (changing-denominator half only); the REQUIREMENTS.md wording change is queued to S4-4.
-- **No D-05 primary-source read owed at discuss** — both shipping citations were read and confirmed by you
-  at their locators in answered HQ-8.
-
-**Operator action (optional):** veto or amend the numbering/severity via the daily summary, or confirm at
-the S5-2 drain. Silence = accept. Nothing downstream blocks on this.
-
-### HQ-11 — Phase 16 D-06 numbering veto window: `DSX-REP-060` / `DSX-REP-061` (non-blocking; veto via daily summary or by S5-2)
-
-**Status: filed 2026-08-29 (S3-1). Decided by the loop's persona round; NOT a blocker.** Per brief §4,
-numeric finding-code assignments (D-06, irreversible) are decided by the loop using "next free number in
-family, catalogue-consistent" and recorded loudly — *not* escalated. This entry exists only so the operator
-has an explicit **veto window** before Phase 16 ships. The loop proceeds through S3-2..S3-5 unless vetoed.
-
-**What the loop decided (Architect + Auditor 2-persona round, both opus/high, unanimous Option A — full
-rationale in `.planning/phases/16-re-run-verification-off-the-gate-path/16-CONTEXT.md` D-06):**
-
-| Code | Severity | Finding (final text finalised at S3-3) |
-|---|---|---|
-| `DSX-REP-060` | HIGH | Reproduce report declared (`reproducibility.reproduce_report`) but `REPRO-REPORT.md` is missing — the reproduced verdict is unsubstantiated. |
-| `DSX-REP-061` | HIGH | `REPRO-REPORT.md` present but its declared re-run numbers do not overlap `results.tests` — the analysis does not reproduce. |
-
-- **Why mint (not reuse):** none of the 11 existing `DSX-REP-*` codes names "report missing" or "declared
-  numbers don't overlap"; reusing one emits false text and the catalogue dedupes by code, hiding the drift.
-- **Why in Phase 16 (not moved to Phase 15):** keeps the reproduce skill + its enforcing gate in one phase
-  (no trust-without-enforcement window); Phase 15's codes carry D-05 statistical citations — these are
-  engineering-hygiene checks with none.
-- **Band:** `06x` is the next free block in the REP family (max was `DSX-REP-053`), catalogue-consistent
-  (06x = reproduce-report). Both HIGH because verify/ship blocks only at HIGH.
-- **Consequence recorded:** ROADMAP's "Phase 15 is the only phase that extends the catalogue" was amended
-  (D-07) — Phase 15 **and** 16 extend it. No requirement dropped/reworded. Catalogue moves 256 → 258
-  additively; the frozen Phase-12 snapshot anchor is not mutated.
-- **No D-05 owed by Phase 16** (its codes cite no primary source; brief.md line 389 assigns none).
-
-**Operator action (optional):** veto or amend the numbering via the daily summary, or confirm at the S5-2
-drain. Silence = accept. Nothing downstream blocks on this.
-
-### HQ-9 — Phase 13 end-of-phase security sign-off + UAT (batched; non-blocking until S5-2)
-
-**Status: filed 2026-08-28 (S1-5). Technical gates PASS; awaiting operator sign-off.** Per brief §4
-category 4 (a `SECURITY.md` approval line is a human item) and the standing UAT batch. The loop
-completed the technical verification; the operator confirms the sign-off line at the close-out drain
-(S5-2). Nothing downstream blocks on this until then.
-
-**What the loop already verified (orchestrator re-gate, real commands — brief §5):**
-- **Security — SECURED, `threats_open: 0`** (`13-SECURITY.md`): 14/14 threats closed. Gate-path
-  purity (zero `dsx/`|`scripts/` edits), route-and-cite discipline (anti-parallel-advice grep 0 lines
-  ×5 files), zero-mint set-identity (catalogue 256, `added=[] removed=[]`, `--check` exit 0), D-05
-  advisory boundary (`dsx-scope-analysis` emits `gsd-tier.ps1`, no config mutation). Skill-only phase,
-  asvs_level 1 L1 short-circuit — no auditor spawn needed.
-- **Validation — `nyquist_compliant: true`, 0 gaps** (`13-VALIDATION.md`): 6/6 REQ-P13-01..06 COVERED
-  by green automated tests (`tests/test_phase13_playbooks.py` 8 tests + `test_finding_catalogue_invariant`
-  2 tests). Full gate `sh scripts/check.sh` = all passed (Ran 1230 tests OK).
-
-**Operator action at S5-2:** (1) confirm the `13-SECURITY.md` Sign-Off approval line as written (or
-flag any threat disposition), and (2) run/confirm the Phase 13 UAT for REQ-P13-01..06. There is **no
-D-05 primary-source read owed by Phase 13** (it mints no codes and cites only existing ones — all 28
-citations verified present). An interactive session records the verdict and checks this item off.
-
-### HQ-10 — Phase 14 end-of-phase security sign-off + UAT (batched; non-blocking until S5-2)
-
-**Status: filed 2026-08-28 (S2-5). Technical gates PASS; awaiting operator sign-off.** Per brief §4
-category 4 (a `SECURITY.md` approval line is a human item) and the standing UAT batch. The loop
-completed the technical verification; the operator confirms the sign-off line at the close-out drain
-(S5-2). Nothing downstream blocks on this until then.
-
-**What the loop already verified (orchestrator re-gate, real commands — brief §5):**
-- **Security — SECURED, `threats_open: 0`** (`14-SECURITY.md`): 16/16 register entries closed (15
-  threats + 1 supply-chain accept; 7 at high severity). Gate-path purity (empty `dsx/`+`scripts/`+
-  `capability.json` manifest diff over the 5 feature commits; `report.add` cli.py=0), zero-mint
-  set-identity (256, `added=[] removed=[]`, `--check` exit 0), gate-path hermeticity (`test_gate_path_hermetic`
-  2 OK), documented-skip honesty (`hooks:[]`, no `aliases` key, `supported:["*"]`, DSX-DQ-001 named),
-  disclosure guarded on literal `research`, Triggers on 13/13 skills, `data_storage` 0 in skills/shims.
-  Doc/skill/template phase, asvs_level 1 L1 short-circuit — no auditor spawn needed.
-- **Validation — `nyquist_compliant: true`, 0 gaps** (`14-VALIDATION.md`): 6/6 REQ-P14-01..06 COVERED
-  by green automated tests (`tests/test_phase14_onboarding.py` 11 tests + `test_gate_path_hermetic` 2 +
-  `test_finding_catalogue_invariant` 2). Full gate `sh scripts/check.sh` = all passed (Ran 1243 tests OK).
-
-**Operator action at S5-2:** (1) confirm the `14-SECURITY.md` Sign-Off approval line as written (or
-flag any threat disposition), and (2) run/confirm the Phase 14 UAT for REQ-P14-01..06. There is **no
-D-05 primary-source read owed by Phase 14** (it mints no codes and cites only the existing `DSX-DQ-001`
-— verified present). An interactive session records the verdict and checks this item off.
-
-### HQ-12 — Phase 16 end-of-phase security sign-off + UAT (batched; non-blocking until S5-2)
-
-**Status: filed 2026-08-29 (S3-5). Technical gates PASS; awaiting operator sign-off.** Per brief §4
-category 4 (a `SECURITY.md` approval line is a human item) and the standing UAT batch. The loop
-completed the technical verification; the operator confirms the sign-off line at the close-out drain
-(S5-2). Nothing downstream blocks on this until then. The Phase 16 D-06 numbering veto is tracked
-**separately** as HQ-11 (same drain).
-
-**What the loop already verified (orchestrator re-gate, real commands — brief §5):**
-- **Security — SECURED, `threats_open: 0`** (`16-SECURITY.md`): 13/13 register entries closed (12
-  threats + 1 supply-chain accept; 3 critical + 8 high). Gate-path purity (`git diff ec216b2..HEAD
-  -- dsx/ scripts/` = only `dsx/checks/repro.py`, stdlib `math`/`re`/`pathlib` only — no execution
-  primitive), entrypoint-execution guard (`test_no_entrypoint_execution` 3 OK, AST scan + pos/neg
-  controls), gate-path hermeticity (`test_gate_path_hermetic` 2 OK), verdict-agnostic + honest-skip
-  (`test_reproduce_report` 7 OK), zero-drift catalogue (invariant 2 OK = 258 + set-identity vs
-  snapshot ∪ {060,061}; `--check` exit 0; frozen anchor byte-unchanged), additive calibration
-  (`test_known_bad_corpus` 45 OK; known-bad `ANALYSIS-SPEC.yaml` diff empty). Skill/template/test
-  phase, asvs_level 1 L1 short-circuit — no auditor spawn needed.
-- **Validation — `nyquist_compliant: true`, 0 gaps** (`16-VALIDATION.md`): 4/4 REQ-P16-01..04 COVERED
-  by green automated tests (`tests/test_phase16_reproduce.py` 9 + `test_reproduce_report` 7 +
-  `test_no_entrypoint_execution` 3 + `test_known_bad_corpus` 45). Full gate `sh scripts/check.sh` =
-  all passed (Ran 1263 tests OK).
-
-**Operator action at S5-2:** (1) confirm the `16-SECURITY.md` Sign-Off approval line as written (or
-flag any threat disposition), and (2) run/confirm the Phase 16 UAT for REQ-P16-01..04. There is **no
-D-05 primary-source read owed by Phase 16** — its two new codes (`DSX-REP-060`/`061`) are
-engineering-hygiene checks that cite no primary source (brief.md line 389 assigns none). The D-06
-numbering veto for those codes is HQ-11. An interactive session records the verdict and checks this
-item off.
+(none currently — the six Phase 13/14/15/16 end-of-phase items (HQ-9 .. HQ-14) were
+all answered 2026-08-29; see Answered below. The S5-6 ship decisions — merge to
+`main` and the `v2.2.0` release tag — are expected here once the loop's close-out
+stage reaches them.)
 
 ## HQ-8-superseded — original evidence pack (answered; kept for the record)
 
@@ -257,9 +80,6 @@ citation is not confirmed as **not in hand** (S4-3 D-05 bar).
 
 ## Will be added by the loop when reached
 
-- Phase 13 / 14 / 16 end-of-phase UAT rounds and security sign-offs (batched per phase).
-- Any D-06 numeric finding-code veto window — expected from Phase 15 (S4-1) and
-  possibly Phase 16 (S3-1, if its gate check mints a `DSX-REP-*` code).
 - The S5-6 ship decisions: merge to `main` and the `v2.2.0` release tag.
 - Any persona decision the operator vetoes from a daily summary.
 
@@ -327,3 +147,54 @@ is satisfied by its changing-denominator half only — Phase 15's S4-1 discuss m
 a loud, documented partial satisfaction (not a silent scope-narrowing) and confirm `brief.md`
 §6.5 still carries the survivorship-bias item as an open, unpromoted entry.
 
+### HQ-9 — Phase 13 end-of-phase security sign-off + UAT (answered 2026-08-29)
+
+**Operator decision:** Approved — the recommended option (sign off `13-SECURITY.md` as
+written and confirm the REQ-P13-01..06 UAT) was selected, on the strength of the loop's
+orchestrator re-gate evidence: 14/14 threats closed, `threats_open: 0`, `nyquist_compliant: true`
+with 6/6 requirements COVERED, full corpus gate green (1230 tests). No D-05 read was owed
+(Phase 13 mints no codes). Recorded in `13-SECURITY.md`'s Sign-Off section.
+
+### HQ-10 — Phase 14 end-of-phase security sign-off + UAT (answered 2026-08-29)
+
+**Operator decision:** Approved — the recommended option (sign off `14-SECURITY.md` as
+written and confirm the REQ-P14-01..06 UAT) was selected, on the strength of the loop's
+orchestrator re-gate evidence: 16/16 register entries closed, `threats_open: 0`,
+`nyquist_compliant: true` with 6/6 requirements COVERED (including the REQ-P14-05
+documented-skip disposition — no GSD Core overlay hooks exist), full corpus gate green
+(1243 tests). Recorded in `14-SECURITY.md`'s Sign-Off section.
+
+### HQ-11 — Phase 16 D-06 numbering veto window: `DSX-REP-060` / `DSX-REP-061` (answered 2026-08-29)
+
+**Operator decision:** Accepted the loop's numbering as filed — no veto exercised.
+`DSX-REP-060` and `DSX-REP-061`, both **HIGH** severity, land in the `06x` REP band as
+decided by the Architect + Auditor persona round (unanimous Option A).
+
+### HQ-12 — Phase 16 end-of-phase security sign-off + UAT (answered 2026-08-29)
+
+**Operator decision:** Approved — the recommended option (sign off `16-SECURITY.md` as
+written and confirm the REQ-P16-01..04 UAT) was selected, on the strength of the loop's
+orchestrator re-gate evidence: 13/13 register entries closed, `threats_open: 0`,
+`nyquist_compliant: true` with 4/4 requirements COVERED, full corpus gate green
+(1263 tests). No D-05 read was owed (the two new REP codes cite no primary source).
+Recorded in `16-SECURITY.md`'s Sign-Off section.
+
+### HQ-13 — Phase 15 D-06 numbering veto window: `DSX-EXP-070` / `DSX-MET-021` (answered 2026-08-29)
+
+**Operator decision:** Accepted the loop's numbering and severity as filed — no veto
+exercised. `DSX-EXP-070` ships **CRITICAL**, `DSX-MET-021` ships **HIGH** (not escalated
+to CRITICAL). The open severity question the filing raised — whether the changing-denominator
+bad fixture should block at `dsx gate plan` rather than only at verify/ship, which would have
+forced CRITICAL — was resolved by accepting HIGH as the Architect + Statistician persona
+round decided (orchestrator tie-break: a declaration-only check evidences a bucket-allocation
+*shift*, not a confirmed sign *reversal*, so CRITICAL would overstate).
+
+### HQ-14 — Phase 15 end-of-phase security sign-off + UAT (answered 2026-08-29)
+
+**Operator decision:** Approved — the recommended option (sign off `15-SECURITY.md` as
+written and confirm the REQ-P15-01..07 UAT) was selected, on the strength of the loop's
+orchestrator re-gate evidence: 23/23 register entries closed, `threats_open: 0`,
+`nyquist_compliant: true` with 7/7 requirements COVERED (REQ-P15-04 COVERED **PARTIAL**,
+consistent with the HQ-8 decision), full corpus gate green (1312 tests). The D-06 numbering
+veto for Phase 15's two new codes was granted separately as HQ-13. Recorded in
+`15-SECURITY.md`'s Sign-Off section.

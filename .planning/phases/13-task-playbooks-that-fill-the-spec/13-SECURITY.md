@@ -95,4 +95,4 @@ created: 2026-08-28
 - [x] `threats_open: 0` confirmed
 - [x] `status: verified` set in frontmatter
 
-**Approval:** verified (technical) 2026-08-28 — gate **SECURED**, `threats_open: 0`, 14/14 closed by orchestrator re-gate. **Human sign-off is a D-05/§4-category-4 operator item and is NOT yet granted** — queued to `HUMAN-QUEUE.md` as the batched Phase 13 end-of-phase security + UAT round. Per brief §4 this is non-blocking until close-out (S5-2); the technical gate for ledger unit S1-5 is met.
+**Approval:** verified (technical) 2026-08-28 — gate **SECURED**, `threats_open: 0`, 14/14 closed by orchestrator re-gate. **Human sign-off granted 2026-08-29 (operator verdict recorded in HUMAN-QUEUE.md, item HQ-9):** the sign-off line above is approved as written, and REQ-P13-01..06's UAT is confirmed. Phase 13 is now both technically verified and human-approved.

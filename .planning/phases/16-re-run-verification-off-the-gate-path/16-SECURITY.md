@@ -106,4 +106,4 @@ baseline through the landed phase); the four feature commits are 1195d97 / 71454
 - [x] `threats_open: 0` confirmed
 - [x] `status: verified` set in frontmatter
 
-**Approval:** verified (technical) 2026-08-29 — gate **SECURED**, `threats_open: 0`, 13/13 closed by orchestrator re-gate. **Human sign-off is a D-05/§4-category-4 operator item and is NOT yet granted** — queued to `HUMAN-QUEUE.md` (HQ-12) as the batched Phase 16 end-of-phase security + UAT round. Per brief §4 this is non-blocking until close-out (S5-2); the technical gate for ledger unit S3-5 is met.
+**Approval:** verified (technical) 2026-08-29 — gate **SECURED**, `threats_open: 0`, 13/13 closed by orchestrator re-gate. **Human sign-off granted 2026-08-29 (operator verdict recorded in HUMAN-QUEUE.md, item HQ-12):** the sign-off line above is approved as written, and the phase's UAT is confirmed. Phase 16 is now both technically verified and human-approved.
