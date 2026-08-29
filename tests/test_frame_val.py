@@ -639,7 +639,17 @@ def _all_fixture_paths() -> "list[Path]":
 # Hardened all three sites (filter to string members before the set op); the
 # count-based fire is unchanged so no canonical verdict moves. Sanctioned deliberate
 # edit this guard exists to force into the open, not a regression.
-_DESIGN_PY_SHA256 = "f18056a6cc041cccdffee666ee627ec9dd6efb7411b331cc9558141fa527cd3d"
+# Updated 2026-08-29 (Phase 15 plan 15-04, REQ-P15-02, D-06): design.check now runs
+# _check_cuped, which mints DSX-EXP-070 (CRITICAL) when a spec declaring
+# variance_adjustment: cuped gives design.cuped.covariate_timing anything other than
+# pre_experiment (cite Deng, Xu, Kohavi & Walker 2013 WSDM). This is an additive new
+# check on a new EXP code; REQ-P7-03's behavioural invariant is untouched — DSX-EXP-070
+# is disjoint from DSX-EXP-021/DSX-VAL-020, so the three disjointness tests above still
+# pass, and _check_cuped fires only on variance_adjustment==cuped. Sanctioned deliberate
+# edit this guard exists to force into the open, not a regression. (The 15-04 feature
+# commit edited design.py without updating this anchor; the S4-4 full-suite gate caught
+# the stale hash, which is exactly what this guard is for.)
+_DESIGN_PY_SHA256 = "a4f296c2b7ca879a96248d0bcc736b571df8e462802b9332317b2bad6e80c271"
 
 
 def _design_py_hash() -> str:

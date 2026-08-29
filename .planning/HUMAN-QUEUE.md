@@ -32,8 +32,16 @@ before Phase 15 ships. The loop proceeds through S4-2..S4-5 unless vetoed.
 
 | Code | Severity | Finding (fixed plain text; finalised at S4-3) | Citation (D-05, confirmed via HQ-8) |
 |---|---|---|---|
-| `DSX-EXP-070` | CRITICAL | CUPED declared with a covariate that is not pre-experiment. | Deng, Xu, Kohavi & Walker (2013), WSDM '13, pp.123-132. |
-| `DSX-MET-021` | HIGH | Metric pooled across buckets sampled at different rates with no reweighting declared. | Crook, Frasca, Kohavi & Longbotham (2009), KDD '09, §6 Pitfall 4. |
+| `DSX-EXP-070` | CRITICAL | CUPED declared with a covariate that is not pre-experiment | Deng, Xu, Kohavi & Walker (2013), WSDM '13, pp.123-132. |
+| `DSX-MET-021` | HIGH | metric pooled across buckets sampled at different rates with no reweighting declared | Crook, Frasca, Kohavi & Longbotham (2009), KDD '09, §6 Pitfall 4. |
+
+**Finalised text (S4-4, 2026-08-29):** both rows above now carry the **exact shipped**
+`references/finding-codes.md` text (verbatim from the `report.add(...)` titles) — note
+`DSX-MET-021` ships lower-case "metric pooled…", no trailing period. Both codes landed
+at S4-3 exactly as decided here (`DSX-EXP-070` CRITICAL in `design.py::_check_cuped`,
+`DSX-MET-021` HIGH in `metrics.py::_check_cohort_denominator_shift`); catalogue is
+258 → 260 additive, frozen Phase-12 snapshot (256) unmutated. Still non-blocking; still
+silence = accept.
 
 - **Why these numbers:** `EXP-070` is the next free EXP band (design-correctness, not the SPEC-044 vocab
   question); `MET-021` is the free slot adjacent to its closest sibling `DSX-MET-020` in the 02x
