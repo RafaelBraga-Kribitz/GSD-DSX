@@ -1,6 +1,7 @@
 # HUMAN-QUEUE — items only you can answer
 
-Milestone **v2.2 Analytic Surface**. The loop keeps working around these; it only
+Milestone **v2.2 Analytic Surface — SHIPPED 2026-08-29 (tag `v2.2.0`).** All
+items below are historical. The loop keeps working around open items; it only
 blocks at the close-out stage (S5-2) if any remain.
 
 **How to answer:** the operator is usually remote and cannot run local commands.
@@ -20,50 +21,9 @@ a persona round and records loudly):
 
 ## Open
 
-### HQ-15 — Close-out ship approval: complete milestone + merge to `main` + tag `v2.2.0` (blocks DoD)
-
-**Filed 2026-08-29T14:26Z (S5-2 firing), once the queue drained and the close-out ship stage
-was reached.** This is the last thing standing between v2.2 and done. Everything the loop can
-do without you is done; the remaining three actions are all outward-facing or destructive, so
-per brief §4 (categories 2 = irreversible/destructive and 5 = outward-facing ship) the loop
-**will not self-approve them** — they need your go.
-
-**Why it's ready (all loop-verifiable, all green):**
-
-- All 4 phases built and each end-of-phase security sign-off + UAT is human-approved
-  (HQ-9/10/12/14, answered 2026-08-29; sign-offs recorded in each `NN-SECURITY.md`).
-- `/gsd-audit-milestone` reached **`passed`** (S5-4): 23/23 requirements satisfied, 4/4 phases,
-  10/10 cross-phase integration seams, Nyquist compliant, 0 unsatisfied/orphaned.
-- `/gsd-audit-uat` cross-phase sweep clean (S5-1); `/gsd-extract-learnings` done (S5-3).
-- HUMAN-QUEUE now drained of every blocking item (S5-2, this firing).
-- The only unchecked ledger units are **S5-5** (`/gsd-complete-milestone`) and **S5-6** (ship).
-
-**What needs your approval (the three outward-facing / destructive actions):**
-
-1. **Merge** `gsd/v2.2.0-analytic-surface` → `main` (outward-facing).
-2. **Tag** the merge `v2.2.0` — the next free tag; the v2.0.0 tag already shipped as `v2.1.0`,
-   so this does not collide. **Never force-move a published tag.**
-3. **`/gsd-complete-milestone`'s destructive bookkeeping** — it runs `git rm .planning/REQUIREMENTS.md`
-   and archives the milestone (irreversible without git history surgery).
-
-**Recommended path (per the two recorded precedents in Standing framework notes below):**
-
-- **Do NOT use `/gsd-pr-branch`** — its per-commit cherry-pick chain does not survive a long
-  ceremony branch (abandoned mid-run on v2.0.0's 707-commit branch).
-- Ship by **direct 3-way merge**: verify on a throwaway branch first (full suite +
-  `scripts/check.sh` green, after deleting any gitignored `DECISIONS.jsonl` — see the two-test
-  false-fail note below) **before** touching `main`, then `git merge --no-ff` into `main` and
-  `git tag v2.2.0`.
-- `/gsd-complete-milestone` is **not headless-safe** (the loop verified this directly on
-  2026-08-29: interactive `verify_readiness` confirm + an incomplete-requirements
-  proceed/audit/abort prompt, since all 23 `REQUIREMENTS.md` rows are still `[ ]`/Queued),
-  so it must be run in an **interactive session**, not by a headless firing.
-
-**How to answer:** reply in an interactive session with your go (e.g. "ship it" to approve the
-recommended path, or specify a different merge/tag path). That session executes the merge +
-tag + milestone completion, records the result, and checks off **S5-5** and **S5-6** here and
-in `LOOP-LEDGER.md`. Until then the loop holds — S5-5/S5-6 are the only work left and neither
-is loop-doable.
+(none — HQ-15 answered and closed 2026-08-29; see Answered below. v2.2 Analytic
+Surface is fully shipped, tagged `v2.2.0`, and merged to `main`. No milestone is
+currently open.)
 
 ## HQ-8-superseded — original evidence pack (answered; kept for the record)
 
@@ -120,8 +80,7 @@ citation is not confirmed as **not in hand** (S4-3 D-05 bar).
 
 ## Will be added by the loop when reached
 
-- The S5-6 ship decisions: merge to `main` and the `v2.2.0` release tag.
-- Any persona decision the operator vetoes from a daily summary.
+(none — v2.2 has shipped; nothing further is expected on this milestone.)
 
 ## Standing framework notes (not queue items — nothing to answer, just remember)
 
@@ -238,3 +197,46 @@ orchestrator re-gate evidence: 23/23 register entries closed, `threats_open: 0`,
 consistent with the HQ-8 decision), full corpus gate green (1312 tests). The D-06 numbering
 veto for Phase 15's two new codes was granted separately as HQ-13. Recorded in
 `15-SECURITY.md`'s Sign-Off section.
+
+### HQ-15 — Close-out ship approval: complete milestone + merge to `main` + tag `v2.2.0` (answered 2026-08-29)
+
+**Operator decision:** "Ship it — explicit named-branch merge (Recommended)" — the
+recommended path was approved: verify on a throwaway branch first, then
+`git merge --no-ff` the ceremony branch into `main` **by explicit name**, never the
+generic `/gsd-complete-milestone` skill's auto-detected branch.
+
+**Why the explicit-name caveat mattered:** before executing, the interactive session
+found this repo carries 4 stale `gsd/*` branches from prior milestones
+(`gsd/v1.1.0-milestone`, `gsd/v2.0.0-dsx-validity-frame`, `gsd/v2.0.0-milestone`).
+`/gsd-complete-milestone`'s `handle_branches` step auto-detects "the milestone branch"
+via `git branch --list "gsd/*" | head -1` (alphabetically first), which would have
+silently merged `gsd/v1.1.0-milestone` instead of `gsd/v2.2.0-analytic-surface`. This
+was caught and reported before running anything, and the ship proceeded with an
+explicit, named merge instead of trusting that auto-detect.
+
+**What was executed:**
+
+1. Verified on a throwaway branch off `main` first: `git merge --no-ff
+   gsd/v2.2.0-analytic-surface`, 0 conflicts; `sh scripts/check.sh` all green (1312
+   tests, catalogue current, capability conformant, gate contract + determinism hold).
+2. Real merge onto `main`: commit `c0656b1`. Full gate re-run green again on `main`.
+3. Tagged `v2.2.0` (annotated) — confirmed by dereferencing the tag object, not
+   assumed, that it points at `c0656b1`. Pushed `main` and the tag.
+4. Ran `/gsd-complete-milestone`'s archival (`gsd-tools.cjs query milestone.complete
+   v2.2`), then hand-corrected two of its output defects before committing: several
+   generated accomplishment one-liners were truncated mid-sentence (replaced with
+   accurate text from each phase's real SUMMARY.md), and the archived
+   `v2.2-REQUIREMENTS.md` carried all 23 rows forward still `[ ]`/"(queued)" despite
+   the milestone audit's own `passed` verdict (corrected to `[x]`/"(complete)" with an
+   explanatory note, corroborated by `.planning/milestones/v2.2-MILESTONE-AUDIT.md`).
+5. Completed the workflow's AI-only steps by hand: full PROJECT.md evolution review,
+   ROADMAP.md reorganized (v2.2 collapsed into a shipped block), RETROSPECTIVE.md
+   milestone section added.
+6. Safety commit `4992bc6` (archive files + updated docs), then `git rm
+   .planning/REQUIREMENTS.md` committed separately (`427372c`) per the workflow's own
+   two-commit pattern — full gate re-run green after each. Both pushed to `main`.
+
+**Result:** v2.2 Analytic Surface is fully shipped. `main` is at `427372c`, 0 ahead /
+0 unpushed. LOOP-LEDGER.md S5-5 and S5-6 checked off — all 29 ledger units complete.
+`gsd/v2.2.0-analytic-surface` is left in place (still the Scheduled Task's target
+branch); a future firing against it will find every unit `[x]` and hold correctly.
