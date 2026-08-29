@@ -164,3 +164,81 @@ level.
    learnings` conjuncts carry the real positive assertion. Harmless.
 
 Agents: planner `a6082e0cfaaabaa6c`; checker `ab0e4c082146f3169`.
+
+## S4-2 — Phase 15 plan (full evidence)
+
+**Firing 2026-08-29 (S4-2).** Reconcile-first at HEAD `8d91d96` (branch up-to-date with
+origin, nothing unpushed) found ledger == repo — S4-1 (Phase 15 discuss, `15-CONTEXT.md`
++ D-06 mint `DSX-EXP-070`/`DSX-MET-021`) was the last landed commit, no correction owed.
+
+**Method.** Spawned `gsd-planner` (opus, §3) to author the plan set from `15-CONTEXT.md`
+(D-01..D-09 + the 12 traps) + REQUIREMENTS REQ-P15-01..07, then the independent
+`gsd-plan-checker` (opus — §3 override of the profile's haiku `checker_model`) as the gate.
+Orchestrator ground-truthed the baseline first (brief §5): `--check` exit 0 @258;
+`VARIANCE_ADJUSTMENTS` = 4 members @`spec.py:264` (no `cuped`); `DSX-MET-020` /
+`_check_denominator_drift` reads `results.period_comparisons` @`metrics.py:189-201`;
+`_D05_ALLOWLIST_CODES` exact-code frozenset @`gen-finding-catalogue.py:146` (prefixes = PAR/
+VAL/INT/PRE/ADM/CRV, no EXP/MET); invariant `_EXPECTED_TOTAL=258`/`_SNAPSHOT_TOTAL=256`;
+`DSX-EXP-070`/`DSX-MET-021` grep-0 in the catalogue (both genuinely free).
+
+**Plan set (6 plans):**
+| Plan | Wave | depends_on | requirements | Files (product) |
+|---|---|---|---|---|
+| 15-01 | 1 | [] | REQ-P15-01 | `dsx/spec.py` (`cuped`→VARIANCE_ADJUSTMENTS + `CUPED_COVARIATE_TIMINGS`), `tests/test_cuped_vocab.py` |
+| 15-02 | 1 | [] | REQ-P15-04 | `dsx/checks/metrics.py` (mint MET-021 HIGH), `tests/test_cohort_denominator.py` |
+| 15-03 | 1 | [] | REQ-P15-05, REQ-P15-06 | `templates/APA-TABLE-research.md`, `tests/test_apa_template.py`, `tests/test_no_shapiro_autoswitch.py` |
+| 15-04 | 2 | [15-01] | REQ-P15-02 | `dsx/mathx.py` (θ/ρ² ref impl), `dsx/checks/design.py` (mint EXP-070 CRITICAL), `tests/test_cuped.py` |
+| 15-05 | 3 | [15-01,15-02,15-04] | REQ-P15-03 | `examples/good-ANALYSIS-SPEC.yaml`, `tests/test_good_fixture_phase15.py` |
+| 15-06 | 3 | [15-02,15-04] | REQ-P15-07 | `scripts/gen-finding-catalogue.py`, `references/finding-codes.md`, `tests/test_finding_catalogue_invariant.py` |
+
+**Gate = REVISE (1 blocker) → 1 repair → PASS.**
+
+Blocker (checker, confirmed by orchestrator): 15-02 Task 1's `<verify>` did
+`body=ast.get_source_segment(src,f); assert 'period_comparisons' not in body`, but the same
+task's `<action>` prescribes a `Structural criterion:` docstring line naming
+`results.period_comparisons` — and `get_source_segment` returns the whole function
+*including its docstring*, so `'period_comparisons' not in body` is False and the verify is
+unpassable on a faithful implementation. 15-02 is the sole plan delivering REQ-P15-04
+(MET-021), so a stuck verify would block the phase mid-execution.
+
+Repair (checker's preferred option b): scoped the negative scan to code string-constants,
+excluding the docstring by node identity —
+`docn = f.body[0].value if <first stmt is a str Expr> else None; codestrs = ' '.join(str
+constants in ast.walk(f) where n is not docn); assert 'cohort_comparisons' in codestrs and
+'period_comparisons' not in codestrs`. Also reworded prohibition #3's prose to match
+("function CODE (docstring excluded, by node identity)").
+
+Orchestrator re-verification of the repair (brief §5 — empirical, not reasoned): built a
+faithful synthetic `_check_cohort_denominator_shift` (docstring names `period_comparisons`,
+code reads only `cohort_comparisons`) and ran both verifies — OLD **fails** (blocker
+reproduced), NEW **passes**; the untouched downstream asserts (single `report.add`, literal
+message, `DSX-MET-021`, `HIGH`, no pandas/scipy/numpy) still hold. Temp harness deleted.
+
+Orchestrator re-verification of the checker's PASS claims (frontmatter-level, from disk):
+- Coverage union == exactly {REQ-P15-01..07}: 01→15-01, 02→15-04, 03→15-05, 04→15-02,
+  05+06→15-03, 07→15-06 — each requirement owned once, none invented, none uncovered.
+- Single-writer-per-wave: wave-1 (15-01 spec.py / 15-02 metrics.py / 15-03 templates+2 tests)
+  pairwise file-disjoint; 15-04 sole wave-2; wave-3 (15-05 examples+test / 15-06 generator+
+  catalogue+invariant) disjoint. `spec.py` only 15-01, `design.py` only 15-04, `metrics.py`
+  only 15-02. Every `depends_on` → strictly earlier wave; no cycles / forward refs.
+- Trap #12: `cuped ∈ VARIANCE_ADJUSTMENTS` lands wave 1 (15-01) before both CUPED PASS
+  fixtures (15-04 wave 2 `depends_on:[15-01]`, 15-05 wave 3) — no stray DSX-SPEC-044 window.
+- Two mints only: EXP-070 CRITICAL (`design.py`, keyed on `variance_adjustment==cuped`,
+  pre_experiment→ok / post_treatment|unrecognised|absent→fire) + MET-021 HIGH (`metrics.py`,
+  reads `results.cohort_comparisons`, disjoint from MET-020 by a both-directions test). No
+  survivorship code. No `GATE_THRESHOLDS`/`GATE_PROFILES` edit.
+- D-08 additive rebaseline lives only in 15-06 (`_EXPECTED_TOTAL` 258→260, `_MINTED_CODES`
+  += EXP-070,MET-021, `_SNAPSHOT_TOTAL` stays 256, frozen snapshot untouched, catalogue
+  REGENERATED via `--write` not hand-edited). D-09 exact-code allowlist, not prefix.
+- Catalogue-staleness window (mints wave 1/2, regen wave 3) judged SAFE: 15-02/04/05 verify
+  blocks explicitly do NOT run `--check`/the invariant; the invariant reads the catalogue
+  FILE (stays 258 until 15-06's `--write`), so nothing goes red mid-phase.
+
+**Non-blocking nits (from the checker; carried to S4-3/S4-4, none blocks execution):**
+1. 15-02 prohibition #3 prose reworded with the fix (done this unit).
+2. 15-05 Task 2 uses `tests.test_causal_verb_golden` as a regression anchor — confirm at
+   execute time that golden keys on finding codes only, not `report.ok` message lines.
+3. 15-04 gate-plan exit test baselines on the *unmutated* good fixture (pre-Phase-15, no
+   cuped block) — holds at wave 2; the in-memory deepcopy injection is self-contained.
+
+Agents: planner `ad746fb00d5a99e52`; checker `a8d9950bfa667aa3b`.
