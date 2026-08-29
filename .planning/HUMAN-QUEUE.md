@@ -20,10 +20,50 @@ a persona round and records loudly):
 
 ## Open
 
-(none currently — the six Phase 13/14/15/16 end-of-phase items (HQ-9 .. HQ-14) were
-all answered 2026-08-29; see Answered below. The S5-6 ship decisions — merge to
-`main` and the `v2.2.0` release tag — are expected here once the loop's close-out
-stage reaches them.)
+### HQ-15 — Close-out ship approval: complete milestone + merge to `main` + tag `v2.2.0` (blocks DoD)
+
+**Filed 2026-08-29T14:26Z (S5-2 firing), once the queue drained and the close-out ship stage
+was reached.** This is the last thing standing between v2.2 and done. Everything the loop can
+do without you is done; the remaining three actions are all outward-facing or destructive, so
+per brief §4 (categories 2 = irreversible/destructive and 5 = outward-facing ship) the loop
+**will not self-approve them** — they need your go.
+
+**Why it's ready (all loop-verifiable, all green):**
+
+- All 4 phases built and each end-of-phase security sign-off + UAT is human-approved
+  (HQ-9/10/12/14, answered 2026-08-29; sign-offs recorded in each `NN-SECURITY.md`).
+- `/gsd-audit-milestone` reached **`passed`** (S5-4): 23/23 requirements satisfied, 4/4 phases,
+  10/10 cross-phase integration seams, Nyquist compliant, 0 unsatisfied/orphaned.
+- `/gsd-audit-uat` cross-phase sweep clean (S5-1); `/gsd-extract-learnings` done (S5-3).
+- HUMAN-QUEUE now drained of every blocking item (S5-2, this firing).
+- The only unchecked ledger units are **S5-5** (`/gsd-complete-milestone`) and **S5-6** (ship).
+
+**What needs your approval (the three outward-facing / destructive actions):**
+
+1. **Merge** `gsd/v2.2.0-analytic-surface` → `main` (outward-facing).
+2. **Tag** the merge `v2.2.0` — the next free tag; the v2.0.0 tag already shipped as `v2.1.0`,
+   so this does not collide. **Never force-move a published tag.**
+3. **`/gsd-complete-milestone`'s destructive bookkeeping** — it runs `git rm .planning/REQUIREMENTS.md`
+   and archives the milestone (irreversible without git history surgery).
+
+**Recommended path (per the two recorded precedents in Standing framework notes below):**
+
+- **Do NOT use `/gsd-pr-branch`** — its per-commit cherry-pick chain does not survive a long
+  ceremony branch (abandoned mid-run on v2.0.0's 707-commit branch).
+- Ship by **direct 3-way merge**: verify on a throwaway branch first (full suite +
+  `scripts/check.sh` green, after deleting any gitignored `DECISIONS.jsonl` — see the two-test
+  false-fail note below) **before** touching `main`, then `git merge --no-ff` into `main` and
+  `git tag v2.2.0`.
+- `/gsd-complete-milestone` is **not headless-safe** (the loop verified this directly on
+  2026-08-29: interactive `verify_readiness` confirm + an incomplete-requirements
+  proceed/audit/abort prompt, since all 23 `REQUIREMENTS.md` rows are still `[ ]`/Queued),
+  so it must be run in an **interactive session**, not by a headless firing.
+
+**How to answer:** reply in an interactive session with your go (e.g. "ship it" to approve the
+recommended path, or specify a different merge/tag path). That session executes the merge +
+tag + milestone completion, records the result, and checks off **S5-5** and **S5-6** here and
+in `LOOP-LEDGER.md`. Until then the loop holds — S5-5/S5-6 are the only work left and neither
+is loop-doable.
 
 ## HQ-8-superseded — original evidence pack (answered; kept for the record)
 
