@@ -561,7 +561,7 @@ vocabulary; there is no external ecosystem or library version to track.
 
 **If this table is empty:** N/A — see above; both entries are implementation-mechanism inferences, not factual claims about the live tree (everything else in this document was read directly from the repository during this session).
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Where should the three new regression tests live — one file each, or folded into `tests/test_dsx.py`?**
    - What we know: this codebase has both patterns. `tests/test_dsx.py` is a
@@ -576,7 +576,7 @@ vocabulary; there is no external ecosystem or library version to track.
      it matches the majority of recent additions, keeps each regression
      traceable to its requirement in the file name, and avoids growing an
      already-large `test_dsx.py` further. Non-blocking either way; the planner
-     can choose freely.
+     can choose freely. **RESOLVED (S1-2 planning):** three separate single-purpose files were adopted — `tests/test_boschloo_reconciliation.py`, `tests/test_time_to_event_fallthrough.py`, `tests/test_estimand_kind_vocab.py` — matching this recommendation and the 17-VALIDATION.md Wave-0 test map.
 
 2. **Should the D-06 range pre-allocation get a reinforcing code comment in `dsx/checks/stats.py`, given `17-CONTEXT.md` is already committed?**
    - What we know: `17-CONTEXT.md` (containing the full D-03 range table) is
@@ -591,7 +591,7 @@ vocabulary; there is no external ecosystem or library version to track.
      `dsx/checks/stats.py`'s `PARAMETRIC_TESTS`/`NONPARAMETRIC_TESTS`
      constants pointing at `.planning/phases/17-.../17-CONTEXT.md` D-03 for the
      reserved `DSX-STA-050`–`139` range. Low-cost, not required by any test,
-     purely a discoverability improvement — planner's discretion.
+     purely a discoverability improvement — planner's discretion. **RESOLVED (S1-2 planning):** deferred — not adopted. The committed `17-CONTEXT.md` D-03 already clears REQ-P17-04's "committed note" bar; the optional reinforcing code comment is left out of scope as discretionary.
 
 ## Environment Availability
 

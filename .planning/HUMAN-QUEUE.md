@@ -463,6 +463,21 @@ filters on `f.includes('-VERIFICATION')` while this repo's files are named
 (found v2.2 S5-1). **At S5-1, never accept the CLI's "all clear" — hand-check
 every phase's VERIFICATION.md.**
 
+**`check.decision-coverage-plan` false-blocks on this project's CONTEXT.md
+decision-bullet style (found v2.3 S1-2).** The §13a plan-phase decision-coverage
+gate parses decisions with `gsd-core/bin/lib/decisions.cjs`, whose regexes expect
+`- **D-NN:** …` (colon-immediate) or em-dash-*inside*-the-bold. The discuss-phase
+persona rounds write `- **D-12a disposition table** recorded …` / `- **D-06 range
+pre-allocation** — one …` (title inside the bold, separator *after* the closing
+`**`), which matches none of the three regexes → `total:0, reason:"could-not-parse",
+passed:false`. That is a parser format-mismatch, **not** an uncovered decision — the
+gsd-plan-checker's Dimension-7 (Context Compliance) substantively verifies the same
+property (every D-NN honored by a plan). **At every phase plan gate (P18/P19/P20 S*-2),
+do NOT treat this could-not-parse/total:0 as a real coverage gap** — confirm coverage
+via the plan-checker Dim-7 pass and proceed. (Fixing it would mean either widening the
+parser or reformatting committed CONTEXT.md decision bullets to `- **D-NN:** …`; not
+done — the substantive gate already covers it.)
+
 **`/gsd-pr-branch` does not survive a long ceremony branch.** Its per-commit
 cherry-pick chain hit recurring modify/delete conflicts on v2.0.0's 707-commit
 branch and was abandoned mid-run. Ship by direct 3-way merge.

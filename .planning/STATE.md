@@ -2,19 +2,19 @@
 gsd_state_version: 1.0
 milestone: v2.3
 milestone_name: Test Catalog
+current_phase: 17
+current_phase_name: foundation-repairs-and-spec-vocabulary
 status: executing
 stopped_at: "Milestone opened 2026-08-29 by operator direction (interactive session). Scope researched (6-agent workflow) and written: .planning/research/V2.3-V2.4-SCOPE.md; REQUIREMENTS.md REQ-P17-01..REQ-P20-04; ROADMAP.md Phases 17-20. Loop repointed: branch gsd/v2.3.0-test-catalog, LOOP-BRIEF/LOOP-LEDGER/HUMAN-QUEUE rewritten for v2.3, firing script updated (branch + usage-limit backoff). Next: the loop's S0-1 (verify state + scope recheck)."
-last_updated: "2026-08-29T21:48:00.000Z"
-last_activity: 2026-08-29
-last_activity_desc: "S1-1 Phase 17 discuss complete — 17-CONTEXT.md settles estimand_kind (6-member), the D-12a disposition table, and the D-06 range pre-allocation"
+last_updated: "2026-08-30T00:20:53.743Z"
+last_activity: 2026-08-30
+last_activity_desc: "S1-2 Phase 17 planning complete — 3 plans (17-01 Boschloo, 17-02 fallthrough pin + disposition/range verify, 17-03 estimand_kind vocab + guard + zero-new-codes); gsd-plan-checker VERIFICATION PASSED; dsx plan:post gate clean spec-less (exit 0)"
 progress:
   total_phases: 4
   completed_phases: 0
-  total_plans: 0
+  total_plans: 3
   completed_plans: 0
   percent: 0
-current_phase: 17
-current_phase_name: foundation-repairs-and-spec-vocabulary
 ---
 
 # Project state
