@@ -22,7 +22,7 @@ PARAMETRIC_TESTS = {
 
 NONPARAMETRIC_TESTS = {
     "mann_whitney", "wilcoxon_signed_rank", "kruskal_wallis", "spearman_correlation",
-    "fisher_exact", "mcnemar", "chi_square", "permutation_test", "bootstrap",
+    "fisher_exact", "boschloo_exact", "mcnemar", "chi_square", "permutation_test", "bootstrap",
 }
 
 # Rule of thumb above which the CLT makes a mean-based test safe despite skew.
@@ -62,7 +62,7 @@ def recommend_test(
             return _rec(
                 "two_proportion_z",
                 "Two independent proportions with adequate expected cell counts.",
-                ["fisher_exact (any expected cell < 5)", "chi_square", "bootstrap"],
+                ["boschloo_exact (any expected cell < 5)", "chi_square", "bootstrap"],
                 "risk_difference + cohens_h",
             )
         return _rec("chi_square", "Three or more independent proportions.",
