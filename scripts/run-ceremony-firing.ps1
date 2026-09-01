@@ -17,10 +17,16 @@
 .NOTES
   Overlap guard: a lock file prevents a second firing starting while one is running.
   Usage-limit backoff: when a firing's transcript shows a usage/rate-limit hit, a
-  .backoff-until file parks every poll until the account's allowance returns --
-  the weekly reset is Wednesday 10:00 America/Sao_Paulo (13:00 UTC; Brazil has had
-  no DST since 2019), a 5-hour-window hit parks 60 minutes. Resumption is automatic:
-  the first poll after the timestamp deletes the file and works normally.
+  .backoff-until file parks polls until the account's allowance returns -- the
+  weekly reset is Wednesday 10:00 America/Sao_Paulo (13:00 UTC; Brazil has had no
+  DST since 2019), a 5-hour-window hit parks 60 minutes. Resumption is automatic
+  two ways: (1) the first poll after the deadline always resumes; (2) every
+  $ProbeIntervalMinutes during the hold, a poll spends one trivial, tool-free
+  `claude -p` call to check whether the limit was lifted EARLY -- observed for
+  real on 2026-09-01: Anthropic sometimes restores a weekly allowance before its
+  stated reset, and a pure dead-reckoning wait has no way to notice that on its
+  own, so it would otherwise sit idle for up to a full window's worth of already-
+  available capacity.
   Logs: .planning/loop-logs/ (gitignored).
 #>
 
@@ -36,9 +42,14 @@ $Branch = 'gsd/v2.3.0-test-catalog'
 $LogDir = Join-Path $Repo '.planning\loop-logs'
 $Lock   = Join-Path $LogDir '.firing.lock'
 $Backoff = Join-Path $LogDir '.backoff-until'
+$ProbeMarker = Join-Path $LogDir '.backoff-last-probe'
 $BackoffLog = Join-Path $LogDir 'backoff.log'
 $Stamp  = (Get-Date).ToUniversalTime().ToString('yyyyMMdd-HHmmss')
 $Log    = Join-Path $LogDir "firing-$Stamp.log"
+# How often (minutes) a held poll spends one trivial probe call checking for an
+# early release. 2 poll cycles: frequent enough to catch an early reset within
+# ~30 min, infrequent enough that a probe is a rounding error next to a firing.
+$ProbeIntervalMinutes = 30
 
 if (-not (Test-Path $LogDir)) { New-Item -ItemType Directory -Path $LogDir -Force | Out-Null }
 
@@ -58,9 +69,43 @@ function Get-NextWeeklyReset {
   return $candidate
 }
 
+function Test-UsageLimitHit([string]$Text) {
+  # Shared wording check, used both on a real firing's transcript and on a
+  # bare probe reply. $Text should already be lowercased. Returns a hashtable
+  # so callers get both "was it a limit" and "which kind" from one scan.
+  $isLimited = $false
+  foreach ($pat in @('usage limit', 'rate limit', 'rate-limit', 'limit reached',
+                     'limit will reset', 'out of extra usage', 'usage cap',
+                     'hit your limit', 'hit your weekly', 'hit your monthly',
+                     'weekly limit', 'exceeded your usage')) {
+    if ($Text.Contains($pat)) { $isLimited = $true; break }
+  }
+  return @{ Limited = $isLimited; Weekly = ($isLimited -and $Text.Contains('week')) }
+}
+
+function Invoke-LimitProbe {
+  # A trivial, tool-free call that costs almost nothing and definitively answers
+  # "does the account accept work right now" -- Claude either replies, or the
+  # CLI prints limit wording and exits non-zero. No file reads, no git, no repo
+  # side effects; deliberately decoupled from ceremony state.
+  $prevPref = $ErrorActionPreference
+  $ErrorActionPreference = 'Continue'
+  try {
+    $out = & claude -p 'Reply with exactly: PROBE-OK' `
+        --permission-mode bypassPermissions `
+        --dangerously-skip-permissions 2>&1 |
+      ForEach-Object { $_.ToString() }
+  } finally {
+    $ErrorActionPreference = $prevPref
+  }
+  return (($out -join ' ') -replace "`0", '').ToLowerInvariant()
+}
+
 # --- Usage-limit backoff guard (BEFORE the lock; cheapest possible exit) ------
-# During a hold, polls must not spawn a firing log each -- one line to a single
-# rolling backoff.log is enough for the operator to see the loop is parked.
+# During a hold, most polls must not spawn a firing log each -- a single
+# rolling backoff.log line is enough for the operator to see the loop is
+# parked. Every $ProbeIntervalMinutes, though, a poll spends one Invoke-LimitProbe
+# call to check for an early release rather than blindly trusting the deadline.
 if (Test-Path $Backoff) {
   $untilRaw = (Get-Content $Backoff -Raw -ErrorAction SilentlyContinue).Trim()
   $until = [datetime]::MinValue
@@ -68,15 +113,52 @@ if (Test-Path $Backoff) {
       [Globalization.CultureInfo]::InvariantCulture,
       ([Globalization.DateTimeStyles]::AssumeUniversal -bor [Globalization.DateTimeStyles]::AdjustToUniversal),
       [ref]$until)
+
   if ($parsed -and ((Get-Date).ToUniversalTime() -lt $until)) {
-    Add-Content -Path $BackoffLog -Value ("[{0}Z] parked: usage-limit hold until {1} (UTC); poll skipped." -f `
+    $probeDue = $true
+    if (Test-Path $ProbeMarker) {
+      $lastProbe = (Get-Item $ProbeMarker).LastWriteTimeUtc
+      if (((Get-Date).ToUniversalTime() - $lastProbe).TotalMinutes -lt $ProbeIntervalMinutes) {
+        $probeDue = $false
+      }
+    }
+
+    if (-not $probeDue) {
+      Add-Content -Path $BackoffLog -Value ("[{0}Z] parked: usage-limit hold until {1} (UTC); poll skipped." -f `
+        (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ss'), $untilRaw)
+      exit 0
+    }
+
+    # Probe due: spend one trivial call to check for an early release.
+    Set-Content -Path $ProbeMarker -Value ((Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ'))
+    $probeText = Invoke-LimitProbe
+    $probeResult = Test-UsageLimitHit $probeText
+
+    if ($probeResult.Limited) {
+      # Still genuinely limited. Re-derive the hold window from THIS probe's own
+      # wording (Anthropic could equally extend or shorten it) rather than
+      # assuming the original deadline still holds.
+      if ($probeResult.Weekly) { $newUntil = Get-NextWeeklyReset } else { $newUntil = (Get-Date).ToUniversalTime().AddMinutes(60) }
+      $newUntilStr = $newUntil.ToString('yyyy-MM-ddTHH:mm:ssZ')
+      Set-Content -Path $Backoff -Value $newUntilStr
+      Add-Content -Path $BackoffLog -Value ("[{0}Z] probe: still limited -- hold updated to {1} (UTC)." -f `
+        (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ss'), $newUntilStr)
+      exit 0
+    }
+
+    # Probe succeeded -- capacity is back before the dead-reckoned deadline.
+    Remove-Item $Backoff -Force -ErrorAction SilentlyContinue
+    Remove-Item $ProbeMarker -Force -ErrorAction SilentlyContinue
+    Add-Content -Path $BackoffLog -Value ("[{0}Z] probe succeeded (early release, before {1} UTC) -- resuming now." -f `
       (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ss'), $untilRaw)
-    exit 0
+    # Fall through into the normal firing below -- no need to wait for the next poll.
+  } else {
+    # Deadline passed (or file unparseable -- fail open, never park forever on garbage).
+    Remove-Item $Backoff -Force -ErrorAction SilentlyContinue
+    Remove-Item $ProbeMarker -Force -ErrorAction SilentlyContinue
+    Add-Content -Path $BackoffLog -Value ("[{0}Z] hold ended ({1}) -- resuming normal firings." -f `
+      (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ss'), $untilRaw)
   }
-  # Window over (or file unparseable -- fail open, never park forever on garbage).
-  Remove-Item $Backoff -Force -ErrorAction SilentlyContinue
-  Add-Content -Path $BackoffLog -Value ("[{0}Z] hold ended ({1}) -- resuming normal firings." -f `
-    (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ss'), $untilRaw)
 }
 
 # --- Overlap guard -----------------------------------------------------------
@@ -236,43 +318,35 @@ of any previous firing. Everything you need to know is on disk.
 
   # --- Usage-limit detection --> graceful backoff -----------------------------
   # Operator directive (2026-08-29): when the account hits its token limits, the
-  # loop must fail gracefully and return to work BY ITSELF at the weekly reset
-  # (Wednesday 10:00 Sao Paulo = 13:00 UTC). The Scheduled Task itself cannot be
-  # modified from automation (Access Denied -- verified), so the pause lives here:
-  # a .backoff-until file that the guard at the top of this script honors.
+  # loop must fail gracefully and return to work BY ITSELF -- both at the weekly
+  # reset AND, per Test-UsageLimitHit's periodic probe above, on an early release
+  # (observed for real 2026-09-01). The Scheduled Task itself cannot be modified
+  # from automation (Access Denied -- verified), so the pause lives here: a
+  # .backoff-until file the guard at the top of this script honors.
   #
-  # Detection scans the tail of this firing's own transcript. The exact CLI
-  # wording varies by limit type and version, so several case-insensitive
-  # patterns are checked; 'week' in the same tail distinguishes the weekly
-  # allowance (park until the weekly reset) from a 5-hour-window hit (park 60
-  # minutes). False positives are cheap for the 60-minute branch and the weekly
-  # branch still self-heals at the next reset; false negatives only cost a few
-  # no-op polls that fail fast at the CLI.
+  # Detection scans the tail of this firing's own transcript via the same
+  # Test-UsageLimitHit used by the probe, so the two paths can never drift apart.
+  # False positives are cheap (the periodic probe corrects them within
+  # $ProbeIntervalMinutes); false negatives only cost a few no-op polls that
+  # fail fast at the CLI.
   $tail = ''
   if (Test-Path $Log) {
     $tail = ((Get-Content $Log -Tail 400 -ErrorAction SilentlyContinue) -join ' ')
     $tail = ($tail -replace "`0", '').ToLowerInvariant()
   }
-  $limitHit = $false
-  foreach ($pat in @('usage limit', 'rate limit', 'rate-limit', 'limit reached',
-                     'limit will reset', 'out of extra usage', 'usage cap',
-                     'hit your limit', 'hit your weekly', 'hit your monthly',
-                     'weekly limit', 'exceeded your usage')) {
-    if ($tail.Contains($pat)) { $limitHit = $true; break }
-  }
-  if ($limitHit) {
-    if ($tail.Contains('week')) {
-      $until = Get-NextWeeklyReset
-      $reason = 'weekly allowance exhausted'
-    } else {
-      $until = (Get-Date).ToUniversalTime().AddMinutes(60)
-      $reason = '5-hour-window limit (or unclassified limit)'
-    }
+  $limitResult = Test-UsageLimitHit $tail
+  if ($limitResult.Limited) {
+    if ($limitResult.Weekly) { $until = Get-NextWeeklyReset; $reason = 'weekly allowance exhausted' }
+    else { $until = (Get-Date).ToUniversalTime().AddMinutes(60); $reason = '5-hour-window limit (or unclassified limit)' }
     $untilStr = $until.ToString('yyyy-MM-ddTHH:mm:ssZ')
     Set-Content -Path $Backoff -Value $untilStr
-    Write-Log "BACKOFF: $reason detected in transcript -- parking all polls until $untilStr (UTC). Resumption is automatic."
+    Write-Log "BACKOFF: $reason detected in transcript -- parking all polls until $untilStr (UTC). Resumption is automatic (deadline or an earlier successful probe, whichever comes first)."
     Add-Content -Path $BackoffLog -Value ("[{0}Z] parked by firing-{1}: {2}; hold until {3}." -f `
       (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ss'), $Stamp, $reason, $untilStr)
+  } else {
+    # A clean firing is itself proof capacity exists -- drop any stale probe
+    # marker so a future hold's first probe isn't needlessly throttled by it.
+    Remove-Item $ProbeMarker -Force -ErrorAction SilentlyContinue
   }
 }
 catch {
