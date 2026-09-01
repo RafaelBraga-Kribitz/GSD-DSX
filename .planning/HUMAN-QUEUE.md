@@ -40,8 +40,16 @@ every non-accepted mitigation: 13 targeted tests green (`test_boschloo_reconcili
 machine-verifiable and the loop earned it; the outward-facing **operator approval** is a
 human read (brief §4 item 4) the loop may not self-sign. Nothing blocks on it until S5-2.
 
+**Phase 17 UAT (folded in here — non-blocking until S5-2):** Phase 17 is an internal
+spec/routing/vocabulary phase with **no user-facing surface**, so its user-acceptance
+test is simply confirming the automated acceptance is sufficient. `/gsd-validate-phase 17`
+returned **nyquist_compliant: true** (all 5 reqs COVERED, zero gaps) and
+`/gsd-verify-work`-class behavior is fully exercised by the green gate suite. No interactive
+UAT is owed; the operator confirms this alongside the security sign-off.
+
 **To sign:** reply in a session confirming; an interactive session sets the Approval line
-to `verified <date>` and checks this item off. To reject, name the threat and the gap.
+in `17-SECURITY.md` to `verified <date>`, notes the UAT acceptance, and checks this item off.
+To reject, name the threat (or UAT concern) and the gap.
 
 *(HQ-16, HQ-17, HQ-18 answered 2026-09-01; see Answered below.)*
 
