@@ -51,6 +51,36 @@ UAT is owed; the operator confirms this alongside the security sign-off.
 in `17-SECURITY.md` to `verified <date>`, notes the UAT acceptance, and checks this item off.
 To reject, name the threat (or UAT concern) and the gap.
 
+### HQ-20 — Phase 18 discuss decisions (NON-BLOCKING veto window; silence = accept)
+
+**Status: RECORDED 2026-09-01 (S2-1). Not a D-05/scope/ship escalation — a D-06-class persona
+decision recorded loudly with a veto window per brief §4. Nothing blocks on it.** Two items from
+`.planning/phases/18-correlation-association-and-agreement/18-CONTEXT.md` the operator may veto
+from a daily summary:
+
+1. **D-06 code numbering for the five new Phase 18 gate codes** (drawn from the Phase-17
+   pre-allocated ranges 050–059 and 060–069, next-free slot per owning decade). All HIGH,
+   permanent under D-06:
+   - `DSX-STA-050` — Pearson/linear correlation declared against a declared-ordinal operand
+     (point-biserial and dichotomous operands whitelisted).
+   - `DSX-STA-051` — a correlation coefficient declared for an `agreement`/`method_comparison`
+     estimand (routes to kappa/ICC/Bland-Altman).
+   - `DSX-STA-060` — ICC declared without the full (model, type, definition) triple.
+   - `DSX-STA-061` — weighted kappa declared without declared weights.
+   - `DSX-STA-062` — kappa declared without its p_pos/p_neg companions.
+   Full predicates + rationale in 18-CONTEXT.md D-02.
+
+2. **Requirement-parenthetical alignment for REQ-P18-04 (offered, not yet applied).** The
+   requirement paraphrases the kappa companions as "raw agreement + prevalence, per Feinstein &
+   Cicchetti 1990." The operator-answered HQ-16 correction (2026-09-01, primary text read)
+   establishes the actual recommendation is separate **p_pos and p_neg** values, in the companion
+   Part II (Cicchetti & Feinstein 1990, JCE 43(6):551–558). DSX-STA-062 is built to the corrected
+   p_pos/p_neg predicate (18-CONTEXT.md D-04) — this is executing the operator's own answered D-05,
+   not a unilateral reword. REQUIREMENTS.md's parenthetical was **not** edited this firing (a
+   requirement reword is a §4 escalation); the loop offers to align it ("prevalence" → "p_pos/p_neg")
+   so the requirement and the gate cannot drift. To veto either item, reply in a session; otherwise
+   silence accepts and Phase 18 execute (S2-3) builds on them.
+
 *(HQ-16, HQ-17, HQ-18 answered 2026-09-01; see Answered below.)*
 
 ## Will be added by the loop when reached
@@ -60,7 +90,7 @@ To reject, name the threat (or UAT concern) and the gap.
 - Phase 17/18/19/20 end-of-phase security sign-off + UAT rounds (batched per
   phase; non-blocking until S5-2). **Phase 17 security → FILED as HQ-19 (2026-09-01).**
 - D-06 numbering veto windows for the new codes (from the Phase 17 pre-allocated
-  ranges; silence = accept).
+  ranges; silence = accept). **Phase 18 codes → FILED as HQ-20 (2026-09-01).**
 - The S5-6 ship decisions: merge to `main` and the `v2.3.0` release tag.
 - Any persona decision the operator vetoes from a daily summary.
 

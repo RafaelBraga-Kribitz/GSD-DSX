@@ -5,10 +5,10 @@ milestone_name: Test Catalog
 current_phase: 18
 current_phase_name: correlation-association-and-agreement
 status: executing
-stopped_at: "S1-5 complete (2026-09-01T22:16Z) — Phase 17 secure + validate BOTH passed; PHASE 17 CLOSED (S1-1…S1-5 all done). /gsd-secure-phase 17 = SECURED (threats_open:0, 17-SECURITY.md); /gsd-validate-phase 17 = NYQUIST-COMPLIANT (nyquist_compliant:true, zero gaps, 17-VALIDATION.md). Operator security sign-off + Phase-17 UAT batched to HUMAN-QUEUE HQ-19 (non-blocking until S5-2). Stopped at the ~12-min pacing cap on the S1-5 / Phase-17-close boundary. Next unblocked unit: S2-1 (Phase 18 discuss) — now UNBLOCKED (S1-5 done AND HQ-16 Phase-18 D-05 pack answered). S2-1 is a full opus/high discuss+persona unit; deliberately not started this firing to avoid mid-unit compaction on a decision artifact (brief §1)."
-last_updated: "2026-09-01T22:16:00Z"
+stopped_at: "S2-1 complete (2026-09-01T22:55Z) — Phase 18 discuss + persona round done; 18-CONTEXT.md written (8 decisions D-01…D-08). Architect+Statistician (opus/high, concurrent, unanimous). Five HIGH codes minted: DSX-STA-050/051 (correlation scale/kind, 050–059) + 060/061/062 (agreement completeness, 060–069); catalogue 260→265 at execute. Dataless recommend_association = anti-two-stage proof; p_pos/p_neg companion correction (HQ-16); report-only effect-size KIND registry keeps EFFECT_SIZE_KINDS={d,h,r}; α=0.7598@ordinal pinned, ICC/Kendall-W bands + dCor/partial catalog-only. Veto window HQ-20 (non-blocking). Stopped at the S2-1 unit boundary (~12-min pacing cap). Next unblocked unit: S2-2 (Phase 18 plan; plan-checker must pass; single-writer waves per 18-CONTEXT.md D-08)."
+last_updated: "2026-09-01T22:55:00Z"
 last_activity: 2026-09-01
-last_activity_desc: "S1-5 done — Phase 17 secure (SECURED, threats_open:0; every mitigation re-run green) + validate (NYQUIST-COMPLIANT, all 5 reqs COVERED, zero gaps). 17-SECURITY.md + 17-VALIDATION.md written; sign-off/UAT batched to HQ-19. Phase 17 fully CLOSED (S1-1…S1-5). Next: S2-1 (Phase 18 discuss), unblocked."
+last_activity_desc: "S2-1 done — Phase 18 discuss + persona round. 18-CONTEXT.md written: routing shape (dataless recommend_association), five HIGH codes (DSX-STA-050/051/060/061/062) from the pre-allocated ranges, p_pos/p_neg companion correction, report-only effect-size KIND registry, D-05 pin/catalog dispositions. HQ-20 veto window filed. Phase 17 CLOSED. Next: S2-2 (Phase 18 plan), unblocked."
 progress:
   total_phases: 4
   completed_phases: 1
@@ -39,14 +39,14 @@ log one line and stop; the wrapper owns the pacing.
 See: .planning/PROJECT.md (updated 2026-08-29; Key Decisions table there is the full decision log)
 
 **Core value:** Gate analytical work on validity before the data is touched.
-**Current focus:** Phase 17 — foundation repairs (Boschloo doc/code reconciliation, `estimand_kind` vocabulary, D-12a dispositions, D-06 range pre-allocation) before any catalog row lands.
+**Current focus:** Phase 18 — correlation, association and agreement rows (keyed on DECLARED `estimand_kind`) + two new declaration-only gates (correlation scale/kind match; agreement declaration completeness) + effect-size convention bands. Phase 17 foundation is CLOSED.
 
 ## Current Position
 
-Phase: 17 (foundation-repairs-and-spec-vocabulary) — S0 done, S1-1 discuss done, S1-2 plan done; S1-3 execute IN PROGRESS (Wave 1 of 2 complete)
-Plan: 17-03 (estimand_kind vocab + DSX-STA-040 widen + fixtures/catalogue regen + zero-new-codes) is the next incomplete plan — Wave 2, now unblocked (17-01 done). `/gsd-execute-phase 17` will auto-skip 17-01/02 via has_summary.
-Status: Executing — Wave 1 done (17-01 Boschloo GREEN, 17-02 fallthrough pin); resume 17-03 next firing. See phase `.continue-here.md`.
-Last activity: 2026-09-01 — S1-3 Wave 1: 17-01 + 17-02 executed inline (branch-safety: init's milestone-template branch name `gsd/v2.3-test-catalog` mismatches the ceremony branch `gsd/v2.3.0-test-catalog`; never run the framework's handle_branching)
+Phase: 18 (correlation-association-and-agreement) — S2-1 discuss DONE (18-CONTEXT.md, 8 decisions, persona round unanimous); S2-2 plan is next.
+Plan: none written yet. S2-2 (`/gsd-plan-phase 18`) is the next unit — plan-checker must pass; the D-08 single-writer wave split is decided (Plan 18-A routing+gates+doc/catalogue lockstep ∥ Plan 18-B effect-size convention bands).
+Status: Executing — Phase 17 CLOSED (S1-1…S1-5); Phase 18 discuss complete; next firing plans Phase 18.
+Last activity: 2026-09-01 — S2-1 Phase 18 discuss + persona round (Architect+Statistician, opus/high). Five HIGH codes numbered from the pre-allocated ranges (DSX-STA-050/051/060/061/062); HQ-20 veto window filed. Branch-safety unchanged: init's milestone-template branch name `gsd/v2.3-test-catalog` mismatches the ceremony branch `gsd/v2.3.0-test-catalog` — never run the framework's handle_branching; execute inline on the ceremony branch.
 
 ## Performance Metrics
 
