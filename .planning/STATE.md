@@ -5,15 +5,15 @@ milestone_name: Test Catalog
 current_phase: 17
 current_phase_name: foundation-repairs-and-spec-vocabulary
 status: executing
-stopped_at: "Milestone opened 2026-08-29 by operator direction (interactive session). Scope researched (6-agent workflow) and written: .planning/research/V2.3-V2.4-SCOPE.md; REQUIREMENTS.md REQ-P17-01..REQ-P20-04; ROADMAP.md Phases 17-20. Loop repointed: branch gsd/v2.3.0-test-catalog, LOOP-BRIEF/LOOP-LEDGER/HUMAN-QUEUE rewritten for v2.3, firing script updated (branch + usage-limit backoff). Next: the loop's S0-1 (verify state + scope recheck)."
-last_updated: "2026-09-01T21:35:00Z"
+stopped_at: "S1-4 complete (2026-09-01T22:00Z) — Phase 17 code review + verification PASSED; stopped at the ~12-min pacing cap on the S1-4 boundary. Phase 17 code work (17-01/02/03) all executed + reviewed + verified; only S1-5 (secure + validate, sign-off batched to HUMAN-QUEUE, non-blocking until S5-2) remains before Phase 17 is closed. Next unblocked unit: S1-5. S1-5 hard-blocks S2 (Phase 18) and S3 (Phase 19)."
+last_updated: "2026-09-01T22:00:00Z"
 last_activity: 2026-09-01
-last_activity_desc: "S1-3 Wave 1 executed inline on the ceremony branch — 17-01 Boschloo reconciliation (GREEN, 260 codes intact) + 17-02 time_to_event fallthrough pin, both with SUMMARY. 17-03 (estimand_kind vocab + DSX-STA-040 widen + zero-new-codes) pending; stopped at the ~12-min pacing cap on the clean Wave-1 boundary."
+last_activity_desc: "S1-4 done — Phase 17 code review + fixes (1 LOW: missing Any import in stats.py, fixed) + verification PASSED goal-backward vs REQ-P17-01..05 (17-REVIEW.md, 17-VERIFICATION.md). scripts/check.sh all checks passed (1323 OK, catalogue current @260 set-identity). All 3 plans (17-01/02/03) executed with SUMMARY. Next: S1-5 (secure + validate phase 17, sign-off batched to HUMAN-QUEUE; hard-blocks S2/S3)."
 progress:
   total_phases: 4
   completed_phases: 0
   total_plans: 3
-  completed_plans: 2
+  completed_plans: 3
   percent: 0
 ---
 

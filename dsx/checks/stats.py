@@ -8,6 +8,8 @@ every time, because a p-value alone answers a question nobody asked.
 
 from __future__ import annotations
 
+from typing import Any
+
 from ..findings import Report
 from ..mathx import EFFECT_SIZE_KINDS, apply_correction, interpret_effect
 from ..spec import ESTIMAND_KINDS, as_number, get, is_blank, items, normalize, section
