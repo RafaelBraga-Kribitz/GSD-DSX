@@ -5,10 +5,10 @@ milestone_name: Test Catalog
 current_phase: 18
 current_phase_name: correlation-association-and-agreement
 status: executing
-stopped_at: "S2-1 complete (2026-09-01T22:55Z) — Phase 18 discuss + persona round done; 18-CONTEXT.md written (8 decisions D-01…D-08). Architect+Statistician (opus/high, concurrent, unanimous). Five HIGH codes minted: DSX-STA-050/051 (correlation scale/kind, 050–059) + 060/061/062 (agreement completeness, 060–069); catalogue 260→265 at execute. Dataless recommend_association = anti-two-stage proof; p_pos/p_neg companion correction (HQ-16); report-only effect-size KIND registry keeps EFFECT_SIZE_KINDS={d,h,r}; α=0.7598@ordinal pinned, ICC/Kendall-W bands + dCor/partial catalog-only. Veto window HQ-20 (non-blocking). Stopped at the S2-1 unit boundary (~12-min pacing cap). Next unblocked unit: S2-2 (Phase 18 plan; plan-checker must pass; single-writer waves per 18-CONTEXT.md D-08)."
-last_updated: "2026-09-01T22:55:00Z"
+stopped_at: "S2-2 IN PROGRESS — plan preflight done (2026-09-01T23:26Z). gsd-phase-researcher (sonnet) → 18-RESEARCH.md committed 4e531df/pushed (all live locators verified; surfaced the _D05_ALLOWLIST_CODES by-exact-name gap, the gate-split-for-citation-docstrings pattern, the weights string-OR-matrix branch, and 3 open field-shape decisions for the planner). 18-VALIDATION.md seeded from RESEARCH §Validation Architecture (stdlib unittest; REQ-P18-01…06 oracle map; catalogue 260→265; D-07 pinned vs catalog-only). init now reports has_research:true, has_plans:false. Stopped at the GSD-native resumable boundary (~12-min pacing cap). S2-2 NOT checked — gate is plan-checker pass. NEXT firing: gsd-planner (opus) → gsd-plan-checker (haiku) revision loop → check S2-2 (single-writer D-08 waves: 18-A routing+gates+doc/catalogue lockstep ∥ 18-B effect-size convention bands)."
+last_updated: "2026-09-01T23:26:00Z"
 last_activity: 2026-09-01
-last_activity_desc: "S2-1 done — Phase 18 discuss + persona round. 18-CONTEXT.md written: routing shape (dataless recommend_association), five HIGH codes (DSX-STA-050/051/060/061/062) from the pre-allocated ranges, p_pos/p_neg companion correction, report-only effect-size KIND registry, D-05 pin/catalog dispositions. HQ-20 veto window filed. Phase 17 CLOSED. Next: S2-2 (Phase 18 plan), unblocked."
+last_activity_desc: "S2-2 plan preflight — 18-RESEARCH.md (gsd-phase-researcher, sonnet) + 18-VALIDATION.md seeded. Live locators verified; _D05_ALLOWLIST_CODES by-exact-name gap + 3 planner Open Questions surfaced. Next: gsd-planner → gsd-plan-checker (S2-2 plan; gate = checker pass)."
 progress:
   total_phases: 4
   completed_phases: 1
@@ -43,10 +43,10 @@ See: .planning/PROJECT.md (updated 2026-08-29; Key Decisions table there is the 
 
 ## Current Position
 
-Phase: 18 (correlation-association-and-agreement) — S2-1 discuss DONE (18-CONTEXT.md, 8 decisions, persona round unanimous); S2-2 plan is next.
-Plan: none written yet. S2-2 (`/gsd-plan-phase 18`) is the next unit — plan-checker must pass; the D-08 single-writer wave split is decided (Plan 18-A routing+gates+doc/catalogue lockstep ∥ Plan 18-B effect-size convention bands).
-Status: Executing — Phase 17 CLOSED (S1-1…S1-5); Phase 18 discuss complete; next firing plans Phase 18.
-Last activity: 2026-09-01 — S2-1 Phase 18 discuss + persona round (Architect+Statistician, opus/high). Five HIGH codes numbered from the pre-allocated ranges (DSX-STA-050/051/060/061/062); HQ-20 veto window filed. Branch-safety unchanged: init's milestone-template branch name `gsd/v2.3-test-catalog` mismatches the ceremony branch `gsd/v2.3.0-test-catalog` — never run the framework's handle_branching; execute inline on the ceremony branch.
+Phase: 18 (correlation-association-and-agreement) — S2-1 discuss DONE; S2-2 plan IN PROGRESS (preflight done).
+Plan: not yet written. S2-2 preflight complete — 18-RESEARCH.md (4e531df) + 18-VALIDATION.md seeded. NEXT firing: gsd-planner (opus) → gsd-plan-checker (haiku) revision loop → check S2-2 (plan-checker must pass). D-08 single-writer wave split decided (Plan 18-A routing+gates+doc/catalogue lockstep ∥ Plan 18-B effect-size convention bands).
+Status: Executing — Phase 17 CLOSED (S1-1…S1-5); Phase 18 discuss complete + plan preflight done; next firing runs the planner→checker loop.
+Last activity: 2026-09-01 — S2-2 plan preflight: gsd-phase-researcher (sonnet) → 18-RESEARCH.md; 18-VALIDATION.md seeded. Research surfaced the `_D05_ALLOWLIST_CODES` by-exact-name build-gate gap (prefix `DSX-STA-` not allowlisted), the citation-docstring gate-split pattern, the weights string-OR-matrix branch, and 3 open field-shape decisions for the planner. Branch-safety unchanged: init's milestone-template branch name `gsd/v2.3-test-catalog` mismatches the ceremony branch `gsd/v2.3.0-test-catalog` — never run the framework's handle_branching; execute inline on the ceremony branch.
 
 ## Performance Metrics
 
