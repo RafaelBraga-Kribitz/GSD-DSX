@@ -20,14 +20,37 @@ a persona round and records loudly):
 
 ## Open
 
-(none — HQ-16, HQ-17, HQ-18 answered 2026-09-01; see Answered below.)
+### HQ-19 — Phase 17 end-of-phase security sign-off (NON-BLOCKING until S5-2)
+
+**What to sign:** the operator **Approval** line in
+`.planning/phases/17-foundation-repairs-and-spec-vocabulary/17-SECURITY.md`.
+
+**What the loop already did (S1-5, 2026-09-01):** ran `/gsd-secure-phase 17` (State B,
+ASVS L1, `security_block_on: high`). All three PLAN threat registers parsed →
+`register_authored_at_plan_time: true`. Built the 11-threat register (8 mitigate,
+3 accept = supply-chain, zero packages installed). Classified **all 11 CLOSED,
+threats_open: 0**. Per brief §5, did **not** trust the L1 short-circuit blind — re-ran
+every non-accepted mitigation: 13 targeted tests green (`test_boschloo_reconciliation`,
+`test_time_to_event_fallthrough`, `test_estimand_kind_vocab`,
+`test_finding_catalogue_invariant`) + `gen-finding-catalogue.py --check` exit 0
+("finding catalogue is current") + the D-06/D-12a grep oracle over committed
+`17-CONTEXT.md`. Frontmatter `status: verified`.
+
+**Why this is only a sign-off, not a gate:** the SECURED verdict (threats_open:0) is
+machine-verifiable and the loop earned it; the outward-facing **operator approval** is a
+human read (brief §4 item 4) the loop may not self-sign. Nothing blocks on it until S5-2.
+
+**To sign:** reply in a session confirming; an interactive session sets the Approval line
+to `verified <date>` and checks this item off. To reject, name the threat and the gap.
+
+*(HQ-16, HQ-17, HQ-18 answered 2026-09-01; see Answered below.)*
 
 ## Will be added by the loop when reached
 
 - ~~S0-3: Phase 18 D-05 evidence pack~~ — **FILED as HQ-16, ANSWERED 2026-09-01 (see Answered).**
 - ~~S0-4: Phase 19 D-05 evidence pack~~ — **FILED as HQ-17, ANSWERED 2026-09-01 (see Answered).**
 - Phase 17/18/19/20 end-of-phase security sign-off + UAT rounds (batched per
-  phase; non-blocking until S5-2).
+  phase; non-blocking until S5-2). **Phase 17 security → FILED as HQ-19 (2026-09-01).**
 - D-06 numbering veto windows for the new codes (from the Phase 17 pre-allocated
   ranges; silence = accept).
 - The S5-6 ship decisions: merge to `main` and the `v2.3.0` release tag.
