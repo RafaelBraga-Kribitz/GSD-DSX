@@ -7807,23 +7807,26 @@ class TestAdmissibilityRecommendComposition(unittest.TestCase):
 
         self.assertFalse(hasattr(stats_mod, "admissible_families"))
 
-    # REQ-P11-05: Recorded baseline for v1.5.0 behavior without --spec flag.
-    # dsx/checks/stats.py is byte-identical between tag v1.4.0 and HEAD
-    # (verified: `git diff v1.4.0 HEAD --stat -- dsx/checks/stats.py` is empty),
-    # so recommend_test() has never changed and today's output IS the baseline.
+    # REQ-P11-05 baseline for `dsx recommend-test proportion --groups 2` without --spec.
+    # UPDATED by REQ-P17-01 (v2.3 Boschloo reconciliation): the small-expected-cell
+    # alternative changed from fisher_exact to boschloo_exact when dsx/checks/stats.py was
+    # reconciled to references/test-selection.md (D-04 — Boschloo dominates Fisher on power
+    # while holding size; Lydersen, Fagerland & Laake 2009 §9). stats.py is therefore NO
+    # LONGER byte-identical to v1.4.0; this snapshot records the reconciled routing, and
+    # every other field (test, rationale, effect_size) and the key order are unchanged.
     _BASELINE_TWO_PROPORTION_NO_SPEC = {
         "test": "two_proportion_z",
         "rationale": "Two independent proportions with adequate expected cell counts.",
-        "alternatives": ["fisher_exact (any expected cell < 5)", "chi_square", "bootstrap"],
+        "alternatives": ["boschloo_exact (any expected cell < 5)", "chi_square", "bootstrap"],
         "effect_size": "risk_difference + cohens_h",
     }
 
     def test_no_spec_proportion_groups_2_output_is_pinned_to_recorded_baseline(self):
         """REQ-P11-05: ``dsx recommend-test proportion --groups 2`` output
-        without --spec flag must be byte-identical to its v1.5.0 baseline.
-        The baseline is recorded from dsx/checks/stats.py, which is proven
-        unchanged since v1.4.0, so recommend_test() has never changed and
-        today's output IS the recorded baseline."""
+        without --spec flag is pinned to its recorded baseline. Updated by
+        REQ-P17-01: the small-expected-cell alternative is now boschloo_exact
+        (the doc/code Boschloo reconciliation), not fisher_exact; every other
+        field and the key order are unchanged from the v1.5.0 baseline."""
         result = self._recommend(["proportion", "--groups", "2"])
         self.assertEqual(result.returncode, 0, result.stderr)
 
