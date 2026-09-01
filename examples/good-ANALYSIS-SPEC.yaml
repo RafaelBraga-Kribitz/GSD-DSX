@@ -153,6 +153,7 @@ design:
 
 analysis:
   outcome_type: proportion
+  estimand_kind: linear_association
   n_groups: 2
   paired: false
   n_per_group: 9206

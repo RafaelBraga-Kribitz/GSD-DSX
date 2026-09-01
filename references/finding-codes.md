@@ -118,7 +118,7 @@ Test selection, assumptions, and the reporting contract.
 | `DSX-STA-021` | HIGH | '<…>' declares equivalence_bound=<…> but CI/TOST do not prove it |
 | `DSX-STA-030` | MEDIUM | Multiplicity correction could not be applied |
 | `DSX-STA-031` | HIGH | <…> result(s) lose significance after <…> correction |
-| `DSX-STA-040` | MEDIUM | analysis.outcome_type <…> is not recognised |
+| `DSX-STA-040` | MEDIUM | analysis.<…> <…> is not recognised |
 | `DSX-STA-041` | HIGH | Declared test '<…>' does not match the data's shape |
 | `DSX-STA-042` | MEDIUM | Parametric test '<…>' with unassessed assumptions |
 | `DSX-STA-043` | CRITICAL | Independence assumption is declared violated |

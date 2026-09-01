@@ -84,6 +84,7 @@ design:
 
 analysis:
   outcome_type: proportion
+  estimand_kind: linear_association   # valid member — inert here (the defect below is the wrong test family)
   n_groups: 2
   test: welch_t                 # wrong family for a proportion outcome
 
