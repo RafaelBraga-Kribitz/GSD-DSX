@@ -69,6 +69,20 @@ carries stale `gsd/*` branches from prior milestones; `/gsd-complete-milestone`'
 here (found and bypassed at v2.2 ship). `git merge --no-ff gsd/v2.3.0-test-catalog`
 by name, verified on a throwaway branch first.
 
+**`/gsd-execute-phase`'s computed branch name mismatches the ceremony branch
+(found v2.3 S1-3).** `gsd-tools query init.execute-phase` returns
+`branch_name: gsd/v2.3-test-catalog` (milestone template `gsd/{milestone}-{slug}`
+with `milestone_version: v2.3`), but the ceremony branch is
+`gsd/v2.3.0-test-catalog` (with the `.0`). The workflow's `handle_branching` step
+would `git checkout -b gsd/v2.3-test-catalog origin/main` — forking a fresh branch
+off `main` and **orphaning every committed S0/S1/S1-3 unit**. **At every phase
+execute (S1-3 remainder, S2-3, S3-3, S4-3): do NOT run the framework's
+`handle_branching`/subagent-wave path. Execute plans inline on the current branch
+as orchestrator** (GSD `has_summary` resume auto-skips already-summarised plans),
+or, if spawning executors, stay on `gsd/v2.3.0-test-catalog` and never let the
+branch switch fire. Confirm `git rev-parse --abbrev-ref HEAD` == `gsd/v2.3.0-test-catalog`
+before and after any execute step.
+
 **Release tags: never force-move a published one.** v2.0.0 shipped as tag
 `v2.1.0` for this reason; v2.2 shipped as `v2.2.0`. The next free tag for this
 milestone is `v2.3.0`.

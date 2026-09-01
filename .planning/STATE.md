@@ -6,14 +6,14 @@ current_phase: 17
 current_phase_name: foundation-repairs-and-spec-vocabulary
 status: executing
 stopped_at: "Milestone opened 2026-08-29 by operator direction (interactive session). Scope researched (6-agent workflow) and written: .planning/research/V2.3-V2.4-SCOPE.md; REQUIREMENTS.md REQ-P17-01..REQ-P20-04; ROADMAP.md Phases 17-20. Loop repointed: branch gsd/v2.3.0-test-catalog, LOOP-BRIEF/LOOP-LEDGER/HUMAN-QUEUE rewritten for v2.3, firing script updated (branch + usage-limit backoff). Next: the loop's S0-1 (verify state + scope recheck)."
-last_updated: "2026-08-30T00:20:53.743Z"
-last_activity: 2026-08-30
-last_activity_desc: "S1-2 Phase 17 planning complete — 3 plans (17-01 Boschloo, 17-02 fallthrough pin + disposition/range verify, 17-03 estimand_kind vocab + guard + zero-new-codes); gsd-plan-checker VERIFICATION PASSED; dsx plan:post gate clean spec-less (exit 0)"
+last_updated: "2026-09-01T21:35:00Z"
+last_activity: 2026-09-01
+last_activity_desc: "S1-3 Wave 1 executed inline on the ceremony branch — 17-01 Boschloo reconciliation (GREEN, 260 codes intact) + 17-02 time_to_event fallthrough pin, both with SUMMARY. 17-03 (estimand_kind vocab + DSX-STA-040 widen + zero-new-codes) pending; stopped at the ~12-min pacing cap on the clean Wave-1 boundary."
 progress:
   total_phases: 4
   completed_phases: 0
   total_plans: 3
-  completed_plans: 0
+  completed_plans: 2
   percent: 0
 ---
 
@@ -43,10 +43,10 @@ See: .planning/PROJECT.md (updated 2026-08-29; Key Decisions table there is the 
 
 ## Current Position
 
-Phase: 17 (foundation-repairs-and-spec-vocabulary) — S0 bootstrap done, S1-1 discuss done; next ledger unit is S1-2 (plan)
-Plan: — (S1-2 will create 17-PLAN via /gsd-plan-phase; plan-checker must pass)
-Status: Executing — discuss complete (17-CONTEXT.md), planning next
-Last activity: 2026-08-29 — S1-1 Phase 17 discuss: estimand_kind vocab, D-12a dispositions, D-06 range pre-allocation settled
+Phase: 17 (foundation-repairs-and-spec-vocabulary) — S0 done, S1-1 discuss done, S1-2 plan done; S1-3 execute IN PROGRESS (Wave 1 of 2 complete)
+Plan: 17-03 (estimand_kind vocab + DSX-STA-040 widen + fixtures/catalogue regen + zero-new-codes) is the next incomplete plan — Wave 2, now unblocked (17-01 done). `/gsd-execute-phase 17` will auto-skip 17-01/02 via has_summary.
+Status: Executing — Wave 1 done (17-01 Boschloo GREEN, 17-02 fallthrough pin); resume 17-03 next firing. See phase `.continue-here.md`.
+Last activity: 2026-09-01 — S1-3 Wave 1: 17-01 + 17-02 executed inline (branch-safety: init's milestone-template branch name `gsd/v2.3-test-catalog` mismatches the ceremony branch `gsd/v2.3.0-test-catalog`; never run the framework's handle_branching)
 
 ## Performance Metrics
 
