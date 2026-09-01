@@ -20,13 +20,105 @@ a persona round and records loudly):
 
 ## Open
 
+(none — HQ-16, HQ-17, HQ-18 answered 2026-09-01; see Answered below.)
+
+## Will be added by the loop when reached
+
+- ~~S0-3: Phase 18 D-05 evidence pack~~ — **FILED as HQ-16, ANSWERED 2026-09-01 (see Answered).**
+- ~~S0-4: Phase 19 D-05 evidence pack~~ — **FILED as HQ-17, ANSWERED 2026-09-01 (see Answered).**
+- Phase 17/18/19/20 end-of-phase security sign-off + UAT rounds (batched per
+  phase; non-blocking until S5-2).
+- D-06 numbering veto windows for the new codes (from the Phase 17 pre-allocated
+  ranges; silence = accept).
+- The S5-6 ship decisions: merge to `main` and the `v2.3.0` release tag.
+- Any persona decision the operator vetoes from a daily summary.
+
+## Standing framework notes (not queue items — nothing to answer, just remember)
+
+**`/gsd-audit-uat`'s automated CLI under-reports human-verification items — TWO
+defects.** (1) `gsd-core/bin/lib/uat.cjs::parseVerificationItems` only recognizes
+a level-2 `## Human Verification` heading while the verifier template writes
+level-3 `### Human Verification Required` (found v2.0.0). (2) `uat.cjs:78`
+filters on `f.includes('-VERIFICATION')` while this repo's files are named
+`VERIFICATION.md`, so the CLI never opens them and returns a false All Clear
+(found v2.2 S5-1). **At S5-1, never accept the CLI's "all clear" — hand-check
+every phase's VERIFICATION.md.**
+
+**`check.decision-coverage-plan` false-blocks on this project's CONTEXT.md
+decision-bullet style (found v2.3 S1-2).** The §13a plan-phase decision-coverage
+gate parses decisions with `gsd-core/bin/lib/decisions.cjs`, whose regexes expect
+`- **D-NN:** …` (colon-immediate) or em-dash-*inside*-the-bold. The discuss-phase
+persona rounds write `- **D-12a disposition table** recorded …` / `- **D-06 range
+pre-allocation** — one …` (title inside the bold, separator *after* the closing
+`**`), which matches none of the three regexes → `total:0, reason:"could-not-parse",
+passed:false`. That is a parser format-mismatch, **not** an uncovered decision — the
+gsd-plan-checker's Dimension-7 (Context Compliance) substantively verifies the same
+property (every D-NN honored by a plan). **At every phase plan gate (P18/P19/P20 S*-2),
+do NOT treat this could-not-parse/total:0 as a real coverage gap** — confirm coverage
+via the plan-checker Dim-7 pass and proceed. (Fixing it would mean either widening the
+parser or reformatting committed CONTEXT.md decision bullets to `- **D-NN:** …`; not
+done — the substantive gate already covers it.)
+
+**`/gsd-pr-branch` does not survive a long ceremony branch.** Its per-commit
+cherry-pick chain hit recurring modify/delete conflicts on v2.0.0's 707-commit
+branch and was abandoned mid-run. Ship by direct 3-way merge.
+
+**Ship by EXPLICIT branch name — never the framework's auto-detect.** This repo
+carries stale `gsd/*` branches from prior milestones; `/gsd-complete-milestone`'s
+`handle_branches` picks the alphabetically-first `gsd/*` branch, which is wrong
+here (found and bypassed at v2.2 ship). `git merge --no-ff gsd/v2.3.0-test-catalog`
+by name, verified on a throwaway branch first.
+
+**Release tags: never force-move a published one.** v2.0.0 shipped as tag
+`v2.1.0` for this reason; v2.2 shipped as `v2.2.0`. The next free tag for this
+milestone is `v2.3.0`.
+
+**`/gsd-complete-milestone` output needs hand-verification.** At v2.2 close its
+generated accomplishment bullets were truncated mid-sentence and the archived
+REQUIREMENTS.md carried all rows forward still unchecked despite the passed
+audit — both had to be hand-corrected. Also: it is NOT headless-safe
+(interactive prompts + `git rm REQUIREMENTS.md`) — interactive session only.
+
+**Run the full suite from a clean tree — a stray root `DECISIONS.jsonl`
+false-fails two `explain` tests.** `tests/test_dsx.py::test_explain_missing_spec_exits_zero_not_two`
+and `tests/test_explain_self_reported.py::test_returns_zero_when_spec_cannot_be_loaded`
+run from repo-root CWD without isolation; any repo-root `dsx gate`/`dsx explain`
+leaves a gitignored ledger that breaks them. If exactly these two fail:
+`rm -f DECISIONS.jsonl examples/DECISIONS.jsonl examples/known-bad/DECISIONS.jsonl templates/DECISIONS.jsonl`
+and re-run before treating it as real.
+
+**Usage-limit backoff is the wrapper's job (operator-directed 2026-08-29).**
+`scripts/run-ceremony-firing.ps1` detects limit hits in the transcript, writes
+`.planning/loop-logs/.backoff-until`, skips polls until the weekly reset
+(Wednesday 10:00 América/São_Paulo = 13:00 UTC; 60 minutes for a 5-hour-window
+hit), then resumes by itself. Firings: log one line, stop, never retry-loop,
+never touch the backoff file.
+
+## Answered
+
+(v2.0.0's items HQ-1…HQ-7 and v2.2's items HQ-8…HQ-15 are archived at
+`.planning/milestones/v2.0.0-HUMAN-QUEUE*.md` and
+`.planning/milestones/v2.2-HUMAN-QUEUE.md`. Numbering continues from HQ-16.)
+
+
 Both D-05 packs are now filed: the Phase 18 pack (HQ-16, 11 citations) and the
 Phase 19 pack (HQ-17, 16 citations across REQ-P19-01…07). Expect ~27 citation reads
 across the two — the largest D-05 round of any milestone so far; the granularity ruling
 that keeps it bounded is: **one human read per new gate CODE, bibliographic citation
 per catalog ENTRY.** Nothing blocks on these until close-out (S5-2).
 
-### HQ-16 — Phase 18 D-05 citation evidence pack (filed early by design; non-blocking)
+### HQ-16 — Phase 18 D-05 citation evidence pack (answered 2026-09-01)
+
+**Operator verdict (2026-09-01): Confirmed as corrected.** All 11 citations
+accepted; independently re-verified in an interactive session (7 parallel
+research agents, each reading primary sources directly where access allowed,
+not just re-confirming the loop's bibliographic corroboration) before the
+operator's confirm. Two corrections landed in the pack below (marked inline
+at Group B4 and Group E1); everything else confirmed as originally filed,
+either against primary text an agent actually read, or via strong convergent
+secondary corroboration where the journal itself was paywalled to automated
+fetch (normal, not a gap). Full per-citation verification detail is preserved
+below for the Phase 18 discuss stage to read.
 
 **Status: ASSEMBLED 2026-08-29 (S0-3), awaiting the human read. DO NOT SIGN — the
 loop prepared this pack; D-05 authenticity is a human opening each primary source
@@ -98,6 +190,17 @@ the Phase 18 row-bibliography pass.
 
 **B4 — Hayes & Krippendorff (2007), Krippendorff's α + WORKED VALUE — confidence: HIGH on locator, the VALUE is the live D-05 question**
 
+> **CORRECTED 2026-09-01 (independent verification, primary text read in full):**
+> neither 0.743 nor 0.734 appears anywhere in the Hayes & Krippendorff (2007)
+> paper. Its own worked example (5 observers, 40 newspaper articles, ordinal
+> 0-3 scale) reports **α = 0.7598 (ordinal)** as the headline figure, with
+> 0.4765 (nominal), 0.7574 (interval), 0.6621 (ratio) for the other
+> measurement levels. The 0.743 figure is real but belongs to a *different*
+> Krippendorff document (his own technical note "Computing Krippendorff's
+> Alpha-Reliability," a different 4-rater/12-unit dataset) — not this paper.
+> **The Phase 18 fixture must use 0.7598, cited to this paper's own worked
+> example, not 0.743/0.734.**
+
 | Field | Value |
 |---|---|
 | Primary source | Hayes, A. F. & Krippendorff, K. (2007). *Answering the call for a standard reliability measure for coding data.* **Communication Methods and Measures, 1(1), 77–89.** DOI **10.1080/19312450709336664**. |
@@ -145,6 +248,16 @@ the Phase 18 row-bibliography pass.
 #### Group E — Kappa companion-reporting gate (REQ-P18-04) — confidence: HIGH
 
 **E1 — Feinstein & Cicchetti (1990)**
+
+> **CORRECTED 2026-09-01 (independent verification):** the two-paradoxes
+> claim is confirmed verbatim from the publisher's own abstract. But the
+> "report p_o and marginals alongside kappa" framing is imprecise — the
+> actual, explicit reporting recommendation ("the omnibus value of κ should
+> always be accompanied by separate individual values of p_pos and p_neg")
+> lives in the **companion Part II paper** (Cicchetti & Feinstein 1990,
+> "...II. Resolving the paradoxes," JCE 43(6):551-558), not confirmed as
+> stated standalone in Part I. **Cite both parts; the gate rationale should
+> name p_pos/p_neg specifically, not "p_o and marginals."**
 
 | Field | Value |
 |---|---|
@@ -194,7 +307,14 @@ unverified number. An interactive session records the verdict and checks HQ-16 o
 Until then, Phase 18 (S2) treats any code whose citation is not confirmed as **not
 in hand** (the S2-1 D-05 bar).
 
-### HQ-17 — Phase 19 D-05 citation evidence pack (filed early by design; non-blocking)
+### HQ-17 — Phase 19 D-05 citation evidence pack (answered 2026-09-01)
+
+**Operator verdict (2026-09-01): Confirmed as corrected.** All 16 citations
+accepted; independently re-verified the same way as HQ-16. Five corrections
+landed (marked inline at Groups A2, F1, F3, G3, G4); everything else confirmed
+either against primary text or via strong convergent secondary corroboration.
+Full per-citation verification detail is preserved below for the Phase 19
+discuss stage to read.
 
 **Status: ASSEMBLED 2026-08-29 (S0-4), awaiting the human read. DO NOT SIGN — same
 standard as HQ-16: the loop corroborated bibliographic metadata + the candidate
@@ -235,6 +355,20 @@ require a separate human read.
 | **UNVERIFIED — for the human** | The exact equation/page defining ε (function of the covariance-matrix eigenvalues). ⚠️ **Locator trap:** a same-authors, author-order-**reversed** paper exists — Geisser, S. & Greenhouse, S. W. (1958), *An extension of Box's results…*, **Annals of Mathematical Statistics 29(3):885–891** — which did the underlying derivation but is **not** the paper to cite for the applied ε correction. Confirm the catalog cites the **1959 Psychometrika** paper. |
 
 **A2 — Maxwell & Delaney (2004), the "routinely correct" doctrine — confidence: HIGH on identity, TEXTBOOK (no DOI)**
+
+> **CORRECTED 2026-09-01 (independent verification):** the Kelley
+> co-authorship trap is confirmed real — the authoritative 2nd-ed (2004)
+> catalog record (Open Library, library/LOC data) lists Maxwell & Delaney
+> only; Kelley is a 3rd-edition (2018) addition, retailer listings are wrong.
+> Chapters 11-12 confirmed present in the 2nd edition and **not renumbered**
+> in the 3rd edition (same chapter numbers/titles both editions) — the
+> reversed claim in the original pack was itself an overcaution, now
+> resolved. **However, the specific "argues for routinely applying GG rather
+> than a preliminary Mauchly test" claim could not be verified against the
+> actual chapter text (access blocked).** Ship this locator at chapter
+> granularity with that specific argument framed as the catalog's own
+> paraphrase of the doctrine, not a confirmed direct quote, until someone
+> with the physical/library text confirms the passage.
 
 | Field | Value |
 |---|---|
@@ -337,6 +471,19 @@ require a separate human read.
 
 **F1 — Zimmerman (2004), preliminary variance test invalidates the location test**
 
+> **CORRECTED 2026-09-01 (independent verification, abstract read directly):**
+> confirmed — the paper's tested/simulated design is specifically the
+> two-group case (a preliminary Levene test on two samples, followed by a
+> pooled or Welch t-test), **not** k-group ANOVA. Verbatim: "The study found
+> Type I error rates of a two-stage procedure, consisting of a preliminary
+> Levene test on samples of different sizes with unequal variances, followed
+> by either a Student pooled-variances t test or a Welch separate-variances
+> t test." **The REQ-P19-06(a) gate rationale must scope this citation to the
+> two-group case; citing it for a general ANOVA-level variance-precondition
+> ban would be extrapolating beyond what the paper studied** — cite it
+> narrowly, or pair it with a second source if the gate needs to cover the
+> k-group case too.
+
 | Field | Value |
 |---|---|
 | Primary source | Zimmerman, D. W. (2004). *A note on preliminary tests of equality of variances.* **British Journal of Mathematical and Statistical Psychology, 57(1), 173–181.** DOI **10.1348/000711004849222**, PMID **15171807**. |
@@ -354,6 +501,15 @@ require a separate human read.
 | **UNVERIFIED — for the human (scope)** | The exact p-value↔power monotone relation page/equation; whether the argument covers **all** post-hoc power uses or only interpreting one's own non-significant result — this sets how broadly the gate should fire. |
 
 **F3 — Lakens (2022), sensitivity power analysis (the sanctioned MDE substitute)**
+
+> **CORRECTED 2026-09-01 (independent verification, full open-access text
+> read directly):** confirmed sensitivity power analysis is presented as one
+> of Lakens's recommended tools. But "MDE" / "minimum detectable effect" is
+> **not** Lakens's own term — nowhere in the paper. His own term, used as an
+> exact section header, is **"The Minimal Statistically Detectable Effect"**
+> (used interchangeably with "critical effect size"). **Any catalog text
+> using "MDE" is the catalog's own paraphrase, not a quote — do not attribute
+> the abbreviation to Lakens.**
 
 | Field | Value |
 |---|---|
@@ -387,6 +543,20 @@ require a separate human read.
 
 **G3 — McCullagh & Nelder (1989), offset for exposure/time-at-risk — SECTION LOCATOR UNCONFIRMED**
 
+> **UPGRADED 2026-09-01 (independent verification, 2nd-ed table of contents
+> read directly):** the exact prose of §6.2 vs §6.3.2 vs p.206 remains
+> unread, but the locator is now well-supported rather than a guess. Chapter
+> 6 "Log-linear models" (pp.193-236) breaks down as §6.2 "Likelihood
+> functions" (general Poisson machinery, pp.194-200) and §6.3 "Examples,"
+> with **§6.3.2 "A study of wave damage to cargo ships" (pp.204-209)** as the
+> specific worked example. The R `MASS` package's own documentation
+> (Venables & Ripley) cites this exact example verbatim: "The data are from
+> McCullagh and Nelder (1989, p. 205, Table 6.2)" for the `ships` dataset —
+> which is precisely the offset-as-log(exposure) worked example this project
+> needs. **Cite §6.3.2, pp.204-209, worked example at p.205-206** — a real
+> upgrade from the previously-unconfirmed §6.2, though still not a
+> read-the-prose-directly confirmation.
+
 | Field | Value |
 |---|---|
 | Primary source | McCullagh, P. & Nelder, J. A. (1989). *Generalized Linear Models* (**2nd ed.**). London: Chapman & Hall. *Monographs on Statistics and Applied Probability*, vol. 37. ISBN **0-412-31760-5**. **Textbook — no DOI.** Ch. 6 "Log-Linear Models." |
@@ -395,6 +565,18 @@ require a separate human read.
 | **UNVERIFIED — for the human (this is the weakest link in the pack)** | ⚠️ The specific "**§6.2**" sub-section could **not** be corroborated. Secondary citations point at **"p. 206"** and **"§6.3.2"** — **neither confirms 6.2**. Per brief §5, until the human confirms the exact section, the citation ships at **chapter granularity ("Ch. 6, Log-Linear Models")**, not pinned to "§6.2." Confirm the exact section/page for the offset content in the 2nd-ed copy. |
 
 **G4 — Wilson (2015), Vuong-for-zero-inflation is a misuse (DEPRECATED row)**
+
+> **CORRECTED 2026-09-01 (independent verification, full text read
+> directly):** the misuse argument is confirmed (the zero-inflation
+> parameter's null value sits on the boundary of its parameter space,
+> violating Vuong's interior-point prerequisite). **But Wilson does not
+> recommend a specific drop-in replacement test** — the paper only sketches
+> two unfinished research directions (a distributional mixture method
+> described as "yet to be determined," and a note that allowing negative
+> zero-modification could make the models genuinely nested, citing Dietz &
+> Böhning 2000 and Todem et al. 2012 as related prior work). **The DEPRECATED
+> row should state the misuse finding only, and must not claim Wilson
+> endorses any specific alternative test.**
 
 | Field | Value |
 |---|---|
@@ -423,7 +605,11 @@ not-confirmed. An interactive session records the verdict and checks HQ-17 off. 
 then, Phase 19 (S3) treats any code whose citation is not confirmed as **not in hand**
 (the S3-1 D-05 bar).
 
-### HQ-18 — Phase 17 discuss decisions (veto window; NON-BLOCKING; silence = accept)
+### HQ-18 — Phase 17 discuss decisions (answered 2026-09-01 — accepted, no veto)
+
+**Operator verdict (2026-09-01): Accept both, recommended path.** Nothing
+found during independent citation verification contradicts either decision.
+Both stand as filed at S1-1.
 
 **Status: RECORDED 2026-08-29 (S1-1). Not a D-05/scope/ship escalation — a D-06-class
 persona decision recorded loudly with a veto window per brief §4. Nothing blocks on it.**
@@ -440,81 +626,3 @@ that the operator may veto from a daily summary:
    draw collision-free. Phase 17 assigns none.
 
 To veto either, reply in a session; otherwise silence accepts and Phase 18/19 build on them.
-
-## Will be added by the loop when reached
-
-- ~~S0-3: Phase 18 D-05 evidence pack~~ — **FILED as HQ-16 above (2026-08-29).**
-- ~~S0-4: Phase 19 D-05 evidence pack~~ — **FILED as HQ-17 above (2026-08-29).**
-- Phase 17/18/19/20 end-of-phase security sign-off + UAT rounds (batched per
-  phase; non-blocking until S5-2).
-- D-06 numbering veto windows for the new codes (from the Phase 17 pre-allocated
-  ranges; silence = accept).
-- The S5-6 ship decisions: merge to `main` and the `v2.3.0` release tag.
-- Any persona decision the operator vetoes from a daily summary.
-
-## Standing framework notes (not queue items — nothing to answer, just remember)
-
-**`/gsd-audit-uat`'s automated CLI under-reports human-verification items — TWO
-defects.** (1) `gsd-core/bin/lib/uat.cjs::parseVerificationItems` only recognizes
-a level-2 `## Human Verification` heading while the verifier template writes
-level-3 `### Human Verification Required` (found v2.0.0). (2) `uat.cjs:78`
-filters on `f.includes('-VERIFICATION')` while this repo's files are named
-`VERIFICATION.md`, so the CLI never opens them and returns a false All Clear
-(found v2.2 S5-1). **At S5-1, never accept the CLI's "all clear" — hand-check
-every phase's VERIFICATION.md.**
-
-**`check.decision-coverage-plan` false-blocks on this project's CONTEXT.md
-decision-bullet style (found v2.3 S1-2).** The §13a plan-phase decision-coverage
-gate parses decisions with `gsd-core/bin/lib/decisions.cjs`, whose regexes expect
-`- **D-NN:** …` (colon-immediate) or em-dash-*inside*-the-bold. The discuss-phase
-persona rounds write `- **D-12a disposition table** recorded …` / `- **D-06 range
-pre-allocation** — one …` (title inside the bold, separator *after* the closing
-`**`), which matches none of the three regexes → `total:0, reason:"could-not-parse",
-passed:false`. That is a parser format-mismatch, **not** an uncovered decision — the
-gsd-plan-checker's Dimension-7 (Context Compliance) substantively verifies the same
-property (every D-NN honored by a plan). **At every phase plan gate (P18/P19/P20 S*-2),
-do NOT treat this could-not-parse/total:0 as a real coverage gap** — confirm coverage
-via the plan-checker Dim-7 pass and proceed. (Fixing it would mean either widening the
-parser or reformatting committed CONTEXT.md decision bullets to `- **D-NN:** …`; not
-done — the substantive gate already covers it.)
-
-**`/gsd-pr-branch` does not survive a long ceremony branch.** Its per-commit
-cherry-pick chain hit recurring modify/delete conflicts on v2.0.0's 707-commit
-branch and was abandoned mid-run. Ship by direct 3-way merge.
-
-**Ship by EXPLICIT branch name — never the framework's auto-detect.** This repo
-carries stale `gsd/*` branches from prior milestones; `/gsd-complete-milestone`'s
-`handle_branches` picks the alphabetically-first `gsd/*` branch, which is wrong
-here (found and bypassed at v2.2 ship). `git merge --no-ff gsd/v2.3.0-test-catalog`
-by name, verified on a throwaway branch first.
-
-**Release tags: never force-move a published one.** v2.0.0 shipped as tag
-`v2.1.0` for this reason; v2.2 shipped as `v2.2.0`. The next free tag for this
-milestone is `v2.3.0`.
-
-**`/gsd-complete-milestone` output needs hand-verification.** At v2.2 close its
-generated accomplishment bullets were truncated mid-sentence and the archived
-REQUIREMENTS.md carried all rows forward still unchecked despite the passed
-audit — both had to be hand-corrected. Also: it is NOT headless-safe
-(interactive prompts + `git rm REQUIREMENTS.md`) — interactive session only.
-
-**Run the full suite from a clean tree — a stray root `DECISIONS.jsonl`
-false-fails two `explain` tests.** `tests/test_dsx.py::test_explain_missing_spec_exits_zero_not_two`
-and `tests/test_explain_self_reported.py::test_returns_zero_when_spec_cannot_be_loaded`
-run from repo-root CWD without isolation; any repo-root `dsx gate`/`dsx explain`
-leaves a gitignored ledger that breaks them. If exactly these two fail:
-`rm -f DECISIONS.jsonl examples/DECISIONS.jsonl examples/known-bad/DECISIONS.jsonl templates/DECISIONS.jsonl`
-and re-run before treating it as real.
-
-**Usage-limit backoff is the wrapper's job (operator-directed 2026-08-29).**
-`scripts/run-ceremony-firing.ps1` detects limit hits in the transcript, writes
-`.planning/loop-logs/.backoff-until`, skips polls until the weekly reset
-(Wednesday 10:00 América/São_Paulo = 13:00 UTC; 60 minutes for a 5-hour-window
-hit), then resumes by itself. Firings: log one line, stop, never retry-loop,
-never touch the backoff file.
-
-## Answered
-
-(v2.0.0's items HQ-1…HQ-7 and v2.2's items HQ-8…HQ-15 are archived at
-`.planning/milestones/v2.0.0-HUMAN-QUEUE*.md` and
-`.planning/milestones/v2.2-HUMAN-QUEUE.md`. Numbering continues from HQ-16.)
