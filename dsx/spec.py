@@ -388,6 +388,40 @@ ESTIMAND_TYPES = {
     ),
 }
 
+# analysis.estimand_kind is the association/agreement FORM used for TEST ROUTING;
+# validity_frame.estimand.type (ESTIMAND_TYPES above) is the causal QUANTITY used for
+# ADMISSIBILITY. Disjoint closed vocabularies, never read from the same site — a value
+# slotted into the wrong one fails closed-vocab membership loudly rather than silently
+# mis-routing (17-CONTEXT.md D-01). Exact normalized membership only, no fuzzy match, same
+# discipline as ESTIMAND_TYPES. Absence is non-blocking (D-10): estimand_kind is a routing
+# hint, never a gate on its own. Read by recommend_test and the Phase-18 correlation gate.
+ESTIMAND_KINDS = {
+    "linear_association": (
+        "Signed, slope-like linear dependence — Pearson r, including point-biserial "
+        "(Pearson r on {0,1}-coded vs continuous data). Routes Pearson and point-biserial."
+    ),
+    "monotone_association": (
+        "Signed, rank-monotone dependence with no linearity assumption. "
+        "Routes Spearman's rho and Kendall's tau-b."
+    ),
+    "nominal_association": (
+        "Unsigned, chi-square-based departure from independence on an unordered r x c "
+        "table — no slope and no direction. Routes phi (2x2) and Cramer's V (r x c)."
+    ),
+    "agreement": (
+        "Dimensionless, chance-corrected agreement between raters or methods. Routes "
+        "Cohen's / weighted / Fleiss' kappa, Krippendorff's alpha, and the ICC."
+    ),
+    "method_comparison": (
+        "Bias plus limits of agreement between two measurement methods, in the "
+        "measurement units. Routes Bland-Altman."
+    ),
+    "ordered_trend": (
+        "A monotone trend across an ordered factor or dose. Routes Cochran-Armitage, "
+        "Jonckheere-Terpstra, and Mann-Kendall with Sen's slope."
+    ),
+}
+
 # Dependence structure -> admissible variance-adjustment method family (D-04, REQ-P7-04).
 # Every method named below is drawn verbatim from VARIANCE_ADJUSTMENTS above — M-09
 # forbids inventing a parallel vocabulary. "none" has no entry: a declared independence
@@ -571,6 +605,9 @@ _VOCABULARIES: "list[tuple[str, Any]]" = [
     ("constraint_sources", CONSTRAINT_SOURCES),
     ("dependence_structures", DEPENDENCE_STRUCTURES),
     ("estimand_types", ESTIMAND_TYPES),
+    # Singular dump key on purpose — matches the analysis.estimand_kind FIELD name and the
+    # 17-VALIDATION.md oracle describe_vocabulary()["estimand_kind"], not the plural sibling.
+    ("estimand_kind", ESTIMAND_KINDS),
     ("interference_risks", INTERFERENCE_RISKS),
     ("interference_mitigations", INTERFERENCE_MITIGATIONS),
     ("missingness_mechanisms", MISSINGNESS_MECHANISMS),

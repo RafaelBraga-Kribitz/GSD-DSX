@@ -10,9 +10,19 @@ from __future__ import annotations
 
 from ..findings import Report
 from ..mathx import EFFECT_SIZE_KINDS, apply_correction, interpret_effect
-from ..spec import as_number, get, is_blank, items, normalize, section
+from ..spec import ESTIMAND_KINDS, as_number, get, is_blank, items, normalize, section
 
 OUTCOME_TYPES = {"proportion", "continuous", "count", "ordinal", "time_to_event"}
+
+# analysis-block routing fields whose declared value must be a member of a closed
+# vocabulary. Both are guarded by the SAME DSX-STA-040 from a single call site — no new
+# code minted (REQ-P17-05) — and the guard runs INDEPENDENTLY of whether a test is declared
+# (17-CONTEXT.md D-01: a mis-slotted routing value is a loud decidable error, never a silent
+# no-op). ESTIMAND_KINDS is a name->description dict; `in` tests its keys.
+_MEMBERSHIP_FIELDS: "tuple[tuple[str, Any], ...]" = (
+    ("outcome_type", OUTCOME_TYPES),
+    ("estimand_kind", ESTIMAND_KINDS),
+)
 
 # Tests that assume approximate normality of the sampling distribution.
 PARAMETRIC_TESTS = {
@@ -430,20 +440,41 @@ def _check_correction_applied(
 
 
 def _check_declared_test(analysis: dict, spec: dict, report: Report) -> None:
-    """Compare the declared test against the one the decision table derives."""
+    """Compare the declared test against the one the decision table derives.
+
+    Also enforces closed-vocabulary membership for the analysis-block routing fields
+    (outcome_type, estimand_kind) — independently of whether a test is declared, so a
+    mis-slotted routing value is always a loud DSX-STA-040 (17-CONTEXT.md D-01), never a
+    silent no-op.
+    """
     if not analysis:
         return
+
+    # Closed-vocabulary membership guard: one DSX-STA-040 per mis-slotted routing field,
+    # from a single call site (REQ-P17-05 — reuse the code, mint none). Pure string
+    # membership — is_blank short-circuit, then exact normalized equality — with no
+    # n_groups / paired coupling. Runs before, and independently of, the declared-test
+    # comparison, so both fields are checked even when analysis.test is absent.
+    for field_name, vocabulary in _MEMBERSHIP_FIELDS:
+        raw = analysis.get(field_name, "")
+        if is_blank(raw):
+            continue
+        value = normalize(raw)
+        if value not in vocabulary:
+            report.add(
+                "DSX-STA-040", "MEDIUM", f"analysis.{field_name} {value!r} is not recognised",
+                detail="Allowed: " + ", ".join(sorted(vocabulary)),
+                remedy="Declare a recognised value so test selection can be checked.",
+                where=f"spec.analysis.{field_name}",
+            )
+
     declared = normalize(analysis.get("test", ""))
     outcome_type = normalize(analysis.get("outcome_type", ""))
     if not declared or not outcome_type:
         return
     if outcome_type not in OUTCOME_TYPES:
-        report.add(
-            "DSX-STA-040", "MEDIUM", f"analysis.outcome_type {outcome_type!r} is not recognised",
-            detail="Allowed: " + ", ".join(sorted(OUTCOME_TYPES)),
-            remedy="Declare the outcome's measurement type so test selection can be checked.",
-            where="spec.analysis.outcome_type",
-        )
+        # Already reported by the membership loop above; don't derive a test from an
+        # outcome_type the decision table cannot key on.
         return
 
     n_groups = int(as_number(analysis.get("n_groups")) or 2)
