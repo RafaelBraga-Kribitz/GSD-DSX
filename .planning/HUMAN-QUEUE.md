@@ -7,7 +7,30 @@ and checks the item off here.
 
 ## Open
 
-### HQ-7 — S4-6 final ship: PR / merge-to-main / release-tag decisions (filed 2026-08-28, S4-6 prep)
+**None. The queue is empty and the milestone is complete** (HQ-7, the last item and
+the milestone's terminal gate, was answered by the operator in action on 2026-08-28
+and recorded here 2026-09-01T20:12Z — see Answered). Nothing is waiting on the human.
+
+### HQ-7 — S4-6 final ship: PR / merge-to-main / release-tag decisions (filed 2026-08-28, S4-6 prep) — ✅ ANSWERED 2026-08-28 (recorded 2026-09-01)
+
+**Verdict — the operator answered by doing it, not by typing here.** ~32 min after the
+last hold firing he merged the branch himself and moved on to v2.1/v2.2; the loop only
+discovered this on 2026-09-01 and is recording it now. As executed:
+
+| Decision | Answer | Evidence |
+|---|---|---|
+| 1. PR shape | **(c) direct merge, no new PR** | no new PR opened; PR #1 remains the only one |
+| 2. Merge to `main` | **merge commit, `--no-ff`** — `db802ce` "merge: ship v2.0.0 DSX Validity Frame (Phases 6-12) into main", 2026-08-28 11:25:33 -0300 (14:25Z), all 706 branch commits vs main's 4, 5 files hand-resolved, verified on the merged tree with the full suite (1221 tests, OK) + `check.sh` green, run twice | `git merge-base --is-ancestor HEAD origin/main` exit 0; `origin/main...HEAD` = 118/0 (no longer diverged) |
+| 3. Release tag | **(a) leave the published `v2.0.0` tag at `cb94015` untouched; cut new tags instead** — `v2.1.0` 2026-08-28 14:38Z, `v2.2.0` 2026-08-29. No published ref was rewritten. | `git for-each-ref refs/tags` |
+
+All three match the loop's own recommendation on 2 and 3 (least-destructive: no
+force-move of a released tag). `/gsd-cleanup` was already a verified no-op, so the
+promised deletion approval never became live. **S4-6 is checked; the milestone is
+complete.** Original decision request preserved below for the record.
+
+<details><summary>Original HQ-7 request as filed 2026-08-28 (superseded by the verdict above)</summary>
+
+### HQ-7 (as filed) — S4-6 final ship: PR / merge-to-main / release-tag decisions
 
 This is the milestone's **terminal** human gate. Everything else is done: audit
 `passed` (S4-4), milestone archived (S4-5), branch pushed (0/0 vs origin), queue
@@ -48,6 +71,8 @@ avoids rewriting a release ref already on origin. Rationale: rigour > reliabilit
 in an interactive session (pause the Scheduled Task first — two writers on this branch conflict).
 Once shipped, a firing checks S4-6 and logs `MILESTONE COMPLETE`.
 
+</details>
+
 _(HQ-1 through HQ-6 + the ⚠Z Zimmerman fix are all answered — see below.)_
 
 ## Standing framework notes (not queue items — nothing to answer, just remember)
@@ -82,3 +107,4 @@ unit (S4-1b ⚠Z fix, S4-2 queue drain, S4-4 milestone audit) is complete. Point
 - HQ-5 — Phase 11.3 D-05 citation reads + D-06 code veto + security sign-off (answered 2026-08-27) — `HUMAN-QUEUE-ARCHIVE.md`
 - HQ-6 — Phase 12 (Calibration) UAT round + §4 veto + security sign-off (answered 2026-08-27) — `HUMAN-QUEUE-ARCHIVE.md`
 - ⚠Z Zimmerman citation fix — HQ-1 follow-up (answered 2026-08-27; executed at S4-1b, commit dc65fc6) — `HUMAN-QUEUE-ARCHIVE.md`
+- HQ-7 — S4-6 final ship: PR / merge / tag (answered 2026-08-28 **by action** — merge `db802ce`, no new PR, `v2.0.0` tag left at `cb94015`, new tags `v2.1.0`/`v2.2.0` cut; recorded 2026-09-01T20:12Z) — full verdict inline above, this being the terminal gate.
