@@ -113,6 +113,35 @@ security sign-off.
 `18-SECURITY.md` to `verified <date>`, notes the UAT acceptance, and checks this item off.
 To reject, name the threat (or UAT concern) and the gap.
 
+### HQ-22 — Phase 19 discuss decisions (NON-BLOCKING veto window; silence = accept)
+
+**Status: RECORDED 2026-09-02 (S3-1). Not a D-05/scope/ship escalation — a D-06-class persona
+decision recorded loudly with a veto window per brief §4. Nothing blocks on it.** One item from
+`.planning/phases/19-rm-trend-categorical-resampling-post-hoc/19-CONTEXT.md` the operator may veto
+from a daily summary:
+
+**D-06 code numbering for the ten new Phase 19 gate codes** (drawn from the Phase-17 pre-allocated
+ranges 070–129, next-free slot per owning decade). All HIGH, permanent under D-06:
+- `DSX-STA-070` — a two-stage sphericity procedure (Mauchly-then-correct-if-significant) declared on
+  an RM-ANOVA (keys on the declared procedure, not the presence of repeated measures).
+- `DSX-STA-080` — Cochran-Armitage declared without declared dose scores.
+- `DSX-STA-081` — Mann-Kendall / Sen's slope declared without declared autocorrelation handling
+  (a declared `none`/`independent` satisfies).
+- `DSX-STA-090` — a declared resampling procedure with an incomplete {seed, B, unit, method} quadruple.
+- `DSX-STA-100` — declared post-hoc family ≠ declared omnibus family.
+- `DSX-STA-110` — a variance test declared as a precondition to a location-test choice (when scale is
+  not the declared estimand).
+- `DSX-STA-111` — observed/post-hoc power declared in a readout (narrow; a-priori/design and
+  MDE-sensitivity do not fire).
+- `DSX-STA-120` — a Wald interval declared for a proportion.
+- `DSX-STA-121` — declared exposure/time-at-risk with no declared offset.
+- `DSX-STA-122` — NNT declared without a CI.
+Catalogue 265 → 275. Full predicates + rationale in 19-CONTEXT.md D-01. **REQ-P19-03 (categorical)
+mints zero codes** (rows + a DEPRECATED Yates row + a log-linear pointer row); the CMH-stratifier
+gate and five other statistically-correct riders are named D-13 deferrals in 19-CONTEXT.md, not
+silent gaps. To veto the numbering, reply in a session; otherwise silence accepts and Phase 19
+execute (S3-3) builds on it.
+
 ## Will be added by the loop when reached
 
 - ~~S0-3: Phase 18 D-05 evidence pack~~ — **FILED as HQ-16, ANSWERED 2026-09-01 (see Answered).**
@@ -121,7 +150,8 @@ To reject, name the threat (or UAT concern) and the gap.
   phase; non-blocking until S5-2). **Phase 17 security → FILED as HQ-19 (2026-09-01);
   Phase 18 security → FILED as HQ-21 (2026-09-02).**
 - D-06 numbering veto windows for the new codes (from the Phase 17 pre-allocated
-  ranges; silence = accept). **Phase 18 codes → FILED as HQ-20 (2026-09-01).**
+  ranges; silence = accept). **Phase 18 codes → FILED as HQ-20 (2026-09-01);
+  Phase 19 codes → FILED as HQ-22 (2026-09-02).**
 - The S5-6 ship decisions: merge to `main` and the `v2.3.0` release tag.
 - Any persona decision the operator vetoes from a daily summary.
 
