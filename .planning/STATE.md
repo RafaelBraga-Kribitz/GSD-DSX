@@ -2,19 +2,19 @@
 gsd_state_version: 1.0
 milestone: v2.4
 milestone_name: Visual Excellence
-current_phase: 21
-current_phase_name: viz-vocabulary-reconciliation
+current_phase: 22
+current_phase_name: catalog-spine-uncertainty-heuristic
 status: executing
-stopped_at: "S1-4 (Phase 21 code review + verification) COMPLETE: review + verification opus/high, all gates re-run by orchestrator on the final post-fix tree. 21-REVIEW.md (2 LOW test-hardening findings fixed: non-vacuity guard on _mark_universe + CAPABILITY_ONLY⊆universe phantom guard) and 21-VERIFICATION.md (verdict PASSED). REQ-P21-01 invariant 9 OK incl. both gate smokes; REQ-P21-02 refusal records complete (5×{reason,code,citation}, code=DSX-VIZ-001); REQ-P21-03 set-identity diff codes(4b5c32d^)==codes(HEAD)==275, symmetric difference EMPTY, gen --check current @275. Full suite 1470→1471 OK. REQ-P21-01..03 checked in REQUIREMENTS.md. Next: S1-5 (/gsd-secure-phase 21 + /gsd-validate-phase 21; end-of-phase security sign-off + UAT batched to HUMAN-QUEUE, non-blocking until S5-2)."
-last_updated: "2026-09-02T23:25Z"
+stopped_at: "S1-5 (Phase 21 secure + validate) COMPLETE — Phase 21 full ceremony done (S1-1..S1-5). /gsd-secure-phase 21: State B create, 21-SECURITY.md status:verified threats_open:0 ASVS-L1; all 3 plan-time threats (T-21-01/02/03) CLOSED, mitigation tests re-run GREEN by orchestrator (55 invariant+catalogue tests OK) not trusted from S1-4; ASVS-L1 short-circuit valid (register authored at plan time). /gsd-validate-phase 21: State A, 21-VALIDATION.md status:validated nyquist_compliant:true; gap analysis all 3 reqs COVERED with green automated tests, 0 gaps → no auditor spawn; full suite re-run 1471 OK (40.4s measured). Security human sign-off filed HQ-29 (non-blocking until S5-2); Phase-21 UAT is fully automated (no manual steps); refusal-citation authenticity read stays under HQ-27 Tier-3. NEXT: S2-1 (Phase 22 discuss) is BLOCKED on HQ-27 (D-05 evidence pack unsigned) — all downstream units gated behind it by numeric phase order. Loop is in all-remaining-blocked-on-HUMAN-QUEUE state until the operator answers HQ-27."
+last_updated: "2026-09-02T23:33Z"
 last_activity: 2026-09-02
-last_activity_desc: "S1-4 Phase 21 code review + verification PASSED; 2 LOW findings fixed; set-identity 275==275 zero mint; full suite 1471 OK"
+last_activity_desc: "S1-5 Phase 21 secure+validate COMPLETE (threats_open:0, nyquist_compliant:true, full suite 1471 OK); Phase 21 fully shipped; loop now blocked on HQ-27 for Phase 22 start"
 progress:
   total_phases: 4
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 1
   completed_plans: 1
-  percent: 0
+  percent: 25
 ---
 
 # Project state

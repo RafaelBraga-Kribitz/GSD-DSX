@@ -82,9 +82,39 @@ Two decisions the loop made for you to veto if you disagree:
   `{reason, code, citation}` records (single registry, no drift surface), not a parallel
   sub-map. Refusal citations = HQ-27 Tier-3, batched to S5-2, non-blocking.
 
+### HQ-29 — Phase 21 end-of-phase security sign-off (filed S1-5, 2026-09-02)
+
+**Type:** security sign-off — a `SECURITY.md` approval line (brief §4 item 4). The
+loop verified the mitigations; it may not self-sign the approval. **Non-blocking**
+for Phase 21 advancement; must be signed by **S5-2** close-out.
+
+**File:** `.planning/phases/21-viz-vocabulary-reconciliation/21-SECURITY.md`
+(State B create; `status: verified`, `threats_open: 0`, ASVS L1).
+
+**What the loop verified (machine gate, re-run by the orchestrator — not trusted):**
+all three plan-time threats CLOSED by in-tree tests, re-run GREEN 2026-09-02:
+
+| Threat | Category | Mitigation (test) | Re-run |
+|---|---|---|---|
+| T-21-01 | Tampering | every-mark-has-a-home invariant (`TestEveryMarkHasAHome`) | GREEN |
+| T-21-02 | Repudiation | refusal-record completeness + code identity (`TestRefusalEntryCompleteness`, code=DSX-VIZ-001) | GREEN |
+| T-21-03 | Tampering | zero-mint set-identity (`test_finding_catalogue_invariant` + `test_gen_finding_catalogue`, 275→275) | GREEN |
+
+No threat rises to `high`; nothing blocks under ASVS-L1 block-on-`high`. No new
+packages → no supply-chain gate. **UAT note:** Phase 21 has no user-facing
+behavior — its acceptance test IS the automated invariant (55 tests OK; full
+suite 1471 OK), so there are no manual UAT steps to run. The one residual human
+read (refusal-citation *authenticity*, incl. the provisional `radar` row) is
+already tracked under **HQ-27 Tier-3**, not duplicated here.
+
+**To sign:** confirm the audit and write the approval line in `21-SECURITY.md`
+(`Approval: verified <initials> <date>`, flip the `- [ ]` Approval box); an
+interactive session then checks HQ-29 off here.
+
 ## Will be added by the loop when reached
 
 - ~~S0-3: Phase 22 D-05 evidence pack~~ — FILED 2026-09-03 as HQ-27 (see Open).
+- ~~Phase 21 security sign-off~~ — FILED 2026-09-02 as HQ-29 (see Open).
 - Phase 21/22/23/24 end-of-phase security sign-off + UAT rounds (batched per
   phase; non-blocking until S5-2).
 - D-06 numbering veto windows for any new codes Phase 22 mints (from a freshly
