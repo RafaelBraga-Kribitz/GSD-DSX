@@ -214,6 +214,47 @@ guard's miss-union is CRITICAL-only, so any *future* HIGH code that ever needs a
 declaration requires that severity filter to be widened first; not exploited this phase (all 15
 are PRESENT-caught).
 
+### HQ-25 — Phase 20 end-of-phase security sign-off (NON-BLOCKING until S5-2)
+
+**What to sign:** the operator **Approval** line in
+`.planning/phases/20-calibration-and-reporting-close/20-SECURITY.md`.
+
+**What the loop already did (S4-5, 2026-09-02):** ran `/gsd-secure-phase 20` (State B,
+ASVS L1, `security_block_on: high`). All four PLAN threat registers (20-A, 20-B, 20-C, 20-D)
+parsed → `register_authored_at_plan_time: true`. Built the combined **21-threat** register
+(17 mitigate, 4 accept = supply-chain, zero packages installed). Classified **all 21 CLOSED,
+threats_open: 0**. **Phase 20 carries FIVE HIGH threats** — T-20-A-01 (self-reference: HIGH
+stratum reading the golden ledger as "what fired"), T-20-A-02 (null result wearing a coverage
+star), T-20-B-01 (silent mint off 275), T-20-D-01 (docs drift from behaviour — the Boschloo
+divergence class), T-20-D-02 (cross-check false pass on a silently-unparsed row). Per brief §5,
+did **not** trust the L1 short-circuit blind — re-ran every non-accepted mitigation from a clean
+tree: full suite **1462 OK** + 77 targeted Phase-20 tests (`test_known_bad_corpus` calibration
+harness + HIGH stratum, `test_causal_verb_golden`, `test_phase20_zero_mint_close`,
+`test_doc_code_agreement`, `test_no_shapiro_autoswitch`, `test_time_to_event_fallthrough`) +
+`gen-finding-catalogue.py --check` "current" @275 + production byte-frozen
+(`git diff 0013ea3..HEAD -- dsx scripts references` empty = zero-mint structural). The five HIGH
+mitigations confirmed structurally: the HIGH catch is computed LIVE via `self._gate_findings`
+filtered to HIGH and **never** from `_GOLDEN_SHIP_FINDINGS` (D-09; the ledger name appears only
+in prose comments at `test_known_bad_corpus.py:489/729/1576`); catalogue 275 + Phase-12 256
+snapshot byte-frozen; the fifteen milestone codes in `_D05_ALLOWLIST_CODES` by **exact string**;
+the doc/code cross-check `bound==31` exhaustiveness net (31 bound + 26 skip-listed = all 57 data
+rows). Frontmatter `status: verified`.
+
+**Why this is only a sign-off, not a gate:** the SECURED verdict (threats_open:0) is
+machine-verifiable and the loop earned it; the outward-facing **operator approval** is a
+human read (brief §4 item 4) the loop may not self-sign. Nothing blocks on it until S5-2.
+
+**Phase 20 UAT (folded in here — non-blocking until S5-2):** Phase 20 is the terminal
+internal calibration/reporting-close phase with **no user-facing surface**, so its user-acceptance
+test is confirming the automated acceptance is sufficient. `/gsd-validate-phase 20` returned
+**nyquist_compliant: true** (all 4 reqs REQ-P20-01…04 COVERED, zero gaps; zero-mint verified —
+catalogue stays 275) and the behavior is fully exercised by the green gate suite. No interactive
+UAT is owed; the operator confirms this alongside the security sign-off.
+
+**To sign:** reply in a session confirming; an interactive session sets the Approval line in
+`20-SECURITY.md` to `verified <date>`, notes the UAT acceptance, and checks this item off.
+To reject, name the threat (or UAT concern) and the gap.
+
 ## Will be added by the loop when reached
 
 - ~~S0-3: Phase 18 D-05 evidence pack~~ — **FILED as HQ-16, ANSWERED 2026-09-01 (see Answered).**
@@ -221,7 +262,8 @@ are PRESENT-caught).
 - Phase 17/18/19/20 end-of-phase security sign-off + UAT rounds (batched per
   phase; non-blocking until S5-2). **Phase 17 security → FILED as HQ-19 (2026-09-01);
   Phase 18 security → FILED as HQ-21 (2026-09-02); Phase 19 security → FILED as HQ-23
-  (2026-09-02).**
+  (2026-09-02); Phase 20 security → FILED as HQ-25 (2026-09-02). All four phase
+  security sign-offs now filed — S5-2 drains them.**
 - D-06 numbering veto windows for the new codes (from the Phase 17 pre-allocated
   ranges; silence = accept). **Phase 18 codes → FILED as HQ-20 (2026-09-01);
   Phase 19 codes → FILED as HQ-22 (2026-09-02); Phase 20 mints ZERO codes → no numbering
