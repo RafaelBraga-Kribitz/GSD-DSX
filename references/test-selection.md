@@ -245,6 +245,37 @@ matches the declared `analysis.posthoc` against the acceptable set for the decla
 `analysis.omnibus` family. A deprecated post-hoc (SNK, unprotected LSD at k > 3) is **never a
 member** of any acceptable set.
 
+## Variance pretest and power reporting
+
+Two declaration-only gates keyed on **declared roles**, never on the presence of a test. Dataless:
+no `n`, no variance estimate, no computed power reaches either gate — the role and the reporting
+type are **declared**, not read off the data.
+
+| Declared field | Correct declaration | Gate trigger |
+|---|---|---|
+| `analysis.variance_test` (`levene` / `brown_forsythe` / `bartlett` / `fligner_killeen`) with `analysis.variance_test_role` | `scale_estimand` when scale genuinely IS the estimand — the scale test is then the **primary** analysis | blank role **or** `precondition_to_location` |
+| `analysis.power_reporting_type` | `a_priori` / `design` / `mde_sensitivity` | `observed` **or** `post_hoc` |
+
+**The variance test's role is declared, not the test's presence (DSX-STA-110, Wave 2).** A declared
+variance test with a **blank** `analysis.variance_test_role` or a declared
+`precondition_to_location` fires: gating a location test (t / ANOVA) on a variance pre-test
+corrupts the location test's error rate — the pre-test's own error compounds with it; the
+heteroscedasticity-robust route (always-Welch) needs no pre-test. The gate is **SILENT** on
+`scale_estimand` (the scale test IS the correct primary analysis when scale is the estimand) and
+**never keys on the presence of Levene / Brown-Forsythe / Bartlett / Fligner alone** (D-06 over-block
+guard). Zimmerman (2004), *BJMSP* 57(1):173-181, is the bibliographic locator; the finding is
+**two-group-scoped** with an explicit principled-extension flag — the mechanism is invariant to
+group count, but the empirical **k-group magnitude is unverified**, so **no numeric boundary is
+printed**.
+
+**Observed / post-hoc power in a readout is declared (DSX-STA-111, Wave 2).** A declared
+`analysis.power_reporting_type` of `observed` or `post_hoc` fires — observed power is a deterministic
+transform of the p-value, adding no information beyond it and unable to justify accepting a null.
+The gate is **narrow**: `a_priori`, `design`, and `mde_sensitivity` do **not** fire (D-06; broadening
+is a D-13 deferral). Hoenig & Heisey (2001), *The American Statistician* 55(1):19-24, for the
+observed-power/p-value identity; Lakens (2022), *Collabra: Psychology* 8(1):33267 — the
+MDE-sensitivity framing is the catalog's paraphrase, not attributed to Lakens.
+
 ## Proportion and count extras
 
 Mirror of `recommend_proportion_ci(context)` and the count-model pointers, keyed on **declared**
