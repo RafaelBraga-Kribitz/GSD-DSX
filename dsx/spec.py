@@ -422,6 +422,38 @@ ESTIMAND_KINDS = {
     ),
 }
 
+# ── Phase 18 correlation/agreement declared sub-vocabularies (REQ-P18-03/04) ──
+# All closed, all read declaration-only by dsx/checks/stats.py's
+# _check_declared_association gate — never from data (the anti-two-stage
+# invariant, REQ-P18-06). Exact normalized membership only, same discipline as
+# ESTIMAND_KINDS. Absence is non-blocking; a mis-slotted value is a loud finding.
+
+# ICC declared triple. Admissible values per Shrout, P.E. & Fleiss, J.L. (1979),
+# "Intraclass Correlations: Uses in Assessing Rater Reliability", Psychological
+# Bulletin 86(2):420-428; and McGraw, K.O. & Wong, S.P. (1996, corrected
+# edition), "Forming Inferences About Some Intraclass Correlation Coefficients",
+# Psychological Methods 1(1):30-46. DSX-STA-060 checks presence + membership over
+# this triple only (completeness, not combination-coherence — deferred as
+# candidate DSX-STA-063 per 18-CONTEXT.md D-05).
+ICC_MODELS = {"one_way_random", "two_way_random", "two_way_mixed"}
+ICC_TYPES = {"single", "average"}
+ICC_DEFINITIONS = {"consistency", "absolute_agreement"}
+
+# Weighted-kappa weighting-scheme tokens. A declared `weights` may ALSO be an
+# explicit matrix (a non-empty list) — that structural shape is accepted by the
+# gate's isinstance branch (18-RESEARCH.md Pitfall 5), never stringified against
+# this set. These are the two recognised STRING schemes only.
+KAPPA_WEIGHT_TOKENS = {"linear", "quadratic"}
+
+# Declared operand measurement scale (analysis.operand_scale). The ordinal-vs-
+# dichotomous split is what encodes 18-CONTEXT.md D-03's ">2 levels" whitelist: a
+# 2-level operand is declared `dichotomous` (point-biserial's home) and is
+# whitelisted from DSX-STA-050, while an `ordinal` operand (>2 ordered levels)
+# declared against Pearson fires it. Registered in stats.py's _MEMBERSHIP_FIELDS
+# so a mis-slotted value is loud via DSX-STA-040 for free.
+OPERAND_SCALES = {"continuous", "ordinal", "dichotomous", "nominal"}
+
+
 # Dependence structure -> admissible variance-adjustment method family (D-04, REQ-P7-04).
 # Every method named below is drawn verbatim from VARIANCE_ADJUSTMENTS above — M-09
 # forbids inventing a parallel vocabulary. "none" has no entry: a declared independence
@@ -615,6 +647,15 @@ _VOCABULARIES: "list[tuple[str, Any]]" = [
     ("declaration_points", DECLARATION_POINTS),
     ("paradigms", PARADIGMS),
     ("paradigm_justifications", PARADIGM_JUSTIFICATIONS),
+    # New this phase (REQ-P18-03/04) — declared correlation/agreement
+    # sub-vocabularies the _check_declared_association gate reads. Plain sets, the
+    # same shape as design_kinds/claim_types above (discretionary registration,
+    # 18-RESEARCH.md "Claude's Discretion": register for house-style consistency):
+    ("icc_models", ICC_MODELS),
+    ("icc_types", ICC_TYPES),
+    ("icc_definitions", ICC_DEFINITIONS),
+    ("kappa_weight_tokens", KAPPA_WEIGHT_TOKENS),
+    ("operand_scales", OPERAND_SCALES),
 ]
 
 

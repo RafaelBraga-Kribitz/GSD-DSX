@@ -153,6 +153,18 @@ _D05_ALLOWLIST_PREFIXES = (
 # (`_check_cohort_denominator_shift`) cites Crook et al. 2009 KDD. Both live in
 # brand-new functions this phase wrote, so no legacy sibling is dragged in — the
 # same exact-code precedent as DSX-SPEC-080..086 and DSX-COH-040 above.
+#
+# Phase 18 (REQ-P18-03, REQ-P18-04, 2026-09-01) adds DSX-STA-050, DSX-STA-051,
+# DSX-STA-060, DSX-STA-061 and DSX-STA-062 here, by exact code and NOT via
+# `_D05_ALLOWLIST_PREFIXES`: `DSX-STA-*` is a large pre-existing family (~40
+# legacy codes) carrying no `Citation:`/`Structural criterion:` docstring line
+# and no `# D-05:` test marker, so a `"DSX-STA-"` prefix add would fail the build
+# red on all of them (18-RESEARCH.md Pitfall 3 / Anti-Patterns). The two
+# correlation codes (050/051) live in `_check_correlation_scale_kind` and the
+# three agreement codes (060/061/062) in `_check_agreement_completeness` — two
+# brand-new helpers this phase wrote, split by predicate group so each carries
+# its own attributable D-05 docstring (18-RESEARCH.md Pattern 1); the same
+# exact-code precedent as DSX-EXP-070/DSX-MET-021/DSX-COH-040 above.
 _D05_ALLOWLIST_CODES = frozenset(
     {
         "DSX-SPEC-080", "DSX-SPEC-081", "DSX-SPEC-082", "DSX-SPEC-085", "DSX-SPEC-086",
@@ -161,6 +173,7 @@ _D05_ALLOWLIST_CODES = frozenset(
         "DSX-ML-090", "DSX-ML-091", "DSX-ML-092",
         "DSX-COH-040",
         "DSX-EXP-070", "DSX-MET-021",
+        "DSX-STA-050", "DSX-STA-051", "DSX-STA-060", "DSX-STA-061", "DSX-STA-062",
     }
 )
 
