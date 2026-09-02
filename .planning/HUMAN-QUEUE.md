@@ -142,13 +142,50 @@ gate and five other statistically-correct riders are named D-13 deferrals in 19-
 silent gaps. To veto the numbering, reply in a session; otherwise silence accepts and Phase 19
 execute (S3-3) builds on it.
 
+### HQ-23 — Phase 19 end-of-phase security sign-off (NON-BLOCKING until S5-2)
+
+**What to sign:** the operator **Approval** line in
+`.planning/phases/19-rm-trend-categorical-resampling-post-hoc/19-SECURITY.md`.
+
+**What the loop already did (S3-5, 2026-09-02):** ran `/gsd-secure-phase 19` (State B,
+ASVS L1, `security_block_on: high`). Both PLAN threat registers (19-A, 19-C) parsed →
+`register_authored_at_plan_time: true`. Built the combined **12-threat** register (11 mitigate,
+1 accept = supply-chain, zero packages installed). Classified **all 12 CLOSED, threats_open: 0**.
+**Unlike Phases 17–18 (all-low registers), Phase 19 carries two HIGH threats** — T-19-C-01
+(a code shipping uncited) and T-19-C-02 (citation laundering: one monolithic gate emitting all
+ten codes under a shared docstring). Per brief §5, did **not** trust the L1 short-circuit blind —
+re-ran every non-accepted mitigation from a clean tree: full suite **1442 OK** + 69 targeted
+Phase-19 gate/routing tests + `gen-finding-catalogue.py --check` exit 0 at 275 (ten codes each
+present once) + the golden ship-set/known-bad-corpus (51 OK) proving the extended bad fixture
+fires all ten and the good fixture fires none. The two HIGH mitigations were confirmed
+structurally: **seven per-family `_check_declared_*` helpers** at `stats.py:1078–1308` (each with
+its own attributable `Citation:` docstring, not one shared block → T-19-C-02 closed) and **the
+ten codes added by exact name to `_D05_ALLOWLIST_CODES`** with the per-code `--check` marker gate
+exit 0 (→ T-19-C-01 closed). Frontmatter `status: verified`.
+
+**Why this is only a sign-off, not a gate:** the SECURED verdict (threats_open:0) is
+machine-verifiable and the loop earned it; the outward-facing **operator approval** is a
+human read (brief §4 item 4) the loop may not self-sign. Nothing blocks on it until S5-2.
+
+**Phase 19 UAT (folded in here — non-blocking until S5-2):** Phase 19 is an internal
+routing/gate/catalogue phase with **no user-facing surface**, so its user-acceptance test is
+confirming the automated acceptance is sufficient. `/gsd-validate-phase 19` returned
+**nyquist_compliant: true** (all 7 reqs REQ-P19-01…07 COVERED, zero gaps; REQ-P19-03 verified
+zero-mint) and the behavior is fully exercised by the green gate suite. No interactive UAT is
+owed; the operator confirms this alongside the security sign-off.
+
+**To sign:** reply in a session confirming; an interactive session sets the Approval line in
+`19-SECURITY.md` to `verified <date>`, notes the UAT acceptance, and checks this item off.
+To reject, name the threat (or UAT concern) and the gap.
+
 ## Will be added by the loop when reached
 
 - ~~S0-3: Phase 18 D-05 evidence pack~~ — **FILED as HQ-16, ANSWERED 2026-09-01 (see Answered).**
 - ~~S0-4: Phase 19 D-05 evidence pack~~ — **FILED as HQ-17, ANSWERED 2026-09-01 (see Answered).**
 - Phase 17/18/19/20 end-of-phase security sign-off + UAT rounds (batched per
   phase; non-blocking until S5-2). **Phase 17 security → FILED as HQ-19 (2026-09-01);
-  Phase 18 security → FILED as HQ-21 (2026-09-02).**
+  Phase 18 security → FILED as HQ-21 (2026-09-02); Phase 19 security → FILED as HQ-23
+  (2026-09-02).**
 - D-06 numbering veto windows for the new codes (from the Phase 17 pre-allocated
   ranges; silence = accept). **Phase 18 codes → FILED as HQ-20 (2026-09-01);
   Phase 19 codes → FILED as HQ-22 (2026-09-02).**

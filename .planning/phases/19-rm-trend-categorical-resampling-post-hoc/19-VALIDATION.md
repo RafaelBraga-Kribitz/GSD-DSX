@@ -3,10 +3,11 @@ phase: 19
 slug: rm-trend-categorical-resampling-post-hoc
 # status lifecycle: draft (seeded by plan-phase) → validated (set by validate-phase §6)
 # audit-milestone §5.5 distinguishes NOT-VALIDATED (draft) from PARTIAL (validated + nyquist_compliant: false) (#2117)
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: validated
+nyquist_compliant: true
+wave_0_complete: true
 created: 2026-09-02
+validated: 2026-09-02
 ---
 
 # Phase 19 — Validation Strategy
@@ -16,7 +17,9 @@ created: 2026-09-02
 > Per-task IDs finalize when the D-08 wave-split plans are written by the planner at
 > S3-2. Phase 19 mints **ten** HIGH codes; catalogue **265 → 275**. Wave 1 is **19-A
 > alone** (research verdict: no new mathx band → no 19-B); Wave 2 is **19-C** (gates +
-> fixtures). All oracles below are **pending** until the plans are written and executed.
+> fixtures). **All oracles below re-run green by the orchestrator from a clean tree at S3-5
+> (2026-09-02): full suite 1442 OK, catalogue `--check` exit 0 @275, 69 targeted Phase-19
+> gate/routing tests OK, golden ship-set 51 OK (bad fires all ten / good silent).**
 
 ---
 
@@ -61,38 +64,38 @@ catalog-only, and no REQ-P19-01…07 names a band).
 
 | Req / Proof | Plan | Wave | Behavior (oracle) | Test Type | Automated Command | Status |
 |---|---|---|---|---|---|---|
-| REQ-P19-01 | 19-C (routing 19-A) | 1→2 | DSX-STA-070 fires on declared `mauchly_conditional` (two-stage sphericity), silent on `unconditional_gg`/absent; **never** fires on mere repeated-measures presence | unit + structural | `python3 -m unittest tests.test_rm_sphericity_gate -v` | ⬜ pending |
-| REQ-P19-02 | 19-C (routing 19-A) | 1→2 | DSX-STA-080 fires on `cochran_armitage` + blank dose-scores; DSX-STA-081 fires on `mann_kendall`/`sens_slope` + blank autocorrelation-handling, **SILENT on a declared `none`/`independent`** (`is_blank` predicate, not membership) | unit | `python3 -m unittest tests.test_trend_gate -v` | ⬜ pending |
-| REQ-P19-03 | 19-A | 1 | DEPRECATED Yates row + log-linear pointer row + CMH surfaced field + Fisher-Freeman-Halton footnote present in `test-selection.md`; **ZERO new codes minted** (catalogue stays 265 at Wave 1) | doc-presence + catalogue count | `python3 -m unittest tests.test_finding_catalogue_invariant -v` + substring asserts | ⬜ pending |
-| REQ-P19-04 | 19-C (routing 19-A) | 1→2 | DSX-STA-090 fires on an incomplete `{method, seed, B, unit}` quadruple, message names the missing member; silent on the complete quadruple (ONE code, not four) | unit | `python3 -m unittest tests.test_resampling_gate -v` | ⬜ pending |
-| REQ-P19-05 | 19-C (routing 19-A) | 1→2 | DSX-STA-100 fires on declared post-hoc family ∉ declared omnibus family-map; silent on a matched pair; deprecated post-hocs (SNK, unprotected-LSD-k>3) never selected as a default | unit | `python3 -m unittest tests.test_posthoc_gate -v` | ⬜ pending |
-| REQ-P19-06 | 19-C (routing 19-A) | 1→2 | DSX-STA-110 fires on a variance test declared with role = precondition-to-location (or blank role) AND scale not the declared estimand, silent on `scale_estimand`; DSX-STA-111 fires on power-reporting type ∈ {observed, post_hoc} only (a-priori/design/MDE-sensitivity do not fire — narrow) | unit | `python3 -m unittest tests.test_variance_role_gate -v` / `tests.test_power_reporting_gate -v` | ⬜ pending |
-| REQ-P19-07 | 19-C (routing 19-A) | 1→2 | DSX-STA-120 fires on `wald` proportion-CI (n-independent, no hard-coded n≤40); DSX-STA-121 fires on declared exposure + blank offset; DSX-STA-122 fires on declared nnt + blank nnt-CI companion | unit | `python3 -m unittest tests.test_proportion_count_gate -v` | ⬜ pending |
-| No-autoswitch (REQ-P18-06 doctrine, extended) | 19-A | 1 | every new `recommend_*` signature takes NO data/n/distribution flag (the anti-two-stage structural proof) | unit, structural (`inspect.signature`) | `python3 -m unittest tests.test_declared_rm_trend_routing -v` / `tests.test_declared_resampling_posthoc_routing -v` | ⬜ pending |
-| Catalogue mint proof (Wave 1) | 19-A | 1 | rows/recommend/vocab mint no codes: live catalogue declared total == **265** (unchanged) | unit | `python3 -m unittest tests.test_finding_catalogue_invariant -v` | ⬜ pending |
-| Catalogue mint proof (Wave 2) | 19-C | 2 | live set == frozen snapshot ∪ four prior ∪ five Phase-18 ∪ **ten Phase-19**; declared total == **275**; set-identity (no drift) | unit | `python3 -m unittest tests.test_finding_catalogue_invariant -v` | ⬜ pending |
-| D-05 citation build gate (ten codes) | 19-C | 2 | each of the ten codes has a `Citation:` line, a `Structural criterion:`/`Reference value:` line, and a `# D-05: <CODE>` test marker; `_D05_ALLOWLIST_CODES` carries all ten by exact name | build script | `python3 scripts/gen-finding-catalogue.py --check` | ⬜ pending |
-| D-08 fixture discipline | 19-C | 2 | `examples/good-ANALYSIS-SPEC.yaml` fires none of the ten; `examples/bad-ANALYSIS-SPEC.yaml` (extended) fires all ten; `_SNAPSHOT_TOTAL`/phase12 fixture stay byte-frozen at 256 | integration | `dsx audit --spec examples/good-ANALYSIS-SPEC.yaml` / same for `bad` | ⬜ pending |
+| REQ-P19-01 | 19-C (routing 19-A) | 1→2 | DSX-STA-070 fires on declared `mauchly_conditional` (two-stage sphericity), silent on `unconditional_gg`/absent; **never** fires on mere repeated-measures presence | unit + structural | `python3 -m unittest tests.test_rm_sphericity_gate -v` | ✅ green (re-run 2026-09-02) |
+| REQ-P19-02 | 19-C (routing 19-A) | 1→2 | DSX-STA-080 fires on `cochran_armitage` + blank dose-scores; DSX-STA-081 fires on `mann_kendall`/`sens_slope` + blank autocorrelation-handling, **SILENT on a declared `none`/`independent`** (`is_blank` predicate, not membership) | unit | `python3 -m unittest tests.test_trend_gate -v` | ✅ green (re-run 2026-09-02) |
+| REQ-P19-03 | 19-A | 1 | DEPRECATED Yates row + log-linear pointer row + CMH surfaced field + Fisher-Freeman-Halton footnote present in `test-selection.md`; **ZERO new codes minted** (catalogue stays 265 at Wave 1) | doc-presence + catalogue count | `python3 -m unittest tests.test_finding_catalogue_invariant -v` + substring asserts | ✅ green (re-run 2026-09-02) |
+| REQ-P19-04 | 19-C (routing 19-A) | 1→2 | DSX-STA-090 fires on an incomplete `{method, seed, B, unit}` quadruple, message names the missing member; silent on the complete quadruple (ONE code, not four) | unit | `python3 -m unittest tests.test_resampling_gate -v` | ✅ green (re-run 2026-09-02) |
+| REQ-P19-05 | 19-C (routing 19-A) | 1→2 | DSX-STA-100 fires on declared post-hoc family ∉ declared omnibus family-map; silent on a matched pair; deprecated post-hocs (SNK, unprotected-LSD-k>3) never selected as a default | unit | `python3 -m unittest tests.test_posthoc_gate -v` | ✅ green (re-run 2026-09-02) |
+| REQ-P19-06 | 19-C (routing 19-A) | 1→2 | DSX-STA-110 fires on a variance test declared with role = precondition-to-location (or blank role) AND scale not the declared estimand, silent on `scale_estimand`; DSX-STA-111 fires on power-reporting type ∈ {observed, post_hoc} only (a-priori/design/MDE-sensitivity do not fire — narrow) | unit | `python3 -m unittest tests.test_variance_role_gate -v` / `tests.test_power_reporting_gate -v` | ✅ green (re-run 2026-09-02) |
+| REQ-P19-07 | 19-C (routing 19-A) | 1→2 | DSX-STA-120 fires on `wald` proportion-CI (n-independent, no hard-coded n≤40); DSX-STA-121 fires on declared exposure + blank offset; DSX-STA-122 fires on declared nnt + blank nnt-CI companion | unit | `python3 -m unittest tests.test_proportion_count_gate -v` | ✅ green (re-run 2026-09-02) |
+| No-autoswitch (REQ-P18-06 doctrine, extended) | 19-A | 1 | every new `recommend_*` signature takes NO data/n/distribution flag (the anti-two-stage structural proof) | unit, structural (`inspect.signature`) | `python3 -m unittest tests.test_declared_rm_trend_routing -v` / `tests.test_declared_resampling_posthoc_routing -v` | ✅ green (re-run 2026-09-02) |
+| Catalogue mint proof (Wave 1) | 19-A | 1 | rows/recommend/vocab mint no codes: live catalogue declared total == **265** (unchanged) | unit | `python3 -m unittest tests.test_finding_catalogue_invariant -v` | ✅ green (re-run 2026-09-02) |
+| Catalogue mint proof (Wave 2) | 19-C | 2 | live set == frozen snapshot ∪ four prior ∪ five Phase-18 ∪ **ten Phase-19**; declared total == **275**; set-identity (no drift) | unit | `python3 -m unittest tests.test_finding_catalogue_invariant -v` | ✅ green (re-run 2026-09-02) |
+| D-05 citation build gate (ten codes) | 19-C | 2 | each of the ten codes has a `Citation:` line, a `Structural criterion:`/`Reference value:` line, and a `# D-05: <CODE>` test marker; `_D05_ALLOWLIST_CODES` carries all ten by exact name | build script | `python3 scripts/gen-finding-catalogue.py --check` | ✅ green (re-run 2026-09-02) |
+| D-08 fixture discipline | 19-C | 2 | `examples/good-ANALYSIS-SPEC.yaml` fires none of the ten; `examples/bad-ANALYSIS-SPEC.yaml` (extended) fires all ten; `_SNAPSHOT_TOTAL`/phase12 fixture stay byte-frozen at 256 | integration | `dsx audit --spec examples/good-ANALYSIS-SPEC.yaml` / same for `bad` | ✅ green (re-run 2026-09-02) |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
 ---
 
-## Wave 0 Requirements (test files — all NEW or EXTENDED, none exist yet)
+## Wave 0 Requirements (test files — all NEW or EXTENDED; all now exist and green)
 
-- [ ] `tests/test_declared_rm_trend_routing.py` — new; no-autoswitch for `recommend_rm`/`recommend_trend`/`recommend_variance_role` (REQ-P18-06 doctrine)
-- [ ] `tests/test_declared_resampling_posthoc_routing.py` — new; no-autoswitch for `recommend_resampling`/`recommend_posthoc`/`recommend_power`/`recommend_proportion_ci`
-- [ ] `tests/test_rm_sphericity_gate.py` — new; REQ-P19-01 (DSX-STA-070)
-- [ ] `tests/test_trend_gate.py` — new; REQ-P19-02 (DSX-STA-080/081)
-- [ ] `tests/test_resampling_gate.py` — new; REQ-P19-04 (DSX-STA-090)
-- [ ] `tests/test_posthoc_gate.py` — new; REQ-P19-05 (DSX-STA-100)
-- [ ] `tests/test_variance_role_gate.py` — new; REQ-P19-06a (DSX-STA-110)
-- [ ] `tests/test_power_reporting_gate.py` — new; REQ-P19-06b (DSX-STA-111)
-- [ ] `tests/test_proportion_count_gate.py` — new; REQ-P19-07 (DSX-STA-120/121/122)
-- [ ] `tests/test_finding_catalogue_invariant.py` — extended (no new file): `_EXPECTED_TOTAL` 265→275, `_MINTED_CODES` +10, method rename + 275-mentioning docstrings; `_SNAPSHOT_TOTAL` 256 byte-frozen
-- [ ] `scripts/gen-finding-catalogue.py` — the ten codes added to `_D05_ALLOWLIST_CODES` by exact name (build-gate prerequisite for the D-05 checks to mean anything)
-- [ ] REQ-P19-03 doc-presence asserts (Yates DEPRECATED / log-linear pointer / CMH field / FFH footnote) — folded into the routing or catalogue test module
-- [ ] No framework install needed — stdlib `unittest` confirmed working (baseline `--check` green this session, Python 3.14.6).
+- [x] `tests/test_declared_rm_trend_routing.py` — new; no-autoswitch for `recommend_rm`/`recommend_trend`/`recommend_variance_role` (REQ-P18-06 doctrine)
+- [x] `tests/test_declared_resampling_posthoc_routing.py` — new; no-autoswitch for `recommend_resampling`/`recommend_posthoc`/`recommend_power`/`recommend_proportion_ci`
+- [x] `tests/test_rm_sphericity_gate.py` — new; REQ-P19-01 (DSX-STA-070)
+- [x] `tests/test_trend_gate.py` — new; REQ-P19-02 (DSX-STA-080/081)
+- [x] `tests/test_resampling_gate.py` — new; REQ-P19-04 (DSX-STA-090)
+- [x] `tests/test_posthoc_gate.py` — new; REQ-P19-05 (DSX-STA-100)
+- [x] `tests/test_variance_role_gate.py` — new; REQ-P19-06a (DSX-STA-110)
+- [x] `tests/test_power_reporting_gate.py` — new; REQ-P19-06b (DSX-STA-111)
+- [x] `tests/test_proportion_count_gate.py` — new; REQ-P19-07 (DSX-STA-120/121/122)
+- [x] `tests/test_finding_catalogue_invariant.py` — extended (no new file): `_EXPECTED_TOTAL` 265→275, `_MINTED_CODES` +10, method rename + 275-mentioning docstrings; `_SNAPSHOT_TOTAL` 256 byte-frozen
+- [x] `scripts/gen-finding-catalogue.py` — the ten codes added to `_D05_ALLOWLIST_CODES` by exact name (build-gate prerequisite for the D-05 checks to mean anything)
+- [x] REQ-P19-03 doc-presence asserts (Yates DEPRECATED / log-linear pointer / CMH field / FFH footnote) — folded into the routing or catalogue test module
+- [x] No framework install needed — stdlib `unittest` confirmed working (baseline `--check` green this session, Python 3.14.6).
 
 ---
 
@@ -107,15 +110,43 @@ catalog-only, and no REQ-P19-01…07 names a band).
 
 ---
 
-## Validation Sign-Off (pending — set at S3-5 `/gsd-validate-phase 19`)
+## Validation Sign-Off (set at S3-5 `/gsd-validate-phase 19`, 2026-09-02)
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references (the new gate/routing test modules)
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 60s (full suite)
-- [ ] `nyquist_compliant: true` set in frontmatter (after execute + validate)
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references (the new gate/routing test modules)
+- [x] No watch-mode flags
+- [x] Feedback latency < 60s (full suite)
+- [x] `nyquist_compliant: true` set in frontmatter (after execute + validate)
 
-**Approval:** PENDING — this is the plan-phase seed (`status: draft`). Set to
-NYQUIST-COMPLIANT by `/gsd-validate-phase 19` at S3-5 once the ten gates + their test
-modules exist and all REQ-P19-01…07 oracles are green from a clean tree.
+**Approval:** NYQUIST-COMPLIANT 2026-09-02 (orchestrator, State A audit). All 7 requirements
+(REQ-P19-01…07) have automated verification: every mapped oracle re-run green by the
+orchestrator from a clean tree (stray `DECISIONS.jsonl` cleared first per the HUMAN-QUEUE
+standing note) — 69 targeted Phase-19 gate/routing tests + `test_finding_catalogue_invariant`
+at 275 + `gen-finding-catalogue.py --check` exit 0 at 275 + the golden ship-set/known-bad-corpus
+(51 OK) proving the extended bad fixture fires all ten and good fires none, all inside a full
+suite of **1442 OK**. REQ-P19-03 verified zero-mint (catalogue stays 265 at Wave 1; the absent
+decade is the tell). Two manual-only items (D-05 citation authenticity — HQ-17-answered for all
+ten gate codes — and the hard-code prohibition) are the standing portfolio bar, not code oracles.
+Zero gaps → no nyquist-auditor spawn required (workflow §3). `nyquist_compliant: true`,
+`status: validated`.
+
+---
+
+## Validation Audit 2026-09-02
+
+| Metric | Count |
+|--------|-------|
+| Requirements | 7 (REQ-P19-01…07) |
+| COVERED (automated, green) | 7 |
+| PARTIAL | 0 |
+| MISSING | 0 |
+| Manual-only (D-05 citation authenticity + hard-code prohibition) | 2 (HQ-17-answered for the ten gate codes) |
+| Gaps found | 0 |
+| Resolved | 0 (none to resolve — all oracles present and green) |
+| Escalated | 0 |
+
+State A audit: every mapped oracle re-run by the orchestrator from a clean tree (brief §5;
+stray `DECISIONS.jsonl` ledgers cleared first per the HUMAN-QUEUE standing note). No new test
+files generated — the Wave-0 modules (nine new gate/routing modules + the extended invariant)
+already exist and pass. `nyquist_compliant: true`, `status: validated`.
