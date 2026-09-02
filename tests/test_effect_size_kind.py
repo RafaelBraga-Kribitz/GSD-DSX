@@ -228,5 +228,73 @@ class TestConventionCatalogPresence(unittest.TestCase):
         )
 
 
+# ── Plan 18-B Task 2: the ungated APA template wiring + the report-only seam ────
+
+
+def _report_only_seam_is_live() -> bool:
+    """Detect Plan 18-A's DSX-STA-012 report-only branch empirically.
+
+    The report-only-firing behaviour requires Plan 18-A's stats.py branch that
+    consults mathx.REPORT_ONLY_EFFECT_KINDS. Once that seam is present, a
+    significant result carrying effect_size_kind == kappa no longer fires
+    DSX-STA-012. In isolation (18-A not merged) current stats.py fires
+    DSX-STA-012 for the unrecognised kind, so this returns False and the oracle
+    below is SKIPPED — this plan stays green in isolation, and the Wave-1 merge
+    turns the oracle on and enforces the behaviour.
+    """
+    try:
+        report = stats.check(_spec("kappa"))
+    except Exception:  # noqa: BLE001 - any failure means the seam is not live yet
+        return False
+    return "DSX-STA-012" not in _codes(report)
+
+
+class TestReportOnlyFiringSeamOracle(unittest.TestCase):
+    """The ONE cross-plan seam with Plan 18-A — validated at the Wave-1 merge.
+
+    Guarded so it SKIPS in isolation (Plan 18-B alone) and ENFORCES post-merge:
+    a report-only effect_size_kind on a significant result must fire neither
+    DSX-STA-011 nor DSX-STA-012 and must yield a report.ok naming the convention
+    (18-RESEARCH.md Pitfall 6; 18-CONTEXT.md D-06/D-08).
+    """
+
+    @unittest.skipUnless(
+        _report_only_seam_is_live(),
+        "Plan 18-A's DSX-STA-012 report-only branch not present (Wave-1 seam)",
+    )
+    def test_report_only_kappa_fires_neither_011_nor_012_and_reports_ok(self):  # REQ-P18-05
+        report = stats.check(_spec("kappa"))
+        codes = _codes(report)
+        self.assertNotIn("DSX-STA-011", codes)
+        self.assertNotIn("DSX-STA-012", codes)
+        self.assertTrue(
+            any("convention" in name.lower() for name in report.passed_checks),
+            f"expected a report.ok naming the convention; got {report.passed_checks!r}",
+        )
+
+
+class TestApaTemplateConventionNote(unittest.TestCase):
+    """The ONE wiring point: the ungated APA template mints no finding code."""
+
+    def _template_text(self) -> str:
+        return (_REPO_ROOT / "templates" / "APA-TABLE-research.md").read_text(
+            encoding="utf-8"
+        )
+
+    def test_template_names_the_conventions(self):  # REQ-P18-05
+        text = self._template_text()
+        self.assertIn("convention", text.lower())
+        self.assertRegex(text, r"Landis")
+        self.assertIn("0.7598", text)
+        self.assertRegex(text, r"(?i)ordinal")
+        self.assertRegex(text, r"(?i)kappa")
+
+    def test_template_mints_no_finding_code(self):  # REQ-P18-05 (structural)
+        # "conventions never block" is structural: the wiring point carries no
+        # DSX-* finding code, so a convention can never become a gated threshold.
+        text = self._template_text()
+        self.assertNotRegex(text, r"DSX-[A-Z]{2,4}-\d{3}")
+
+
 if __name__ == "__main__":
     unittest.main()
