@@ -13,7 +13,7 @@ a suppression or a reference in a review stays valid across versions.
 **Gate thresholds.** `plan` and `execute` block at CRITICAL; `verify` and
 `ship` block at HIGH.
 
-**Total: 260 codes.**
+**Total: 265 codes.**
 
 ## Contract structure — `DSX-SPEC-*`
 
@@ -122,6 +122,11 @@ Test selection, assumptions, and the reporting contract.
 | `DSX-STA-041` | HIGH | Declared test '<…>' does not match the data's shape |
 | `DSX-STA-042` | MEDIUM | Parametric test '<…>' with unassessed assumptions |
 | `DSX-STA-043` | CRITICAL | Independence assumption is declared violated |
+| `DSX-STA-050` | HIGH | Pearson correlation declared against a declared-ordinal operand |
+| `DSX-STA-051` | HIGH | Correlation coefficient '<…>' declared for a <…> estimand |
+| `DSX-STA-060` | HIGH | ICC declared without a complete (model, type, definition) triple |
+| `DSX-STA-061` | HIGH | Weighted kappa declared without recognised weights |
+| `DSX-STA-062` | HIGH | Kappa declared without its p_pos/p_neg companions |
 
 ## ML integrity — `DSX-ML-*`
 

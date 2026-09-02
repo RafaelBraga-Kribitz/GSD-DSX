@@ -29,17 +29,21 @@ _CATALOGUE_PATH = ROOT / "references" / "finding-codes.md"
 # count invariant alone would pass.
 _SNAPSHOT_PATH = ROOT / "tests" / "fixtures" / "finding-codes-phase12.md"
 
-# The pinned count. Phase 16 mints DSX-REP-060/061 and Phase 15 mints
-# DSX-EXP-070/DSX-MET-021 (D-08 additive rebaselines), so the live catalogue is 260 —
-# up from the 256 the byte-frozen Phase-12 snapshot enumerates.
-_EXPECTED_TOTAL = 260
+# The pinned count. Phase 16 mints DSX-REP-060/061, Phase 15 mints
+# DSX-EXP-070/DSX-MET-021, and Phase 18 (Plan 18-A) mints DSX-STA-050/051/060/061/062
+# (D-08 additive rebaselines), so the live catalogue is 265 — up from the 256 the
+# byte-frozen Phase-12 snapshot enumerates.
+_EXPECTED_TOTAL = 265
 
 # The byte-frozen Phase-12 snapshot's own size, and the explicit additive delta over it.
 # Kept SEPARATE from _EXPECTED_TOTAL on purpose: tests/fixtures/finding-codes-phase12.md
-# is never mutated (D-08) and stays at 256, while the live catalogue is 260 — conflating
+# is never mutated (D-08) and stays at 256, while the live catalogue is 265 — conflating
 # the two would break the snapshot-length leg after the bump (D-08 trap #3).
 _SNAPSHOT_TOTAL = 256
-_MINTED_CODES = {"DSX-REP-060", "DSX-REP-061", "DSX-EXP-070", "DSX-MET-021"}
+_MINTED_CODES = {
+    "DSX-REP-060", "DSX-REP-061", "DSX-EXP-070", "DSX-MET-021",
+    "DSX-STA-050", "DSX-STA-051", "DSX-STA-060", "DSX-STA-061", "DSX-STA-062",
+}
 
 # The declared-total line — matched after whitespace-collapse, so it is agnostic to
 # ``\n`` vs ``\r\n`` and to any incidental wrapping of the surrounding prose.
@@ -52,17 +56,18 @@ _ROW_RE = re.compile(r"\|\s*`(DSX-[A-Z]+-\d+)`\s*\|")
 
 
 class TestCatalogueInvariant(unittest.TestCase):
-    def test_finding_catalogue_stays_at_260_codes(self):
-        """The catalogue declares, and enumerates, exactly 260 codes (D-08).
+    def test_finding_catalogue_stays_at_265_codes(self):
+        """The catalogue declares, and enumerates, exactly 265 codes (D-08).
 
-        Two independent readings of the same generated artifact must agree on 260:
+        Two independent readings of the same generated artifact must agree on 265:
         the human-facing ``**Total: N codes.**`` line and the machine count of
-        ``DSX-*`` table rows. Requiring both to equal 260 catches a stale Total line
+        ``DSX-*`` table rows. Requiring both to equal 265 catches a stale Total line
         as well as a minted or dropped code, without re-walking the ``dsx/`` AST here —
         this test stays a pure reader of the same file ``gen-finding-catalogue.py
-        --check`` gates. Phase 16 added DSX-REP-060/061 and Phase 15 added
-        DSX-EXP-070/DSX-MET-021 additively (256 -> 260); any further movement is a new
-        mint or drop and belongs to its own phase.
+        --check`` gates. Phase 16 added DSX-REP-060/061, Phase 15 added
+        DSX-EXP-070/DSX-MET-021, and Phase 18 added DSX-STA-050/051/060/061/062
+        additively (256 -> 265); any further movement is a new mint or drop and
+        belongs to its own phase.
         """
         raw = _CATALOGUE_PATH.read_text(encoding="utf-8")
 
@@ -79,10 +84,10 @@ class TestCatalogueInvariant(unittest.TestCase):
         self.assertEqual(
             declared_total, _EXPECTED_TOTAL,
             f"catalogue declares {declared_total} codes, expected {_EXPECTED_TOTAL} — "
-            "Phase 16 mints DSX-REP-060/061 and Phase 15 mints DSX-EXP-070/DSX-MET-021 "
-            "over the frozen 256 (D-08); if a code was legitimately added or removed "
-            "beyond that, that change belongs to its own check-shipping phase, not a "
-            "silent edit here",
+            "Phase 16 mints DSX-REP-060/061, Phase 15 mints DSX-EXP-070/DSX-MET-021 and "
+            "Phase 18 mints DSX-STA-050/051/060/061/062 over the frozen 256 (D-08); if a "
+            "code was legitimately added or removed beyond that, that change belongs to "
+            "its own check-shipping phase, not a silent edit here",
         )
 
         # Independent cross-check: the enumerated rows agree with the declared total,
@@ -100,10 +105,11 @@ class TestCatalogueInvariant(unittest.TestCase):
         )
 
 
-    def test_code_set_is_phase12_snapshot_plus_the_phase15_and_phase16_mints(self):
+    def test_code_set_is_phase12_snapshot_plus_the_sanctioned_mints(self):
         """The current catalogue's DSX-* code SET equals the frozen Phase-12
         snapshot PLUS exactly the sanctioned mints {DSX-REP-060, DSX-REP-061,
-        DSX-EXP-070, DSX-MET-021} (D-08).
+        DSX-EXP-070, DSX-MET-021, DSX-STA-050, DSX-STA-051, DSX-STA-060,
+        DSX-STA-061, DSX-STA-062} (D-08).
 
         The count invariant above pins cardinality, but a mint-one/drop-one swap
         preserves the count and slips through it. A set-identity diff is strictly

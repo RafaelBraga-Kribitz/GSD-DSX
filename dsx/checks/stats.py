@@ -12,19 +12,64 @@ from typing import Any
 
 from ..findings import Report
 from ..mathx import EFFECT_SIZE_KINDS, apply_correction, interpret_effect
-from ..spec import ESTIMAND_KINDS, as_number, get, is_blank, items, normalize, section
+from ..spec import (
+    ESTIMAND_KINDS,
+    ICC_DEFINITIONS,
+    ICC_MODELS,
+    ICC_TYPES,
+    KAPPA_WEIGHT_TOKENS,
+    OPERAND_SCALES,
+    as_number,
+    get,
+    is_blank,
+    items,
+    normalize,
+    section,
+)
 
 OUTCOME_TYPES = {"proportion", "continuous", "count", "ordinal", "time_to_event"}
 
 # analysis-block routing fields whose declared value must be a member of a closed
-# vocabulary. Both are guarded by the SAME DSX-STA-040 from a single call site — no new
+# vocabulary. All are guarded by the SAME DSX-STA-040 from a single call site — no new
 # code minted (REQ-P17-05) — and the guard runs INDEPENDENTLY of whether a test is declared
 # (17-CONTEXT.md D-01: a mis-slotted routing value is a loud decidable error, never a silent
-# no-op). ESTIMAND_KINDS is a name->description dict; `in` tests its keys.
+# no-op). ESTIMAND_KINDS is a name->description dict; `in` tests its keys. operand_scale
+# (OPERAND_SCALES, Phase 18 REQ-P18-03) joins here so a mis-slotted scale is loud via
+# DSX-STA-040 for free — zero new code for the recognition half of the DSX-STA-050 gate.
 _MEMBERSHIP_FIELDS: "tuple[tuple[str, Any], ...]" = (
     ("outcome_type", OUTCOME_TYPES),
     ("estimand_kind", ESTIMAND_KINDS),
+    ("operand_scale", OPERAND_SCALES),
 )
+
+# The correlation-coefficient family DSX-STA-051 keys on: a declared test that measures
+# association, wrongly declared for an agreement/method_comparison estimand. Kept module-level
+# so recommend_association's acceptable sets and the gate cannot drift.
+CORRELATION_FAMILY = {
+    "pearson_correlation", "spearman_correlation", "kendall_tau_b",
+    "point_biserial", "phi", "cramers_v",
+}
+
+# Dataless routing table: each association estimand_kind -> (acceptable-coefficient
+# frozenset, effect-size token, citation label). The three association kinds only;
+# agreement/method_comparison/ordered_trend route elsewhere (recommend_association raises).
+_ASSOCIATION_ROUTES: "dict[str, tuple[frozenset[str], str, str]]" = {
+    "linear_association": (
+        frozenset({"pearson_correlation", "point_biserial"}),
+        "fisher_z",
+        "Pearson r with a Fisher-z confidence interval",
+    ),
+    "monotone_association": (
+        frozenset({"spearman_correlation", "kendall_tau_b"}),
+        "rho_or_tau_b",
+        "Spearman rho / Kendall tau-b",
+    ),
+    "nominal_association": (
+        frozenset({"phi", "cramers_v"}),
+        "phi_or_cramers_v",
+        "phi (2x2) / Cramer's V (r x c)",
+    ),
+}
 
 # Tests that assume approximate normality of the sampling distribution.
 PARAMETRIC_TESTS = {
@@ -145,6 +190,28 @@ def _rec(test: str, rationale: str, alternatives: list[str], effect: str) -> dic
     return {"test": test, "rationale": rationale, "alternatives": alternatives, "effect_size": effect}
 
 
+def recommend_association(estimand_kind: str) -> dict[str, object]:
+    """Dataless string->acceptable-coefficient-SET lookup for the three association kinds.
+
+    The anti-two-stage proof (REQ-P18-06): this function takes NO data, NO n, NO
+    distribution flag — only the declared ``estimand_kind`` — so it is a mechanically
+    verifiable routing table, a stronger guarantee than a branch of a function that already
+    accepts data-shape arguments (contrast ``recommend_test``). Returns
+    ``{"tests", "effect_size", "citation"}`` where ``tests`` is the acceptable-coefficient
+    frozenset for the kind. Raises ``ValueError`` for a kind with no association route
+    (``agreement`` / ``method_comparison`` route to kappa/ICC/Bland-Altman;
+    ``ordered_trend`` routes to trend tests — all out of this function's scope).
+    """
+    kind = normalize(estimand_kind)
+    if kind not in _ASSOCIATION_ROUTES:
+        raise ValueError(
+            f"no association routing for estimand_kind {estimand_kind!r}; "
+            f"expected one of {', '.join(sorted(_ASSOCIATION_ROUTES))}"
+        )
+    tests, effect_size, citation = _ASSOCIATION_ROUTES[kind]
+    return {"tests": tests, "effect_size": effect_size, "citation": citation}
+
+
 # ── Checks ───────────────────────────────────────────────────────────────────
 
 
@@ -160,6 +227,7 @@ def check(spec: dict) -> Report:
         analysis = section(spec, "analysis")
         if analysis:
             _check_declared_test(analysis, spec, report)
+            _check_declared_association(analysis, spec, report)
         return report
 
     pvalues: list[float] = []
@@ -175,6 +243,7 @@ def check(spec: dict) -> Report:
 
     _check_correction_applied(spec, pvalues, alpha, report)
     _check_declared_test(section(spec, "analysis"), spec, report)
+    _check_declared_association(section(spec, "analysis"), spec, report)
     return report
 
 
@@ -543,4 +612,170 @@ def _check_declared_test(analysis: dict, spec: dict, report: Report) -> None:
                 ),
                 remedy="Model the dependence structure — clustered SEs, mixed effects, or GEE.",
                 where="spec.analysis.independence_ok",
+            )
+
+
+def _check_declared_association(analysis: dict, spec: dict, report: Report) -> None:
+    """Dispatch the two declaration-only association/agreement gate groups.
+
+    Sits beside ``_check_declared_test`` (D-01's "hybrid, not fold-in"): the two are
+    deliberately independent, so a correlation/agreement declaration is gated on the
+    DECLARED estimand_kind and test/agreement fields — never on data (the anti-two-stage
+    invariant, REQ-P18-06). Wired at BOTH ``check()`` call sites (the not-tests early
+    return and the post-loop return, 18-RESEARCH.md Pattern 2), so a pure declaration-only
+    spec with no ``results.tests`` is still gated. The body is split into two private
+    helpers by predicate group so each carries its own attributable D-05 docstring
+    (18-RESEARCH.md Pattern 1).
+    """
+    if not analysis:
+        return
+    _check_correlation_scale_kind(analysis, report)
+    _check_agreement_completeness(analysis, report)
+
+
+def _check_correlation_scale_kind(analysis: dict, report: Report) -> None:
+    """DSX-STA-050/051: declared correlation coefficient vs declared scale/kind.
+
+    Citation: rests on the internal Phase-17 estimand_kind/scale definitions
+    (dsx/spec.py ESTIMAND_KINDS / OPERAND_SCALES) for the scale->admissible-coefficient
+    doctrine; the external doctrinal scale citation is a named, presence-only D-07
+    not-in-hand disposition — no fabricated page/section locator is printed
+    (18-CONTEXT.md D-07). The DSX-STA-051 routing correction rests on the same internal
+    Phase-17 estimand_kind vocabulary.
+    Structural criterion: declaration-only string comparison against ANALYSIS-SPEC.yaml's
+    analysis: block; never reads results.tests or any computed statistic. DSX-STA-050 fires
+    only for Pearson r against a declared-ordinal operand (the ordinal-vs-dichotomous split
+    IS D-03's ">2 levels" whitelist — point_biserial and a declared-dichotomous operand
+    never reach the firing branch); absent operand_scale is non-blocking.
+    """
+    declared_test = normalize(analysis.get("test", ""))
+    estimand_kind = normalize(analysis.get("estimand_kind", ""))
+    operand_scale = normalize(analysis.get("operand_scale", ""))
+
+    if declared_test == "pearson_correlation" and operand_scale == "ordinal":
+        report.add(
+            "DSX-STA-050",
+            "HIGH",
+            "Pearson correlation declared against a declared-ordinal operand",
+            detail=(
+                "Pearson r assumes a linear, interval-or-better scale. An ordinal operand "
+                "with more than two ordered levels calls for a monotone rank measure. "
+                "(A 2-level operand is declared 'dichotomous' — point-biserial's home — and "
+                "is whitelisted; this fires only on a declared 'ordinal' scale.)"
+            ),
+            remedy=(
+                "Redeclare estimand_kind as monotone_association and use "
+                "spearman_correlation or kendall_tau_b."
+            ),
+            where="spec.analysis.test",
+        )
+
+    if declared_test in CORRELATION_FAMILY and estimand_kind in ("agreement", "method_comparison"):
+        report.add(
+            "DSX-STA-051",
+            "HIGH",
+            f"Correlation coefficient '{declared_test}' declared for a {estimand_kind} estimand",
+            detail=(
+                "A correlation coefficient measures association, not chance-corrected "
+                "agreement or method bias. Correlation is high whenever two raters/methods "
+                "move together even under a constant offset — exactly the disagreement "
+                "agreement statistics exist to catch."
+            ),
+            remedy=(
+                "Route to kappa/ICC (agreement) or Bland-Altman (method_comparison); "
+                "redeclare estimand_kind if the association reading was intended."
+            ),
+            where="spec.analysis.test",
+        )
+
+
+def _check_agreement_completeness(analysis: dict, report: Report) -> None:
+    """DSX-STA-060/061/062: agreement declarations, presence + membership only.
+
+    Citation: Shrout, P.E. and Fleiss, J.L. (1979), Psychological Bulletin 86(2):420-428;
+    McGraw, K.O. and Wong, S.P. (1996, corrected edition), Psychological Methods 1(1):30-46
+    [the ICC (model, type, definition) triple]. Feinstein, A.R. and Cicchetti, D.V. (1990),
+    J. Clin. Epidemiol. 43(6):543-549 (Part I, the two paradoxes) and Cicchetti, D.V. and
+    Feinstein, A.R. (1990), 43(6):551-558 (Part II, the p_pos/p_neg reporting
+    recommendation) [the kappa companions — the HQ-16-corrected D-04 reading].
+    Structural criterion: presence + closed-vocabulary membership over declared sub-fields
+    only; never a coherence judgment (ICC combination-coherence is deferred as candidate
+    DSX-STA-063, 18-CONTEXT.md D-05) and never a numeric-agreement computation. The weights
+    guard branches on isinstance BEFORE any normalize (18-RESEARCH.md Pitfall 5), so an
+    explicit weight matrix is never stringified.
+    """
+    # DSX-STA-060 — ICC declared (an icc dict, or test == icc) without a complete,
+    # in-vocabulary (model, type, definition) triple. Presence + membership, fire once.
+    icc = analysis.get("icc") if isinstance(analysis.get("icc"), dict) else None
+    if icc is not None or normalize(analysis.get("test", "")) == "icc":
+        icc = icc or {}
+        for field_name, vocab in (
+            ("model", ICC_MODELS),
+            ("type", ICC_TYPES),
+            ("definition", ICC_DEFINITIONS),
+        ):
+            value = icc.get(field_name)
+            if is_blank(value) or normalize(value) not in vocab:
+                report.add(
+                    "DSX-STA-060",
+                    "HIGH",
+                    "ICC declared without a complete (model, type, definition) triple",
+                    detail=(
+                        f"Missing or unrecognised: analysis.icc.{field_name}. "
+                        "An ICC value is uninterpretable without all three: the model "
+                        "(one_way_random / two_way_random / two_way_mixed), the type "
+                        "(single / average) and the definition (consistency / "
+                        "absolute_agreement)."
+                    ),
+                    remedy="Declare all three of analysis.icc.model, .type and .definition.",
+                    where=f"spec.analysis.icc.{field_name}",
+                )
+                break
+
+    # DSX-STA-061 — weighted kappa without recognised weights. isinstance branch BEFORE any
+    # normalize: a string is checked against KAPPA_WEIGHT_TOKENS; a non-empty list/tuple is
+    # accepted as a declared explicit weight matrix (presence, not validity); anything else
+    # (blank / bare number / dict) fires. Never stringifies a matrix (Pitfall 5).
+    if normalize(analysis.get("test", "")) == "weighted_kappa":
+        weights = analysis.get("weights")
+        if isinstance(weights, str):
+            weights_ok = normalize(weights) in KAPPA_WEIGHT_TOKENS
+        elif isinstance(weights, (list, tuple)):
+            weights_ok = len(weights) > 0
+        else:
+            weights_ok = False
+        if not weights_ok:
+            report.add(
+                "DSX-STA-061",
+                "HIGH",
+                "Weighted kappa declared without recognised weights",
+                detail=(
+                    "weighted_kappa needs a declared weighting scheme: 'linear' or "
+                    "'quadratic', or an explicit weight matrix. An unweighted kappa is a "
+                    "different statistic (declare cohens_kappa instead)."
+                ),
+                remedy=(
+                    "Declare analysis.weights as 'linear', 'quadratic', or an explicit "
+                    "weight matrix."
+                ),
+                where="spec.analysis.weights",
+            )
+
+    # DSX-STA-062 — kappa-family test missing either companion. BOTH p_pos AND p_neg are
+    # required (D-04, the HQ-16-corrected Feinstein-Cicchetti Part II reading).
+    if normalize(analysis.get("test", "")) in ("cohens_kappa", "weighted_kappa", "fleiss_kappa"):
+        if is_blank(analysis.get("p_pos")) or is_blank(analysis.get("p_neg")):
+            report.add(
+                "DSX-STA-062",
+                "HIGH",
+                "Kappa declared without its p_pos/p_neg companions",
+                detail=(
+                    "Feinstein & Cicchetti (1990) Part I documents two paradoxes an omnibus "
+                    "kappa can hide (high raw agreement with low kappa under skewed "
+                    "prevalence, and asymmetric marginals); Part II recommends reporting the "
+                    "separate positive and negative agreement proportions alongside it. Both "
+                    "p_pos and p_neg are required, not either one."
+                ),
+                remedy="Declare both analysis.p_pos and analysis.p_neg alongside the kappa.",
+                where="spec.analysis",
             )
