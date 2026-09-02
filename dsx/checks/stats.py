@@ -11,6 +11,7 @@ from __future__ import annotations
 from typing import Any
 
 from ..findings import Report
+from .. import mathx
 from ..mathx import EFFECT_SIZE_KINDS, apply_correction, interpret_effect
 from ..spec import (
     ESTIMAND_KINDS,
@@ -376,6 +377,20 @@ def _check_practical_significance(
                     remedy="Lead the write-up with the magnitude, not the p-value.",
                     where=where,
                 )
+        elif kind in getattr(mathx, "REPORT_ONLY_EFFECT_KINDS", frozenset()):
+            # Cross-plan seam (18-CONTEXT.md D-06, owned jointly with Plan 18-B). A kind in
+            # the report-only registry (kappa/ICC/Kendall's W/phi/Cramer's V/tau-b/rho) is
+            # RECOGNISED — neither DSX-STA-011 nor DSX-STA-012 fires — because its magnitude
+            # is a labeled convention, never a gated threshold (REQ-P18-05: conventions never
+            # block). EFFECT_SIZE_KINDS is deliberately NOT widened; interpret_effect's flat
+            # abs() band would be statistically wrong for these kinds (Cramer's V is
+            # df-dependent; phi/W are unsigned). The registry is read via a defensive
+            # module-attribute access with an empty default so this branch is inert until
+            # Plan 18-B lands mathx.REPORT_ONLY_EFFECT_KINDS, then activates automatically.
+            report.ok(
+                f"'{label}' declares effect_size_kind={kind}; magnitude is a labeled "
+                "convention, not a gated band"
+            )
         else:
             report.add(
                 "DSX-STA-012",
