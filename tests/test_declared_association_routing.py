@@ -70,6 +70,22 @@ class RecommendAssociationRoutingTest(unittest.TestCase):
         self.assertIn("citation", out)
 
 
+class CorrelationFamilyInvariantTest(unittest.TestCase):
+    """CORRELATION_FAMILY (the set DSX-STA-051 keys on) must stay the exact union of the
+    ``_ASSOCIATION_ROUTES`` acceptable-coefficient sets. The stats.py comment claims the
+    two "cannot drift", but they are two separate module literals — only this test enforces
+    it. A coefficient added to a route (or to the family) without the other turns this red,
+    so DSX-STA-051's family and ``recommend_association``'s routes cannot silently diverge
+    under permanent D-06 numbering (18-REVIEW.md LOW-1).
+    """
+
+    def test_family_equals_union_of_route_coefficient_sets(self):
+        union = set().union(
+            *(tests for tests, _effect, _citation in stats._ASSOCIATION_ROUTES.values())
+        )
+        self.assertEqual(set(stats.CORRELATION_FAMILY), union)
+
+
 class AssociationDocMirrorTest(unittest.TestCase):
     """REQ-P18-01/02: the catalog-only pointer rows are present in the doc mirror."""
 
