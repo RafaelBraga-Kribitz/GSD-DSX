@@ -2,25 +2,25 @@
 gsd_state_version: 1.0
 milestone: v2.3
 milestone_name: Test Catalog
-current_phase: 18
-current_phase_name: correlation-association-and-agreement
+current_phase: 19
+current_phase_name: rm-trend-categorical-resampling-post-hoc
 status: executing
-stopped_at: "S2-4 DONE — Phase 18 code review + fixes + verification PASSED (2026-09-02T02:31Z). Run inline by the orchestrator (opus/high, brief §3); branch confirmed, framework handle_branching NOT run. Read the full a266a9b..HEAD source diff (1003 insertions / 12 files). One LOW finding (18-REVIEW.md): CORRELATION_FAMILY vs _ASSOCIATION_ROUTES-union drift risk (comment claimed 'cannot drift', unenforced) → FIXED with an invariant test (test-only, mints no code). Three suspected defects adversarially probed + cleared (is_blank(0.0)=False → no p_pos=0.0 false-fire; normalize() str()-first tolerates non-string icc; DSX-STA-012 seam branch correct + inert-safe). 18-VERIFICATION.md = PASSED all 6 reqs goal-backward. GATE RE-RUN BY ORCHESTRATOR from a clean tree: full suite Ran 1367 OK (1366 + the 1 invariant test); catalogue --check exit 0 at 265 (5 codes each once); no-autoswitch test green; seam oracle RUNS (not skipped) + passes. Stopped at the S2-4 boundary (~12-min cap; S2-5 is a distinct secure+validate multi-step unit). NEXT firing: S2-5 — /gsd-secure-phase 18 + /gsd-validate-phase 18; sign-off batched to HUMAN-QUEUE."
-last_updated: "2026-09-02T02:31:00Z"
+stopped_at: "S2-5 DONE — Phase 18 secure + validate PASSED (2026-09-02T02:44Z); PHASE 18 CLOSED (S2-1…S2-5 all done). Run inline by the orchestrator; branch confirmed, framework handle_branching NOT run. secure-phase (State B, 18-SECURITY.md): both PLAN threat registers (18-A, 18-B) parsed → register_authored_at_plan_time:true, ASVS L1, block_on:high; combined 10-threat register (8 mitigate + 2 accept=supply-chain), all CLOSED, threats_open:0, status:verified. Every non-accepted mitigation re-run green from a clean tree (stray DECISIONS.jsonl cleared): full suite 1367 OK + 52 targeted Phase-18 tests + gen-finding-catalogue.py --check exit 0 @265 + EFFECT_SIZE_KINDS={d,h,r} firewall + DSX-STA-012 seam oracle (RUNS not skipped). validate-phase (State A, 18-VALIDATION.md): all 6 reqs COVERED, nyquist_compliant:true, wave_0_complete:true, zero gaps (no auditor spawn). Operator security sign-off + Phase-18 UAT batched to HUMAN-QUEUE HQ-21 (non-blocking until S5-2). Stopped at the S2-5 / Phase-18-close boundary (~12-min cap; S3-1 is a full opus/high discuss+persona unit). NEXT firing: S3-1 — Phase 19 discuss + persona round (largest phase, 7 reqs; UNBLOCKED — S1-5 done AND HQ-17 answered)."
+last_updated: "2026-09-02T02:44:00Z"
 last_activity: 2026-09-02
-last_activity_desc: "S2-4 DONE — Phase 18 code review + verification PASSED (18-REVIEW.md 1 LOW finding fixed; 18-VERIFICATION.md all 6 reqs goal-backward). Gate re-run by orchestrator: full suite 1367 OK, catalogue 265, seam oracle live. Next: S2-5 secure + validate."
+last_activity_desc: "S2-5 DONE — Phase 18 secure + validate PASSED; PHASE 18 CLOSED. 18-SECURITY.md (10 threats, threats_open:0) + 18-VALIDATION.md (6 reqs COVERED, nyquist_compliant:true). Gates re-run by orchestrator: full suite 1367 OK, catalogue 265, firewall + seam oracle green. Sign-off batched HQ-21. Next: S3-1 Phase 19 discuss."
 progress:
   total_phases: 4
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 5
   completed_plans: 5
-  percent: 25
+  percent: 50
 ---
 
 # Project state
 
 **Status:** v2.3 Test Catalog — OPEN, executing under the autonomous ceremony
-**Progress:** [░░░░░░░░░░░░░░░░░░░░] v2.3 — 0/4 phases (17 foundation → 18 correlation/agreement → 19 RM/trend/categorical/resampling/post-hoc → 20 calibration)
+**Progress:** [██████████░░░░░░░░░░] v2.3 — 2/4 phases (17 foundation ✅ → 18 correlation/agreement ✅ → 19 RM/trend/categorical/resampling/post-hoc → 20 calibration)
 **Predecessors:** v2.2 Analytic Surface SHIPPED 2026-08-29 (tag `v2.2.0`); v2.0.0 DSX Validity Frame SHIPPED 2026-08-28 (tag `v2.1.0`). Archives under `.planning/milestones/`.
 
 **Loop control:** the autonomous ceremony drives this milestone. Contract:

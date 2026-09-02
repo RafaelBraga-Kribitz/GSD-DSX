@@ -83,12 +83,43 @@ from a daily summary:
 
 *(HQ-16, HQ-17, HQ-18 answered 2026-09-01; see Answered below.)*
 
+### HQ-21 — Phase 18 end-of-phase security sign-off (NON-BLOCKING until S5-2)
+
+**What to sign:** the operator **Approval** line in
+`.planning/phases/18-correlation-association-and-agreement/18-SECURITY.md`.
+
+**What the loop already did (S2-5, 2026-09-02):** ran `/gsd-secure-phase 18` (State B,
+ASVS L1, `security_block_on: high`). Both PLAN threat registers (18-A, 18-B) parsed →
+`register_authored_at_plan_time: true`. Built the combined **10-threat** register (8 mitigate,
+2 accept = supply-chain, zero packages installed). Classified **all 10 CLOSED, threats_open: 0**.
+Per brief §5, did **not** trust the L1 short-circuit blind — re-ran every non-accepted mitigation
+from a clean tree: full suite **1367 OK** + 52 targeted Phase-18 tests + `gen-finding-catalogue.py
+--check` exit 0 at 265 + the `EFFECT_SIZE_KINDS={d,h,r}` firewall test + the DSX-STA-012 seam
+oracle (`test_report_only_kappa_fires_neither_011_nor_012_and_reports_ok`, RUNS not skipped).
+Frontmatter `status: verified`.
+
+**Why this is only a sign-off, not a gate:** the SECURED verdict (threats_open:0) is
+machine-verifiable and the loop earned it; the outward-facing **operator approval** is a
+human read (brief §4 item 4) the loop may not self-sign. Nothing blocks on it until S5-2.
+
+**Phase 18 UAT (folded in here — non-blocking until S5-2):** Phase 18 is an internal
+routing/gate/catalogue phase with **no user-facing surface**, so its user-acceptance test is
+confirming the automated acceptance is sufficient. `/gsd-validate-phase 18` returned
+**nyquist_compliant: true** (all 6 reqs COVERED, zero gaps) and the behavior is fully exercised
+by the green gate suite. No interactive UAT is owed; the operator confirms this alongside the
+security sign-off.
+
+**To sign:** reply in a session confirming; an interactive session sets the Approval line in
+`18-SECURITY.md` to `verified <date>`, notes the UAT acceptance, and checks this item off.
+To reject, name the threat (or UAT concern) and the gap.
+
 ## Will be added by the loop when reached
 
 - ~~S0-3: Phase 18 D-05 evidence pack~~ — **FILED as HQ-16, ANSWERED 2026-09-01 (see Answered).**
 - ~~S0-4: Phase 19 D-05 evidence pack~~ — **FILED as HQ-17, ANSWERED 2026-09-01 (see Answered).**
 - Phase 17/18/19/20 end-of-phase security sign-off + UAT rounds (batched per
-  phase; non-blocking until S5-2). **Phase 17 security → FILED as HQ-19 (2026-09-01).**
+  phase; non-blocking until S5-2). **Phase 17 security → FILED as HQ-19 (2026-09-01);
+  Phase 18 security → FILED as HQ-21 (2026-09-02).**
 - D-06 numbering veto windows for the new codes (from the Phase 17 pre-allocated
   ranges; silence = accept). **Phase 18 codes → FILED as HQ-20 (2026-09-01).**
 - The S5-6 ship decisions: merge to `main` and the `v2.3.0` release tag.
