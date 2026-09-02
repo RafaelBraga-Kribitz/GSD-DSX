@@ -34,7 +34,7 @@ OFF the gate path.
 
 ## S0 — Milestone bootstrap
 
-- [ ] S0-1 Verify GSD state points at v2.4 (STATE.md frontmatter `milestone: v2.4`,
+- [x] S0-1 Verify GSD state points at v2.4 (STATE.md frontmatter `milestone: v2.4`,
   `current_phase: 21`, progress 0/4) and `gsd-tools query init.milestone-op`
   resolves it (4 phases, 0 complete); `.planning/phases/` is empty (v2.3 dirs
   archived). Gate: command output pasted.
@@ -139,3 +139,5 @@ OFF the gate path.
 Keep the most recent ~15–20; archive older entries to `LOOP-LEDGER-ARCHIVE.md`.)
 
 2026-09-02T21:30Z | milestone-open | v2.4 opened by operator direction in an interactive session (operator traveling, connected from a hotel): scope reused from .planning/research/V2.3-V2.4-SCOPE.md §3 (researched 2026-08-29 alongside v2.3) and re-verified against the live tree at open (dsx/checks/viz.py untouched since before v2.3; catalogue confirmed at 275). REQUIREMENTS.md (REQ-P21-01..P24-03) + ROADMAP.md (Phases 21-24 active) written; STATE.md repointed (v2.4, phase 21, 0/4); PROJECT.md Active Milestone section updated; v2.3 loop artifacts archived to .planning/milestones/v2.3-LOOP-*, v2.3-HUMAN-QUEUE.md; this ledger + LOOP-BRIEF + HUMAN-QUEUE rewritten for v2.4; branch gsd/v2.4.0-visual-excellence created from main; firing script repointed. Usage-limit backoff (with the periodic early-release probe fixed 2026-09-01) carries forward unchanged — proven across v2.3's close. Next = S0-1. | .planning/research/V2.3-V2.4-SCOPE.md §3; scripts/run-ceremony-firing.ps1
+2026-09-03T00:00Z | firing-start | Read brief+ledger+queue; reconciled ledger vs repo: HEAD=699c341 (milestone-open commit) matches ledger claim exactly, no correction needed. Untracked operator-local files present (.claude/*, .vscode/, EDA_enhancement_BRIEF.md, graphify-out/, references/The AI Data Scientist.md) — NOT ceremony work, left untouched per brief §1, staging only my own planning files. `gsd-tools` not on PATH; invoke via `node ~/.claude/gsd-core/bin/gsd-tools.cjs`. | git status
+2026-09-03T00:00Z | S0-1 | DONE. STATE.md frontmatter milestone:v2.4 current_phase:21 progress 0/4 total_phases:4 completed_phases:0. `init.milestone-op` → milestone_version:v2.4 phase_count:4 completed_phases:0 all_phases_complete:false roadmap/state/project all exist. .planning/phases/ holds only .gitkeep (v2.3 dirs archived). Gate: three command outputs confirmed. | .planning/STATE.md; gsd-tools query init.milestone-op
