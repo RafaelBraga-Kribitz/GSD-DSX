@@ -5,15 +5,15 @@ milestone_name: Test Catalog
 current_phase: 18
 current_phase_name: correlation-association-and-agreement
 status: executing
-stopped_at: "S2-2 DONE — Phase 18 plan gate PASSED (2026-09-02T01:36Z). Reconciled ledger vs repo: a prior firing's gsd-planner had written BOTH plans (18-A/18-B, uncommitted, has_plans:true, phase_status Planned) then stopped before the checker; trusted the repo. gsd-plan-checker (adaptive→haiku) → VERIFICATION PASSED — REQ-P18-01…06 all covered (18-A: 01/02/03/04/06 ∥ 18-B: 05), D-01…D-08 honored, 18-A/18-B files_modified disjoint single-writer. 2 non-blocking warnings BOTH FIXED inline before commit (W-1: 18-A Task-3 verify was a no-op → replaced with a real fixture audit, validated runnable; W-2: 18-RESEARCH.md OQ-1/2/3 marked RESOLVED-in-18-A). Orchestrator re-ran gates: dsx plan:post clean spec-less (exit 0); gap-analysis + decision-coverage CLI non-blocking (known format-parse under-report). Stopped at the S2-2 boundary (~12-min cap; S2-3 execute is a large multi-plan unit). NEXT firing: S2-3 — execute 18-A ∥ 18-B inline on the ceremony branch, full-suite Wave-1 merge gate validates the DSX-STA-012 seam, catalogue 260→265."
-last_updated: "2026-09-02T01:36:00Z"
+stopped_at: "S2-3 DONE — Phase 18 both plans EXECUTED + Wave-1 merge gate GREEN (2026-09-02T02:19Z). Two file-disjoint Wave-1 plans run by two sequential gsd-executors inline on the ceremony branch (framework handle_branching NOT run — HQ branch-safety rule; branch confirmed before/after by both executors AND orchestrator), 18-B before 18-A so 18-A's DSX-STA-012 report-only seam validated LIVE. 18-B (fdd8617/9647387/aafeecc, REQ-P18-05): REPORT_ONLY_EFFECT_KINDS + Landis-Koch KAPPA_BANDS + Krippendorff 0.7598@ordinal pin + catalog-only ICC/Kendall-W/dCor/partial/Cronbach→omega in mathx.py; bands wired only into the ungated APA template; EFFECT_SIZE_KINDS firewall {d,h,r} intact. 18-A (03c0327/a8ac933/0381a2e/28f3f2c, REQ-P18-01/02/03/04/06): dataless recommend_association (sig==['estimand_kind'] anti-two-stage) + five HIGH codes DSX-STA-050/051/060/061/062 via _check_declared_association at both check() sites; new spec vocabularies + operand_scale in _MEMBERSHIP_FIELDS; five codes by exact name in _D05_ALLOWLIST_CODES; finding-codes.md regen in-commit; catalogue 260→265. GATE RE-RUN BY ORCHESTRATOR from a clean tree: full suite Ran 1366 OK; catalogue --check exit 0 at 265 (set-identity, no drift); signature proof; firewall + 0.7598 pin; both canonical fixtures silent on the five codes with no fixture edit; seam oracle RUNS+PASSES post-merge. Stopped at the S2-3 boundary (~12-min cap; S2-4 is a full opus/high review+verify unit). NEXT firing: S2-4 — Phase 18 code review + fixes; verification passed (REQ-P18-01..06; no-autoswitch extension test green)."
+last_updated: "2026-09-02T02:19:00Z"
 last_activity: 2026-09-02
-last_activity_desc: "S2-2 DONE — Phase 18 plans (18-A ∥ 18-B) plan-checked to VERIFICATION PASSED; 2 non-blocking warnings fixed inline (real fixture audit in 18-A Task-3; OQ-1/2/3 RESOLVED markers). dsx plan:post clean. Next: S2-3 execute both plans (Wave-1 merge gate)."
+last_activity_desc: "S2-3 DONE — Phase 18 plans 18-A ∥ 18-B executed inline; Wave-1 merge gate GREEN (full suite 1366 OK, catalogue 265 set-identity, dataless recommend_association, firewall + 0.7598 pin, canonical fixtures silent). Next: S2-4 code review + verification."
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 5
-  completed_plans: 3
+  completed_plans: 5
   percent: 25
 ---
 
