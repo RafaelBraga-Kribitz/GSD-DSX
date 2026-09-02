@@ -20,241 +20,6 @@ a persona round and records loudly):
 
 ## Open
 
-### HQ-19 — Phase 17 end-of-phase security sign-off (NON-BLOCKING until S5-2)
-
-**What to sign:** the operator **Approval** line in
-`.planning/phases/17-foundation-repairs-and-spec-vocabulary/17-SECURITY.md`.
-
-**What the loop already did (S1-5, 2026-09-01):** ran `/gsd-secure-phase 17` (State B,
-ASVS L1, `security_block_on: high`). All three PLAN threat registers parsed →
-`register_authored_at_plan_time: true`. Built the 11-threat register (8 mitigate,
-3 accept = supply-chain, zero packages installed). Classified **all 11 CLOSED,
-threats_open: 0**. Per brief §5, did **not** trust the L1 short-circuit blind — re-ran
-every non-accepted mitigation: 13 targeted tests green (`test_boschloo_reconciliation`,
-`test_time_to_event_fallthrough`, `test_estimand_kind_vocab`,
-`test_finding_catalogue_invariant`) + `gen-finding-catalogue.py --check` exit 0
-("finding catalogue is current") + the D-06/D-12a grep oracle over committed
-`17-CONTEXT.md`. Frontmatter `status: verified`.
-
-**Why this is only a sign-off, not a gate:** the SECURED verdict (threats_open:0) is
-machine-verifiable and the loop earned it; the outward-facing **operator approval** is a
-human read (brief §4 item 4) the loop may not self-sign. Nothing blocks on it until S5-2.
-
-**Phase 17 UAT (folded in here — non-blocking until S5-2):** Phase 17 is an internal
-spec/routing/vocabulary phase with **no user-facing surface**, so its user-acceptance
-test is simply confirming the automated acceptance is sufficient. `/gsd-validate-phase 17`
-returned **nyquist_compliant: true** (all 5 reqs COVERED, zero gaps) and
-`/gsd-verify-work`-class behavior is fully exercised by the green gate suite. No interactive
-UAT is owed; the operator confirms this alongside the security sign-off.
-
-**To sign:** reply in a session confirming; an interactive session sets the Approval line
-in `17-SECURITY.md` to `verified <date>`, notes the UAT acceptance, and checks this item off.
-To reject, name the threat (or UAT concern) and the gap.
-
-### HQ-20 — Phase 18 discuss decisions (NON-BLOCKING veto window; silence = accept)
-
-**Status: RECORDED 2026-09-01 (S2-1). Not a D-05/scope/ship escalation — a D-06-class persona
-decision recorded loudly with a veto window per brief §4. Nothing blocks on it.** Two items from
-`.planning/phases/18-correlation-association-and-agreement/18-CONTEXT.md` the operator may veto
-from a daily summary:
-
-1. **D-06 code numbering for the five new Phase 18 gate codes** (drawn from the Phase-17
-   pre-allocated ranges 050–059 and 060–069, next-free slot per owning decade). All HIGH,
-   permanent under D-06:
-   - `DSX-STA-050` — Pearson/linear correlation declared against a declared-ordinal operand
-     (point-biserial and dichotomous operands whitelisted).
-   - `DSX-STA-051` — a correlation coefficient declared for an `agreement`/`method_comparison`
-     estimand (routes to kappa/ICC/Bland-Altman).
-   - `DSX-STA-060` — ICC declared without the full (model, type, definition) triple.
-   - `DSX-STA-061` — weighted kappa declared without declared weights.
-   - `DSX-STA-062` — kappa declared without its p_pos/p_neg companions.
-   Full predicates + rationale in 18-CONTEXT.md D-02.
-
-2. **Requirement-parenthetical alignment for REQ-P18-04 (offered, not yet applied).** The
-   requirement paraphrases the kappa companions as "raw agreement + prevalence, per Feinstein &
-   Cicchetti 1990." The operator-answered HQ-16 correction (2026-09-01, primary text read)
-   establishes the actual recommendation is separate **p_pos and p_neg** values, in the companion
-   Part II (Cicchetti & Feinstein 1990, JCE 43(6):551–558). DSX-STA-062 is built to the corrected
-   p_pos/p_neg predicate (18-CONTEXT.md D-04) — this is executing the operator's own answered D-05,
-   not a unilateral reword. REQUIREMENTS.md's parenthetical was **not** edited this firing (a
-   requirement reword is a §4 escalation); the loop offers to align it ("prevalence" → "p_pos/p_neg")
-   so the requirement and the gate cannot drift. To veto either item, reply in a session; otherwise
-   silence accepts and Phase 18 execute (S2-3) builds on them.
-
-*(HQ-16, HQ-17, HQ-18 answered 2026-09-01; see Answered below.)*
-
-### HQ-21 — Phase 18 end-of-phase security sign-off (NON-BLOCKING until S5-2)
-
-**What to sign:** the operator **Approval** line in
-`.planning/phases/18-correlation-association-and-agreement/18-SECURITY.md`.
-
-**What the loop already did (S2-5, 2026-09-02):** ran `/gsd-secure-phase 18` (State B,
-ASVS L1, `security_block_on: high`). Both PLAN threat registers (18-A, 18-B) parsed →
-`register_authored_at_plan_time: true`. Built the combined **10-threat** register (8 mitigate,
-2 accept = supply-chain, zero packages installed). Classified **all 10 CLOSED, threats_open: 0**.
-Per brief §5, did **not** trust the L1 short-circuit blind — re-ran every non-accepted mitigation
-from a clean tree: full suite **1367 OK** + 52 targeted Phase-18 tests + `gen-finding-catalogue.py
---check` exit 0 at 265 + the `EFFECT_SIZE_KINDS={d,h,r}` firewall test + the DSX-STA-012 seam
-oracle (`test_report_only_kappa_fires_neither_011_nor_012_and_reports_ok`, RUNS not skipped).
-Frontmatter `status: verified`.
-
-**Why this is only a sign-off, not a gate:** the SECURED verdict (threats_open:0) is
-machine-verifiable and the loop earned it; the outward-facing **operator approval** is a
-human read (brief §4 item 4) the loop may not self-sign. Nothing blocks on it until S5-2.
-
-**Phase 18 UAT (folded in here — non-blocking until S5-2):** Phase 18 is an internal
-routing/gate/catalogue phase with **no user-facing surface**, so its user-acceptance test is
-confirming the automated acceptance is sufficient. `/gsd-validate-phase 18` returned
-**nyquist_compliant: true** (all 6 reqs COVERED, zero gaps) and the behavior is fully exercised
-by the green gate suite. No interactive UAT is owed; the operator confirms this alongside the
-security sign-off.
-
-**To sign:** reply in a session confirming; an interactive session sets the Approval line in
-`18-SECURITY.md` to `verified <date>`, notes the UAT acceptance, and checks this item off.
-To reject, name the threat (or UAT concern) and the gap.
-
-### HQ-22 — Phase 19 discuss decisions (NON-BLOCKING veto window; silence = accept)
-
-**Status: RECORDED 2026-09-02 (S3-1). Not a D-05/scope/ship escalation — a D-06-class persona
-decision recorded loudly with a veto window per brief §4. Nothing blocks on it.** One item from
-`.planning/phases/19-rm-trend-categorical-resampling-post-hoc/19-CONTEXT.md` the operator may veto
-from a daily summary:
-
-**D-06 code numbering for the ten new Phase 19 gate codes** (drawn from the Phase-17 pre-allocated
-ranges 070–129, next-free slot per owning decade). All HIGH, permanent under D-06:
-- `DSX-STA-070` — a two-stage sphericity procedure (Mauchly-then-correct-if-significant) declared on
-  an RM-ANOVA (keys on the declared procedure, not the presence of repeated measures).
-- `DSX-STA-080` — Cochran-Armitage declared without declared dose scores.
-- `DSX-STA-081` — Mann-Kendall / Sen's slope declared without declared autocorrelation handling
-  (a declared `none`/`independent` satisfies).
-- `DSX-STA-090` — a declared resampling procedure with an incomplete {seed, B, unit, method} quadruple.
-- `DSX-STA-100` — declared post-hoc family ≠ declared omnibus family.
-- `DSX-STA-110` — a variance test declared as a precondition to a location-test choice (when scale is
-  not the declared estimand).
-- `DSX-STA-111` — observed/post-hoc power declared in a readout (narrow; a-priori/design and
-  MDE-sensitivity do not fire).
-- `DSX-STA-120` — a Wald interval declared for a proportion.
-- `DSX-STA-121` — declared exposure/time-at-risk with no declared offset.
-- `DSX-STA-122` — NNT declared without a CI.
-Catalogue 265 → 275. Full predicates + rationale in 19-CONTEXT.md D-01. **REQ-P19-03 (categorical)
-mints zero codes** (rows + a DEPRECATED Yates row + a log-linear pointer row); the CMH-stratifier
-gate and five other statistically-correct riders are named D-13 deferrals in 19-CONTEXT.md, not
-silent gaps. To veto the numbering, reply in a session; otherwise silence accepts and Phase 19
-execute (S3-3) builds on it.
-
-### HQ-23 — Phase 19 end-of-phase security sign-off (NON-BLOCKING until S5-2)
-
-**What to sign:** the operator **Approval** line in
-`.planning/phases/19-rm-trend-categorical-resampling-post-hoc/19-SECURITY.md`.
-
-**What the loop already did (S3-5, 2026-09-02):** ran `/gsd-secure-phase 19` (State B,
-ASVS L1, `security_block_on: high`). Both PLAN threat registers (19-A, 19-C) parsed →
-`register_authored_at_plan_time: true`. Built the combined **12-threat** register (11 mitigate,
-1 accept = supply-chain, zero packages installed). Classified **all 12 CLOSED, threats_open: 0**.
-**Unlike Phases 17–18 (all-low registers), Phase 19 carries two HIGH threats** — T-19-C-01
-(a code shipping uncited) and T-19-C-02 (citation laundering: one monolithic gate emitting all
-ten codes under a shared docstring). Per brief §5, did **not** trust the L1 short-circuit blind —
-re-ran every non-accepted mitigation from a clean tree: full suite **1442 OK** + 69 targeted
-Phase-19 gate/routing tests + `gen-finding-catalogue.py --check` exit 0 at 275 (ten codes each
-present once) + the golden ship-set/known-bad-corpus (51 OK) proving the extended bad fixture
-fires all ten and the good fixture fires none. The two HIGH mitigations were confirmed
-structurally: **seven per-family `_check_declared_*` helpers** at `stats.py:1078–1308` (each with
-its own attributable `Citation:` docstring, not one shared block → T-19-C-02 closed) and **the
-ten codes added by exact name to `_D05_ALLOWLIST_CODES`** with the per-code `--check` marker gate
-exit 0 (→ T-19-C-01 closed). Frontmatter `status: verified`.
-
-**Why this is only a sign-off, not a gate:** the SECURED verdict (threats_open:0) is
-machine-verifiable and the loop earned it; the outward-facing **operator approval** is a
-human read (brief §4 item 4) the loop may not self-sign. Nothing blocks on it until S5-2.
-
-**Phase 19 UAT (folded in here — non-blocking until S5-2):** Phase 19 is an internal
-routing/gate/catalogue phase with **no user-facing surface**, so its user-acceptance test is
-confirming the automated acceptance is sufficient. `/gsd-validate-phase 19` returned
-**nyquist_compliant: true** (all 7 reqs REQ-P19-01…07 COVERED, zero gaps; REQ-P19-03 verified
-zero-mint) and the behavior is fully exercised by the green gate suite. No interactive UAT is
-owed; the operator confirms this alongside the security sign-off.
-
-**To sign:** reply in a session confirming; an interactive session sets the Approval line in
-`19-SECURITY.md` to `verified <date>`, notes the UAT acceptance, and checks this item off.
-To reject, name the threat (or UAT concern) and the gap.
-
-### HQ-24 — Phase 20 discuss decisions (NON-BLOCKING veto window; silence = accept)
-
-**Status: RECORDED 2026-09-02 (S4-1). Not a D-05/scope/ship escalation — a persona-round
-decision recorded loudly with a veto window per brief §4. Nothing blocks on it.** Phase 20 is
-the terminal calibration close and **mints ZERO codes** (catalogue stays 275), so there is **no
-D-06 code-numbering veto** this phase. Two substantive *methodological* choices from
-`.planning/phases/20-calibration-and-reporting-close/20-CONTEXT.md` the operator may veto from a
-daily summary:
-
-1. **REQ-P20-04 mechanism = a read-only CROSS-CHECK test, not a generated mirror (D-02).** A new
-   `tests/test_doc_code_agreement.py` parses `references/test-selection.md` and asserts agreement
-   with the live engine — strict cell-equality of the Decision-table rows (8–24) to
-   `recommend_test` (the exact cell the Boschloo divergence lived in, incl. the Boschloo fallback
-   in `alternatives`), plus honest **set-membership** binding of the six `recommend_*` mirror
-   tables, with a visible skip-list for pointer/DEPRECATED/catalog-only/footnote rows. Chosen over
-   generating the doc because ~280/303 lines of `test-selection.md` are irreducible hand-written
-   prose the `gen-finding-catalogue.py` generator precedent does not transfer to.
-
-2. **The load-bearing calibration finding (D-03): the 15 new Phase-18/19 codes are all HIGH and
-   `stats` runs only at verify/ship, so the existing `test_stratified_catch_rate_and_fpr_report`
-   (CRITICAL / plan-execute only) is a PROVABLE NO-OP on them.** The decision is to **extend the
-   single calibration test with a live HIGH verify/ship stratum** (severity-parameterized,
-   defaulting to CRITICAL; read live via `_gate_findings`, never from `_GOLDEN_SHIP_FINDINGS` —
-   the D-09 no-self-reference rule) rather than re-run the harness (which would report an
-   unchanged number as "re-baselined") or add a divergent sibling test. Consequences also carried:
-   the 5 Phase-18 codes (050/051/060/061/062) get dedicated PRESENT known-bad fixtures (they fire
-   nowhere in `examples/` today), and the good-corpus gains valid negative controls per routing
-   family so the FPR genuinely exercises their silence. Full rationale + `file:line` locators in
-   20-CONTEXT.md D-03/D-04/D-05.
-
-To veto either, reply in a session; otherwise silence accepts and Phase 20 plan (S4-2) builds on
-them. One named deferral is recorded loudly (not a silent gap): **D-13-a** — the falsifiability
-guard's miss-union is CRITICAL-only, so any *future* HIGH code that ever needs an ABSENT "miss"
-declaration requires that severity filter to be widened first; not exploited this phase (all 15
-are PRESENT-caught).
-
-### HQ-25 — Phase 20 end-of-phase security sign-off (NON-BLOCKING until S5-2)
-
-**What to sign:** the operator **Approval** line in
-`.planning/phases/20-calibration-and-reporting-close/20-SECURITY.md`.
-
-**What the loop already did (S4-5, 2026-09-02):** ran `/gsd-secure-phase 20` (State B,
-ASVS L1, `security_block_on: high`). All four PLAN threat registers (20-A, 20-B, 20-C, 20-D)
-parsed → `register_authored_at_plan_time: true`. Built the combined **21-threat** register
-(17 mitigate, 4 accept = supply-chain, zero packages installed). Classified **all 21 CLOSED,
-threats_open: 0**. **Phase 20 carries FIVE HIGH threats** — T-20-A-01 (self-reference: HIGH
-stratum reading the golden ledger as "what fired"), T-20-A-02 (null result wearing a coverage
-star), T-20-B-01 (silent mint off 275), T-20-D-01 (docs drift from behaviour — the Boschloo
-divergence class), T-20-D-02 (cross-check false pass on a silently-unparsed row). Per brief §5,
-did **not** trust the L1 short-circuit blind — re-ran every non-accepted mitigation from a clean
-tree: full suite **1462 OK** + 77 targeted Phase-20 tests (`test_known_bad_corpus` calibration
-harness + HIGH stratum, `test_causal_verb_golden`, `test_phase20_zero_mint_close`,
-`test_doc_code_agreement`, `test_no_shapiro_autoswitch`, `test_time_to_event_fallthrough`) +
-`gen-finding-catalogue.py --check` "current" @275 + production byte-frozen
-(`git diff 0013ea3..HEAD -- dsx scripts references` empty = zero-mint structural). The five HIGH
-mitigations confirmed structurally: the HIGH catch is computed LIVE via `self._gate_findings`
-filtered to HIGH and **never** from `_GOLDEN_SHIP_FINDINGS` (D-09; the ledger name appears only
-in prose comments at `test_known_bad_corpus.py:489/729/1576`); catalogue 275 + Phase-12 256
-snapshot byte-frozen; the fifteen milestone codes in `_D05_ALLOWLIST_CODES` by **exact string**;
-the doc/code cross-check `bound==31` exhaustiveness net (31 bound + 26 skip-listed = all 57 data
-rows). Frontmatter `status: verified`.
-
-**Why this is only a sign-off, not a gate:** the SECURED verdict (threats_open:0) is
-machine-verifiable and the loop earned it; the outward-facing **operator approval** is a
-human read (brief §4 item 4) the loop may not self-sign. Nothing blocks on it until S5-2.
-
-**Phase 20 UAT (folded in here — non-blocking until S5-2):** Phase 20 is the terminal
-internal calibration/reporting-close phase with **no user-facing surface**, so its user-acceptance
-test is confirming the automated acceptance is sufficient. `/gsd-validate-phase 20` returned
-**nyquist_compliant: true** (all 4 reqs REQ-P20-01…04 COVERED, zero gaps; zero-mint verified —
-catalogue stays 275) and the behavior is fully exercised by the green gate suite. No interactive
-UAT is owed; the operator confirms this alongside the security sign-off.
-
-**To sign:** reply in a session confirming; an interactive session sets the Approval line in
-`20-SECURITY.md` to `verified <date>`, notes the UAT acceptance, and checks this item off.
-To reject, name the threat (or UAT concern) and the gap.
-
 ### HQ-26 — S5-6 ship: merge to `main` + tag `v2.3.0` (OUTWARD-FACING — operator only; loop prepared, does NOT self-approve)
 
 **Status: FILED 2026-09-02T17:27Z (S5-6 reached). This is a brief §4 item-5 outward-facing
@@ -414,6 +179,286 @@ hit), then resumes by itself. Firings: log one line, stop, never retry-loop,
 never touch the backoff file.
 
 ## Answered
+
+### HQ-19 — Phase 17 end-of-phase security sign-off (answered 2026-09-02)
+
+**Operator verdict:** Approved — the recommended path was selected. Signed in
+`17-SECURITY.md`'s Approval line. Basis: threats_open:0, 11/11 threats CLOSED,
+the orchestrator independently re-ran every non-accepted mitigation (13 targeted
+tests + the catalogue/D-05/D-12a oracles) rather than trusting the L1
+short-circuit, and Phase 17's UAT (no user-facing surface) is satisfied by
+`nyquist_compliant: true` on all 5 requirements.
+
+**What to sign:** the operator **Approval** line in
+`.planning/phases/17-foundation-repairs-and-spec-vocabulary/17-SECURITY.md`.
+
+**What the loop already did (S1-5, 2026-09-01):** ran `/gsd-secure-phase 17` (State B,
+ASVS L1, `security_block_on: high`). All three PLAN threat registers parsed →
+`register_authored_at_plan_time: true`. Built the 11-threat register (8 mitigate,
+3 accept = supply-chain, zero packages installed). Classified **all 11 CLOSED,
+threats_open: 0**. Per brief §5, did **not** trust the L1 short-circuit blind — re-ran
+every non-accepted mitigation: 13 targeted tests green (`test_boschloo_reconciliation`,
+`test_time_to_event_fallthrough`, `test_estimand_kind_vocab`,
+`test_finding_catalogue_invariant`) + `gen-finding-catalogue.py --check` exit 0
+("finding catalogue is current") + the D-06/D-12a grep oracle over committed
+`17-CONTEXT.md`. Frontmatter `status: verified`.
+
+**Why this is only a sign-off, not a gate:** the SECURED verdict (threats_open:0) is
+machine-verifiable and the loop earned it; the outward-facing **operator approval** is a
+human read (brief §4 item 4) the loop may not self-sign. Nothing blocks on it until S5-2.
+
+**Phase 17 UAT (folded in here — non-blocking until S5-2):** Phase 17 is an internal
+spec/routing/vocabulary phase with **no user-facing surface**, so its user-acceptance
+test is simply confirming the automated acceptance is sufficient. `/gsd-validate-phase 17`
+returned **nyquist_compliant: true** (all 5 reqs COVERED, zero gaps) and
+`/gsd-verify-work`-class behavior is fully exercised by the green gate suite. No interactive
+UAT is owed; the operator confirms this alongside the security sign-off.
+
+**To sign:** reply in a session confirming; an interactive session sets the Approval line
+in `17-SECURITY.md` to `verified <date>`, notes the UAT acceptance, and checks this item off.
+To reject, name the threat (or UAT concern) and the gap.
+
+### HQ-20 — Phase 18 discuss decisions (answered 2026-09-02 — accepted, no veto)
+
+**Operator verdict:** Accepted both — the five D-06 code numbers
+(`DSX-STA-050/051/060/061/062`) and the REQ-P18-04 parenthetical alignment
+(reworded to p_pos/p_neg per the operator's own HQ-16 correction). No veto.
+
+**Status: RECORDED 2026-09-01 (S2-1). Not a D-05/scope/ship escalation — a D-06-class persona
+decision recorded loudly with a veto window per brief §4. Nothing blocks on it.** Two items from
+`.planning/phases/18-correlation-association-and-agreement/18-CONTEXT.md` the operator may veto
+from a daily summary:
+
+1. **D-06 code numbering for the five new Phase 18 gate codes** (drawn from the Phase-17
+   pre-allocated ranges 050–059 and 060–069, next-free slot per owning decade). All HIGH,
+   permanent under D-06:
+   - `DSX-STA-050` — Pearson/linear correlation declared against a declared-ordinal operand
+     (point-biserial and dichotomous operands whitelisted).
+   - `DSX-STA-051` — a correlation coefficient declared for an `agreement`/`method_comparison`
+     estimand (routes to kappa/ICC/Bland-Altman).
+   - `DSX-STA-060` — ICC declared without the full (model, type, definition) triple.
+   - `DSX-STA-061` — weighted kappa declared without declared weights.
+   - `DSX-STA-062` — kappa declared without its p_pos/p_neg companions.
+   Full predicates + rationale in 18-CONTEXT.md D-02.
+
+2. **Requirement-parenthetical alignment for REQ-P18-04 (offered, not yet applied).** The
+   requirement paraphrases the kappa companions as "raw agreement + prevalence, per Feinstein &
+   Cicchetti 1990." The operator-answered HQ-16 correction (2026-09-01, primary text read)
+   establishes the actual recommendation is separate **p_pos and p_neg** values, in the companion
+   Part II (Cicchetti & Feinstein 1990, JCE 43(6):551–558). DSX-STA-062 is built to the corrected
+   p_pos/p_neg predicate (18-CONTEXT.md D-04) — this is executing the operator's own answered D-05,
+   not a unilateral reword. REQUIREMENTS.md's parenthetical was **not** edited this firing (a
+   requirement reword is a §4 escalation); the loop offers to align it ("prevalence" → "p_pos/p_neg")
+   so the requirement and the gate cannot drift. To veto either item, reply in a session; otherwise
+   silence accepts and Phase 18 execute (S2-3) builds on them.
+
+*(HQ-16, HQ-17, HQ-18 answered 2026-09-01; see Answered below.)*
+
+### HQ-21 — Phase 18 end-of-phase security sign-off (answered 2026-09-02)
+
+**Operator verdict:** Approved — the recommended path was selected. Signed in
+`18-SECURITY.md`'s Approval line. Basis: threats_open:0, 10/10 threats CLOSED,
+orchestrator re-gate from a clean tree (full suite 1367 OK + 52 targeted tests +
+catalogue check @265 + the effect-size firewall + the DSX-STA-012 seam oracle),
+and Phase 18's UAT satisfied by `nyquist_compliant: true` on all 6 requirements.
+
+**What to sign:** the operator **Approval** line in
+`.planning/phases/18-correlation-association-and-agreement/18-SECURITY.md`.
+
+**What the loop already did (S2-5, 2026-09-02):** ran `/gsd-secure-phase 18` (State B,
+ASVS L1, `security_block_on: high`). Both PLAN threat registers (18-A, 18-B) parsed →
+`register_authored_at_plan_time: true`. Built the combined **10-threat** register (8 mitigate,
+2 accept = supply-chain, zero packages installed). Classified **all 10 CLOSED, threats_open: 0**.
+Per brief §5, did **not** trust the L1 short-circuit blind — re-ran every non-accepted mitigation
+from a clean tree: full suite **1367 OK** + 52 targeted Phase-18 tests + `gen-finding-catalogue.py
+--check` exit 0 at 265 + the `EFFECT_SIZE_KINDS={d,h,r}` firewall test + the DSX-STA-012 seam
+oracle (`test_report_only_kappa_fires_neither_011_nor_012_and_reports_ok`, RUNS not skipped).
+Frontmatter `status: verified`.
+
+**Why this is only a sign-off, not a gate:** the SECURED verdict (threats_open:0) is
+machine-verifiable and the loop earned it; the outward-facing **operator approval** is a
+human read (brief §4 item 4) the loop may not self-sign. Nothing blocks on it until S5-2.
+
+**Phase 18 UAT (folded in here — non-blocking until S5-2):** Phase 18 is an internal
+routing/gate/catalogue phase with **no user-facing surface**, so its user-acceptance test is
+confirming the automated acceptance is sufficient. `/gsd-validate-phase 18` returned
+**nyquist_compliant: true** (all 6 reqs COVERED, zero gaps) and the behavior is fully exercised
+by the green gate suite. No interactive UAT is owed; the operator confirms this alongside the
+security sign-off.
+
+**To sign:** reply in a session confirming; an interactive session sets the Approval line in
+`18-SECURITY.md` to `verified <date>`, notes the UAT acceptance, and checks this item off.
+To reject, name the threat (or UAT concern) and the gap.
+
+### HQ-22 — Phase 19 discuss decisions (answered 2026-09-02 — accepted, no veto)
+
+**Operator verdict:** Accepted — the ten D-06 code numbers
+(`DSX-STA-070/080/081/090/100/110/111/120/121/122`, catalogue 265→275). No veto.
+
+**Status: RECORDED 2026-09-02 (S3-1). Not a D-05/scope/ship escalation — a D-06-class persona
+decision recorded loudly with a veto window per brief §4. Nothing blocks on it.** One item from
+`.planning/phases/19-rm-trend-categorical-resampling-post-hoc/19-CONTEXT.md` the operator may veto
+from a daily summary:
+
+**D-06 code numbering for the ten new Phase 19 gate codes** (drawn from the Phase-17 pre-allocated
+ranges 070–129, next-free slot per owning decade). All HIGH, permanent under D-06:
+- `DSX-STA-070` — a two-stage sphericity procedure (Mauchly-then-correct-if-significant) declared on
+  an RM-ANOVA (keys on the declared procedure, not the presence of repeated measures).
+- `DSX-STA-080` — Cochran-Armitage declared without declared dose scores.
+- `DSX-STA-081` — Mann-Kendall / Sen's slope declared without declared autocorrelation handling
+  (a declared `none`/`independent` satisfies).
+- `DSX-STA-090` — a declared resampling procedure with an incomplete {seed, B, unit, method} quadruple.
+- `DSX-STA-100` — declared post-hoc family ≠ declared omnibus family.
+- `DSX-STA-110` — a variance test declared as a precondition to a location-test choice (when scale is
+  not the declared estimand).
+- `DSX-STA-111` — observed/post-hoc power declared in a readout (narrow; a-priori/design and
+  MDE-sensitivity do not fire).
+- `DSX-STA-120` — a Wald interval declared for a proportion.
+- `DSX-STA-121` — declared exposure/time-at-risk with no declared offset.
+- `DSX-STA-122` — NNT declared without a CI.
+Catalogue 265 → 275. Full predicates + rationale in 19-CONTEXT.md D-01. **REQ-P19-03 (categorical)
+mints zero codes** (rows + a DEPRECATED Yates row + a log-linear pointer row); the CMH-stratifier
+gate and five other statistically-correct riders are named D-13 deferrals in 19-CONTEXT.md, not
+silent gaps. To veto the numbering, reply in a session; otherwise silence accepts and Phase 19
+execute (S3-3) builds on it.
+
+### HQ-23 — Phase 19 end-of-phase security sign-off (answered 2026-09-02)
+
+**Operator verdict:** Approved — the recommended path was selected. Signed in
+`19-SECURITY.md`'s Approval line. Basis: threats_open:0, 12/12 threats CLOSED
+including the two HIGH threats (uncited code; citation laundering via a shared
+docstring), both confirmed structurally closed (seven per-family citation
+docstrings; ten codes in the D-05 allowlist by exact name), orchestrator re-gate
+from a clean tree (full suite 1442 OK + 69 targeted tests + 51-case golden
+known-bad/good corpus), and Phase 19's UAT satisfied by `nyquist_compliant: true`
+on all 7 requirements (REQ-P19-03 zero-mint verified).
+
+**What to sign:** the operator **Approval** line in
+`.planning/phases/19-rm-trend-categorical-resampling-post-hoc/19-SECURITY.md`.
+
+**What the loop already did (S3-5, 2026-09-02):** ran `/gsd-secure-phase 19` (State B,
+ASVS L1, `security_block_on: high`). Both PLAN threat registers (19-A, 19-C) parsed →
+`register_authored_at_plan_time: true`. Built the combined **12-threat** register (11 mitigate,
+1 accept = supply-chain, zero packages installed). Classified **all 12 CLOSED, threats_open: 0**.
+**Unlike Phases 17–18 (all-low registers), Phase 19 carries two HIGH threats** — T-19-C-01
+(a code shipping uncited) and T-19-C-02 (citation laundering: one monolithic gate emitting all
+ten codes under a shared docstring). Per brief §5, did **not** trust the L1 short-circuit blind —
+re-ran every non-accepted mitigation from a clean tree: full suite **1442 OK** + 69 targeted
+Phase-19 gate/routing tests + `gen-finding-catalogue.py --check` exit 0 at 275 (ten codes each
+present once) + the golden ship-set/known-bad-corpus (51 OK) proving the extended bad fixture
+fires all ten and the good fixture fires none. The two HIGH mitigations were confirmed
+structurally: **seven per-family `_check_declared_*` helpers** at `stats.py:1078–1308` (each with
+its own attributable `Citation:` docstring, not one shared block → T-19-C-02 closed) and **the
+ten codes added by exact name to `_D05_ALLOWLIST_CODES`** with the per-code `--check` marker gate
+exit 0 (→ T-19-C-01 closed). Frontmatter `status: verified`.
+
+**Why this is only a sign-off, not a gate:** the SECURED verdict (threats_open:0) is
+machine-verifiable and the loop earned it; the outward-facing **operator approval** is a
+human read (brief §4 item 4) the loop may not self-sign. Nothing blocks on it until S5-2.
+
+**Phase 19 UAT (folded in here — non-blocking until S5-2):** Phase 19 is an internal
+routing/gate/catalogue phase with **no user-facing surface**, so its user-acceptance test is
+confirming the automated acceptance is sufficient. `/gsd-validate-phase 19` returned
+**nyquist_compliant: true** (all 7 reqs REQ-P19-01…07 COVERED, zero gaps; REQ-P19-03 verified
+zero-mint) and the behavior is fully exercised by the green gate suite. No interactive UAT is
+owed; the operator confirms this alongside the security sign-off.
+
+**To sign:** reply in a session confirming; an interactive session sets the Approval line in
+`19-SECURITY.md` to `verified <date>`, notes the UAT acceptance, and checks this item off.
+To reject, name the threat (or UAT concern) and the gap.
+
+### HQ-24 — Phase 20 discuss decisions (answered 2026-09-02 — accepted, no veto)
+
+**Operator verdict:** Accepted both — the read-only cross-check mechanism for
+REQ-P20-04 (over a generated-mirror approach) and the live HIGH-verify/ship
+calibration stratum extending `test_stratified_catch_rate_and_fpr_report`. The
+D-13-a deferral (falsifiability guard's miss-union stays CRITICAL-only) is noted
+as recorded, not silent. No veto.
+
+**Status: RECORDED 2026-09-02 (S4-1). Not a D-05/scope/ship escalation — a persona-round
+decision recorded loudly with a veto window per brief §4. Nothing blocks on it.** Phase 20 is
+the terminal calibration close and **mints ZERO codes** (catalogue stays 275), so there is **no
+D-06 code-numbering veto** this phase. Two substantive *methodological* choices from
+`.planning/phases/20-calibration-and-reporting-close/20-CONTEXT.md` the operator may veto from a
+daily summary:
+
+1. **REQ-P20-04 mechanism = a read-only CROSS-CHECK test, not a generated mirror (D-02).** A new
+   `tests/test_doc_code_agreement.py` parses `references/test-selection.md` and asserts agreement
+   with the live engine — strict cell-equality of the Decision-table rows (8–24) to
+   `recommend_test` (the exact cell the Boschloo divergence lived in, incl. the Boschloo fallback
+   in `alternatives`), plus honest **set-membership** binding of the six `recommend_*` mirror
+   tables, with a visible skip-list for pointer/DEPRECATED/catalog-only/footnote rows. Chosen over
+   generating the doc because ~280/303 lines of `test-selection.md` are irreducible hand-written
+   prose the `gen-finding-catalogue.py` generator precedent does not transfer to.
+
+2. **The load-bearing calibration finding (D-03): the 15 new Phase-18/19 codes are all HIGH and
+   `stats` runs only at verify/ship, so the existing `test_stratified_catch_rate_and_fpr_report`
+   (CRITICAL / plan-execute only) is a PROVABLE NO-OP on them.** The decision is to **extend the
+   single calibration test with a live HIGH verify/ship stratum** (severity-parameterized,
+   defaulting to CRITICAL; read live via `_gate_findings`, never from `_GOLDEN_SHIP_FINDINGS` —
+   the D-09 no-self-reference rule) rather than re-run the harness (which would report an
+   unchanged number as "re-baselined") or add a divergent sibling test. Consequences also carried:
+   the 5 Phase-18 codes (050/051/060/061/062) get dedicated PRESENT known-bad fixtures (they fire
+   nowhere in `examples/` today), and the good-corpus gains valid negative controls per routing
+   family so the FPR genuinely exercises their silence. Full rationale + `file:line` locators in
+   20-CONTEXT.md D-03/D-04/D-05.
+
+To veto either, reply in a session; otherwise silence accepts and Phase 20 plan (S4-2) builds on
+them. One named deferral is recorded loudly (not a silent gap): **D-13-a** — the falsifiability
+guard's miss-union is CRITICAL-only, so any *future* HIGH code that ever needs an ABSENT "miss"
+declaration requires that severity filter to be widened first; not exploited this phase (all 15
+are PRESENT-caught).
+
+### HQ-25 — Phase 20 end-of-phase security sign-off (answered 2026-09-02)
+
+**Operator verdict:** Approved — the recommended path was selected. Signed in
+`20-SECURITY.md`'s Approval line. Basis: threats_open:0, 21/21 threats CLOSED
+including all five HIGH threats (self-reference; null-result-as-coverage; silent
+mint; docs drift; cross-check false pass), each confirmed structurally closed,
+orchestrator re-gate from a clean tree (full suite 1462 OK + 77 targeted tests +
+catalogue check @275 + a byte-frozen zero-mint diff), and Phase 20's UAT satisfied
+by `nyquist_compliant: true` on all 4 requirements (zero-mint verified, catalogue
+stays 275).
+
+**What to sign:** the operator **Approval** line in
+`.planning/phases/20-calibration-and-reporting-close/20-SECURITY.md`.
+
+**What the loop already did (S4-5, 2026-09-02):** ran `/gsd-secure-phase 20` (State B,
+ASVS L1, `security_block_on: high`). All four PLAN threat registers (20-A, 20-B, 20-C, 20-D)
+parsed → `register_authored_at_plan_time: true`. Built the combined **21-threat** register
+(17 mitigate, 4 accept = supply-chain, zero packages installed). Classified **all 21 CLOSED,
+threats_open: 0**. **Phase 20 carries FIVE HIGH threats** — T-20-A-01 (self-reference: HIGH
+stratum reading the golden ledger as "what fired"), T-20-A-02 (null result wearing a coverage
+star), T-20-B-01 (silent mint off 275), T-20-D-01 (docs drift from behaviour — the Boschloo
+divergence class), T-20-D-02 (cross-check false pass on a silently-unparsed row). Per brief §5,
+did **not** trust the L1 short-circuit blind — re-ran every non-accepted mitigation from a clean
+tree: full suite **1462 OK** + 77 targeted Phase-20 tests (`test_known_bad_corpus` calibration
+harness + HIGH stratum, `test_causal_verb_golden`, `test_phase20_zero_mint_close`,
+`test_doc_code_agreement`, `test_no_shapiro_autoswitch`, `test_time_to_event_fallthrough`) +
+`gen-finding-catalogue.py --check` "current" @275 + production byte-frozen
+(`git diff 0013ea3..HEAD -- dsx scripts references` empty = zero-mint structural). The five HIGH
+mitigations confirmed structurally: the HIGH catch is computed LIVE via `self._gate_findings`
+filtered to HIGH and **never** from `_GOLDEN_SHIP_FINDINGS` (D-09; the ledger name appears only
+in prose comments at `test_known_bad_corpus.py:489/729/1576`); catalogue 275 + Phase-12 256
+snapshot byte-frozen; the fifteen milestone codes in `_D05_ALLOWLIST_CODES` by **exact string**;
+the doc/code cross-check `bound==31` exhaustiveness net (31 bound + 26 skip-listed = all 57 data
+rows). Frontmatter `status: verified`.
+
+**Why this is only a sign-off, not a gate:** the SECURED verdict (threats_open:0) is
+machine-verifiable and the loop earned it; the outward-facing **operator approval** is a
+human read (brief §4 item 4) the loop may not self-sign. Nothing blocks on it until S5-2.
+
+**Phase 20 UAT (folded in here — non-blocking until S5-2):** Phase 20 is the terminal
+internal calibration/reporting-close phase with **no user-facing surface**, so its user-acceptance
+test is confirming the automated acceptance is sufficient. `/gsd-validate-phase 20` returned
+**nyquist_compliant: true** (all 4 reqs REQ-P20-01…04 COVERED, zero gaps; zero-mint verified —
+catalogue stays 275) and the behavior is fully exercised by the green gate suite. No interactive
+UAT is owed; the operator confirms this alongside the security sign-off.
+
+**To sign:** reply in a session confirming; an interactive session sets the Approval line in
+`20-SECURITY.md` to `verified <date>`, notes the UAT acceptance, and checks this item off.
+To reject, name the threat (or UAT concern) and the gap.
+
 
 (v2.0.0's items HQ-1…HQ-7 and v2.2's items HQ-8…HQ-15 are archived at
 `.planning/milestones/v2.0.0-HUMAN-QUEUE*.md` and

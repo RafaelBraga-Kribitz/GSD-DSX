@@ -75,4 +75,4 @@ created: 2026-09-01
 - [x] `threats_open: 0` confirmed
 - [x] `status: verified` set in frontmatter (threat register verified by the orchestrator)
 
-**Approval:** threat register verified 2026-09-01 (orchestrator, threats_open:0). **Operator security sign-off PENDING — batched to HUMAN-QUEUE HQ-19, non-blocking until close-out S5-2 per LOOP-LEDGER S1-5.** The loop prepared and verified this register; the outward-facing security approval line is a human read (brief §4 item 4) and is not self-signed.
+**Approval:** threat register verified 2026-09-01 (orchestrator, threats_open:0). **Human sign-off granted 2026-09-02 (operator verdict recorded in HUMAN-QUEUE.md, item HQ-19):** the sign-off line above is approved as written, and Phase 17's UAT (no user-facing surface; `nyquist_compliant: true`, 5/5 requirements COVERED) is confirmed. Phase 17 is now both technically verified and human-approved.
