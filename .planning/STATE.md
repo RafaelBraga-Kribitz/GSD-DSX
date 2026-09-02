@@ -3,10 +3,10 @@ gsd_state_version: 1.0
 milestone: v2.4
 milestone_name: Visual Excellence
 status: executing
-stopped_at: "Milestone opened 2026-09-02 by operator direction (interactive session, operator traveling). Scope reused from .planning/research/V2.3-V2.4-SCOPE.md §3 (researched 2026-08-29 alongside v2.3, entry condition v2.3-shipped now met) and re-verified against the live tree at open: dsx/checks/viz.py untouched since before v2.3; catalogue confirmed at 275. REQUIREMENTS.md REQ-P21-01..REQ-P24-03; ROADMAP.md Phases 21-24. Loop repointed: branch gsd/v2.4.0-visual-excellence, LOOP-BRIEF/LOOP-LEDGER/HUMAN-QUEUE rewritten for v2.4, firing script repointed. Next: the loop's S0-1 (verify state + scope recheck)."
-last_updated: "2026-09-02T21:30:00.000Z"
-last_activity: 2026-09-02
-last_activity_desc: "v2.4 Visual Excellence opened; requirements, roadmap, and loop artifacts written; ceremony repointed"
+stopped_at: "S0 complete (S0-1/S0-2/S0-3) and S1-1 (Phase 21 discuss) complete: 21-CONTEXT.md written with the Architect+Auditor persona round settling D-01 (invariant scope — two-clause repo-integrity test, gate-faithful capability-home = CHART_CAPABILITIES ∪ EXTRA_MARKS, frozen CAPABILITY_ONLY allowlist) and D-02 (refusal entries — enrich BANNED_TYPES in place to {reason,code,citation}). Finding beyond S0-2 recorded: population_pyramid/butterfly are relationship-orphans only (capability-homed via EXTRA_MARKS[IT011]); ~14 capability-only marks documented-exempt. Veto window filed HQ-28 (non-blocking). Next: S1-2 (Phase 21 plan; plan-checker must pass)."
+last_updated: "2026-09-03T00:35:00.000Z"
+last_activity: 2026-09-03
+last_activity_desc: "S1-1 Phase 21 discuss complete; 21-CONTEXT.md persona round (D-01 invariant scope, D-02 refusal representation)"
 progress:
   total_phases: 4
   completed_phases: 0
@@ -47,10 +47,10 @@ See: .planning/PROJECT.md (updated 2026-09-02; Key Decisions table there is the 
 
 ## Current Position
 
-Phase: 21 (viz-vocabulary-reconciliation) — not started; next ledger unit is S0-1
-Plan: —
-Status: Executing (ceremony bootstrap)
-Last activity: 2026-09-02 — milestone opened, requirements + loop artifacts written, ceremony repointed
+Phase: 21 (viz-vocabulary-reconciliation) — discuss complete (S1-1); next ledger unit is S1-2 (plan)
+Plan: — (S1-2 pending)
+Status: Executing (Phase 21 discussed; 21-CONTEXT.md written)
+Last activity: 2026-09-03 — S1-1 Phase 21 discuss: persona round settled invariant scope (D-01) and refusal representation (D-02)
 
 ## Performance Metrics
 

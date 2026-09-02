@@ -46,6 +46,26 @@ source, one authenticity confirmation per per-entry source):
 interactive session checks HQ-27 off here. ~9 core + 4 refusal = within the ~8–12
 estimate.
 
+### HQ-28 — Phase 21 discuss persona decisions (veto window, filed S1-1, 2026-09-03)
+
+**Type:** persona-decision veto window (brief §4 — recorded loudly, **non-blocking**;
+silence = accept). **Not** a scope change, not a sign-off. Full rationale in
+`.planning/phases/21-viz-vocabulary-reconciliation/21-CONTEXT.md` (D-01, D-02).
+
+Two decisions the loop made for you to veto if you disagree:
+
+- **D-01 (invariant scope).** The every-mark-has-a-home invariant is a repo-integrity
+  test (off the gate path) with two clauses: capability-completeness for all non-banned
+  marks, and relationship-completeness *or* an explicit frozen `CAPABILITY_ONLY`
+  allowlist. "Capability home" is defined gate-faithfully as `CHART_CAPABILITIES ∪
+  EXTRA_MARKS`. **Finding beyond S0-2:** `population_pyramid`/`butterfly` are
+  relationship-orphans only (not double orphans — capability-homed via `EXTRA_MARKS[IT011]`);
+  ~14 capability-only marks (`column`, `grouped_bar`, `bubble`, …) lack a relationship
+  home and are documented-exempt, not homed (promotion deferred to Phase 22).
+- **D-02 (refusal entries).** `BANNED_TYPES` enriched **in place** to
+  `{reason, code, citation}` records (single registry, no drift surface), not a parallel
+  sub-map. Refusal citations = HQ-27 Tier-3, batched to S5-2, non-blocking.
+
 ## Will be added by the loop when reached
 
 - ~~S0-3: Phase 22 D-05 evidence pack~~ — FILED 2026-09-03 as HQ-27 (see Open).
