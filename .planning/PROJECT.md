@@ -78,6 +78,18 @@ written profile.
   rationale below). The finding catalogue now holds **260 codes**, grown
   additively from 256 with the frozen Phase-12 snapshot unmutated. Full detail
   archived under `.planning/milestones/v2.2-*`.
+- **v2.3 Test Catalog — SHIPPED 2026-09-02** (tag `v2.3.0`). All 4 phases
+  (17, 18, 19, 20) complete — 11 plans. Every phase is verified (`threats_open: 0`
+  across 54 threats, all seven HIGH) and human-signed-off; the milestone audit
+  reached `passed` (22/22 requirements, 5/5 cross-phase integration seams,
+  Nyquist compliant, 0 unsatisfied/orphaned). Delivered: the `recommend_test`
+  decision table grew from ~15 to ~75 rows across 11 categories, backed by 15 new
+  declaration-only gate checks (`DSX-STA-050`…`122`) under full D-05 citation
+  discipline — every citation independently re-verified against primary sources
+  before shipping (27 citations checked, 7 corrected). The finding catalogue now
+  holds **275 codes**, grown additively from 260 with both frozen snapshots
+  (Phase-12 at 256, v2.2's set) unmutated. Full detail archived under
+  `.planning/milestones/v2.3-*`.
 
 ## Shipped Milestone: v2.0.0 DSX Validity Frame (shipped 2026-08-28)
 
@@ -146,6 +158,67 @@ the changing-denominator half shipped (`DSX-MET-021`, HIGH); survivorship bias
 stays an open, unpromoted item in `brief.md` §6.5. This was a loud, recorded
 decision (HUMAN-QUEUE HQ-8/HQ-13), not a silent scope cut.
 
+## Shipped Milestone: v2.3 Test Catalog (shipped 2026-09-02)
+
+**Goal (delivered):** Expand the analyst-facing test-selection surface as close
+to exhaustion as stays manageable and citable: the `recommend_test` decision
+table grows ~15 → ~75 rows across 11 categories (correlation/association,
+agreement/reliability, repeated measures, trend, categorical, resampling,
+variance/scale, proportions, counts, post-hoc, power conventions), plus 15 new
+declaration-only gate checks and the effect-size band growth — every row cited,
+every check under full D-05 discipline.
+
+**Why tests before charts:** both subjects write the same single-writer files
+(finding-codes, spec template, shared skills) and D-06 makes range collisions
+permanent, so the milestones run strictly sequentially; tests carry the heavier
+D-05 read burden (27 citations vs v2.4's expected ~8–12) and began with
+mandatory repairs (the Boschloo doc/code divergence; the missing `estimand_kind`
+vocabulary), so they went first while the operator queue was fresh.
+
+**Scope boundary held:** the gate did not become a per-test catalog.
+`families.yaml` remains the admissibility ontology; what expanded is the
+routing surface plus declaration-only checks. See
+`.planning/research/V2.3-V2.4-SCOPE.md`.
+
+**Delivered features:** Phases 17–20, archived at
+`.planning/milestones/v2.3-ROADMAP.md`. All 22 requirements (REQ-P17-* …
+REQ-P20-*) satisfied — archived traceability at
+`.planning/milestones/v2.3-REQUIREMENTS.md`.
+
+**The independent citation re-verification that mattered:** before shipping,
+an interactive session re-verified all 27 citations against primary sources
+(not just the loop's bibliographic corroboration) using parallel research
+agents. Seven citations needed correction — the most consequential: a proposed
+Krippendorff's-alpha worked-example fixture (0.743, with a claimed 0.734
+"textbook typo") did not actually appear anywhere in the cited paper (Hayes &
+Krippendorff 2007); the paper's own worked example gives α = 0.7598. Corrected
+before the code shipped, not after. The other six were smaller: a kappa
+companion-reporting citation reworded to the actual recommended statistics
+(p_pos/p_neg, not "p_o and marginals"); a Zimmerman (2004) gate scoped to the
+two-group case it actually studied, not generalized to k-group ANOVA; a
+McCullagh & Nelder locator upgraded from an unconfirmed guess to a
+well-supported specific section; a Lakens (2022) term corrected to his actual
+wording; a Wilson (2015) DEPRECATED row stripped of an unsupported
+replacement-test claim; a Maxwell & Delaney claim softened pending further
+source access.
+
+## Queued Milestone: v2.4 Visual Excellence
+
+**Status:** Queued. Entry condition (D-13): v2.3 shipped.
+
+**Goal:** The exhaustive-but-manageable chart catalog (~80 entries on the FT
+Visual Vocabulary spine + Wilke's uncertainty family + rigour staples, three
+citable axes per entry), the 5-layer question→chart selection heuristic
+(Munzner → FT function → data signature → shortlist → Cleveland-McGill
+tie-break), the license-audited publication style layer (dsx-urban default,
+dsx-538, dsx-econ/dsx-bbc reimplemented from published doctrine), the SVG
+determinism recipe, and a portfolio exemplar capstone that exercises both
+milestones end-to-end. Phases 21–24; requirements REQ-P21-* … REQ-P24-* queued
+in `.planning/REQUIREMENTS.md`. Pre-agreed contingency: split style/exemplar
+off as v2.5 if v2.3's D-05 queue outruns the ceremony cadence.
+
+**v3.0 (models) remains future scope** — nothing here touches it.
+
 ## Requirements
 
 ### Validated
@@ -170,14 +243,19 @@ decision (HUMAN-QUEUE HQ-8/HQ-13), not a silent scope cut.
 - ✓ Compounding-learnings search, `DATA-DICTIONARY.md` onboarding artifact, opt-in research-domain AI-assistance disclosure, CSV-first slash aliases, and a documented file-drop-hook skip — Phase 14 (REQ-P14-01 … REQ-P14-06) — v2.2
 - ✓ CUPED as a closed-vocabulary variance adjustment with a post-treatment-covariate gate check (`DSX-EXP-070`), a changing-denominator BI check (`DSX-MET-021`), an optional APA research table, and a Shapiro–Wilk auto-switch prohibition — Phase 15 (REQ-P15-01 … REQ-P15-07; REQ-P15-04 satisfied as-worded via its own escape clause — see Shipped Milestone note below) — v2.2
 - ✓ Off-gate-path reproduce verification (`dsx-reproduce` skill, `DSX-REP-060`/`061`), corpus `protocol_adherence` tagging, and a static no-entrypoint-execution guard — Phase 16 (REQ-P16-01 … REQ-P16-04) — v2.2
+- ✓ Boschloo doc/code reconciliation, `estimand_kind` closed vocabulary (6 members), D-12a disposition table, and D-06 range pre-allocation — Phase 17 (REQ-P17-01 … REQ-P17-05) — v2.3
+- ✓ Correlation/association routing (`recommend_association`) and agreement/reliability gates — scale/kind mismatch (`DSX-STA-050/051`), ICC/kappa declaration completeness (`DSX-STA-060/061/062`) — plus report-only effect-size conventions in `dsx/mathx.py` — Phase 18 (REQ-P18-01 … REQ-P18-06) — v2.3
+- ✓ Repeated-measures/trend/categorical/resampling/post-hoc routing and ten declaration-only gates (`DSX-STA-070` … `122`) — unconditional Greenhouse-Geisser, declared dose scores/autocorrelation, resampling quadruples, post-hoc/omnibus matching, variance-test-as-precondition ban, observed-power ban, Wilson-not-Wald, declared exposure offsets — Phase 19 (REQ-P19-01 … REQ-P19-07; REQ-P19-03 verified zero-mint) — v2.3
+- ✓ Calibration close — known-bad fixtures + FPR negative controls for the 15 new codes, a live HIGH verify/ship calibration stratum, category-complete no-autoswitch coverage, and a permanent doc/code agreement cross-check — Phase 20 (REQ-P20-01 … REQ-P20-04; zero-mint verified, catalogue stays 275) — v2.3
 
 ### Active
 
-(None — all v2.0.0 requirements (REQ-P6-* … REQ-P12-*) and all v2.2 requirements
-(REQ-P13-* … REQ-P16-*) shipped and validated. Full requirement sets with final
-traceability are archived at `.planning/milestones/v2.0.0-REQUIREMENTS.md` and
-`.planning/milestones/v2.2-REQUIREMENTS.md`.) No milestone is currently queued;
-the next one starts with `/gsd-new-milestone`.
+(None — all v2.0.0, v2.2, and v2.3 requirements shipped and validated. Full
+requirement sets with final traceability are archived at
+`.planning/milestones/v2.0.0-REQUIREMENTS.md`, `v2.2-REQUIREMENTS.md`, and
+`v2.3-REQUIREMENTS.md`.) v2.4 Visual Excellence is queued (REQ-P21-* …
+REQ-P24-* in `.planning/REQUIREMENTS.md` under **Queued**) and becomes Active
+when started.
 
 ### Out of Scope
 
@@ -187,7 +265,12 @@ the next one starts with `/gsd-new-milestone`.
 - Causal identification *strategy* checking — `DSX-CAU-*` owns this
 - Survival, time-series and spatial estimation *methods* — temporal/spatial dependence are declared types; the methods are out
 - Reading a data warehouse from a gate — breaks the determinism doctrine
-- A catalogue of every named statistical test — families, not tests
+- A catalogue of every named statistical test as a computing GATE — `families.yaml`
+  stays the admissibility ontology (families, not tests), and no gate computes a
+  statistic. v2.3 expanded the *routing surface* instead (`recommend_test` ~15→~75
+  rows, one primary answer per declarable key) plus 15 declaration-only defect
+  checks — a bounded, citable decision table, not "every named test" (Kanji
+  enumerates ~100, Sheskin ~200; see `.planning/research/V2.3-V2.4-SCOPE.md` §1).
 - The Unified Framework playbook's `r>0.3` heuristic as a CUPED admissibility rule — not admissible under D-05 (`SURFACE.md` §8); Phase 15 cites the WSDM primary source directly instead.
 - Ratio-metric dilution (Deng & Hu 2015, Formula (3)) as a "changing-denominator" check — permanently out of scope for the declaration-only gate (no closed-form scalar, D-01/D-02); Phase 15's `DSX-MET-021` is scoped to a different defect (Simpson's-paradox-style allocation-rate shifts, Crook et al. 2009) and must not be confused with it.
 
@@ -250,6 +333,9 @@ the next one starts with `/gsd-new-milestone`.
 | **M-09** `dependence.method_family_required` reuses `VARIANCE_ADJUSTMENTS` | Same reasoning as M-02: one concept, one vocabulary. Consequence: the field holds a single member, so the brief's example `cluster_robust_or_mixed` is not expressible — carried as an open item for the M2a discuss rather than silently modelled as a disjunction | Delivered Phase 7 — the dependence check reads the reused vocabulary; resolved in M2a discuss |
 | **v2.2-01** REQ-P15-04's survivorship-bias half ships unminted; only the changing-denominator half (`DSX-MET-021`) ships | A direct primary-source read of the candidate citation (Brown, Goetzmann, Ibbotson & Ross 1992) found it does not transfer to a declaration-checkable "denominator must exclude non-survivors" rule — it is a narrower, fund-performance-persistence-specific result. D-05 and brief §6.5: an honest non-promotion beats a stretched citation | Delivered Phase 15 — `DSX-MET-021` (HIGH) ships citing Crook, Frasca, Kohavi & Longbotham (2009) §6; survivorship bias stays an open item in `brief.md` §6.5. Decided via direct-read (not corroboration-only), recorded HUMAN-QUEUE HQ-8/HQ-13 |
 | **v2.2-02** `DSX-REP-060`/`DSX-REP-061` mint in Phase 16, not Phase 15 | Keeps the `dsx-reproduce` skill and its enforcing gate check in one phase (no window where the skill exists but nothing enforces it). Phase 15's codes all carry D-05 statistical citations; these are engineering-hygiene checks (report missing / numbers don't overlap) with none — mixing the two would blur the citation discipline | Delivered Phase 16 — both HIGH, in `dsx/checks/repro.py`; catalogue moved 256→258 here, then 258→260 in Phase 15. Decided by Architect+Auditor persona round, unanimous, recorded HUMAN-QUEUE HQ-11 |
+| **v2.3-01** Citation granularity: one human D-05 read per new gate CODE, one bibliographic citation per catalog ENTRY | A ~75-row decision table with a human read per row would put ~90 reads in front of one milestone, stalling the ceremony's one human-gated step; reads are only load-bearing for the codes that actually gate | Delivered Phases 18–19 — 15 new gate codes drew ~27 human reads (2 evidence packs, HQ-16/17), not 75+; row-level catalog citations confirmed at execute-time bibliography passes instead |
+| **v2.3-02** All 15 new gate checks are declaration-only, keyed on DECLARED fields, never on inspecting data then choosing | The anti-two-stage doctrine (already shipped for Shapiro–Wilk) extends structurally: a routing key that reads "skew observed → pick test" recreates the exact banned pattern under a new name | Delivered Phases 18–19 — `inspect.signature` structural proofs + the no-autoswitch test suite extended to every new category; two new NEGATIVE gates (variance-test-as-precondition ban, observed-power ban) enforce the doctrine rather than merely avoiding violating it |
+| **v2.3-03** Independent re-verification of all 27 D-05 citations against primary sources before shipping, not after | The Krippendorff-alpha citation (HQ-16 B4) would have shipped a fixture value (0.743) that appears nowhere in its cited paper — caught only by reading the actual paper, exactly the CUPED-author-misattribution failure mode from v2.2's HQ-8 | Delivered at S5-2 close-out — 7 of 27 citations corrected (1 wrong fixture value, 6 smaller wording/scope/locator fixes); corrections recorded in `HUMAN-QUEUE.md` HQ-16/17 before the codes' citations were considered in hand |
 
 ## Non-goals
 
@@ -282,5 +368,5 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-08-29 — v2.2 Analytic Surface milestone complete and shipped
-(tag `v2.2.0`). No milestone is currently queued.*
+*Last updated: 2026-09-02 — v2.3 Test Catalog milestone complete and shipped
+(tag `v2.3.0`). v2.4 Visual Excellence is queued next.*

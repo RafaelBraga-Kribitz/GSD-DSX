@@ -1406,6 +1406,17 @@ _EXPECTED_VAL_CODES: "dict[str, set[str]]" = {
     "garden-of-forking-paths-p-hacking-ANALYSIS-SPEC.yaml": set(),
     "retracted-fabricated-field-experiment-ANALYSIS-SPEC.yaml": set(),
     "operator-known-answer-selective-exclusion-ANALYSIS-SPEC.yaml": set(),
+    # Measured 2026-09-02 (plan 20-A, REQ-P20-01) against each fixture as
+    # committed: loaded via dsx.loader.load(), ran dsx.frame.val.check(spec),
+    # recorded {f.code for f in report.findings} — the empty set for all five.
+    # These five Phase-18 known-bad fixtures encode their defect entirely in the
+    # analysis: block (a DSX-STA-05x routing defect, dsx/checks/stats.py); each
+    # clones the clean minimal-reference validity_frame, so no DSX-VAL-* code fires.
+    "correlation-pearson-ordinal-scale-ANALYSIS-SPEC.yaml": set(),
+    "correlation-for-agreement-estimand-ANALYSIS-SPEC.yaml": set(),
+    "icc-incomplete-triple-ANALYSIS-SPEC.yaml": set(),
+    "weighted-kappa-missing-weights-ANALYSIS-SPEC.yaml": set(),
+    "kappa-missing-companions-ANALYSIS-SPEC.yaml": set(),
 }
 
 

@@ -93,6 +93,12 @@ _GOLDEN_SHIP_FINDINGS: "dict[str, frozenset[str]]" = {
         "DSX-SPEC-010", "DSX-SPEC-026", "DSX-SPEC-081", "DSX-SPEC-082",
         "DSX-SPEC-085", "DSX-SQL-001", "DSX-SQL-007", "DSX-SQL-008", "DSX-SQL-012",
         "DSX-STA-002", "DSX-STA-003", "DSX-STA-007", "DSX-STA-020", "DSX-STA-041",
+        # Phase 19 (19-C): the bad fixture's analysis block was extended (not replaced)
+        # to fire all ten declaration-only Phase-19 gates in one ship run — the
+        # sanctioned "fixture built to demonstrate the new catch" case. Measured
+        # 2026-09-02 (added exactly these ten, dropped nothing), never guessed.
+        "DSX-STA-070", "DSX-STA-080", "DSX-STA-081", "DSX-STA-090", "DSX-STA-100",
+        "DSX-STA-110", "DSX-STA-111", "DSX-STA-120", "DSX-STA-121", "DSX-STA-122",
         "DSX-VAL-011", "DSX-VIZ-001", "DSX-VIZ-012", "DSX-VIZ-013", "DSX-VIZ-020",
         "DSX-VIZ-030", "DSX-VIZ-051", "DSX-VIZ-061", "DSX-VIZ-063", "DSX-VIZ-070",
     }),
@@ -126,6 +132,20 @@ _GOLDEN_SHIP_FINDINGS: "dict[str, frozenset[str]]" = {
     "examples/good-corpus/freq-count-referrals-ANALYSIS-SPEC.yaml": frozenset(),
     "examples/good-corpus/freq-proportion-checkout-ANALYSIS-SPEC.yaml": frozenset(),
     "examples/good-corpus/freq-proportion-email-open-ANALYSIS-SPEC.yaml": frozenset(),
+    # Phase 20-A (REQ-P20-01, D-05): three valid negative controls, one per
+    # Phase-18 routing family, added so the FPR genuinely EXERCISES each of the
+    # five DSX-STA-05x branches and correctly stays silent (the prior corpus never
+    # declared correlation/agreement, so those branches were never reached — the
+    # FPR was silent-not-clean). Each takes the minimal-reference / cwd-resolvable
+    # route and OMITS inference.primary_procedure (the frequentist admissibility
+    # ontology carries no correlation/agreement family, so declaring one would draw
+    # a spurious DSX-ADM-020, and a comparison procedure would contradict
+    # analysis.test via DSX-PRE-030). Each set measured 2026-09-02 against a fresh
+    # tempfile.TemporaryDirectory() per spec via _ship_findings above — never
+    # guessed; each measured frozenset().
+    "examples/good-corpus/valid-correlation-linear-ANALYSIS-SPEC.yaml": frozenset(),
+    "examples/good-corpus/valid-icc-reliability-ANALYSIS-SPEC.yaml": frozenset(),
+    "examples/good-corpus/valid-weighted-kappa-ANALYSIS-SPEC.yaml": frozenset(),
     "examples/known-bad/bayesian-continuous-monitoring-ANALYSIS-SPEC.yaml": frozenset({
         "DSX-CLM-031", "DSX-COH-031", "DSX-MET-040", "DSX-NAR-001", "DSX-PAR-011",
         "DSX-REP-001", "DSX-REP-030", "DSX-STA-041", "DSX-VAL-041",
@@ -188,6 +208,31 @@ _GOLDEN_SHIP_FINDINGS: "dict[str, frozenset[str]]" = {
     "examples/known-bad/weak-identification-mmm-ANALYSIS-SPEC.yaml": frozenset({
         "DSX-CLM-031", "DSX-COH-031", "DSX-INT-030", "DSX-MET-040", "DSX-NAR-001",
         "DSX-REP-030", "DSX-VAL-040",
+    }),
+    # Phase 20-A (REQ-P20-01, D-04/D-06): five dedicated PRESENT known-bad
+    # fixtures, one per Phase-18 code (050/051/060/061/062) — the five codes that
+    # fire NOWHERE in examples/ today. Each declares ONLY the fields needed to fire
+    # its ONE code (mutually exclusive on analysis.test), OMITS analysis.outcome_type
+    # (so DSX-STA-041 stays silent), and takes the minimal-reference / cwd-resolvable
+    # route with inference.primary_procedure omitted, so the measured ship set is
+    # exactly {its DSX-STA-05x code}. The re-baseline (D-06) moves exactly this one
+    # committed number: _GOLDEN_SHIP_FINDINGS gains one MEASURED key per fixture.
+    # Each set measured 2026-09-02 against a fresh tempfile.TemporaryDirectory() per
+    # fixture via _ship_findings above — never guessed.
+    "examples/known-bad/correlation-pearson-ordinal-scale-ANALYSIS-SPEC.yaml": frozenset({
+        "DSX-STA-050",
+    }),
+    "examples/known-bad/correlation-for-agreement-estimand-ANALYSIS-SPEC.yaml": frozenset({
+        "DSX-STA-051",
+    }),
+    "examples/known-bad/icc-incomplete-triple-ANALYSIS-SPEC.yaml": frozenset({
+        "DSX-STA-060",
+    }),
+    "examples/known-bad/weighted-kappa-missing-weights-ANALYSIS-SPEC.yaml": frozenset({
+        "DSX-STA-061",
+    }),
+    "examples/known-bad/kappa-missing-companions-ANALYSIS-SPEC.yaml": frozenset({
+        "DSX-STA-062",
     }),
 }
 

@@ -153,6 +153,7 @@ design:
 
 analysis:
   outcome_type: proportion
+  estimand_kind: linear_association
   n_groups: 2
   paired: false
   n_per_group: 9206
@@ -160,6 +161,13 @@ analysis:
   normality_ok: true
   equal_variance: true
   independence_ok: true
+  # Phase-20 (REQ-P20-02, D-08): silent, in-vocabulary new-family declarations that
+  # exercise the Wave-2 families' happy path and provably stay silent. unconditional_gg
+  # is not mauchly_conditional (DSX-STA-070 silent); a_priori is not observed/post_hoc
+  # (DSX-STA-111 silent); both are in-vocab members (DSX-STA-040 silent). The four-code
+  # ship baseline {DSX-CLM-031, DSX-DQ-001, DSX-FIG-001, DSX-NAR-010} is preserved.
+  sphericity_correction: unconditional_gg
+  power_reporting_type: a_priori
 
 visuals:
   - name: "activation uplift by arm"

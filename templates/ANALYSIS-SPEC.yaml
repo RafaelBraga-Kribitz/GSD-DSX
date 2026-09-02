@@ -150,6 +150,7 @@ design:
 # dsx derives the correct test from these and blocks if `test` disagrees.
 analysis:
   outcome_type: proportion         # proportion | continuous | count | ordinal | time_to_event
+  estimand_kind: null              # linear_association | monotone_association | nominal_association | agreement | method_comparison | ordered_trend
   n_groups: 2
   paired: false
   n_per_group: null

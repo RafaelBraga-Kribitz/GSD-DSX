@@ -84,8 +84,25 @@ design:
 
 analysis:
   outcome_type: proportion
+  estimand_kind: linear_association   # valid member — inert here (the defect below is the wrong test family)
   n_groups: 2
   test: welch_t                 # wrong family for a proportion outcome
+  # --- Phase-19 gate triggers (19-C): each on its own dedicated declared field so all
+  # ten fire in one audit. Every value below is IN-vocabulary, so DSX-STA-040 does not
+  # fire on the new fields — only the ten intended DSX-STA gates fire from these.
+  sphericity_correction: mauchly_conditional   # DSX-STA-070 (two-stage Mauchly, not unconditional)
+  trend_test: [cochran_armitage, mann_kendall] # DSX-STA-080 (no dose_scores) + DSX-STA-081 (no autocorrelation_handling)
+  resampling:                    # DSX-STA-090 — incomplete {method, seed, B, unit} quadruple
+    method: bca
+    seed: 42                     # B and unit deliberately absent
+  omnibus: kruskal_wallis
+  posthoc: tukey_hsd             # DSX-STA-100 — tukey_hsd is not in the kruskal_wallis family
+  variance_test: levene
+  variance_test_role: precondition_to_location  # DSX-STA-110 — variance test as a location pretest
+  power_reporting_type: observed # DSX-STA-111 — observed/post-hoc power in a readout
+  proportion_ci_method: wald     # DSX-STA-120 — Wald proportion interval
+  exposure: person_years         # DSX-STA-121 — declared exposure with no offset
+  nnt: 12                        # DSX-STA-122 — point NNT with no nnt_ci
 
 model:
   task: binary_classification

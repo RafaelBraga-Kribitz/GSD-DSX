@@ -1,6 +1,7 @@
 # Roadmap: gsd-dsx
 
-**Shipped:** v2.2 Analytic Surface — Phases 13–16 (2026-08-29); v2.0.0 DSX Validity Frame — Phases 6–12 (2026-08-28); v1.1.0–v1.5.0 — Phases 1–5
+**Queued:** v2.4 Visual Excellence — Phases 21–24 (entry condition: v2.3 shipped — MET)
+**Shipped:** v2.3 Test Catalog — Phases 17–20 (2026-09-02); v2.2 Analytic Surface — Phases 13–16 (2026-08-29); v2.0.0 DSX Validity Frame — Phases 6–12 (2026-08-28); v1.1.0–v1.5.0 — Phases 1–5
 
 > **Milestone name vs. release tag.** The DSX Validity Frame is named **v2.0.0**
 > throughout planning (its archives are `v2.0.0-ROADMAP.md`, `v2.0.0-REQUIREMENTS.md`,
@@ -17,6 +18,7 @@
 - ✅ **v1.1.0–v1.5.0** — Phases 1–5 (shipped incrementally; ten quality dimensions gated where decidable)
 - ✅ **v2.0.0 DSX Validity Frame** — Phases 6–12 (shipped 2026-08-28, tag `v2.1.0`)
 - ✅ **v2.2 Analytic Surface** — Phases 13–16 (shipped 2026-08-29, tag `v2.2.0`)
+- ✅ **v2.3 Test Catalog** — Phases 17–20 (shipped 2026-09-02, tag `v2.3.0`)
 
 ## Phases
 
@@ -67,6 +69,24 @@ Phase-12 snapshot at 256 was never mutated).
 
 </details>
 
+<details>
+<summary>✅ v2.3 Test Catalog (Phases 17–20) — SHIPPED 2026-09-02</summary>
+
+Full phase detail archived at `.planning/milestones/v2.3-ROADMAP.md` and
+`.planning/milestones/v2.3-phases/`. Milestone audit `passed`
+(`.planning/milestones/v2.3-MILESTONE-AUDIT.md`): 22/22 requirements, 4/4
+phases verified, 5/5 cross-phase integration seams, Nyquist compliant, 0
+unsatisfied/orphaned. Finding catalogue grew 260 → 275 (additive; both frozen
+snapshots — Phase-12 at 256, v2.2's set — never mutated). 27 D-05 citations
+independently re-verified against primary sources at close-out; 7 corrected.
+
+- [x] Phase 17: Foundation — repairs and spec vocabulary — 3/3 plans — completed 2026-09-01
+- [x] Phase 18: Correlation, association and agreement (`DSX-STA-050`…`062`) — 2/2 plans — completed 2026-09-02
+- [x] Phase 19: RM, trend, categorical, resampling, post-hoc (`DSX-STA-070`…`122`) — 2/2 plans — completed 2026-09-02
+- [x] Phase 20: Calibration and reporting close — 4/4 plans — completed 2026-09-02
+
+</details>
+
 ## Progress
 
 | Phase | Milestone | Plans Complete | Status | Completed |
@@ -91,18 +111,34 @@ Phase-12 snapshot at 256 was never mutated).
 | 14. Compounding and data onboarding | v2.2 | 5/5 | Complete | 2026-08-28 |
 | 15. CUPED and BI declaration checks | v2.2 | 6/6 | Complete | 2026-08-29 |
 | 16. Re-run verification (off the gate path) | v2.2 | 4/4 | Complete | 2026-08-29 |
+| 17. Foundation — repairs and spec vocabulary | v2.3 | 3/3 | Complete | 2026-09-01 |
+| 18. Correlation, association and agreement | v2.3 | 2/2 | Complete | 2026-09-02 |
+| 19. RM, trend, categorical, resampling, post-hoc | v2.3 | 2/2 | Complete | 2026-09-02 |
+| 20. Calibration and reporting close | v2.3 | 4/4 | Complete | 2026-09-02 |
 
 **v2.0.0 totals:** 11 phases, 89 plans, 208 tasks. Milestone audit `passed` (`.planning/milestones/v2.0.0-MILESTONE-AUDIT.md`); all 11 phases verified and Nyquist-validated; cross-phase integration INTEGRATED.
 
 **v2.2 totals:** 4 phases, 20 plans. Milestone audit `passed` (`.planning/milestones/v2.2-MILESTONE-AUDIT.md`); all 4 phases verified and Nyquist-validated; cross-phase integration INTEGRATED (10/10 seams).
 
+**v2.3 totals:** 4 phases, 11 plans. Milestone audit `passed` (`.planning/milestones/v2.3-MILESTONE-AUDIT.md`); all 4 phases verified and Nyquist-validated; cross-phase integration INTEGRATED (5/5 seams).
+
+## Queued milestone — v2.4 Visual Excellence (Phases 21–24)
+
+**Status:** Queued. Entry condition (D-13): v2.3 shipped. Requirements
+REQ-P21-* … REQ-P24-* in `.planning/REQUIREMENTS.md` under **Queued**. Full
+research in `.planning/research/V2.3-V2.4-SCOPE.md` §3: viz vocabulary
+reconciliation first (Phase 21), then the ~80-entry chart catalog + uncertainty
+family + 5-layer selection heuristic (Phase 22), the license-audited style/snippet
+layer with the SVG determinism recipe (Phase 23), and the portfolio exemplar
+capstone + viz calibration (Phase 24). Pre-agreed contingency: if v2.3's D-05
+queue materially outruns the ceremony cadence, split Phase 23–24 off as v2.5.
+
 ## Next
 
-Both v2.0.0 and v2.2 are shipped and archived — full internal dependency graphs
-and requirement coverage tables are preserved at `.planning/milestones/v2.0.0-ROADMAP.md`
-and `.planning/milestones/v2.2-ROADMAP.md`. No milestone is currently queued.
-
-Two dormant seeds carry forward from v2.0.0's close (deepen `dsx-explore-data`
-into a reusable EDA protocol; grow DATA-PROFILE into hermetic EDA artifacts) —
-see `.planning/STATE.md` Deferred Items. Start the next milestone with
-`/gsd-new-milestone`, or promote one of the seeds into a scoped milestone.
+v2.0.0, v2.2, and v2.3 are shipped and archived (`.planning/milestones/v2.0.0-*`,
+`v2.2-*`, `v2.3-*`). v2.4 Visual Excellence's entry condition (v2.3 shipped) is
+now met — start it with `/gsd-new-milestone` or by repointing the ceremony.
+Two dormant seeds still carry forward (deepen `dsx-explore-data` into a
+reusable EDA protocol; grow DATA-PROFILE into hermetic EDA artifacts) — see
+`.planning/STATE.md` Deferred Items; both are natural v2.4/v2.5 candidates
+given the EDA-adjacent chart work.

@@ -388,6 +388,147 @@ ESTIMAND_TYPES = {
     ),
 }
 
+# analysis.estimand_kind is the association/agreement FORM used for TEST ROUTING;
+# validity_frame.estimand.type (ESTIMAND_TYPES above) is the causal QUANTITY used for
+# ADMISSIBILITY. Disjoint closed vocabularies, never read from the same site — a value
+# slotted into the wrong one fails closed-vocab membership loudly rather than silently
+# mis-routing (17-CONTEXT.md D-01). Exact normalized membership only, no fuzzy match, same
+# discipline as ESTIMAND_TYPES. Absence is non-blocking (D-10): estimand_kind is a routing
+# hint, never a gate on its own. Read by recommend_test and the Phase-18 correlation gate.
+ESTIMAND_KINDS = {
+    "linear_association": (
+        "Signed, slope-like linear dependence — Pearson r, including point-biserial "
+        "(Pearson r on {0,1}-coded vs continuous data). Routes Pearson and point-biserial."
+    ),
+    "monotone_association": (
+        "Signed, rank-monotone dependence with no linearity assumption. "
+        "Routes Spearman's rho and Kendall's tau-b."
+    ),
+    "nominal_association": (
+        "Unsigned, chi-square-based departure from independence on an unordered r x c "
+        "table — no slope and no direction. Routes phi (2x2) and Cramer's V (r x c)."
+    ),
+    "agreement": (
+        "Dimensionless, chance-corrected agreement between raters or methods. Routes "
+        "Cohen's / weighted / Fleiss' kappa, Krippendorff's alpha, and the ICC."
+    ),
+    "method_comparison": (
+        "Bias plus limits of agreement between two measurement methods, in the "
+        "measurement units. Routes Bland-Altman."
+    ),
+    "ordered_trend": (
+        "A monotone trend across an ordered factor or dose. Routes Cochran-Armitage, "
+        "Jonckheere-Terpstra, and Mann-Kendall with Sen's slope."
+    ),
+}
+
+# ── Phase 18 correlation/agreement declared sub-vocabularies (REQ-P18-03/04) ──
+# All closed, all read declaration-only by dsx/checks/stats.py's
+# _check_declared_association gate — never from data (the anti-two-stage
+# invariant, REQ-P18-06). Exact normalized membership only, same discipline as
+# ESTIMAND_KINDS. Absence is non-blocking; a mis-slotted value is a loud finding.
+
+# ICC declared triple. Admissible values per Shrout, P.E. & Fleiss, J.L. (1979),
+# "Intraclass Correlations: Uses in Assessing Rater Reliability", Psychological
+# Bulletin 86(2):420-428; and McGraw, K.O. & Wong, S.P. (1996, corrected
+# edition), "Forming Inferences About Some Intraclass Correlation Coefficients",
+# Psychological Methods 1(1):30-46. DSX-STA-060 checks presence + membership over
+# this triple only (completeness, not combination-coherence — deferred as
+# candidate DSX-STA-063 per 18-CONTEXT.md D-05).
+ICC_MODELS = {"one_way_random", "two_way_random", "two_way_mixed"}
+ICC_TYPES = {"single", "average"}
+ICC_DEFINITIONS = {"consistency", "absolute_agreement"}
+
+# Weighted-kappa weighting-scheme tokens. A declared `weights` may ALSO be an
+# explicit matrix (a non-empty list) — that structural shape is accepted by the
+# gate's isinstance branch (18-RESEARCH.md Pitfall 5), never stringified against
+# this set. These are the two recognised STRING schemes only.
+KAPPA_WEIGHT_TOKENS = {"linear", "quadratic"}
+
+# Declared operand measurement scale (analysis.operand_scale). The ordinal-vs-
+# dichotomous split is what encodes 18-CONTEXT.md D-03's ">2 levels" whitelist: a
+# 2-level operand is declared `dichotomous` (point-biserial's home) and is
+# whitelisted from DSX-STA-050, while an `ordinal` operand (>2 ordered levels)
+# declared against Pearson fires it. Registered in stats.py's _MEMBERSHIP_FIELDS
+# so a mis-slotted value is loud via DSX-STA-040 for free.
+OPERAND_SCALES = {"continuous", "ordinal", "dichotomous", "nominal"}
+
+
+# ── Phase 19 RM/trend/resampling/post-hoc/variance/power/proportion declared
+#    sub-vocabularies (REQ-P19-01/02/04/05/06/07) ──
+# All closed and additive, read declaration-only by the recommend_* routing
+# functions in dsx/checks/stats.py (this wave) and the Wave-2 gate helpers
+# (19-C) — never from data (the anti-two-stage invariant, REQ-P18-06; every
+# recommend_* signature is dataless, which is the mechanical proof). The six
+# SCALAR fields below join stats.py's _MEMBERSHIP_FIELDS so a mis-slotted value
+# is loud via the existing DSX-STA-040 for free — zero new code for recognition.
+# Each set names its D-05 citation BASIS only; no numeric boundary is encoded
+# here — the not-in-hand thresholds are confirm-at-source (D-07).
+
+# analysis.sphericity_correction. The Wave-2 DSX-STA-070 gate fires only on the
+# two-stage/Mauchly-conditional token; `unconditional_gg`/`unconditional_hf`
+# declare an unconditional correction (the RM analog of always-Welch) and
+# satisfy. Citation basis: Greenhouse & Geisser (1959), Psychometrika — the
+# epsilon is COMPUTED from data at source, never a printed boundary here.
+SPHERICITY_CORRECTIONS = {"unconditional_gg", "unconditional_hf", "mauchly_conditional", "none"}
+
+# analysis.dose_score_scheme (optional; presence of analysis.dose_scores is the
+# Wave-2 trigger, the scheme is DSX-STA-040-guarded only). No numeric spacing
+# encoded — `custom` scores are confirm-at-source.
+DOSE_SCORE_SCHEMES = {"equally_spaced", "midrank", "custom"}
+
+# analysis.autocorrelation_handling. `none` and `independent` are MEMBERS whose
+# PRESENCE satisfies the Wave-2 gate — that gate keys on is_blank, NOT on
+# membership — so a declared `none`/`independent` is non-blank and passes.
+# Citation basis: Hamed & Rao (1998) for the effective-sample-size correction;
+# the lag threshold at which autocorrelation must be handled is NOT encoded here.
+AUTOCORRELATION_HANDLINGS = {"none", "independent", "hamed_rao", "prewhitening", "yue_pilon"}
+
+# analysis.resampling.method (nested block {method, seed, B, unit} — the method
+# is validated inside the Wave-2 gate helper, NOT the flat _MEMBERSHIP_FIELDS
+# loop). BCa is the house default. Citation basis: Davidson & MacKinnon (2000)
+# for permutation/bootstrap practice; Efron & Tibshirani (1993) for BCa (the
+# acronym is the 1993 text, not Efron 1987). B's value is never checked here.
+RESAMPLING_METHODS = {"permutation", "percentile_bootstrap", "bca"}
+
+# analysis.variance_test. Citation basis: Zimmerman (2004), two-group-scoped —
+# the extension to k>2 is a principled extension, flagged as such, not a printed
+# result. Scalar -> _MEMBERSHIP_FIELDS.
+VARIANCE_TESTS = {"levene", "brown_forsythe", "bartlett", "fligner_killeen"}
+
+# analysis.variance_test_role. The estimand exemption rides on this DECLARED role
+# (OQ-6): `scale_estimand` is the dispersion-as-target case (exempt from the
+# variance-pretest gate), `precondition_to_location` is the two-stage misuse the
+# Wave-2 gate blocks. No scale member is added to ESTIMAND_KINDS this phase.
+VARIANCE_TEST_ROLES = {"precondition_to_location", "scale_estimand"}
+
+# analysis.power_reporting_type. The Wave-2 gate fires on {observed, post_hoc}
+# only (the tautological post-hoc-power misuse). Citation basis: Hoenig & Heisey
+# (2001) for the observed/post-hoc critique; Lakens (2022) for a-priori/design/
+# sensitivity practice — `mde_sensitivity` is the catalog's paraphrase, NOT
+# attributed to Lakens. Scalar -> _MEMBERSHIP_FIELDS.
+POWER_REPORTING_TYPES = {"a_priori", "design", "observed", "post_hoc", "mde_sensitivity"}
+
+# analysis.proportion_ci_method. Wilson is the house default; the Wave-2 gate
+# fires on `wald` (n-independent). Citation basis: Brown, Cai & DasGupta (2001)
+# — the n cutoff below which Wald misbehaves is confirm-at-source, NOT encoded.
+# Scalar -> _MEMBERSHIP_FIELDS.
+PROPORTION_CI_METHODS = {"wilson", "clopper_pearson", "jeffreys", "wald", "agresti_coull"}
+
+# Declared-omnibus-family -> acceptable-post-hoc frozenset (OQ-5), structured
+# like _ASSOCIATION_ROUTES. A routing DICT, not a describe-vocabulary set, so it
+# is deliberately NOT registered in _VOCABULARIES. The DEPRECATED post-hocs (SNK,
+# unprotected LSD at k>3) are NEVER a member of any acceptable set (D-04).
+# Citation basis: Games & Howell (1976) for the Welch-ANOVA post-hoc; Hayter
+# (1986) for the protected-vs-unprotected distinction — no numeric alpha encoded.
+POSTHOC_FAMILY_MAP: "dict[str, frozenset[str]]" = {
+    "welch_anova": frozenset({"games_howell", "dunnett_t3"}),
+    "anova": frozenset({"tukey_hsd", "tukey_kramer", "dunnett", "scheffe"}),
+    "kruskal_wallis": frozenset({"dunn", "nemenyi"}),
+    "friedman": frozenset({"nemenyi", "conover"}),
+}
+
+
 # Dependence structure -> admissible variance-adjustment method family (D-04, REQ-P7-04).
 # Every method named below is drawn verbatim from VARIANCE_ADJUSTMENTS above — M-09
 # forbids inventing a parallel vocabulary. "none" has no entry: a declared independence
@@ -571,6 +712,9 @@ _VOCABULARIES: "list[tuple[str, Any]]" = [
     ("constraint_sources", CONSTRAINT_SOURCES),
     ("dependence_structures", DEPENDENCE_STRUCTURES),
     ("estimand_types", ESTIMAND_TYPES),
+    # Singular dump key on purpose — matches the analysis.estimand_kind FIELD name and the
+    # 17-VALIDATION.md oracle describe_vocabulary()["estimand_kind"], not the plural sibling.
+    ("estimand_kind", ESTIMAND_KINDS),
     ("interference_risks", INTERFERENCE_RISKS),
     ("interference_mitigations", INTERFERENCE_MITIGATIONS),
     ("missingness_mechanisms", MISSINGNESS_MECHANISMS),
@@ -578,6 +722,28 @@ _VOCABULARIES: "list[tuple[str, Any]]" = [
     ("declaration_points", DECLARATION_POINTS),
     ("paradigms", PARADIGMS),
     ("paradigm_justifications", PARADIGM_JUSTIFICATIONS),
+    # New this phase (REQ-P18-03/04) — declared correlation/agreement
+    # sub-vocabularies the _check_declared_association gate reads. Plain sets, the
+    # same shape as design_kinds/claim_types above (discretionary registration,
+    # 18-RESEARCH.md "Claude's Discretion": register for house-style consistency):
+    ("icc_models", ICC_MODELS),
+    ("icc_types", ICC_TYPES),
+    ("icc_definitions", ICC_DEFINITIONS),
+    ("kappa_weight_tokens", KAPPA_WEIGHT_TOKENS),
+    ("operand_scales", OPERAND_SCALES),
+    # New this phase (2026 Phase 19, REQ-P19-01/02/04/05/06/07) — declared RM /
+    # trend / resampling / post-hoc / variance / power / proportion-count
+    # sub-vocabularies the recommend_* routing functions (this wave) and the
+    # Wave-2 gate helpers read. Eight closed sets registered; POSTHOC_FAMILY_MAP
+    # is a routing dict, not a describe-vocabulary, so it is NOT registered here.
+    ("sphericity_corrections", SPHERICITY_CORRECTIONS),
+    ("dose_score_schemes", DOSE_SCORE_SCHEMES),
+    ("autocorrelation_handlings", AUTOCORRELATION_HANDLINGS),
+    ("resampling_methods", RESAMPLING_METHODS),
+    ("variance_tests", VARIANCE_TESTS),
+    ("variance_test_roles", VARIANCE_TEST_ROLES),
+    ("power_reporting_types", POWER_REPORTING_TYPES),
+    ("proportion_ci_methods", PROPORTION_CI_METHODS),
 ]
 
 

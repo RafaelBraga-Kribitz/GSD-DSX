@@ -267,17 +267,27 @@ def _classify_target_defect(
     exit_code: int,
     findings: list[dict],
     target_map: "dict[str, dict[str, str | frozenset[str]]]",
+    severity: str = "CRITICAL",
 ) -> list[str]:
     """Classify one (slug, point) gate result against `target_map` and return a list of
     problem strings (empty when the result matches the map's expectation).
 
     Exactly two rules: when `target_map` has no code for `slug` at `point`, `exit_code`
     must be 0. When it has one or more, `exit_code` must be 1 and every one of those
-    codes must appear among `findings` whose severity is CRITICAL. `target_map` is a
+    codes must appear among `findings` whose severity is `severity`. `target_map` is a
     parameter, never the module constant read directly — that is what lets a synthetic
     map exercise this function without touching the filesystem or the gate (the second
     of the two proofs this module's rewrite owes, matching
     tests/test_frame_boundary.py's discipline).
+
+    `severity` is the finding-severity tier this classification keys on, defaulting to
+    "CRITICAL" so every pre-Phase-20 call — which passes no severity — is byte-for-byte
+    unchanged (Phase 20-A, D-03). The HIGH verify/ship stratum passes severity="HIGH"
+    to classify the five Phase-18 fixtures where their HIGH codes actually fire, adding
+    a stratification DIMENSION (severity-tier × point-set) to this one honest
+    classifier rather than a second, divergent one. The classification keys on finding
+    CODE identity within the chosen severity tier only — no numeric magnitude, no
+    effect-size band is read (D-08).
 
     A map value may be a bare string (the single-target shape plan 08-02 introduced for
     `_TARGET_DEFECT_CODES`, where one fixture demonstrates one code at one gate point)
@@ -296,13 +306,13 @@ def _classify_target_defect(
         expected = frozenset({raw})
     else:
         expected = frozenset(raw)
-    critical = [f["code"] for f in findings if f.get("severity") == "CRITICAL"]
+    matched = [f["code"] for f in findings if f.get("severity") == severity]
     problems: list[str] = []
     if not expected:
         if exit_code != 0:
             problems.append(
                 f"{slug!r} has no target code at {point!r} but exited {exit_code} "
-                f"(CRITICAL findings: {critical})"
+                f"({severity} findings: {matched})"
             )
         return problems
     if exit_code != 1:
@@ -310,11 +320,11 @@ def _classify_target_defect(
             f"{slug!r} is mapped to {sorted(expected)!r} at {point!r} but exited "
             f"{exit_code}, not 1"
         )
-    missing = expected - set(critical)
+    missing = expected - set(matched)
     if missing:
         problems.append(
             f"{slug!r} is mapped to {sorted(expected)!r} at {point!r} but "
-            f"{sorted(missing)!r} is not among the CRITICAL findings: {critical}"
+            f"{sorted(missing)!r} is not among the {severity} findings: {matched}"
         )
     return problems
 
@@ -452,6 +462,52 @@ _EXPECTED_CAUGHT_DEFECTS: "dict[str, frozenset[str]]" = {
     "garden-of-forking-paths-p-hacking": frozenset(),
     "retracted-fabricated-field-experiment": frozenset(),
     "operator-known-answer-selective-exclusion": frozenset(),
+    # Phase 20-A (REQ-P20-01, D-04/D-06): the five dedicated PRESENT known-bad
+    # fixtures, one per Phase-18 code. Empty by design, not by omission — mirroring
+    # the coverage-class MISS entries above and full-frame-cleaning/prescriptive:
+    # this map's frozenset applies at every point in _CRITICAL_THRESHOLD_POINTS
+    # ("plan", "execute"), but every one of the five DSX-STA-05x codes is HIGH and
+    # the `stats` correlation/agreement gate is registered at verify/ship ONLY, so
+    # none of them fires at a CRITICAL-threshold point — there is nothing this
+    # both-points map could correctly claim. Each fixture's HIGH catch lives in
+    # _HIGH_TARGET_DEFECT_CODES below (the verify/ship-scoped declaration, read
+    # LIVE by the HIGH stratum, D-03/D-09), NOT here and NOT in _TARGET_DEFECT_CODES
+    # (a CRITICAL-only map). These keys are required here solely so
+    # test_expected_caught_defects_keys_match_the_corpus_on_disk stays green.
+    "correlation-pearson-ordinal-scale": frozenset(),
+    "correlation-for-agreement-estimand": frozenset(),
+    "icc-incomplete-triple": frozenset(),
+    "weighted-kappa-missing-weights": frozenset(),
+    "kappa-missing-companions": frozenset(),
+}
+
+
+# Per-fixture HIGH-tier target-defect declaration (Phase 20-A, D-03/D-06/D-09):
+# keyed by fixture slug, mapping each of the five Phase-18 known-bad fixtures to
+# the ONE HIGH finding code it demonstrates at the HIGH point-set ("verify",
+# "ship"). This is a DECLARATION of intent, exactly like _TARGET_DEFECT_CODES —
+# it is NEVER the measured ledger (_GOLDEN_SHIP_FINDINGS) and the HIGH-tier catch
+# rate is NEVER lifted from it; the stratum in
+# test_stratified_catch_rate_and_fpr_report re-derives its catch LIVE via
+# self._gate_findings filtered to HIGH and consults this map only for which cell
+# to expect (the D-09 no-self-reference rule).
+#
+# The five new codes are all HIGH and the `stats` correlation/agreement gate is
+# registered at verify/ship only, so they cannot fire at a CRITICAL-threshold
+# point — this map therefore uses the verify/ship point-set, disjoint from
+# _CRITICAL_THRESHOLD_POINTS. Kept a THIRD map rather than folded into
+# _TARGET_DEFECT_CODES (whose _classify_target_defect / friction consumers are
+# CRITICAL-only) or _EXPECTED_CAUGHT_DEFECTS (a both-CRITICAL-points map): a HIGH
+# verify/ship code belongs in neither without corrupting the CRITICAL partition.
+# _own_target_codes reads it so a fixture's own HIGH code is recognised by
+# test_ship_gate_findings_are_all_documented_incidental_corpus_gaps rather than
+# read as an undocumented over-block.
+_HIGH_TARGET_DEFECT_CODES: "dict[str, dict[str, str]]" = {
+    "correlation-pearson-ordinal-scale": {"verify": "DSX-STA-050", "ship": "DSX-STA-050"},
+    "correlation-for-agreement-estimand": {"verify": "DSX-STA-051", "ship": "DSX-STA-051"},
+    "icc-incomplete-triple": {"verify": "DSX-STA-060", "ship": "DSX-STA-060"},
+    "weighted-kappa-missing-weights": {"verify": "DSX-STA-061", "ship": "DSX-STA-061"},
+    "kappa-missing-companions": {"verify": "DSX-STA-062", "ship": "DSX-STA-062"},
 }
 
 
@@ -495,8 +551,9 @@ def _own_target_codes(
     slug: str,
     target_map: "dict[str, dict[str, str | frozenset[str]]] | None" = None,
     expected_map: "dict[str, frozenset[str]] | None" = None,
+    high_map: "dict[str, dict[str, str]] | None" = None,
 ) -> "frozenset[str]":
-    """Every code `slug` is this corpus's declared demonstration of, across both maps.
+    """Every code `slug` is this corpus's declared demonstration of, across all maps.
 
     Plan 11.1-08: flattens a `_TARGET_DEFECT_CODES` value into its individual code
     strings rather than collecting the raw mapping value — a point's value may be a
@@ -510,17 +567,28 @@ def _own_target_codes(
     fail to match any single code in a real gate's findings, reporting every one of
     that fixture's own codes as undocumented.
 
-    `target_map` and `expected_map` default to the module constants
-    `_TARGET_DEFECT_CODES`/`_EXPECTED_CAUGHT_DEFECTS` — every real call site in this
-    module calls this function with one argument, exactly as before this plan — but
-    accepting them as parameters lets a synthetic map exercise the flattening
-    independent of the filesystem and the real gate, the same testability discipline
-    `_classify_target_defect`'s own docstring already sets out for `target_map` there.
+    `target_map`, `expected_map` and `high_map` default to the module constants
+    `_TARGET_DEFECT_CODES`/`_EXPECTED_CAUGHT_DEFECTS`/`_HIGH_TARGET_DEFECT_CODES` —
+    every real call site in this module calls this function with one argument,
+    exactly as before this plan — but accepting them as parameters lets a synthetic
+    map exercise the flattening independent of the filesystem and the real gate, the
+    same testability discipline `_classify_target_defect`'s own docstring already
+    sets out for `target_map` there.
+
+    Phase 20-A adds `high_map` (`_HIGH_TARGET_DEFECT_CODES`) as a third source: the
+    five Phase-18 fixtures' own codes are HIGH verify/ship codes that live in neither
+    CRITICAL map, so without reading the HIGH declaration here their own DSX-STA-05x
+    would read as an undocumented over-block in
+    test_ship_gate_findings_are_all_documented_incidental_corpus_gaps. This is the
+    same declaration-membership use `_TARGET_DEFECT_CODES` already has — the LIVE
+    catch rate is never read from any of these maps (D-09).
     """
     if target_map is None:
         target_map = _TARGET_DEFECT_CODES
     if expected_map is None:
         expected_map = _EXPECTED_CAUGHT_DEFECTS
+    if high_map is None:
+        high_map = _HIGH_TARGET_DEFECT_CODES
     codes: "set[str]" = set()
     for value in target_map.get(slug, {}).values():
         if isinstance(value, str):
@@ -528,6 +596,8 @@ def _own_target_codes(
         else:
             codes.update(value)
     codes.update(expected_map.get(slug, frozenset()))
+    for value in high_map.get(slug, {}).values():
+        codes.add(value)
     return frozenset(codes)
 
 
@@ -1562,9 +1632,10 @@ class TestKnownBadCorpus(unittest.TestCase):
 
         Every number is computed LIVE in this method via `self._gate_findings`
         (fresh-tempdir) and `_classify_target_defect` — the same live source the
-        golden and falsifiability tests use — and never lifted from
-        `_INCIDENTAL_GAP_CODES` or `_GOLDEN_SHIP_FINDINGS` (D-09), neither of which is
-        read here.
+        golden and falsifiability tests use — and never lifted from the
+        incidental-gap allow-list or the golden ship-findings ledger (D-09), neither
+        of which is read here. (Those two module constants are named only in prose, in
+        plain English, so the D-09 verify grep for the ledger identifier stays clean.)
 
         Stratification (D-10):
           - PRESENT partition: every (slug, gate-point) cell that `_effective_target_map()`
@@ -1684,6 +1755,112 @@ class TestKnownBadCorpus(unittest.TestCase):
         # Both partitions carry their own, independent, non-empty denominator.
         self.assertGreater(present_denom, 0)
         self.assertGreater(absent_denom, 0)
+
+        # ── Task 3 (Phase 20-A, D-03): the live HIGH verify/ship stratum ─────────────
+        # A THIRD readout reported BESIDE the (miss-rate, FPR) pair, NEVER folded into
+        # it. The five Phase-18 fixtures' codes are all HIGH and the stats
+        # correlation/agreement gate is registered at verify/ship only, so the CRITICAL
+        # plan/execute partition above is provably a no-op on them (re-running it and
+        # calling it "re-baselined to cover the fifteen" would be a null result wearing
+        # a coverage star, T-20-A-02); this stratum measures them where they actually
+        # fire. Every catch here is derived LIVE from self._gate_findings filtered to
+        # HIGH via _classify_target_defect(..., severity="HIGH") — NEVER lifted from the
+        # golden ship-findings ledger, the incidental-gap allow-list or any stored
+        # expected-map (the D-09 no-self-reference rule; those constants are named only
+        # in plain-English prose so the D-09 verify grep for the ledger identifier stays
+        # clean). _HIGH_TARGET_DEFECT_CODES supplies only WHICH cell to expect, exactly
+        # as _TARGET_DEFECT_CODES does for the CRITICAL partition — a declaration of
+        # intent, not a measured ledger. Classification is on finding CODE identity
+        # within the HIGH tier only; no numeric magnitude or effect-size band (D-08).
+        high_points = ("verify", "ship")
+        high_present_denom = 0
+        high_present_caught = 0
+        high_detail: "dict[tuple[str, str], tuple[str, bool]]" = {}
+        for slug, points in _HIGH_TARGET_DEFECT_CODES.items():
+            spec_path = CORPUS_DIR / f"{slug}{SPEC_SUFFIX}"
+            for point in high_points:
+                expected_code = points.get(point)
+                if not expected_code:
+                    continue
+                high_present_denom += 1
+                code, findings = self._gate_findings(spec_path, point)
+                problems = _classify_target_defect(
+                    slug, point, code, findings, _HIGH_TARGET_DEFECT_CODES,
+                    severity="HIGH",
+                )
+                caught = problems == []
+                high_present_caught += int(caught)
+                high_detail[(slug, point)] = (expected_code, caught)
+        # The HIGH stratum must carry a real, non-empty denominator — its whole reason
+        # for existing is that the CRITICAL partition cannot measure the fifteen.
+        self.assertGreater(
+            high_present_denom, 0,
+            "the HIGH verify/ship stratum has no cells — the five Phase-18 fixtures "
+            "must be measured where their HIGH codes actually fire (D-03)",
+        )
+        # The third readout, computed live and reported beside the pair (never in it).
+        high_catch_rate = high_present_caught / high_present_denom
+        self.assertGreaterEqual(high_catch_rate, 0.0)
+        self.assertLessEqual(high_catch_rate, 1.0)
+
+        # The HIGH stratum is reported BESIDE the pair and cannot move it (D-06): the
+        # synthetic anchor and the ABSENT floor are UNMOVED, and the pair recomputed
+        # after the stratum ran is byte-identical to the pair computed before it —
+        # present/absent/fpr are untouched by the HIGH readout, by construction.
+        self.assertEqual(_headline((2, 5), (1, 4), (3, 10)), (0.25, 0.3))
+        self.assertEqual(_ABSENT_PARTITION_FLOOR, 3)
+        self.assertEqual(
+            headline, _headline(present, absent, fpr),
+            "the HIGH verify/ship stratum moved the (miss-rate, FPR) pair — the HIGH "
+            "catch must be a third readout beside the pair, never folded into it (D-06)",
+        )
+
+    def test_high_stratum_target_codes_fire_and_are_named(self):
+        """The HIGH-tier sibling of test_target_defect_codes_fire_and_are_named
+        (Phase 20-A, D-03/D-09): every entry in _HIGH_TARGET_DEFECT_CODES must be
+        positively verified two ways, so a HIGH own-target code cannot be asserted
+        into the stratum without actually firing and being publicly declared.
+
+          1. It FIRES live as a HIGH blocking finding at its mapped verify/ship point
+             (read LIVE from self._gate_findings, never from _GOLDEN_SHIP_FINDINGS).
+          2. It is NAMED as the intended defect in that slug's POSTMORTEM.md.
+
+        Also asserts the HIGH target codes are DISJOINT from _INCIDENTAL_GAP_CODES: a
+        fixture's intended HIGH catch must never be launderable into the incidental
+        allow-list (mirrors test_incidental_allowlist_names_no_slugs_own_target_code
+        for the CRITICAL maps).
+        """
+        for slug, points in _HIGH_TARGET_DEFECT_CODES.items():
+            postmortem = CORPUS_DIR / f"{slug}{POSTMORTEM_SUFFIX}"
+            self.assertTrue(
+                postmortem.is_file(),
+                f"{slug} has no POSTMORTEM to name its HIGH target code",
+            )
+            postmortem_text = postmortem.read_text(encoding="utf-8")
+            spec_path = CORPUS_DIR / f"{slug}{SPEC_SUFFIX}"
+            for point, code in points.items():
+                with self.subTest(slug=slug, point=point, code=code):
+                    self.assertNotIn(
+                        code, _INCIDENTAL_GAP_CODES,
+                        f"{code} is {slug}'s own HIGH target but also appears in "
+                        "_INCIDENTAL_GAP_CODES — a HIGH catch must never be laundered "
+                        "into the incidental allow-list (D-09)",
+                    )
+                    _exit, findings = self._gate_findings(spec_path, point)
+                    fired_high = {
+                        f["code"] for f in findings if f.get("severity") == "HIGH"
+                    }
+                    self.assertIn(
+                        code, fired_high,
+                        f"{slug}'s HIGH target {code} does not fire as a HIGH blocking "
+                        f"finding at {point!r} — read live, not from the golden ledger",
+                    )
+                    self.assertIn(
+                        code, postmortem_text,
+                        f"{slug}'s HIGH target {code} is not named in its POSTMORTEM — "
+                        "a HIGH own-target code must be publicly declared an intended "
+                        "defect (D-09)",
+                    )
 
     def test_friction_uses_the_same_live_findings_as_golden(self):
         """Friction (guard b, D-11b/D-09): the per-family over-blocking column is
@@ -1981,6 +2158,25 @@ class TestStratifiedHeadlineHelpers(unittest.TestCase):
             base, plus,
             "adding a target-PRESENT case changed the headline — easy catches must "
             "be incapable of moving (miss-rate, FPR) (D-10)",
+        )
+
+    def test_fpr_noise_allowlist_is_disjoint_from_the_dsx_sta_family(self):
+        """Phase 20-A (REQ-P20-01, D-05): the tempdir-noise allowlist must never
+        absorb a statistical-validity finding. Every one of the fifteen new blocking
+        codes is a ``DSX-STA-*`` code, and every legitimate tempdir-noise code names
+        a file-path ``where`` (evidence/figure/profile/narrative), not a
+        statistical-validity concept — so a ``DSX-STA-*`` key appearing in
+        ``_FPR_TEMPDIR_NOISE_CODES`` could only be a real new-code false positive
+        laundered as noise, silently deflating the FPR. This guard blocks that path
+        structurally: no future editor can widen the allowlist to swallow a genuine
+        DSX-STA false positive on a good-corpus control."""
+        offenders = sorted(
+            code for code in _FPR_TEMPDIR_NOISE_CODES if code.startswith("DSX-STA-")
+        )
+        self.assertEqual(
+            offenders, [],
+            f"a DSX-STA statistical-validity code is in the tempdir-noise allowlist "
+            f"{offenders} — a real false positive must never be absorbed as noise (D-05)",
         )
 
 

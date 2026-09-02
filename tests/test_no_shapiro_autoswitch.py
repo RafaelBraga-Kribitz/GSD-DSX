@@ -9,9 +9,12 @@ normality-test CALLS.
 Stdlib-only, CRLF-safe (r"\\r?\\n", never bare \\n). This test mints nothing.
 """
 
+import inspect
 import re
 import unittest
 from pathlib import Path
+
+import dsx.checks.stats as _stats
 
 ROOT = Path(__file__).resolve().parent.parent
 TEST_SELECTION = ROOT / "references" / "test-selection.md"
@@ -81,6 +84,85 @@ class DecisionSurfaceScanTest(unittest.TestCase):
                 if token in text:
                     offenders.append(f"{path.relative_to(ROOT)} :: {token}")
         self.assertEqual(offenders, [], f"normality-test call(s) on the decision surface: {offenders}")
+
+
+class NoAutoswitchEveryNewCategoryTest(unittest.TestCase):
+    """The no-autoswitch (anti-two-stage) proof, made CATEGORY-COMPLETE and future-proof.
+
+    Enumerates every public ``recommend_*`` router in ``dsx.checks.stats`` dynamically and
+    proves each new-category router is DATALESS — its ``inspect.signature`` carries no
+    ``data`` / ``n`` / distribution parameter, so it mechanically cannot inspect-then-pick
+    a test (REQ-P18-06, extended to every routing family added in Phases 17-19). Because the
+    enumeration is ``dir()``-based, a NEW category added later without a dataless router is
+    caught automatically, and the anti-vacuity assertion stops a rename from silently
+    emptying the proof.
+
+    ``recommend_test`` is the ONE legacy router that legitimately consumes DECLARED shape
+    fields (``normal`` / ``equal_variance`` / ``n_per_group`` / ``overdispersed``); it is
+    intentionally EXCLUDED from the dataless proof and is instead covered by the
+    Welch-unconditional and normality-declared assertions in ``TestSelectionOrderTest`` above.
+    """
+
+    # The data-then-pick surface a two-stage router would need. Absence of every one of
+    # these parameter NAMES (whole-name set intersection, not substring) is the mechanical
+    # proof a router cannot inspect the data before choosing.
+    _BANNED = frozenset(
+        {"data", "n", "n_groups", "paired", "normal", "equal_variance",
+         "n_per_group", "distribution", "overdispersed"}
+    )
+    # Every routing family shipped through Phase 19; the enumeration must be a superset of
+    # this so a rename/refactor cannot make the proof pass vacuously.
+    _KNOWN_NEW_CATEGORY = frozenset(
+        {"recommend_association", "recommend_rm", "recommend_trend", "recommend_resampling",
+         "recommend_posthoc", "recommend_variance_role", "recommend_power",
+         "recommend_proportion_ci"}
+    )
+
+    def _routers(self):
+        routers = {}
+        for name in dir(_stats):
+            if not name.startswith("recommend_"):
+                continue
+            fn = getattr(_stats, name)
+            if callable(fn) and inspect.isfunction(fn):
+                routers[name] = fn
+        return routers
+
+    def test_enumeration_is_non_vacuous_and_covers_every_new_category(self):
+        routers = self._routers()
+        self.assertIn("recommend_test", routers,
+                      "recommend_test must be enumerated so the legacy/new-category split is real")
+        new_category = set(routers) - {"recommend_test"}
+        missing = self._KNOWN_NEW_CATEGORY - new_category
+        self.assertFalse(
+            missing,
+            f"a known new-category router is missing from the enumeration (rename?): {sorted(missing)}",
+        )
+
+    def test_every_new_category_router_is_dataless(self):
+        routers = self._routers()
+        offenders = []
+        for name in sorted(set(routers) - {"recommend_test"}):
+            params = set(inspect.signature(routers[name]).parameters)
+            leaked = params & self._BANNED
+            if leaked:
+                offenders.append(f"{name}{sorted(leaked)}")
+        self.assertEqual(
+            offenders, [],
+            "data/n/distribution parameter(s) on new-category router(s) — a two-stage "
+            f"(inspect-then-pick) surface has been reintroduced: {offenders}",
+        )
+
+    def test_recommend_test_is_the_only_declared_shape_router(self):
+        # recommend_test legitimately consumes DECLARED shape fields; it is excluded from the
+        # dataless proof above and covered by the Welch-unconditional/normality-declared
+        # assertions. This pins that split: recommend_test DOES carry declared-shape params.
+        params = set(inspect.signature(_stats.recommend_test).parameters)
+        self.assertTrue(
+            params & self._BANNED,
+            "recommend_test is expected to carry declared-shape parameters (it is the "
+            "legacy router excluded from the dataless proof); none found",
+        )
 
 
 if __name__ == "__main__":
