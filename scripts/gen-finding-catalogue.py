@@ -165,6 +165,21 @@ _D05_ALLOWLIST_PREFIXES = (
 # brand-new helpers this phase wrote, split by predicate group so each carries
 # its own attributable D-05 docstring (18-RESEARCH.md Pattern 1); the same
 # exact-code precedent as DSX-EXP-070/DSX-MET-021/DSX-COH-040 above.
+#
+# Phase 19 (REQ-P19-01/02/04/05/06/07, 2026-09-02) adds DSX-STA-070, DSX-STA-080,
+# DSX-STA-081, DSX-STA-090, DSX-STA-100, DSX-STA-110, DSX-STA-111, DSX-STA-120,
+# DSX-STA-121 and DSX-STA-122 here, by EXACT CODE and NOT via
+# `_D05_ALLOWLIST_PREFIXES`: `DSX-STA-*` is a large pre-existing family (~40 legacy
+# codes) carrying no `Citation:`/`Structural criterion:` docstring line and no
+# `# D-05:` test marker, so a `"DSX-STA-"` prefix add would fail the build red on all
+# of them (19-RESEARCH.md Pitfall 3). All ten live in seven brand-new per-family
+# helpers this phase wrote (`_check_declared_rm_sphericity`, `_check_declared_trend`,
+# `_check_declared_resampling`, `_check_declared_posthoc`,
+# `_check_declared_variance_role`, `_check_declared_power_reporting`,
+# `_check_declared_proportion_count`), split by predicate group so each carries its own
+# attributable D-05 docstring (`_resolve_docstrings` binds each code to its enclosing
+# FunctionDef) — a monolith would launder seven distinct citation obligations under one
+# docstring. Same exact-code precedent as the Phase-18 DSX-STA-050..062 block above.
 _D05_ALLOWLIST_CODES = frozenset(
     {
         "DSX-SPEC-080", "DSX-SPEC-081", "DSX-SPEC-082", "DSX-SPEC-085", "DSX-SPEC-086",
@@ -174,6 +189,8 @@ _D05_ALLOWLIST_CODES = frozenset(
         "DSX-COH-040",
         "DSX-EXP-070", "DSX-MET-021",
         "DSX-STA-050", "DSX-STA-051", "DSX-STA-060", "DSX-STA-061", "DSX-STA-062",
+        "DSX-STA-070", "DSX-STA-080", "DSX-STA-081", "DSX-STA-090", "DSX-STA-100",
+        "DSX-STA-110", "DSX-STA-111", "DSX-STA-120", "DSX-STA-121", "DSX-STA-122",
     }
 )
 

@@ -13,7 +13,7 @@ a suppression or a reference in a review stays valid across versions.
 **Gate thresholds.** `plan` and `execute` block at CRITICAL; `verify` and
 `ship` block at HIGH.
 
-**Total: 265 codes.**
+**Total: 275 codes.**
 
 ## Contract structure — `DSX-SPEC-*`
 
@@ -127,6 +127,16 @@ Test selection, assumptions, and the reporting contract.
 | `DSX-STA-060` | HIGH | ICC declared without a complete (model, type, definition) triple |
 | `DSX-STA-061` | HIGH | Weighted kappa declared without recognised weights |
 | `DSX-STA-062` | HIGH | Kappa declared without its p_pos/p_neg companions |
+| `DSX-STA-070` | HIGH | Two-stage Mauchly-conditional sphericity correction declared |
+| `DSX-STA-080` | HIGH | Cochran-Armitage trend declared without dose scores |
+| `DSX-STA-081` | HIGH | Mann-Kendall / Sen's slope trend declared without an autocorrelation handling |
+| `DSX-STA-090` | HIGH | Resampling declared without a complete {method, seed, B, unit} quadruple |
+| `DSX-STA-100` | HIGH | Post-hoc '<…>' is not matched to the declared '<…>' omnibus family |
+| `DSX-STA-110` | HIGH | Variance test declared as a precondition to a location test |
+| `DSX-STA-111` | HIGH | Observed / post-hoc power reporting declared |
+| `DSX-STA-120` | HIGH | Wald proportion interval declared |
+| `DSX-STA-121` | HIGH | Exposure declared without an offset |
+| `DSX-STA-122` | HIGH | NNT declared without a confidence interval |
 
 ## ML integrity — `DSX-ML-*`
 
