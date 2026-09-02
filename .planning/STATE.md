@@ -5,14 +5,14 @@ milestone_name: Test Catalog
 current_phase: 18
 current_phase_name: correlation-association-and-agreement
 status: executing
-stopped_at: "S2-2 IN PROGRESS — plan preflight done (2026-09-01T23:26Z). gsd-phase-researcher (sonnet) → 18-RESEARCH.md committed 4e531df/pushed (all live locators verified; surfaced the _D05_ALLOWLIST_CODES by-exact-name gap, the gate-split-for-citation-docstrings pattern, the weights string-OR-matrix branch, and 3 open field-shape decisions for the planner). 18-VALIDATION.md seeded from RESEARCH §Validation Architecture (stdlib unittest; REQ-P18-01…06 oracle map; catalogue 260→265; D-07 pinned vs catalog-only). init now reports has_research:true, has_plans:false. Stopped at the GSD-native resumable boundary (~12-min pacing cap). S2-2 NOT checked — gate is plan-checker pass. NEXT firing: gsd-planner (opus) → gsd-plan-checker (haiku) revision loop → check S2-2 (single-writer D-08 waves: 18-A routing+gates+doc/catalogue lockstep ∥ 18-B effect-size convention bands)."
-last_updated: "2026-09-01T23:26:00Z"
-last_activity: 2026-09-01
-last_activity_desc: "S2-2 plan preflight — 18-RESEARCH.md (gsd-phase-researcher, sonnet) + 18-VALIDATION.md seeded. Live locators verified; _D05_ALLOWLIST_CODES by-exact-name gap + 3 planner Open Questions surfaced. Next: gsd-planner → gsd-plan-checker (S2-2 plan; gate = checker pass)."
+stopped_at: "S2-2 DONE — Phase 18 plan gate PASSED (2026-09-02T01:36Z). Reconciled ledger vs repo: a prior firing's gsd-planner had written BOTH plans (18-A/18-B, uncommitted, has_plans:true, phase_status Planned) then stopped before the checker; trusted the repo. gsd-plan-checker (adaptive→haiku) → VERIFICATION PASSED — REQ-P18-01…06 all covered (18-A: 01/02/03/04/06 ∥ 18-B: 05), D-01…D-08 honored, 18-A/18-B files_modified disjoint single-writer. 2 non-blocking warnings BOTH FIXED inline before commit (W-1: 18-A Task-3 verify was a no-op → replaced with a real fixture audit, validated runnable; W-2: 18-RESEARCH.md OQ-1/2/3 marked RESOLVED-in-18-A). Orchestrator re-ran gates: dsx plan:post clean spec-less (exit 0); gap-analysis + decision-coverage CLI non-blocking (known format-parse under-report). Stopped at the S2-2 boundary (~12-min cap; S2-3 execute is a large multi-plan unit). NEXT firing: S2-3 — execute 18-A ∥ 18-B inline on the ceremony branch, full-suite Wave-1 merge gate validates the DSX-STA-012 seam, catalogue 260→265."
+last_updated: "2026-09-02T01:36:00Z"
+last_activity: 2026-09-02
+last_activity_desc: "S2-2 DONE — Phase 18 plans (18-A ∥ 18-B) plan-checked to VERIFICATION PASSED; 2 non-blocking warnings fixed inline (real fixture audit in 18-A Task-3; OQ-1/2/3 RESOLVED markers). dsx plan:post clean. Next: S2-3 execute both plans (Wave-1 merge gate)."
 progress:
   total_phases: 4
   completed_phases: 1
-  total_plans: 3
+  total_plans: 5
   completed_plans: 3
   percent: 25
 ---
@@ -43,10 +43,10 @@ See: .planning/PROJECT.md (updated 2026-08-29; Key Decisions table there is the 
 
 ## Current Position
 
-Phase: 18 (correlation-association-and-agreement) — S2-1 discuss DONE; S2-2 plan IN PROGRESS (preflight done).
-Plan: not yet written. S2-2 preflight complete — 18-RESEARCH.md (4e531df) + 18-VALIDATION.md seeded. NEXT firing: gsd-planner (opus) → gsd-plan-checker (haiku) revision loop → check S2-2 (plan-checker must pass). D-08 single-writer wave split decided (Plan 18-A routing+gates+doc/catalogue lockstep ∥ Plan 18-B effect-size convention bands).
-Status: Executing — Phase 17 CLOSED (S1-1…S1-5); Phase 18 discuss complete + plan preflight done; next firing runs the planner→checker loop.
-Last activity: 2026-09-01 — S2-2 plan preflight: gsd-phase-researcher (sonnet) → 18-RESEARCH.md; 18-VALIDATION.md seeded. Research surfaced the `_D05_ALLOWLIST_CODES` by-exact-name build-gate gap (prefix `DSX-STA-` not allowlisted), the citation-docstring gate-split pattern, the weights string-OR-matrix branch, and 3 open field-shape decisions for the planner. Branch-safety unchanged: init's milestone-template branch name `gsd/v2.3-test-catalog` mismatches the ceremony branch `gsd/v2.3.0-test-catalog` — never run the framework's handle_branching; execute inline on the ceremony branch.
+Phase: 18 (correlation-association-and-agreement) — S2-1 discuss DONE; S2-2 plan DONE (plan-checker PASSED).
+Plan: 2 plans written + gate-passed. 18-A (routing+gates+doc/catalogue lockstep, REQ-P18-01/02/03/04/06) ∥ 18-B (effect-size convention bands, REQ-P18-05), file-disjoint single-writer. gsd-plan-checker → VERIFICATION PASSED (all 6 reqs covered, D-01…D-08 honored); 2 non-blocking warnings fixed inline. NEXT firing: S2-3 — execute BOTH plans inline on the ceremony branch (has_summary resume auto-skips summarised plans), then the full-suite Wave-1 merge gate that validates the DSX-STA-012 report-only seam; catalogue 260→265.
+Status: Executing — Phase 17 CLOSED (S1-1…S1-5); Phase 18 discuss + plan complete (S2-1, S2-2); next firing executes (S2-3).
+Last activity: 2026-09-02 — S2-2 DONE: reconciled ledger vs repo (a prior firing's planner had written both plans uncommitted then stopped pre-checker; trusted the repo), ran gsd-plan-checker → VERIFICATION PASSED, fixed 2 non-blocking warnings inline (real fixture audit in 18-A Task-3; OQ-1/2/3 RESOLVED markers), orchestrator re-ran gates (dsx plan:post clean). Branch-safety unchanged: init's milestone-template branch name `gsd/v2.3-test-catalog` mismatches the ceremony branch `gsd/v2.3.0-test-catalog` — never run the framework's handle_branching; execute inline on the ceremony branch (S2-3).
 
 ## Performance Metrics
 

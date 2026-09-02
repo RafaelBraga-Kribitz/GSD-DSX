@@ -907,7 +907,7 @@ completeness gate itself (which is formula-independent).
      `"dichotomous"` split is deliberately what encodes D-03's ">2 levels"
      requirement, so no separate level-count field is needed. **This is a
      planner decision, not resolved by 18-CONTEXT.md — confirm before
-     writing PLAN.md's task list.**
+     writing PLAN.md's task list.** — **UPDATE (S2-2): RESOLVED in 18-A-PLAN.md** — the planner adopted `analysis.operand_scale` with vocab `{continuous, ordinal, dichotomous, nominal}`, registered in `_MEMBERSHIP_FIELDS` (DSX-STA-040 reuse); the ordinal-vs-dichotomous split encodes D-03's ">2 levels" whitelist (18-A objective + Tasks 1/2).
 
 2. **What is the exact declared-field shape for the ICC (model, type,
    definition) triple?**
@@ -922,7 +922,7 @@ completeness gate itself (which is formula-independent).
      living under a top-level section (`design.cuped`), and gives
      DSX-STA-060 a clean, single presence check ("is `analysis.icc` a
      non-blank dict, or is `analysis.test == 'icc'`?") before it walks the
-     three sub-fields. **Planner decision — resolve before PLAN.md.**
+     three sub-fields. **RESOLVED in 18-A-PLAN.md** — `analysis.icc: {model, type, definition}` nesting adopted (18-A objective, OQ-2 resolution).
 
 3. **What is the exact declared-field shape for `weights`, `p_pos`, `p_neg`?**
    - What we know: D-02/D-04 name these as declared fields on the kappa
@@ -936,7 +936,7 @@ completeness gate itself (which is formula-independent).
      applies to the whole kappa family), so a shared parent block buys no
      completeness-check simplification the way `analysis.icc` does, and flat
      fields keep `analysis.weights`'s heterogeneous string-or-matrix type
-     (Pitfall 5) from needing an extra nesting level. **Planner decision.**
+     (Pitfall 5) from needing an extra nesting level. **RESOLVED in 18-A-PLAN.md** — flat `analysis.weights` / `analysis.p_pos` / `analysis.p_neg` adopted (18-A objective, OQ-3 resolution).
 
 4. **HQ-20 (veto window, non-blocking) — RESOLVED per 18-CONTEXT.md as a
    silence-accepts item.** The D-02 code numbering (050/051/060/061/062) and
