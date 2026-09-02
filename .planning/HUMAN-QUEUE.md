@@ -20,70 +20,9 @@ a persona round and records loudly):
 
 ## Open
 
-### HQ-26 — S5-6 ship: merge to `main` + tag `v2.3.0` (OUTWARD-FACING — operator only; loop prepared, does NOT self-approve)
-
-**Status: FILED 2026-09-02T17:27Z (S5-6 reached). This is a brief §4 item-5 outward-facing
-ship action — the loop prepared the runbook and the pre-flight evidence but MAY NOT execute or
-self-approve it.** This is the milestone's terminal operator action; nothing else remains.
-
-**Close-out sequence (do these in order, all in ONE interactive session):**
-1. **Sign the four end-of-phase security sign-offs** — HQ-19, HQ-21, HQ-23, HQ-25 (each sets the
-   `Approval` line in the phase `*-SECURITY.md` to `verified <date>`). Optionally note the three
-   veto windows HQ-20/22/24 as accepted-by-silence (D-06/methodology, non-blocking). This drains
-   **S5-2**.
-2. **Run S5-5 `/gsd-complete-milestone`** — **NOT headless-safe** (interactive prompts +
-   `git rm REQUIREMENTS.md`). Hand-verify its two known-bad outputs: the generated accomplishment
-   bullets (truncated mid-sentence at v2.2) and the archived `REQUIREMENTS.md` checkboxes (carried
-   forward unchecked despite the passed audit at v2.2) — both needed manual correction last
-   milestone. The REQUIREMENTS.md boxes are intentionally still `[ ]` today; tick them here.
-3. **Run S5-6 ship** — the runbook below.
-
-**Pre-flight evidence the loop measured this firing (2026-09-02T17:27Z, HEAD `2b6ca00`):**
-- **The merge is conflict-free.** `origin/main` tip `afc3001` is a direct **ancestor** of the
-  ceremony HEAD `2b6ca00` — main has **not diverged** (`git rev-list --count HEAD..origin/main` =
-  **0**; `git rev-list --count origin/main..HEAD` = **78** commits to bring over). A `--no-ff`
-  merge applies cleanly; no 3-way conflict resolution is owed.
-- **Gates green on this exact HEAD.** Full suite **1462 OK** + `scripts/check.sh` all-checks-passed
-  + `gen-finding-catalogue.py --check` current @**275** were measured from a clean tree at S5-4 on
-  commit `2b6ca00`, and HEAD is **unchanged since** (0 commits, 0 ahead of origin). The milestone
-  audit is `passed` (`.planning/v2.3-MILESTONE-AUDIT.md`: 22/22 reqs, 5/5 seams, nyquist 4/4).
-- **Tag `v2.3.0` is FREE** (existing: v2.0.0, v2.1.0, v2.2.0). Never force-move a published tag.
-
-**Runbook (operator executes — the loop must not):**
-```
-# 0. Confirm you are on the ceremony branch and it is pushed
-git rev-parse --abbrev-ref HEAD      # -> gsd/v2.3.0-test-catalog
-git status                            # -> up to date with origin, 0 ahead
-
-# 1. Dry-run the merge + gate on a throwaway branch FIRST (never touch main until green)
-git fetch origin main
-git checkout -b _shipcheck origin/main
-git merge --no-ff gsd/v2.3.0-test-catalog     # expect: clean, no conflicts
-sh scripts/check.sh                            # expect: 1462 OK, all checks passed, catalogue @275
-git checkout gsd/v2.3.0-test-catalog
-git branch -D _shipcheck
-
-# 2. Real merge — BY EXPLICIT BRANCH NAME (see hazard below), then tag
-git checkout main
-git merge --no-ff gsd/v2.3.0-test-catalog -m "Merge v2.3 Test Catalog milestone"
-git tag -a v2.3.0 -m "v2.3.0 — Test Catalog (Phases 17-20, 22 requirements)"
-git push origin main
-git push origin v2.3.0
-```
-
-**Non-negotiable ship guardrails (consolidated from the standing framework notes):**
-- **Merge by EXPLICIT branch name — NEVER the framework's alphabetical `gsd/*` auto-detect.** This
-  repo carries stale branches; the alphabetically-first `gsd/*` is **`gsd/v1.1.0-milestone`**
-  (also present: `gsd/v2.0.0-*`, `gsd/v2.2.0-analytic-surface`) — auto-detect would merge the
-  WRONG branch. Confirmed live this firing.
-- **NEVER `/gsd-pr-branch`** — its per-commit cherry-pick chain fails with modify/delete conflicts
-  on long ceremony branches (abandoned mid-run at v2.0.0). Direct 3-way merge only.
-- **NEVER force-move a published tag.** `v2.3.0` is the next free tag.
-- **`/gsd-complete-milestone` (step 2) is interactive-only** and its output needs hand-verification
-  (see above).
-
-**To ship:** run the runbook in an interactive session after steps 1–2. To hold, reply naming the
-concern. Until then the loop waits here — no headless unit remains.
+(none — HQ-26 answered 2026-09-02; see Answered below. v2.3 Test
+Catalog is fully shipped, tagged `v2.3.0`, and merged to `main`. No milestone
+is currently active on this branch.)
 
 ## Will be added by the loop when reached
 
@@ -179,6 +118,19 @@ hit), then resumes by itself. Firings: log one line, stop, never retry-loop,
 never touch the backoff file.
 
 ## Answered
+
+### HQ-26 — S5-6 ship: merge to `main` + tag `v2.3.0` (answered 2026-09-02)
+
+**Operator verdict:** "Yes, do the full close-out now" (recommended path) — approved via an interactive session while the operator was traveling with limited connectivity and unable to run the runbook directly.
+
+**What was executed, in the order HQ-26 specified:**
+
+1. Signed HQ-19/21/23/25 (all four end-of-phase security sign-offs) and recorded HQ-20/22/24 as accepted (D-06/methodology veto windows, no veto). This drained S5-2.
+2. Ran `/gsd-complete-milestone` (S5-5) in this interactive session. Hand-verified and corrected the same two CLI defects documented at v2.2's close (truncated/frontmatter-capturing accomplishment bullets; archived REQUIREMENTS.md rows carried forward still unchecked) before committing.
+3. Ran the S5-6 runbook exactly as written: verified the merge on a throwaway branch off `origin/main` first (zero conflicts, `sh scripts/check.sh` all green — 1462 tests, catalogue current @275), then the real merge onto `main` (commit `1a61d3c`), re-verified green again, tagged `v2.3.0` (annotated; dereferenced by hand to confirm it points at `1a61d3c`), pushed `main` and the tag.
+
+**Result:** v2.3 Test Catalog is fully shipped. `main` is at `1a61d3c`, tag `v2.3.0` pushed. LOOP-LEDGER.md S5-2, S5-5, S5-6 all checked off — all 30 ledger units complete. `gsd/v2.3.0-test-catalog` is left in place (still the Scheduled Task's target branch); a future firing against it will find every unit `[x]` and hold correctly — confirmed live: a firing that started mid-close-out (20:53Z) correctly detected the in-progress uncommitted work and held without interfering, neither committing nor discarding it.
+
 
 ### HQ-19 — Phase 17 end-of-phase security sign-off (answered 2026-09-02)
 
