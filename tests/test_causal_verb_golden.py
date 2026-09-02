@@ -93,6 +93,12 @@ _GOLDEN_SHIP_FINDINGS: "dict[str, frozenset[str]]" = {
         "DSX-SPEC-010", "DSX-SPEC-026", "DSX-SPEC-081", "DSX-SPEC-082",
         "DSX-SPEC-085", "DSX-SQL-001", "DSX-SQL-007", "DSX-SQL-008", "DSX-SQL-012",
         "DSX-STA-002", "DSX-STA-003", "DSX-STA-007", "DSX-STA-020", "DSX-STA-041",
+        # Phase 19 (19-C): the bad fixture's analysis block was extended (not replaced)
+        # to fire all ten declaration-only Phase-19 gates in one ship run — the
+        # sanctioned "fixture built to demonstrate the new catch" case. Measured
+        # 2026-09-02 (added exactly these ten, dropped nothing), never guessed.
+        "DSX-STA-070", "DSX-STA-080", "DSX-STA-081", "DSX-STA-090", "DSX-STA-100",
+        "DSX-STA-110", "DSX-STA-111", "DSX-STA-120", "DSX-STA-121", "DSX-STA-122",
         "DSX-VAL-011", "DSX-VIZ-001", "DSX-VIZ-012", "DSX-VIZ-013", "DSX-VIZ-020",
         "DSX-VIZ-030", "DSX-VIZ-051", "DSX-VIZ-061", "DSX-VIZ-063", "DSX-VIZ-070",
     }),
