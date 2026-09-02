@@ -15,7 +15,6 @@ from .. import mathx
 from ..mathx import EFFECT_SIZE_KINDS, apply_correction, interpret_effect
 from ..spec import (
     AUTOCORRELATION_HANDLINGS,
-    DOSE_SCORE_SCHEMES,
     ESTIMAND_KINDS,
     ICC_DEFINITIONS,
     ICC_MODELS,
@@ -25,7 +24,6 @@ from ..spec import (
     POSTHOC_FAMILY_MAP,
     POWER_REPORTING_TYPES,
     PROPORTION_CI_METHODS,
-    RESAMPLING_METHODS,
     SPHERICITY_CORRECTIONS,
     VARIANCE_TEST_ROLES,
     VARIANCE_TESTS,
