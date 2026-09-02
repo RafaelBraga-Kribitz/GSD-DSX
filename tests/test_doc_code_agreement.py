@@ -300,7 +300,6 @@ class DocCodeAgreementTest(unittest.TestCase):
         boschloo_seen = False
         for raw in rows:
             outcome, groups, paired, dist, test, _effect = row_cells(raw)
-            dist_key = "censored" if dist in DASHES else dist
             if dist in DASHES:
                 kwargs = {}
             else:
