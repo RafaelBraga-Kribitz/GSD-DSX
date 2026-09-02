@@ -42,6 +42,22 @@ source, one authenticity confirmation per per-entry source):
 - **Tier 3 — refusal-entry doctrine (batch when refusal entries land):** Few,
   Harris, Tufte, Muth 2018.
 
+**Tier-3 refusal entries HAVE LANDED (Phase 21 S1-3, 2026-09-02).** The five
+`BANNED_TYPES` refusal records in `dsx/checks/viz.py` now carry a `citation`
+field. Per-banned-type → source mapping to confirm at S5-2:
+
+| Banned mark | citation shipped | Tier-3 row | Confidence |
+|---|---|---|---|
+| `3d_bar` | Munzner 2014 ch.6 (no unjustified 3D); Tufte 1983 (chartjunk) | T2-6 / T3-3 | good fit — anti-3D doctrine is exactly ch.6 |
+| `3d_pie` | Munzner 2014 ch.6; Tufte 1983 | T2-6 / T3-3 | good fit |
+| `3d_line` | Munzner 2014 ch.6; Tufte 1983 | T2-6 / T3-3 | good fit |
+| `dual_axis_line` | Muth 2018 (Datawrapper); see also DSX-VIZ-030 | T3-4 | exact — already coded, citation-confirm only |
+| `radar` | Tufte 1983 / Munzner proportional-encoding doctrine — **PROVISIONAL** | (none) | **LEAST CERTAIN of the five — no exact Tier-3 source is pre-mapped to radar. Confirm the doctrine fit or supply a better source at S5-2.** |
+
+Non-blocking for Phase 21 ship: `DSX-VIZ-001` already fires and the `reason`
+strings shipped long ago; this adds only citation *metadata* (zero new codes,
+proven 275→275). The `radar` gap is the one row to give closest attention.
+
 **To sign:** confirm each row in the pack file (`SIGNED <initials> <date>`), then an
 interactive session checks HQ-27 off here. ~9 core + 4 refusal = within the ~8–12
 estimate.

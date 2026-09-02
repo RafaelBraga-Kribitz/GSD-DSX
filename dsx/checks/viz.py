@@ -15,10 +15,11 @@ from ..spec import CHART_CAPABILITIES, DATA_INPUT_TYPES, as_number, is_blank, it
 
 # Relationship → admissible chart types. The first entry is the default choice.
 RELATIONSHIP_CHARTS: dict[str, tuple[str, ...]] = {
-    "comparison": ("bar", "horizontal_bar", "dot_plot", "bullet"),
+    "comparison": ("bar", "horizontal_bar", "dot_plot", "bullet", "butterfly"),
     "trend": ("line", "area", "sparkline", "slope"),
     "part_to_whole": ("stacked_bar", "treemap", "waffle", "pie"),
-    "distribution": ("histogram", "box", "violin", "density", "ecdf", "strip"),
+    "distribution": ("histogram", "box", "violin", "density", "ecdf", "strip", "kde",
+                     "population_pyramid"),
     "correlation": ("scatter", "hexbin", "heatmap"),
     "deviation": ("diverging_bar", "waterfall", "dumbbell"),
     "ranking": ("horizontal_bar", "dot_plot", "slope", "bump"),
@@ -33,12 +34,41 @@ LENGTH_ENCODED = {"bar", "horizontal_bar", "stacked_bar", "area", "stacked_area"
                   "diverging_bar", "column", "histogram", "waffle", "funnel", "stream",
                   "grouped_bar"}
 
-BANNED_TYPES = {
-    "3d_bar": "3D bars distort length with perspective and occlude the back rows.",
-    "3d_pie": "3D pie exaggerates the slices nearest the viewer.",
-    "3d_line": "3D lines make position unreadable without adding information.",
-    "radar": "Radar area scales with the square of the value and depends on axis order.",
-    "dual_axis_line": "Two y-scales let any pair of series be made to look correlated.",
+# A banned mark is a first-class refusal record, never a silent absence
+# (REQ-P21-02). Each is {reason, code, citation}: `reason` is the distortion
+# the ban prevents, `code` is the finding _check_banned emits (DSX-VIZ-001 for
+# all five — a cross-reference to an existing code, not a new one), and
+# `citation` points at the perception-doctrine source (HQ-27 Tier-3, drained at
+# S5-2). The radar citation is the least-certain of the five — no exact Tier-3
+# source is pre-mapped to it — and is flagged for operator confirmation in
+# HUMAN-QUEUE HQ-27.
+BANNED_TYPES: dict[str, dict[str, str]] = {
+    "3d_bar": {
+        "reason": "3D bars distort length with perspective and occlude the back rows.",
+        "code": "DSX-VIZ-001",
+        "citation": "Munzner 2014 ch.6 (no unjustified 3D); Tufte 1983 (chartjunk) — HQ-27 T2-6/T3-3",
+    },
+    "3d_pie": {
+        "reason": "3D pie exaggerates the slices nearest the viewer.",
+        "code": "DSX-VIZ-001",
+        "citation": "Munzner 2014 ch.6 (no unjustified 3D); Tufte 1983 (chartjunk) — HQ-27 T2-6/T3-3",
+    },
+    "3d_line": {
+        "reason": "3D lines make position unreadable without adding information.",
+        "code": "DSX-VIZ-001",
+        "citation": "Munzner 2014 ch.6 (no unjustified 3D); Tufte 1983 (chartjunk) — HQ-27 T2-6/T3-3",
+    },
+    "radar": {
+        "reason": "Radar area scales with the square of the value and depends on axis order.",
+        "code": "DSX-VIZ-001",
+        "citation": "Tufte 1983 / Munzner 2014 proportional-encoding doctrine — PROVISIONAL, "
+                    "no exact Tier-3 source pre-mapped; flagged for HQ-27 S5-2 confirmation",
+    },
+    "dual_axis_line": {
+        "reason": "Two y-scales let any pair of series be made to look correlated.",
+        "code": "DSX-VIZ-001",
+        "citation": "Muth 2018 (Datawrapper) — HQ-27 T3-4; see also DSX-VIZ-030 (_check_dual_axis)",
+    },
 }
 
 MAX_PIE_SLICES = 5
@@ -83,7 +113,7 @@ def _check_banned(chart_type: str, label: str, where: str, report: Report) -> No
             "DSX-VIZ-001",
             "HIGH",
             f"'{label}' uses {chart_type}, which distorts the data",
-            detail=BANNED_TYPES[chart_type],
+            detail=BANNED_TYPES[chart_type]["reason"],
             remedy="Use a 2D length- or position-encoded chart instead.",
             where=f"{where}.type",
         )
