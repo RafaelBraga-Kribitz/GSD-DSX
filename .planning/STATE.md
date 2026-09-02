@@ -2,25 +2,25 @@
 gsd_state_version: 1.0
 milestone: v2.3
 milestone_name: Test Catalog
-current_phase: 19
-current_phase_name: rm-trend-categorical-resampling-post-hoc
+current_phase: 20
+current_phase_name: calibration-and-reporting-close
 status: executing
-stopped_at: "S3-4 DONE — Phase 19 code review + fixes + verification `passed`, run inline by the orchestrator (opus/high, brief §3) on gsd/v2.3.0-test-catalog (branch confirmed; framework handle_branching NOT run — review/verify don't switch branches). Reconciled ledger vs repo: HEAD f31d398 == S3-3-DONE docs commit, origin 0/0, catalogue --check @275 — agree. 19-REVIEW.md: read the full 1ffb161..HEAD source diff (18 files, +1619/−24). ONE LOW finding — two dead imports DOSE_SCORE_SCHEMES + RESAMPLING_METHODS in stats.py (neither referenced in executable code; check.sh runs no linter so S3-3 passed regardless) — FIXED by removal (the mirror of the S1-4 missing-Any finding); suite unchanged. Adversarially probed + cleared: is_blank(0)/(0.0)=False so declared seed:0/dose_scores:0/autocorrelation_handling:none SATISFY; normalize() str()-first + isinstance guards → no crash on wrong-typed declarations; DSX-STA-040×gate = one code per defect; DSX-STA-100 unrecognised-omnibus firing by-design not a defect (good fixture no false-fire). 19-VERIFICATION.md = PASSED all 7 reqs goal-backward (070/080+081/ZERO-mint/090/100/110+111/120+121+122). GATE RE-RUN BY ORCHESTRATOR from a clean tree: full suite Ran 1442 OK (unchanged by the fix); gen-finding-catalogue.py --check exit 0 @275 (ten codes each once; 9 dup warnings pre-existing legacy, none Phase-19); 77 targeted Phase-19 tests OK; golden bad-fixture ship-set equality (test_causal_verb_golden) proves bad fires all ten / good silent (+test_known_bad_corpus 51 OK); good audit exit 0 / bad exit 1. S3-4 CHECKED. NEXT unblocked = S3-5: /gsd-secure-phase 19 + /gsd-validate-phase 19 INLINE (never handle_branching), sign-off batched to HUMAN-QUEUE (non-blocking until S5-2), then Phase 19 CLOSED → S4-1 (Phase 20 discuss)."
-last_updated: "2026-09-02T07:35:00Z"
+stopped_at: "S4-1 DONE — Phase 20 discuss (light), run inline by the orchestrator (opus/high) on gsd/v2.3.0-test-catalog (branch confirmed; framework handle_branching NOT run — discuss doesn't switch branches). Phase 19 CLOSED (S3-1…S3-5) → Phase 20 is the terminal calibration + reporting close (REQ-P20-01…04). Reconciled ledger vs repo: HEAD d993fe7 == ledger S3-5-DONE / Phase-19-CLOSED; STATE.md was stale (still Phase-19 S3-3) — REFRESHED this firing. §4 persona round Architect + Statistician (opus/high, concurrent; Auditor lens folded into Statistician); first Statistician spawn returned 0 file reads → discarded + re-run. 20-CONTEXT.md written, 8 decisions + 1 named deferral. LOAD-BEARING (D-03), both personas live-verified: all 15 new Phase-18/19 codes are HIGH and stats runs only at verify/ship, so the existing test_stratified_catch_rate_and_fpr_report (CRITICAL/plan-execute only) is a PROVABLE NO-OP on them → the real REQ-P20-01 deliverable is EXTENDING the one harness with a live HIGH verify/ship stratum (read via _gate_findings, never _GOLDEN_SHIP_FINDINGS = D-09), not a re-run/sibling. D-02 REQ-P20-04 = cross-check test not generated mirror. D-01 zero-mint (catalogue 275). D-04 all 15 PRESENT-caught none ABSENT; 5 Phase-18 codes need dedicated fixtures. D-05 add good-corpus negative controls (FPR silent-not-clean). D-06 only _GOLDEN_SHIP_FINDINGS moves; anchor (0.25,0.3)+floor 3 frozen. D-07 two-wave rigour split. Veto = HQ-24. PUSH still failing (github.com unreachable — network down, not rate-limit; d993fe7 + this commit local-only). NEXT unblocked = S4-2 (Phase 20 plan; plan-checker must pass; single-writer waves per D-07)."
+last_updated: "2026-09-02T08:32:00Z"
 last_activity: 2026-09-02
-last_activity_desc: "S3-4 DONE — Phase 19 code review + fixes + verification passed (opus/high, inline). 19-REVIEW.md: one LOW finding (two dead imports DOSE_SCORE_SCHEMES/RESAMPLING_METHODS in stats.py) FIXED by removal; is_blank(0)/(0.0)/DSX-STA-040×gate/crash-safety probed + cleared. 19-VERIFICATION.md = PASSED all 7 reqs goal-backward. Gate re-run by orchestrator from a clean tree: full suite 1442 OK (unchanged by the fix); catalogue --check exit 0 @275; golden bad-fixture ship-set equality = bad fires all ten / good silent (51 OK); good exit 0 / bad exit 1. Next: S3-5 secure + validate Phase 19."
+last_activity_desc: "S4-1 DONE — Phase 20 discuss (light, opus/high, inline). Architect + Statistician persona round (Auditor folded in). 20-CONTEXT.md: 8 decisions + D-13-a deferral. Load-bearing D-03: the 15 new codes are HIGH/verify-ship-only → the existing CRITICAL/plan-execute calibration is a provable no-op on them → EXTEND the harness with a live HIGH verify/ship stratum (never read _GOLDEN_SHIP_FINDINGS). D-02 REQ-P20-04 = cross-check test. D-01 zero-mint @275. D-04 all 15 PRESENT-caught; 5 Phase-18 codes need dedicated fixtures. D-05 add FPR negative controls. Veto = HQ-24 (non-blocking). Push failing (network down); commits local-only. Next: S4-2 plan."
 progress:
   total_phases: 4
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 7
   completed_plans: 7
-  percent: 50
+  percent: 75
 ---
 
 # Project state
 
 **Status:** v2.3 Test Catalog — OPEN, executing under the autonomous ceremony
-**Progress:** [██████████░░░░░░░░░░] v2.3 — 2/4 phases (17 foundation ✅ → 18 correlation/agreement ✅ → 19 RM/trend/categorical/resampling/post-hoc → 20 calibration)
+**Progress:** [███████████████░░░░░] v2.3 — 3/4 phases (17 foundation ✅ → 18 correlation/agreement ✅ → 19 RM/trend/categorical/resampling/post-hoc ✅ → 20 calibration [S4-1 discuss ✅])
 **Predecessors:** v2.2 Analytic Surface SHIPPED 2026-08-29 (tag `v2.2.0`); v2.0.0 DSX Validity Frame SHIPPED 2026-08-28 (tag `v2.1.0`). Archives under `.planning/milestones/`.
 
 **Loop control:** the autonomous ceremony drives this milestone. Contract:
@@ -39,14 +39,14 @@ log one line and stop; the wrapper owns the pacing.
 See: .planning/PROJECT.md (updated 2026-08-29; Key Decisions table there is the full decision log)
 
 **Core value:** Gate analytical work on validity before the data is touched.
-**Current focus:** Phase 19 — RM / trend / categorical / resampling / post-hoc / proportion-count rows (keyed on DECLARED fields) + ten new declaration-only gates (DSX-STA-070…122). The largest phase (7 reqs). Phases 17 (foundation) and 18 (correlation/agreement) are CLOSED.
+**Current focus:** Phase 20 — the terminal calibration + reporting close (REQ-P20-01…04): known-bad fixtures for every new blocking code, the stratified catch-rate/FPR re-measured, and the REQ-P20-04 doc/code agreement test. Phases 17/18/19 are CLOSED (15 codes minted, catalogue @275). Phase 20 mints ZERO codes.
 
 ## Current Position
 
-Phase: 19 (rm-trend-categorical-resampling-post-hoc) — S3-1 discuss DONE, S3-2 plan DONE, **S3-3 execute IN PROGRESS (Wave 1 / 19-A DONE + orchestrator merge gate green @265; Wave 2 / 19-C remains)**. S3-4 review+verify / S3-5 secure+validate remain.
-Plan: 2 plans written + plan-checked PASSED (0 blockers). **19-A** [Wave 1, depends_on:[], rows/routing/vocab/doc, catalogue stays 265, zero codes] ∥→ **19-C** [Wave 2, depends_on:[19-A], the ten declaration-only gates DSX-STA-070/080/081/090/100/110/111/120/121/122 + fixtures, catalogue 265→275]. NO 19-B (research verdict — mathx.py bands don't grow this phase). Planner dedicated-field SHAPE-override (080/081/110 → analysis.trend_test/analysis.variance_test, not single-valued analysis.test) ruled sound; OQ-4/5/6 bound. NEXT firing: S3-3 — execute 19-A → 19-C INLINE on the ceremony branch (never the framework handle_branching; branch-name mismatch would orphan commits); single-writer sequential waves; doc/code lockstep per commit; Wave-1 merge gate asserts catalogue 265, Wave-2 asserts 275.
-Status: Executing — Phase 17 CLOSED (S1-1…S1-5); Phase 18 CLOSED (S2-1…S2-5); Phase 19 S3-1 + S3-2 DONE; next firing runs S3-3 (execute, two waves).
-Last activity: 2026-09-02 — S3-2 DONE: gsd-planner (opus) → 2 plans (19-A ∥→ 19-C, NO 19-B) → gsd-plan-checker VERIFICATION PASSED (0 blockers); planner dedicated-field SHAPE-override ruled sound (checker+orchestrator); W1 OQ-RESOLVED doc fix inline; dsx plan:post exit 0 clean spec-less. Branch-safety unchanged: never run the framework's handle_branching (milestone-template name `gsd/v2.3-test-catalog` mismatches the ceremony branch `gsd/v2.3.0-test-catalog`).
+Phase: 20 (calibration-and-reporting-close) — **S4-1 discuss DONE** (20-CONTEXT.md, 8 decisions + D-13-a deferral). S4-2 plan / S4-3 execute / S4-4 review+verify / S4-5 secure+validate remain. Phase 19 CLOSED (S3-1…S3-5).
+Plan: none yet (S4-2 next). Discuss settled: **D-03 load-bearing** — the 15 new Phase-18/19 codes are HIGH/verify-ship-only, so the existing CRITICAL/plan-execute `test_stratified_catch_rate_and_fpr_report` is a provable no-op on them → EXTEND the one harness with a live HIGH verify/ship stratum (read via `_gate_findings`, never `_GOLDEN_SHIP_FINDINGS` = D-09). **D-02** REQ-P20-04 = cross-check test (rows 8–24 cell-equality ↔ `recommend_test` + set-membership for the six `recommend_*` tables + skip-list), not a generated mirror. **D-04** all 15 PRESENT-caught, none ABSENT; the 5 Phase-18 codes (050/051/060/061/062) fire nowhere in examples/ → dedicated PRESENT fixtures; floor stays 3. **D-05** add good-corpus negative controls (FPR silent-not-clean on the 15). **D-06** only `_GOLDEN_SHIP_FINDINGS` moves; anchor (0.25,0.3) + floor 3 frozen. **D-07** two-wave rigour split (C+D structural guards → A+B calibration), file-disjoint single-writer. **D-01** zero-mint @275. Veto = HQ-24 (non-blocking).
+Status: Executing — Phase 17 CLOSED (S1-1…S1-5); Phase 18 CLOSED (S2-1…S2-5); Phase 19 CLOSED (S3-1…S3-5); Phase 20 S4-1 DONE; next firing runs S4-2 (plan; plan-checker must pass). Branch-safety unchanged: never run the framework `handle_branching` (milestone-template name `gsd/v2.3-test-catalog` mismatches the ceremony branch `gsd/v2.3.0-test-catalog`).
+Last activity: 2026-09-02 — S4-1 DONE: Architect + Statistician persona round (opus/high, concurrent; Auditor folded in) → 20-CONTEXT.md. Load-bearing D-03 (15 HIGH codes invisible to the current CRITICAL calibration → HIGH-stratum extension needed). **Push failing this firing (github.com unreachable — network down, not a rate-limit); d993fe7 + the S4-1 commit are LOCAL-ONLY, unpushed.**
 
 ## Performance Metrics
 

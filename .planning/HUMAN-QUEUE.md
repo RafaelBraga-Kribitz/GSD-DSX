@@ -178,6 +178,42 @@ owed; the operator confirms this alongside the security sign-off.
 `19-SECURITY.md` to `verified <date>`, notes the UAT acceptance, and checks this item off.
 To reject, name the threat (or UAT concern) and the gap.
 
+### HQ-24 — Phase 20 discuss decisions (NON-BLOCKING veto window; silence = accept)
+
+**Status: RECORDED 2026-09-02 (S4-1). Not a D-05/scope/ship escalation — a persona-round
+decision recorded loudly with a veto window per brief §4. Nothing blocks on it.** Phase 20 is
+the terminal calibration close and **mints ZERO codes** (catalogue stays 275), so there is **no
+D-06 code-numbering veto** this phase. Two substantive *methodological* choices from
+`.planning/phases/20-calibration-and-reporting-close/20-CONTEXT.md` the operator may veto from a
+daily summary:
+
+1. **REQ-P20-04 mechanism = a read-only CROSS-CHECK test, not a generated mirror (D-02).** A new
+   `tests/test_doc_code_agreement.py` parses `references/test-selection.md` and asserts agreement
+   with the live engine — strict cell-equality of the Decision-table rows (8–24) to
+   `recommend_test` (the exact cell the Boschloo divergence lived in, incl. the Boschloo fallback
+   in `alternatives`), plus honest **set-membership** binding of the six `recommend_*` mirror
+   tables, with a visible skip-list for pointer/DEPRECATED/catalog-only/footnote rows. Chosen over
+   generating the doc because ~280/303 lines of `test-selection.md` are irreducible hand-written
+   prose the `gen-finding-catalogue.py` generator precedent does not transfer to.
+
+2. **The load-bearing calibration finding (D-03): the 15 new Phase-18/19 codes are all HIGH and
+   `stats` runs only at verify/ship, so the existing `test_stratified_catch_rate_and_fpr_report`
+   (CRITICAL / plan-execute only) is a PROVABLE NO-OP on them.** The decision is to **extend the
+   single calibration test with a live HIGH verify/ship stratum** (severity-parameterized,
+   defaulting to CRITICAL; read live via `_gate_findings`, never from `_GOLDEN_SHIP_FINDINGS` —
+   the D-09 no-self-reference rule) rather than re-run the harness (which would report an
+   unchanged number as "re-baselined") or add a divergent sibling test. Consequences also carried:
+   the 5 Phase-18 codes (050/051/060/061/062) get dedicated PRESENT known-bad fixtures (they fire
+   nowhere in `examples/` today), and the good-corpus gains valid negative controls per routing
+   family so the FPR genuinely exercises their silence. Full rationale + `file:line` locators in
+   20-CONTEXT.md D-03/D-04/D-05.
+
+To veto either, reply in a session; otherwise silence accepts and Phase 20 plan (S4-2) builds on
+them. One named deferral is recorded loudly (not a silent gap): **D-13-a** — the falsifiability
+guard's miss-union is CRITICAL-only, so any *future* HIGH code that ever needs an ABSENT "miss"
+declaration requires that severity filter to be widened first; not exploited this phase (all 15
+are PRESENT-caught).
+
 ## Will be added by the loop when reached
 
 - ~~S0-3: Phase 18 D-05 evidence pack~~ — **FILED as HQ-16, ANSWERED 2026-09-01 (see Answered).**
@@ -188,7 +224,8 @@ To reject, name the threat (or UAT concern) and the gap.
   (2026-09-02).**
 - D-06 numbering veto windows for the new codes (from the Phase 17 pre-allocated
   ranges; silence = accept). **Phase 18 codes → FILED as HQ-20 (2026-09-01);
-  Phase 19 codes → FILED as HQ-22 (2026-09-02).**
+  Phase 19 codes → FILED as HQ-22 (2026-09-02); Phase 20 mints ZERO codes → no numbering
+  veto, methodological decisions FILED as HQ-24 (2026-09-02).**
 - The S5-6 ship decisions: merge to `main` and the `v2.3.0` release tag.
 - Any persona decision the operator vetoes from a daily summary.
 
