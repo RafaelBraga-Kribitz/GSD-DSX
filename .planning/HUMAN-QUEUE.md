@@ -255,6 +255,71 @@ UAT is owed; the operator confirms this alongside the security sign-off.
 `20-SECURITY.md` to `verified <date>`, notes the UAT acceptance, and checks this item off.
 To reject, name the threat (or UAT concern) and the gap.
 
+### HQ-26 — S5-6 ship: merge to `main` + tag `v2.3.0` (OUTWARD-FACING — operator only; loop prepared, does NOT self-approve)
+
+**Status: FILED 2026-09-02T17:27Z (S5-6 reached). This is a brief §4 item-5 outward-facing
+ship action — the loop prepared the runbook and the pre-flight evidence but MAY NOT execute or
+self-approve it.** This is the milestone's terminal operator action; nothing else remains.
+
+**Close-out sequence (do these in order, all in ONE interactive session):**
+1. **Sign the four end-of-phase security sign-offs** — HQ-19, HQ-21, HQ-23, HQ-25 (each sets the
+   `Approval` line in the phase `*-SECURITY.md` to `verified <date>`). Optionally note the three
+   veto windows HQ-20/22/24 as accepted-by-silence (D-06/methodology, non-blocking). This drains
+   **S5-2**.
+2. **Run S5-5 `/gsd-complete-milestone`** — **NOT headless-safe** (interactive prompts +
+   `git rm REQUIREMENTS.md`). Hand-verify its two known-bad outputs: the generated accomplishment
+   bullets (truncated mid-sentence at v2.2) and the archived `REQUIREMENTS.md` checkboxes (carried
+   forward unchecked despite the passed audit at v2.2) — both needed manual correction last
+   milestone. The REQUIREMENTS.md boxes are intentionally still `[ ]` today; tick them here.
+3. **Run S5-6 ship** — the runbook below.
+
+**Pre-flight evidence the loop measured this firing (2026-09-02T17:27Z, HEAD `2b6ca00`):**
+- **The merge is conflict-free.** `origin/main` tip `afc3001` is a direct **ancestor** of the
+  ceremony HEAD `2b6ca00` — main has **not diverged** (`git rev-list --count HEAD..origin/main` =
+  **0**; `git rev-list --count origin/main..HEAD` = **78** commits to bring over). A `--no-ff`
+  merge applies cleanly; no 3-way conflict resolution is owed.
+- **Gates green on this exact HEAD.** Full suite **1462 OK** + `scripts/check.sh` all-checks-passed
+  + `gen-finding-catalogue.py --check` current @**275** were measured from a clean tree at S5-4 on
+  commit `2b6ca00`, and HEAD is **unchanged since** (0 commits, 0 ahead of origin). The milestone
+  audit is `passed` (`.planning/v2.3-MILESTONE-AUDIT.md`: 22/22 reqs, 5/5 seams, nyquist 4/4).
+- **Tag `v2.3.0` is FREE** (existing: v2.0.0, v2.1.0, v2.2.0). Never force-move a published tag.
+
+**Runbook (operator executes — the loop must not):**
+```
+# 0. Confirm you are on the ceremony branch and it is pushed
+git rev-parse --abbrev-ref HEAD      # -> gsd/v2.3.0-test-catalog
+git status                            # -> up to date with origin, 0 ahead
+
+# 1. Dry-run the merge + gate on a throwaway branch FIRST (never touch main until green)
+git fetch origin main
+git checkout -b _shipcheck origin/main
+git merge --no-ff gsd/v2.3.0-test-catalog     # expect: clean, no conflicts
+sh scripts/check.sh                            # expect: 1462 OK, all checks passed, catalogue @275
+git checkout gsd/v2.3.0-test-catalog
+git branch -D _shipcheck
+
+# 2. Real merge — BY EXPLICIT BRANCH NAME (see hazard below), then tag
+git checkout main
+git merge --no-ff gsd/v2.3.0-test-catalog -m "Merge v2.3 Test Catalog milestone"
+git tag -a v2.3.0 -m "v2.3.0 — Test Catalog (Phases 17-20, 22 requirements)"
+git push origin main
+git push origin v2.3.0
+```
+
+**Non-negotiable ship guardrails (consolidated from the standing framework notes):**
+- **Merge by EXPLICIT branch name — NEVER the framework's alphabetical `gsd/*` auto-detect.** This
+  repo carries stale branches; the alphabetically-first `gsd/*` is **`gsd/v1.1.0-milestone`**
+  (also present: `gsd/v2.0.0-*`, `gsd/v2.2.0-analytic-surface`) — auto-detect would merge the
+  WRONG branch. Confirmed live this firing.
+- **NEVER `/gsd-pr-branch`** — its per-commit cherry-pick chain fails with modify/delete conflicts
+  on long ceremony branches (abandoned mid-run at v2.0.0). Direct 3-way merge only.
+- **NEVER force-move a published tag.** `v2.3.0` is the next free tag.
+- **`/gsd-complete-milestone` (step 2) is interactive-only** and its output needs hand-verification
+  (see above).
+
+**To ship:** run the runbook in an interactive session after steps 1–2. To hold, reply naming the
+concern. Until then the loop waits here — no headless unit remains.
+
 ## Will be added by the loop when reached
 
 - ~~S0-3: Phase 18 D-05 evidence pack~~ — **FILED as HQ-16, ANSWERED 2026-09-01 (see Answered).**
@@ -268,7 +333,9 @@ To reject, name the threat (or UAT concern) and the gap.
   ranges; silence = accept). **Phase 18 codes → FILED as HQ-20 (2026-09-01);
   Phase 19 codes → FILED as HQ-22 (2026-09-02); Phase 20 mints ZERO codes → no numbering
   veto, methodological decisions FILED as HQ-24 (2026-09-02).**
-- The S5-6 ship decisions: merge to `main` and the `v2.3.0` release tag.
+- ~~The S5-6 ship decisions: merge to `main` and the `v2.3.0` release tag.~~ — **FILED as HQ-26
+  (2026-09-02T17:27Z), with a measured conflict-free pre-flight + the full close-out runbook.
+  All close-out items are now filed; the loop waits on the operator.**
 - Any persona decision the operator vetoes from a daily summary.
 
 ## Standing framework notes (not queue items — nothing to answer, just remember)
