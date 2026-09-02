@@ -354,7 +354,7 @@ are conventions, never thresholds.
   outstanding = the 4 human sign-offs HQ-19/21/23/25 (+ veto windows HQ-20/22/24), all
   non-blocking until S5-2; no user-facing surface → no interactive UAT owed. Full audit:
   `.planning/v2.3-S5-1-UAT-AUDIT.md`. See Log 2026-09-02T16:29Z.
-- [ ] S5-2 Drain HUMAN-QUEUE (the only permitted blocking wait).
+- [x] S5-2 Drain HUMAN-QUEUE (the only permitted blocking wait). — **DONE 2026-09-02 (interactive session, operator remote/limited-connectivity, explicit go-ahead):** HQ-19/21/23/25 signed (all four end-of-phase security sign-offs, 54/54 threats CLOSED across the milestone, every non-accepted mitigation independently re-run, not trusted); HQ-20/22/24 accepted no veto (15 new codes, catalogue 260→275). HUMAN-QUEUE Open now contains only HQ-26 (ship). Commit `4196381`.
 - [x] S5-3 `/gsd-extract-learnings`.
   → Per-phase learnings for all 4 phases (the v2.2 phase-by-phase pattern):
   `17-LEARNINGS.md` (9 dec/5 les/6 pat/4 sur = 24), `18-LEARNINGS.md` (9/5/6/4 = 24),
