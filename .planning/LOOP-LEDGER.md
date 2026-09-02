@@ -375,18 +375,8 @@ are conventions, never thresholds.
   verified satisfied via VERIFICATION.md PASS + `requirements_verified:` arrays. Tech-debt = named
   D-13 deferrals only (DSX-STA-063 ICC-coherence, P19-06b BF-sibling, CMH-stratifier, D-13-a,
   Bancroft-1944 not-in-hand), no blockers. See Log 2026-09-02T17:01Z.
-- [ ] S5-5 `/gsd-complete-milestone` — **NOT headless-safe** (interactive
-  prompts + `git rm REQUIREMENTS.md`); runs in an interactive session per
-  operator approval. Hand-verify the CLI's generated accomplishments and the
-  archived REQUIREMENTS checkboxes (both were wrong at v2.2 close and needed
-  correction).
-- [ ] S5-6 Ship: merge to `main` **by explicit branch name**
-  (`git merge --no-ff gsd/v2.3.0-test-catalog`, verified on a throwaway branch
-  first, full suite + `scripts/check.sh` green BEFORE touching `main`) and tag
-  `v2.3.0`. **Never** the framework's alphabetical `gsd/*` auto-detect (stale
-  branches would be picked); **never** `/gsd-pr-branch` (cherry-pick chain fails
-  on long branches); **never** force-move a published tag. Outward-facing —
-  queue to HUMAN-QUEUE for the operator, do not self-approve.
+- [x] S5-5 `/gsd-complete-milestone` — **DONE 2026-09-02 (interactive session, per operator approval HQ-26):** confirmed not headless-safe before running (interactive prompts + `git rm REQUIREMENTS.md`). Pre-close artifact audit: 2 dormant seeds (carried, same as v2.2) + 3 phases' CONTEXT.md "Open questions" flagged by the mechanical audit — all confirmed already-resolved (answered HQ-18/20/22, properly-recorded D-13 deferrals), none genuinely open. Ran `gsd-tools.cjs query milestone.complete v2.3 --name "Test Catalog"` for the archival (ROADMAP/REQUIREMENTS/audit/phase-dirs → `.planning/milestones/v2.3-*`); hand-corrected the same two CLI defects as v2.2 before committing — accomplishment bullets truncated mid-sentence or capturing YAML frontmatter instead of prose (replaced with accurate one-liners from each plan's real SUMMARY.md), and the archived REQUIREMENTS.md carried all 22 rows forward still `[ ]` despite the passed audit (flipped to `[x]` with a correction note). Completed the workflow's AI-only steps by hand: full PROJECT.md evolution review, ROADMAP.md reorganized, RETROSPECTIVE.md milestone section added. Safety commit `5c98323` (archive files + updated docs), then `git rm .planning/REQUIREMENTS.md` committed separately (`6a5e14d`) — full gate re-run green after each. A concurrent headless firing (20:53Z) correctly detected the in-progress uncommitted work and held without interfering — see its own Log line.
+- [x] S5-6 Ship: merge to `main` **by explicit branch name** — **DONE 2026-09-02 (interactive session, operator remote/limited-connectivity, explicit go-ahead per HQ-26):** verified on a throwaway branch off `origin/main` first (`git merge --no-ff gsd/v2.3.0-test-catalog`, zero conflicts, `sh scripts/check.sh` all green — 1462 tests, catalogue current @275, capability conformant, gate contract + determinism hold), then the real merge onto `main` (commit `1a61d3c`), re-verified green again (1462 OK), tagged `v2.3.0` (annotated; dereferenced by hand to confirm it points at `1a61d3c`), pushed `main` and the tag. No `/gsd-pr-branch`; no published tag force-moved (`v2.3.0` was free).
 
 ## Log
 
