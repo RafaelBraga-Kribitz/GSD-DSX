@@ -92,6 +92,21 @@ class TestEveryMarkHasAHome(unittest.TestCase):
     """D-01, REQ-P21-01: the two directional homing clauses + allowlist staleness,
     plus the gate smokes proving the homing removed real DSX-VIZ-013 friction."""
 
+    def test_mark_universe_is_non_vacuous(self):
+        # Anti-vacuity guard for every clause that subtracts from the universe:
+        # if the vocabulary were ever emptied (a bad import, a renamed module),
+        # the two capability/relationship set-difference clauses below would pass
+        # VACUOUSLY — an empty set is trivially a subset of any home. Anchor on a
+        # handful of marks that must always exist and a floor well under the live
+        # count (50), mirroring the anti-vacuity superset guards used elsewhere.
+        universe = _mark_universe()
+        self.assertGreaterEqual(
+            len(universe), 30, "mark universe collapsed — homing clauses would pass vacuously"
+        )
+        anchors = frozenset({"bar", "line", "scatter", "histogram", "box"})
+        missing = sorted(anchors - universe)
+        self.assertFalse(missing, f"core marks missing from the universe: {missing}")
+
     def test_every_mark_has_a_capability_home(self):
         universe = _mark_universe()
         orphans = sorted(universe - _capability_homed())
@@ -112,6 +127,13 @@ class TestEveryMarkHasAHome(unittest.TestCase):
         stale = sorted(CAPABILITY_ONLY & _relationship_homed())
         self.assertFalse(
             stale, f"CAPABILITY_ONLY entries that already have a relationship home: {stale}"
+        )
+        # A phantom allowlist entry (a mark no surface actually names) rots
+        # silently: it is subtracted from `unhomed` but guards nothing real.
+        # Every allowlisted mark must be a genuine member of the mark universe.
+        phantom = sorted(CAPABILITY_ONLY - _mark_universe())
+        self.assertFalse(
+            phantom, f"CAPABILITY_ONLY entries absent from the mark universe: {phantom}"
         )
 
     # ── Gate smokes: the homing is only real if the DSX-VIZ-013 friction is gone

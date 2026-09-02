@@ -5,10 +5,10 @@ milestone_name: Visual Excellence
 current_phase: 21
 current_phase_name: viz-vocabulary-reconciliation
 status: executing
-stopped_at: "S1-3 (Phase 21 execute) COMPLETE: 21-01-PLAN.md executed inline, 3 TDD tasks RED→GREEN→GREEN. Task 1 new tests/test_viz_vocabulary_invariant.py (off gate path) RED-confirmed with exact orphan lists (10 capability, 3 relationship). Task 2 homed 12 orphans one-family-each into CHART_CAPABILITIES/RELATIONSHIP_CHARTS, regenerated dsx/data/input_types.json (both gate smokes green). Task 3 enriched BANNED_TYPES→{reason,code,citation} (code=DSX-VIZ-001 all five), fixed _check_banned reader, annotated HQ-27 Tier-3 with per-mark citations + radar gap flagged. Gates: full suite 1470 OK; catalogue 275→275 three ways (zero mint, REQ-P21-03). 21-01-SUMMARY.md written. Next: S1-4 (code review + fixes; verification passed; REQ-P21-01..03, zero-new-codes set-identity)."
-last_updated: "2026-09-02T23:00Z"
+stopped_at: "S1-4 (Phase 21 code review + verification) COMPLETE: review + verification opus/high, all gates re-run by orchestrator on the final post-fix tree. 21-REVIEW.md (2 LOW test-hardening findings fixed: non-vacuity guard on _mark_universe + CAPABILITY_ONLY⊆universe phantom guard) and 21-VERIFICATION.md (verdict PASSED). REQ-P21-01 invariant 9 OK incl. both gate smokes; REQ-P21-02 refusal records complete (5×{reason,code,citation}, code=DSX-VIZ-001); REQ-P21-03 set-identity diff codes(4b5c32d^)==codes(HEAD)==275, symmetric difference EMPTY, gen --check current @275. Full suite 1470→1471 OK. REQ-P21-01..03 checked in REQUIREMENTS.md. Next: S1-5 (/gsd-secure-phase 21 + /gsd-validate-phase 21; end-of-phase security sign-off + UAT batched to HUMAN-QUEUE, non-blocking until S5-2)."
+last_updated: "2026-09-02T23:25Z"
 last_activity: 2026-09-02
-last_activity_desc: "S1-3 Phase 21 execute complete; 12 orphans homed, 5 refusal entries enriched, 275→275 zero mint; full suite 1470 OK"
+last_activity_desc: "S1-4 Phase 21 code review + verification PASSED; 2 LOW findings fixed; set-identity 275==275 zero mint; full suite 1471 OK"
 progress:
   total_phases: 4
   completed_phases: 0
@@ -47,10 +47,10 @@ See: .planning/PROJECT.md (updated 2026-09-02; Key Decisions table there is the 
 
 ## Current Position
 
-Phase: 21 (viz-vocabulary-reconciliation) — executed (S1-3); next ledger unit is S1-4 (code review + verification)
-Plan: 21-01-PLAN.md executed — 3 TDD tasks RED→GREEN→GREEN; 21-01-SUMMARY.md written
-Status: Executing (Phase 21 plan executed; full suite 1470 OK; catalogue 275→275 zero mint; verification pending S1-4)
-Last activity: 2026-09-02 — S1-3 execute: 12 orphans homed, 5 refusal entries enriched, REQ-P21-01..03 gate evidence green
+Phase: 21 (viz-vocabulary-reconciliation) — executed + reviewed + verified (S1-4 PASSED); next ledger unit is S1-5 (secure + validate)
+Plan: 21-01-PLAN.md executed; 21-REVIEW.md + 21-VERIFICATION.md (verdict PASSED) written
+Status: Executing (Phase 21 verification PASSED; REQ-P21-01..03 delivered; full suite 1471 OK; catalogue 275==275 set-identity zero mint; S1-5 secure/validate pending)
+Last activity: 2026-09-02 — S1-4 code review + verification PASSED; 2 LOW findings fixed; set-identity diff empty (275==275)
 
 ## Performance Metrics
 

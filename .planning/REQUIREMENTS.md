@@ -19,16 +19,16 @@ re-verified at 275 before this milestone opened), D-12a (paradigm pairs).
 
 ## Phase 21 — Viz vocabulary reconciliation
 
-- [ ] REQ-P21-01 An **every-mark-has-a-home invariant test**: every chart type
+- [x] REQ-P21-01 An **every-mark-has-a-home invariant test**: every chart type
   named anywhere (`RELATIONSHIP_CHARTS`, `CHART_CAPABILITIES`, smells sets,
   input-type extras) is reachable through at least one relationship AND one
   capability family; the current orphans (histogram, density, ecdf, strip,
   diverging_bar, waterfall, dumbbell, bump, sankey, kde, population_pyramid,
   butterfly) are homed.
-- [ ] REQ-P21-02 Banned/excluded types become first-class refusal entries
+- [x] REQ-P21-02 Banned/excluded types become first-class refusal entries
   cross-referencing their banning code and perception citation — present and
   routed-to-refusal, never silently absent.
-- [ ] REQ-P21-03 Zero new codes this phase, by set-identity diff against the
+- [x] REQ-P21-03 Zero new codes this phase, by set-identity diff against the
   live 275-code baseline.
 
 ## Phase 22 — Catalog spine, uncertainty family, selection heuristic
