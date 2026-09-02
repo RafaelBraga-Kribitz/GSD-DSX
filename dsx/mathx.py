@@ -319,6 +319,115 @@ def interpret_effect(kind: str, value: float) -> str:
     return "large"
 
 
+# ── Report-only convention bands (Plan 18-B; REQ-P18-05; 18-CONTEXT.md D-06/D-07) ─
+#
+# LABELED CONVENTIONS for correlation/agreement effect sizes. They are
+# RECOGNISED (so a declared convention kind is not mistaken for an unknown) but
+# are NEVER used as a blocking magnitude band. This surface is deliberately
+# SEPARATE from EFFECT_SIZE_KINDS / interpret_effect (the {d, h, r} blocking
+# domain above, which stays frozen). Two reasons widening the blocking domain
+# would be WRONG (D-06): (1) it would let DSX-STA-011 adjudicate a convention as
+# a gated boundary, violating REQ-P18-05's "never as blocking thresholds"; (2)
+# interpret_effect uses a flat abs(value) band, which is statistically wrong for
+# these kinds — Cramer's V thresholds are df-dependent, and phi / Kendall's W are
+# unsigned with a different null. So the bands live here, report-only, wired only
+# into the ungated templates/APA-TABLE-research.md (which mints no finding code).
+
+# The recognition set the DSX-STA-012 branch in dsx/checks/stats.py (Plan 18-A)
+# consults: a kind in here is a report-only convention — recognised, but never
+# banded by a blocking code. Deliberately DISJOINT from the blocking
+# EFFECT_SIZE_KINDS; adding any of these to EFFECT_SIZE_KINDS is the D-06
+# prohibition (the firewall test asserts the disjointness and the equality).
+REPORT_ONLY_EFFECT_KINDS = frozenset(
+    {"kappa", "icc", "kendalls_w", "phi", "cramers_v", "tau_b", "rho"}
+)
+
+# Landis & Koch (1977), Biometrics 33(1):159-174 — the published kappa band
+# boundaries, PINNED as a LABELED CONVENTION (D-07). Each tuple is
+# (upper_bound_inclusive, label). Edge-tie handling — a value that lands exactly
+# ON a boundary takes the LOWER band — is a labeled CONVENTION CHOICE here, NOT
+# claimed as the paper's exact wording (the published table is stated over
+# 2-decimal ranges with gaps at .21/.41/... ; a continuous band needs a tie
+# rule, and this is ours). Report-only: never fed into interpret_effect /
+# DSX-STA-011.
+KAPPA_BANDS_CITATION = "Landis & Koch (1977), Biometrics 33(1):159-174"
+KAPPA_BANDS = (
+    (0.00, "poor"),
+    (0.20, "slight"),
+    (0.40, "fair"),
+    (0.60, "moderate"),
+    (0.80, "substantial"),
+    (1.00, "almost perfect"),
+)
+
+# Krippendorff's alpha reference value, PINNED at level=ordinal (0.7598,
+# confirmed at source, HQ-16 B4 corrected). The value is LEVEL-OF-MEASUREMENT
+# DEPENDENT and MUST always carry its level (D-07): the SAME data yields a
+# different alpha at each level, so a level-free pin would be wrong. The table is
+# level-keyed precisely so the ordinal value is reachable only by asking for the
+# ordinal level. Report-only reference value, never on any gate compute path.
+KRIPPENDORFF_REFERENCE_CITATION = (
+    "Krippendorff's alpha reference value confirmed at source (HQ-16 B4); "
+    "level-of-measurement dependent — the value must carry its level"
+)
+KRIPPENDORFF_REFERENCE = {
+    "nominal": 0.4765,
+    "ordinal": 0.7598,
+    "interval": 0.7574,
+    "ratio": 0.6621,
+}
+
+# Named CATALOG-ONLY convention entries (D-07): recognised by NAME only, with NO
+# numeric boundary and NO fabricated locator. A D-05 read is owed before any of
+# these ships a pinned band. Each value is a human-readable note only.
+CONVENTION_CATALOG = {
+    "icc": (
+        "ICC magnitude bands (Koo & Li 2016) — catalog-only: the exact boundary "
+        "values are unconfirmed at source, so NO numeric band is pinned here. A "
+        "D-05 read is owed before any ICC band ships."
+    ),
+    "kendalls_w": (
+        "Kendall's W magnitude bands — catalog-only: no band citation exists "
+        "anywhere in the repo or the HQ-16 pack, so NO numeric boundary is "
+        "asserted. A D-05 read is owed before any Kendall's W band ships."
+    ),
+    "distance_correlation": (
+        "Distance correlation (dCor) — catalog/pointer only: no numeric "
+        "magnitude band is pinned; the D-13 promotion entry conditions are unmet."
+    ),
+    "partial_correlation": (
+        "Partial correlation — catalog/pointer only: no numeric magnitude band "
+        "is pinned."
+    ),
+    "cronbach_to_omega": (
+        "Cronbach's alpha -> McDonald's omega — pointer/redirect only, not a "
+        "routing target: catalog-only with deprecation citations, no band."
+    ),
+}
+
+
+def label_convention_band(kind: str, value: float) -> str:
+    """Report-only magnitude label for a convention effect-size kind.
+
+    DISTINCT from interpret_effect: this is a LABELED CONVENTION, never a gated
+    band. It is NEVER called by the blocking DSX-STA-011 guard, and — unlike
+    interpret_effect — it does NOT raise for a report-only / catalog-only kind
+    (raising would let it masquerade as a blocking guard). For ``kappa`` it
+    returns the Landis & Koch (1977) band label (a pinned convention, edge-tie
+    to the lower band). For any other kind it returns a "convention, no gated
+    boundary" style label, naming the convention so the caller can surface it.
+    """
+    k = kind.strip().lower() if isinstance(kind, str) else ""
+    if k == "kappa":
+        for upper, label in KAPPA_BANDS:
+            if value <= upper:
+                return label
+        return "almost perfect"
+    # Every other kind (report-only or catalog-only) is a labeled convention with
+    # no gated boundary; it never raises, so it can never masquerade as a block.
+    return "convention, no gated boundary"
+
+
 def proportion_diff_ci(
     p1: float, n1: int, p2: float, n2: int, alpha: float = 0.05
 ) -> tuple[float, float]:

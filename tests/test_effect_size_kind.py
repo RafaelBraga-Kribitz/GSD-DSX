@@ -15,8 +15,10 @@ import sys
 import unittest
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+_REPO_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_REPO_ROOT))
 
+from dsx import mathx  # noqa: E402
 from dsx.checks import stats  # noqa: E402
 
 
@@ -103,6 +105,127 @@ class TestEffectSizeKindAbsentVsNull(unittest.TestCase):
         self.assertIn("DSX-STA-012", _codes(report))
         finding = next(f for f in report.findings if f.code == "DSX-STA-012")
         self.assertEqual(finding.severity.label, "MEDIUM")
+
+
+# ── Plan 18-B: report-only correlation/agreement convention bands (REQ-P18-05) ──
+#
+# These extend, never rewrite, the DSX-STA-011/012 shapes above. They pin the
+# D-06 firewall (EFFECT_SIZE_KINDS stays {d, h, r}), the D-07 pins (0.7598 @
+# ordinal; Landis-Koch kappa bands), and the catalog-only presence contract
+# (ICC/Kendall's W/dCor/partial/Cronbach->omega named, no numeric boundary).
+
+
+class TestEffectSizeKindsFirewall(unittest.TestCase):
+    """D-06 firewall: the blocking magnitude-band domain never widens."""
+
+    def test_effect_size_kinds_is_exactly_d_h_r(self):  # REQ-P18-05
+        # Equality, NOT subset — a future add of a convention kind turns this red.
+        self.assertEqual(mathx.EFFECT_SIZE_KINDS, frozenset({"d", "h", "r"}))
+
+    def test_interpret_effect_still_rejects_a_report_only_kind(self):  # REQ-P18-05
+        # interpret_effect's domain is unchanged: a report-only kind is unknown
+        # to it and must still raise, never be flat-banded.
+        with self.assertRaises(ValueError):
+            mathx.interpret_effect("kappa", 0.7)
+
+
+class TestReportOnlyEffectKindsRegistry(unittest.TestCase):
+    """The recognition set the DSX-STA-012 branch (Plan 18-A) consults."""
+
+    def test_registry_is_a_frozenset_with_the_required_kinds(self):  # REQ-P18-05
+        self.assertIsInstance(mathx.REPORT_ONLY_EFFECT_KINDS, frozenset)
+        required = {"kappa", "icc", "kendalls_w", "phi", "cramers_v", "tau_b", "rho"}
+        self.assertTrue(
+            required <= set(mathx.REPORT_ONLY_EFFECT_KINDS),
+            f"missing report-only kinds: {required - set(mathx.REPORT_ONLY_EFFECT_KINDS)}",
+        )
+
+    def test_registry_is_disjoint_from_the_blocking_domain(self):  # REQ-P18-05
+        self.assertTrue(
+            set(mathx.EFFECT_SIZE_KINDS).isdisjoint(mathx.REPORT_ONLY_EFFECT_KINDS),
+            "a kind may not be both a blocking band and a report-only convention",
+        )
+
+
+class TestKrippendorffReferencePin(unittest.TestCase):
+    """D-07: 0.7598 is pinned AT level=ordinal and ALWAYS carries its level."""
+
+    def test_ordinal_value_is_pinned(self):  # REQ-P18-05 (pinned)
+        # Numeric equality is allowed here: confirmed at source (HQ-16 B4).
+        self.assertEqual(mathx.KRIPPENDORFF_REFERENCE["ordinal"], 0.7598)
+
+    def test_other_levels_carry_their_own_values(self):  # REQ-P18-05 (pinned)
+        self.assertEqual(mathx.KRIPPENDORFF_REFERENCE["nominal"], 0.4765)
+        self.assertEqual(mathx.KRIPPENDORFF_REFERENCE["interval"], 0.7574)
+        self.assertEqual(mathx.KRIPPENDORFF_REFERENCE["ratio"], 0.6621)
+
+    def test_the_value_is_level_keyed_not_level_free(self):  # REQ-P18-05 (pinned)
+        # A level-free pin is wrong (D-07): the value is level-dependent, so the
+        # ordinal value is reachable ONLY by asking for the ordinal level.
+        self.assertEqual(mathx.KRIPPENDORFF_REFERENCE.get("ordinal"), 0.7598)
+        self.assertIsNone(mathx.KRIPPENDORFF_REFERENCE.get(None))
+        self.assertIsNone(mathx.KRIPPENDORFF_REFERENCE.get(""))
+
+
+class TestLandisKochKappaBands(unittest.TestCase):
+    """D-07: Landis-Koch kappa bands pinned as a labeled convention."""
+
+    def test_representative_points_across_published_boundaries(self):  # REQ-P18-05 (pinned)
+        cases = [
+            (-0.10, "poor"),
+            (0.10, "slight"),
+            (0.30, "fair"),
+            (0.50, "moderate"),
+            (0.70, "substantial"),
+            (0.90, "almost perfect"),
+        ]
+        for value, expected in cases:
+            with self.subTest(value=value):
+                self.assertEqual(mathx.label_convention_band("kappa", value), expected)
+
+    def test_edge_tie_is_only_a_labeled_convention(self):  # REQ-P18-05 (pinned)
+        # A value ON a published boundary (0.20) is resolved by a labeled
+        # CONVENTION (lower band takes the tie), NOT claimed as the paper's exact
+        # wording — so we assert only that it yields SOME Landis-Koch band label.
+        label = mathx.label_convention_band("kappa", 0.20)
+        self.assertIn(label, {lbl for _, lbl in mathx.KAPPA_BANDS})
+
+    def test_label_convention_band_never_raises_for_a_catalog_only_kind(self):  # REQ-P18-05
+        # Distinct from interpret_effect: report-only, never a blocking guard, so
+        # it returns a "convention" label rather than raising for a report-only kind.
+        try:
+            label = mathx.label_convention_band("icc", 0.8)
+        except Exception as exc:  # noqa: BLE001 - the point is that it must not raise
+            self.fail(f"label_convention_band raised as if a blocking guard: {exc!r}")
+        self.assertIsInstance(label, str)
+        self.assertTrue(label.strip())
+
+
+class TestConventionCatalogPresence(unittest.TestCase):
+    """D-07: catalog-only items are NAMED entries with NO numeric boundary.
+
+    Presence/substring assertions ONLY — never a numeric equality assertion for
+    ICC/Koo-Li, Kendall's W, dCor, partial correlation, or Cronbach->omega.
+    """
+
+    def test_named_catalog_entries_present_and_boundary_free(self):  # REQ-P18-05 (catalog-only)
+        for key in (
+            "icc",
+            "kendalls_w",
+            "distance_correlation",
+            "partial_correlation",
+            "cronbach_to_omega",
+        ):
+            with self.subTest(key=key):
+                self.assertIn(key, mathx.CONVENTION_CATALOG)
+                self.assertIsInstance(mathx.CONVENTION_CATALOG[key], str)
+                self.assertTrue(mathx.CONVENTION_CATALOG[key].strip())
+
+    def test_kendalls_w_carries_the_no_band_citation_note(self):  # REQ-P18-05 (catalog-only)
+        self.assertIn(
+            "no band citation exists",
+            mathx.CONVENTION_CATALOG["kendalls_w"].lower(),
+        )
 
 
 if __name__ == "__main__":
