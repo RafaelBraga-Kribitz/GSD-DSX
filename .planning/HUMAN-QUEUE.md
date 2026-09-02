@@ -20,17 +20,35 @@ a persona round and records loudly):
 
 ## Open
 
-(none yet — the loop's S0-3 will file the Phase 22 D-05 citation evidence pack
-here early, so the operator can read it asynchronously while Phase 21 builds.
-Expect ~8–12 citation reads — lighter than v2.3's 27, since most of the catalog
-spine's sources are stable-URL verifications rather than paper reads. Same
-granularity ruling as v2.3: one human read per new gate CODE, bibliographic
-citation per catalog ENTRY.)
+### HQ-27 — Phase 22 D-05 citation evidence pack (filed S0-3, 2026-09-03)
+
+**Type:** D-05 primary-source read (item 1). **Blocks:** S2-1 discuss for any
+Phase 22 code whose Tier-1 source is unsigned; non-blocking for Phase 21.
+**Full pack:** `.planning/v2.4-D05-EVIDENCE-PACK.md` (per-citation table: locator,
+exact claim, confirmed-by-loop vs UNVERIFIED-for-human split). Prepared by the
+loop; **NOT signed** — the loop may prepare, it may not sign.
+
+Sources to confirm at their locators (granularity: one deep read per code-critical
+source, one authenticity confirmation per per-entry source):
+
+- **Tier 1 — mandatory deep read (code-critical):** T1-1 Cleveland & McGill 1984
+  (JASA 79:531-554, the perceptual ranking the REQ-P22-05 tie-break asserts);
+  T1-2 Heer & Bostock 2010 (CHI, the paired replication); T1-3 Wilke 2019 ch.16
+  (the fan/quantile-dot/half-eye/gradient-CI uncertainty family, REQ-P22-02).
+- **Tier 2 — authenticity confirm (per-entry spine + heuristic):** T2-1 FT Visual
+  Vocabulary 2016 (MIT repo, the spine); T2-2 Wilke ch.5 directory; T2-3 Graphic
+  Continuum; T2-4 Data Visualisation Catalogue (stable URLs); T2-5 Datawrapper
+  cardinality bands; T2-6 Munzner 2014 (ch.2/3/6).
+- **Tier 3 — refusal-entry doctrine (batch when refusal entries land):** Few,
+  Harris, Tufte, Muth 2018.
+
+**To sign:** confirm each row in the pack file (`SIGNED <initials> <date>`), then an
+interactive session checks HQ-27 off here. ~9 core + 4 refusal = within the ~8–12
+estimate.
 
 ## Will be added by the loop when reached
 
-- S0-3: Phase 22 D-05 evidence pack (catalog spine + uncertainty family +
-  perceptual-ranking sources).
+- ~~S0-3: Phase 22 D-05 evidence pack~~ — FILED 2026-09-03 as HQ-27 (see Open).
 - Phase 21/22/23/24 end-of-phase security sign-off + UAT rounds (batched per
   phase; non-blocking until S5-2).
 - D-06 numbering veto windows for any new codes Phase 22 mints (from a freshly
