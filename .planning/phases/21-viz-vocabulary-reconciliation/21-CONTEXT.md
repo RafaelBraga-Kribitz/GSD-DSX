@@ -59,6 +59,21 @@ decisions and surfaced one finding that goes beyond the S0-2 recheck (below).
 
 ## Decisions (loud, vetoable — LOOP-BRIEF §4; veto window filed as HQ-28, silence = accept)
 
+<!-- Machine-readable decision index (added S1-2 as a format bridge for the
+     context-coverage gate; decision CONTENT is unchanged — see the detailed
+     ### D-01 / ### D-02 sections below, which remain authoritative). -->
+
+- **D-01 — every-mark-has-a-home invariant scope (REQ-P21-01):** one repo-integrity
+  test off the gate path, two directional clauses over the mark universe
+  (`RELATIONSHIP_CHARTS` ∪ `CHART_CAPABILITIES` ∪ `EXTRA_MARKS` ∪ smells sets, minus
+  `BANNED_TYPES`); capability home = membership in `CHART_CAPABILITIES` or `EXTRA_MARKS`
+  (gate-faithful); relationship home = membership in `RELATIONSHIP_CHARTS`, else the
+  frozen `CAPABILITY_ONLY` allowlist; homes the 12 orphans.
+- **D-02 — refusal-entry representation (REQ-P21-02):** enrich `BANNED_TYPES` in place
+  from `dict[str,str]` to `{reason, code, citation}`; `code` = `DSX-VIZ-001` for all
+  five; `_check_banned` reads `["reason"]` at its one call site; citations point at the
+  HQ-27 Tier-3 pack (non-blocking, drained at S5-2).
+
 ### D-01 — the every-mark-has-a-home invariant's exact scope (REQ-P21-01)
 
 The invariant is **two directional clauses over a precisely-bounded mark universe**,

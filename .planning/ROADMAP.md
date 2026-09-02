@@ -152,6 +152,9 @@ banned/excluded types first-class refusal entries instead of silent absence.
 **Requirements**: REQ-P21-01 … REQ-P21-03. **Zero new codes** (set-identity diff).
 **Ordering**: hard-blocks Phase 22 (the catalog spine is built on a reconciled
 vocabulary).
+**Plans**: 1 plan (1 wave) — 21-01-PLAN.md (home the 12 orphans + regenerate
+input_types.json; enrich the five banned types to {reason,code,citation} refusal
+records; prove 275 → 275). Planned 2026-09-03 (S1-2); plan-checker PASSED 12/12.
 
 ### Phase 22: Catalog spine, uncertainty family, selection heuristic
 
