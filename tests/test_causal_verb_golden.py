@@ -132,6 +132,20 @@ _GOLDEN_SHIP_FINDINGS: "dict[str, frozenset[str]]" = {
     "examples/good-corpus/freq-count-referrals-ANALYSIS-SPEC.yaml": frozenset(),
     "examples/good-corpus/freq-proportion-checkout-ANALYSIS-SPEC.yaml": frozenset(),
     "examples/good-corpus/freq-proportion-email-open-ANALYSIS-SPEC.yaml": frozenset(),
+    # Phase 20-A (REQ-P20-01, D-05): three valid negative controls, one per
+    # Phase-18 routing family, added so the FPR genuinely EXERCISES each of the
+    # five DSX-STA-05x branches and correctly stays silent (the prior corpus never
+    # declared correlation/agreement, so those branches were never reached — the
+    # FPR was silent-not-clean). Each takes the minimal-reference / cwd-resolvable
+    # route and OMITS inference.primary_procedure (the frequentist admissibility
+    # ontology carries no correlation/agreement family, so declaring one would draw
+    # a spurious DSX-ADM-020, and a comparison procedure would contradict
+    # analysis.test via DSX-PRE-030). Each set measured 2026-09-02 against a fresh
+    # tempfile.TemporaryDirectory() per spec via _ship_findings above — never
+    # guessed; each measured frozenset().
+    "examples/good-corpus/valid-correlation-linear-ANALYSIS-SPEC.yaml": frozenset(),
+    "examples/good-corpus/valid-icc-reliability-ANALYSIS-SPEC.yaml": frozenset(),
+    "examples/good-corpus/valid-weighted-kappa-ANALYSIS-SPEC.yaml": frozenset(),
     "examples/known-bad/bayesian-continuous-monitoring-ANALYSIS-SPEC.yaml": frozenset({
         "DSX-CLM-031", "DSX-COH-031", "DSX-MET-040", "DSX-NAR-001", "DSX-PAR-011",
         "DSX-REP-001", "DSX-REP-030", "DSX-STA-041", "DSX-VAL-041",

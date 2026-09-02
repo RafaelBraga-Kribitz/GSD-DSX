@@ -1,0 +1,201 @@
+# Clean control spec — good-side FPR corpus, kappa routing family (D-05).
+# A valid weighted kappa with a recognised weighting scheme AND its p_pos/p_neg
+# companions. It REACHES the DSX-STA-061 and DSX-STA-062 branches and correctly
+# stays silent, so it is a real negative control on both codes rather than the
+# prior silence. Cloned from freq-continuous-aov (the clean minimal-reference
+# template); only the analysis: block is an agreement/kappa declaration.
+# Minimal-reference / cwd-resolvable route throughout.
+
+spec_version: 1
+title: "How well do raters agree? (weighted kappa with weights + companions)"
+owner: "r.braga"
+created: "2026-09-02"
+spec_id: "valid-weighted-kappa"
+
+question_type: causal
+
+decision:
+  owner: "VP Merchandising"
+  decision_rule: >
+    Roll out the bundle recommender if the 95% CI lower bound on the average
+    order value uplift exceeds $0.50 and no guardrail degrades beyond tolerance.
+    Otherwise hold and iterate.
+  action_if_null: "Keep the current storefront; close the initiative."
+  minimum_practical_effect: 0.50
+  reversible: true
+  deadline: "2026-09-20"
+  revisit_when: "order_value 95% CI lower bound below $0.50 at the 2026-Q4 review"
+  replay:
+    metric: order_value
+    ci_lower_min: 0.50
+    on_pass: rollout
+    on_fail: hold
+
+metrics:
+  - name: order_value
+    type: average
+    definition: "Gross merchandise value per completed order"
+    grain: order
+    timezone: UTC
+    source: commerce_marts.fct_orders
+    owner: commerce-analytics
+
+data:
+  - name: orders
+    source: commerce_marts.fct_orders
+    period: "2026-07-01..2026-07-14"
+    rows: 41903
+    snapshot_at: "2026-07-16T03:00:00Z"
+    known_gaps: "Refunded orders excluded upstream. No outages in window."
+
+design:
+  kind: experiment
+  identification: randomized_experiment
+  randomization_unit: user
+  analysis_unit: order
+  variance_adjustment: cluster_robust
+  arms: [control, treatment]
+  expected_allocation: [0.5, 0.5]
+  baseline_rate: 0.30
+  mde: 0.02
+  alpha: 0.05
+  power: 0.80
+  planned_n_per_arm: 9500
+  duration_days: 14
+  guardrail_metrics: [order_value]
+  peeking_policy: fixed_horizon
+
+analysis:
+  # Valid negative control: a weighted kappa with a recognised weighting scheme
+  # (quadratic) so DSX-STA-061 reaches its branch and stays silent, AND both
+  # p_pos and p_neg present so DSX-STA-062 reaches its branch and stays silent.
+  # test is not icc, so DSX-STA-060 is out of scope; outcome_type is OMITTED so
+  # DSX-STA-041 stays silent.
+  estimand_kind: agreement
+  test: weighted_kappa
+  weights: quadratic
+  p_pos: 0.82
+  p_neg: 0.71
+
+results:
+  observed_n: [9600, 9555]
+  interim_looks: 1
+  comparisons_looked_at: 1
+  overall_effect: 1.85
+  tests:
+    - metric: order_value
+      p_value: 0.0009
+      effect: 1.85
+      effect_size_kind: d
+      ci: [0.92, 2.78]
+      interpretation: "Illustrative pinned numbers; this is a clean negative control, not a measured effect."
+      minimum_practical_effect: 0.50
+
+claims:
+  - text: >
+      The bundle recommender raises average order value by $1.85
+      (95% CI $0.92 to $2.78) per completed order in the test window.
+    type: causal
+    evidence: "examples/good-corpus/valid-weighted-kappa-NARRATIVE.md"
+    population: "Completed orders, 2026-07-01 to 2026-07-14"
+    identification: randomized_experiment
+
+assumptions:
+  - assumption: "Assignment is stable across sessions for a given user_id."
+    rationale: "Bucketing is hashed on user_id and persisted server-side."
+    impact_if_wrong: "Cross-arm contamination would bias the estimate toward zero."
+    checked: true
+
+limitations:
+  - "Estimates the effect on order value only; says nothing about order frequency."
+  - "Measured over two weeks; seasonal baskets may differ."
+
+reproducibility:
+  entrypoint: examples/good-corpus/_control_readout.py
+  language_version: "python 3.12.10"
+  package_versions: "numpy 2.1.0, statsmodels 0.14.2"
+  runs_clean_top_to_bottom: true
+  repro_lock:
+    schema_version: "1"
+    stochasticity_declaration: >
+      Analysis outputs depend on data extracts and library versions recorded
+      elsewhere in this block; this lock documents configuration, not
+      byte-identical replay.
+    dsx_version: "2.0.0"
+
+narrative:
+  path: examples/good-corpus/valid-weighted-kappa-NARRATIVE.md
+  audience: executive
+  lead_claim: 0
+
+validity_frame:
+  estimand:
+    quantity: "difference in average order value"
+    type: difference_in_means
+    population: "completed orders, 2026-07-01 to 2026-07-14"
+    contrast: "bundle recommender vs current storefront"
+    time_window: "per order"
+    falsifier: "95% CI on the uplift includes zero, or its lower bound sits below $0.50"
+
+  units:
+    observation: order
+    assignment: user
+    analysis: order
+
+  identification:
+    strength: strong
+    evidence: "Assignment is hashed on user_id and persisted server-side; see design.identification"
+    constraint_source: none
+    constraint_justification: ""
+
+  dependence:
+    structure: clustered
+    cluster_var: user_id
+    method_family_required: cluster_robust
+
+  interference:
+    risk: none
+    mechanism: ""
+    mitigation: none
+    residual_note: ""
+
+  triggering:
+    eligible_population: "all orders placed in the test window"
+    triggered_definition: "placed a completed order"
+    analysis_population: eligible
+    expected_trigger_rate: 1.0
+    dilution_adjusted: true
+
+  stability:
+    window: "14 days"
+    novelty_primacy_assessed: true
+    evidence: "internal readout; the order-value gap held flat after day 3"
+
+  sampling_frame:
+    source: "commerce_marts.fct_orders, no region filter"
+    claim_population: "all completed orders in the test window"
+    known_exclusions: ["refunded orders"]
+    selection_risk: "none identified"
+
+  missingness:
+    mechanism: MAR
+    rate: 0.0
+    method_implied: multiple_imputation
+
+  measurement:
+    construct: "order value"
+    operationalisation: "gross merchandise value per completed order"
+    known_gaps: "none identified"
+
+inference:
+  paradigm: frequentist
+  paradigm_justification: team_convention
+  declared_at: pre_data
+  # primary_procedure intentionally omitted: the frequentist admissibility
+  # ontology (references/families.yaml) carries no agreement/kappa family, so the
+  # executed routing lives in analysis.test only (see the known-bad agreement
+  # fixtures for the same construction).
+  alpha_spending: null
+  fallback_rule: >
+    If any arm's observed n falls below 80% of planned_n_per_arm, extend to the
+    pre-declared duration_days ceiling before analysing; do not analyse early.

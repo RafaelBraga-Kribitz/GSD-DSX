@@ -2043,6 +2043,25 @@ class TestStratifiedHeadlineHelpers(unittest.TestCase):
             "be incapable of moving (miss-rate, FPR) (D-10)",
         )
 
+    def test_fpr_noise_allowlist_is_disjoint_from_the_dsx_sta_family(self):
+        """Phase 20-A (REQ-P20-01, D-05): the tempdir-noise allowlist must never
+        absorb a statistical-validity finding. Every one of the fifteen new blocking
+        codes is a ``DSX-STA-*`` code, and every legitimate tempdir-noise code names
+        a file-path ``where`` (evidence/figure/profile/narrative), not a
+        statistical-validity concept — so a ``DSX-STA-*`` key appearing in
+        ``_FPR_TEMPDIR_NOISE_CODES`` could only be a real new-code false positive
+        laundered as noise, silently deflating the FPR. This guard blocks that path
+        structurally: no future editor can widen the allowlist to swallow a genuine
+        DSX-STA false positive on a good-corpus control."""
+        offenders = sorted(
+            code for code in _FPR_TEMPDIR_NOISE_CODES if code.startswith("DSX-STA-")
+        )
+        self.assertEqual(
+            offenders, [],
+            f"a DSX-STA statistical-validity code is in the tempdir-noise allowlist "
+            f"{offenders} — a real false positive must never be absorbed as noise (D-05)",
+        )
+
 
 class TestFrictionArithmetic(unittest.TestCase):
     """Filesystem-independent proof of the friction arithmetic (guard a, D-11),
