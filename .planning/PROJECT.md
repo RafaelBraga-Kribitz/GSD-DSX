@@ -202,9 +202,7 @@ wording; a Wilson (2015) DEPRECATED row stripped of an unsupported
 replacement-test claim; a Maxwell & Delaney claim softened pending further
 source access.
 
-## Queued Milestone: v2.4 Visual Excellence
-
-**Status:** Queued. Entry condition (D-13): v2.3 shipped.
+## Active Milestone: v2.4 Visual Excellence (opened 2026-09-02)
 
 **Goal:** The exhaustive-but-manageable chart catalog (~80 entries on the FT
 Visual Vocabulary spine + Wilke's uncertainty family + rigour staples, three
@@ -213,9 +211,20 @@ citable axes per entry), the 5-layer question→chart selection heuristic
 tie-break), the license-audited publication style layer (dsx-urban default,
 dsx-538, dsx-econ/dsx-bbc reimplemented from published doctrine), the SVG
 determinism recipe, and a portfolio exemplar capstone that exercises both
-milestones end-to-end. Phases 21–24; requirements REQ-P21-* … REQ-P24-* queued
-in `.planning/REQUIREMENTS.md`. Pre-agreed contingency: split style/exemplar
-off as v2.5 if v2.3's D-05 queue outruns the ceremony cadence.
+milestones end-to-end. Ships as tag `v2.4.0`.
+
+**Entry condition met:** v2.3 shipped 2026-09-02 (tag `v2.3.0`, 22/22 requirements
+`passed`). Scope re-verified against the live tree at open (`dsx/checks/viz.py`
+untouched since before v2.3; catalogue confirmed at 275) — no fresh scoping
+round needed.
+
+**Requirements:** REQ-P21-01 … REQ-P24-03 in `.planning/REQUIREMENTS.md`
+(Phases 21–24: viz vocabulary reconciliation → catalog spine/uncertainty/
+heuristic → style/snippet layer → portfolio exemplar/calibration).
+
+**Pre-agreed contingency:** split style/exemplar off as v2.5 if the D-05 queue
+outruns the ceremony cadence — expected lighter than v2.3's 27 citations
+(~8–12 reads, mostly stable-URL verifications rather than paper reads).
 
 **v3.0 (models) remains future scope** — nothing here touches it.
 

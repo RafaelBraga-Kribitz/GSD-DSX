@@ -1,6 +1,6 @@
 # Roadmap: gsd-dsx
 
-**Queued:** v2.4 Visual Excellence — Phases 21–24 (entry condition: v2.3 shipped — MET)
+**Active:** v2.4 Visual Excellence — Phases 21–24 (opened 2026-09-02)
 **Shipped:** v2.3 Test Catalog — Phases 17–20 (2026-09-02); v2.2 Analytic Surface — Phases 13–16 (2026-08-29); v2.0.0 DSX Validity Frame — Phases 6–12 (2026-08-28); v1.1.0–v1.5.0 — Phases 1–5
 
 > **Milestone name vs. release tag.** The DSX Validity Frame is named **v2.0.0**
@@ -122,23 +122,72 @@ independently re-verified against primary sources at close-out; 7 corrected.
 
 **v2.3 totals:** 4 phases, 11 plans. Milestone audit `passed` (`.planning/milestones/v2.3-MILESTONE-AUDIT.md`); all 4 phases verified and Nyquist-validated; cross-phase integration INTEGRATED (5/5 seams).
 
-## Queued milestone — v2.4 Visual Excellence (Phases 21–24)
+## Queued milestone — v2.4 Visual Excellence (Phases 21–24) — ACTIVE since 2026-09-02
 
-**Status:** Queued. Entry condition (D-13): v2.3 shipped. Requirements
-REQ-P21-* … REQ-P24-* in `.planning/REQUIREMENTS.md` under **Queued**. Full
-research in `.planning/research/V2.3-V2.4-SCOPE.md` §3: viz vocabulary
-reconciliation first (Phase 21), then the ~80-entry chart catalog + uncertainty
-family + 5-layer selection heuristic (Phase 22), the license-audited style/snippet
-layer with the SVG determinism recipe (Phase 23), and the portfolio exemplar
-capstone + viz calibration (Phase 24). Pre-agreed contingency: if v2.3's D-05
-queue materially outruns the ceremony cadence, split Phase 23–24 off as v2.5.
+**Status:** Active — opened 2026-09-02 by operator direction; driven by the
+autonomous ceremony on branch `gsd/v2.4.0-visual-excellence`. Ships as tag
+`v2.4.0`. Requirements REQ-P21-01 … REQ-P24-03 in `.planning/REQUIREMENTS.md`.
+Full research in `.planning/research/V2.3-V2.4-SCOPE.md` §3 (2026-08-29) —
+this milestone does not need a fresh scoping round; scope was re-verified
+against the live tree at open (`dsx/checks/viz.py` untouched since before
+v2.3; catalogue confirmed at 275).
+
+**Scope boundary (do not re-litigate):** the ~80-entry chart catalog is
+citable, not exhaustive-for-its-own-sake — union of five named taxonomies
+(FT Visual Vocabulary spine, Wilke's uncertainty family, Graphic Continuum,
+Data Visualisation Catalogue, Datawrapper) after synonym merge and principled
+exclusions (3D, gauges, word clouds, dual-axis — each cross-referenced to its
+banning code). The style layer is license-audited: dsx-538/dsx-urban forked or
+built from permissively-licensed sources; dsx-econ/dsx-bbc reimplemented from
+published doctrine only, never ported from GPL code or unlicensed PDFs.
+
+### Phase 21: Viz vocabulary reconciliation
+
+**Goal**: Fix the inherited inconsistency every later phase would compound —
+several chart types (histogram, density, ecdf, strip, diverging_bar, waterfall,
+dumbbell, bump, sankey, kde, population_pyramid, butterfly) sit in
+`RELATIONSHIP_CHARTS` or smells sets but in no `CHART_CAPABILITIES` family,
+guaranteeing `DSX-VIZ-013` friction once the catalog references them — and give
+banned/excluded types first-class refusal entries instead of silent absence.
+**Requirements**: REQ-P21-01 … REQ-P21-03. **Zero new codes** (set-identity diff).
+**Ordering**: hard-blocks Phase 22 (the catalog spine is built on a reconciled
+vocabulary).
+
+### Phase 22: Catalog spine, uncertainty family, selection heuristic
+
+**Goal**: The ~80-entry merged chart catalog with three citable axes per entry,
+the uncertainty function family (the one category every poster taxonomy lacks
+and a rigour project most needs — D-12a-clean by construction), faceting as an
+orthogonal declaration, and the 5-layer question→chart selection heuristic
+route-and-cited into the existing taxonomy files.
+**Requirements**: REQ-P22-01 … REQ-P22-05.
+
+### Phase 23: Style and snippet layer
+
+**Goal**: The license-audited `.mplstyle` set (dsx-urban as house default —
+the only system whose real font is legally vendorable), the analyst-side
+`dsx_plotstyle.py` helper, a proven SVG-determinism recipe for
+`FIGURE-MANIFEST.yaml` seals, and a per-chart-type snippet catalog that routes
+to finding codes rather than restating thresholds.
+**Requirements**: REQ-P23-01 … REQ-P23-05.
+
+### Phase 24: Portfolio exemplar and viz calibration
+
+**Goal**: One end-to-end showcase analysis exercising both v2.3 and v2.4 —
+the artifact a scrutinizing senior DS reads whole — plus known-bad chart
+fixtures and a catch-rate/FPR re-baseline, matching the calibration discipline
+Phase 12 and Phase 20 established.
+**Requirements**: REQ-P24-01 … REQ-P24-03.
+
+**Pre-agreed contingency:** if the D-05 queue materially outruns the ceremony
+cadence, split Phase 23–24 off as v2.5 — the style layer needs almost no human
+reads and should not be blocked behind the uncertainty-vocabulary reads.
 
 ## Next
 
 v2.0.0, v2.2, and v2.3 are shipped and archived (`.planning/milestones/v2.0.0-*`,
-`v2.2-*`, `v2.3-*`). v2.4 Visual Excellence's entry condition (v2.3 shipped) is
-now met — start it with `/gsd-new-milestone` or by repointing the ceremony.
-Two dormant seeds still carry forward (deepen `dsx-explore-data` into a
-reusable EDA protocol; grow DATA-PROFILE into hermetic EDA artifacts) — see
+`v2.2-*`, `v2.3-*`). v2.4 is active under the autonomous ceremony. Two dormant
+seeds still carry forward (deepen `dsx-explore-data` into a reusable EDA
+protocol; grow DATA-PROFILE into hermetic EDA artifacts) — see
 `.planning/STATE.md` Deferred Items; both are natural v2.4/v2.5 candidates
 given the EDA-adjacent chart work.
