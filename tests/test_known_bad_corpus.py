@@ -452,6 +452,52 @@ _EXPECTED_CAUGHT_DEFECTS: "dict[str, frozenset[str]]" = {
     "garden-of-forking-paths-p-hacking": frozenset(),
     "retracted-fabricated-field-experiment": frozenset(),
     "operator-known-answer-selective-exclusion": frozenset(),
+    # Phase 20-A (REQ-P20-01, D-04/D-06): the five dedicated PRESENT known-bad
+    # fixtures, one per Phase-18 code. Empty by design, not by omission — mirroring
+    # the coverage-class MISS entries above and full-frame-cleaning/prescriptive:
+    # this map's frozenset applies at every point in _CRITICAL_THRESHOLD_POINTS
+    # ("plan", "execute"), but every one of the five DSX-STA-05x codes is HIGH and
+    # the `stats` correlation/agreement gate is registered at verify/ship ONLY, so
+    # none of them fires at a CRITICAL-threshold point — there is nothing this
+    # both-points map could correctly claim. Each fixture's HIGH catch lives in
+    # _HIGH_TARGET_DEFECT_CODES below (the verify/ship-scoped declaration, read
+    # LIVE by the HIGH stratum, D-03/D-09), NOT here and NOT in _TARGET_DEFECT_CODES
+    # (a CRITICAL-only map). These keys are required here solely so
+    # test_expected_caught_defects_keys_match_the_corpus_on_disk stays green.
+    "correlation-pearson-ordinal-scale": frozenset(),
+    "correlation-for-agreement-estimand": frozenset(),
+    "icc-incomplete-triple": frozenset(),
+    "weighted-kappa-missing-weights": frozenset(),
+    "kappa-missing-companions": frozenset(),
+}
+
+
+# Per-fixture HIGH-tier target-defect declaration (Phase 20-A, D-03/D-06/D-09):
+# keyed by fixture slug, mapping each of the five Phase-18 known-bad fixtures to
+# the ONE HIGH finding code it demonstrates at the HIGH point-set ("verify",
+# "ship"). This is a DECLARATION of intent, exactly like _TARGET_DEFECT_CODES —
+# it is NEVER the measured ledger (_GOLDEN_SHIP_FINDINGS) and the HIGH-tier catch
+# rate is NEVER lifted from it; the stratum in
+# test_stratified_catch_rate_and_fpr_report re-derives its catch LIVE via
+# self._gate_findings filtered to HIGH and consults this map only for which cell
+# to expect (the D-09 no-self-reference rule).
+#
+# The five new codes are all HIGH and the `stats` correlation/agreement gate is
+# registered at verify/ship only, so they cannot fire at a CRITICAL-threshold
+# point — this map therefore uses the verify/ship point-set, disjoint from
+# _CRITICAL_THRESHOLD_POINTS. Kept a THIRD map rather than folded into
+# _TARGET_DEFECT_CODES (whose _classify_target_defect / friction consumers are
+# CRITICAL-only) or _EXPECTED_CAUGHT_DEFECTS (a both-CRITICAL-points map): a HIGH
+# verify/ship code belongs in neither without corrupting the CRITICAL partition.
+# _own_target_codes reads it so a fixture's own HIGH code is recognised by
+# test_ship_gate_findings_are_all_documented_incidental_corpus_gaps rather than
+# read as an undocumented over-block.
+_HIGH_TARGET_DEFECT_CODES: "dict[str, dict[str, str]]" = {
+    "correlation-pearson-ordinal-scale": {"verify": "DSX-STA-050", "ship": "DSX-STA-050"},
+    "correlation-for-agreement-estimand": {"verify": "DSX-STA-051", "ship": "DSX-STA-051"},
+    "icc-incomplete-triple": {"verify": "DSX-STA-060", "ship": "DSX-STA-060"},
+    "weighted-kappa-missing-weights": {"verify": "DSX-STA-061", "ship": "DSX-STA-061"},
+    "kappa-missing-companions": {"verify": "DSX-STA-062", "ship": "DSX-STA-062"},
 }
 
 
@@ -495,8 +541,9 @@ def _own_target_codes(
     slug: str,
     target_map: "dict[str, dict[str, str | frozenset[str]]] | None" = None,
     expected_map: "dict[str, frozenset[str]] | None" = None,
+    high_map: "dict[str, dict[str, str]] | None" = None,
 ) -> "frozenset[str]":
-    """Every code `slug` is this corpus's declared demonstration of, across both maps.
+    """Every code `slug` is this corpus's declared demonstration of, across all maps.
 
     Plan 11.1-08: flattens a `_TARGET_DEFECT_CODES` value into its individual code
     strings rather than collecting the raw mapping value — a point's value may be a
@@ -510,17 +557,28 @@ def _own_target_codes(
     fail to match any single code in a real gate's findings, reporting every one of
     that fixture's own codes as undocumented.
 
-    `target_map` and `expected_map` default to the module constants
-    `_TARGET_DEFECT_CODES`/`_EXPECTED_CAUGHT_DEFECTS` — every real call site in this
-    module calls this function with one argument, exactly as before this plan — but
-    accepting them as parameters lets a synthetic map exercise the flattening
-    independent of the filesystem and the real gate, the same testability discipline
-    `_classify_target_defect`'s own docstring already sets out for `target_map` there.
+    `target_map`, `expected_map` and `high_map` default to the module constants
+    `_TARGET_DEFECT_CODES`/`_EXPECTED_CAUGHT_DEFECTS`/`_HIGH_TARGET_DEFECT_CODES` —
+    every real call site in this module calls this function with one argument,
+    exactly as before this plan — but accepting them as parameters lets a synthetic
+    map exercise the flattening independent of the filesystem and the real gate, the
+    same testability discipline `_classify_target_defect`'s own docstring already
+    sets out for `target_map` there.
+
+    Phase 20-A adds `high_map` (`_HIGH_TARGET_DEFECT_CODES`) as a third source: the
+    five Phase-18 fixtures' own codes are HIGH verify/ship codes that live in neither
+    CRITICAL map, so without reading the HIGH declaration here their own DSX-STA-05x
+    would read as an undocumented over-block in
+    test_ship_gate_findings_are_all_documented_incidental_corpus_gaps. This is the
+    same declaration-membership use `_TARGET_DEFECT_CODES` already has — the LIVE
+    catch rate is never read from any of these maps (D-09).
     """
     if target_map is None:
         target_map = _TARGET_DEFECT_CODES
     if expected_map is None:
         expected_map = _EXPECTED_CAUGHT_DEFECTS
+    if high_map is None:
+        high_map = _HIGH_TARGET_DEFECT_CODES
     codes: "set[str]" = set()
     for value in target_map.get(slug, {}).values():
         if isinstance(value, str):
@@ -528,6 +586,8 @@ def _own_target_codes(
         else:
             codes.update(value)
     codes.update(expected_map.get(slug, frozenset()))
+    for value in high_map.get(slug, {}).values():
+        codes.add(value)
     return frozenset(codes)
 
 

@@ -195,6 +195,31 @@ _GOLDEN_SHIP_FINDINGS: "dict[str, frozenset[str]]" = {
         "DSX-CLM-031", "DSX-COH-031", "DSX-INT-030", "DSX-MET-040", "DSX-NAR-001",
         "DSX-REP-030", "DSX-VAL-040",
     }),
+    # Phase 20-A (REQ-P20-01, D-04/D-06): five dedicated PRESENT known-bad
+    # fixtures, one per Phase-18 code (050/051/060/061/062) — the five codes that
+    # fire NOWHERE in examples/ today. Each declares ONLY the fields needed to fire
+    # its ONE code (mutually exclusive on analysis.test), OMITS analysis.outcome_type
+    # (so DSX-STA-041 stays silent), and takes the minimal-reference / cwd-resolvable
+    # route with inference.primary_procedure omitted, so the measured ship set is
+    # exactly {its DSX-STA-05x code}. The re-baseline (D-06) moves exactly this one
+    # committed number: _GOLDEN_SHIP_FINDINGS gains one MEASURED key per fixture.
+    # Each set measured 2026-09-02 against a fresh tempfile.TemporaryDirectory() per
+    # fixture via _ship_findings above — never guessed.
+    "examples/known-bad/correlation-pearson-ordinal-scale-ANALYSIS-SPEC.yaml": frozenset({
+        "DSX-STA-050",
+    }),
+    "examples/known-bad/correlation-for-agreement-estimand-ANALYSIS-SPEC.yaml": frozenset({
+        "DSX-STA-051",
+    }),
+    "examples/known-bad/icc-incomplete-triple-ANALYSIS-SPEC.yaml": frozenset({
+        "DSX-STA-060",
+    }),
+    "examples/known-bad/weighted-kappa-missing-weights-ANALYSIS-SPEC.yaml": frozenset({
+        "DSX-STA-061",
+    }),
+    "examples/known-bad/kappa-missing-companions-ANALYSIS-SPEC.yaml": frozenset({
+        "DSX-STA-062",
+    }),
 }
 
 
