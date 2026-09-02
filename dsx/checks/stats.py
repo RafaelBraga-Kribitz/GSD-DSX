@@ -14,12 +14,21 @@ from ..findings import Report
 from .. import mathx
 from ..mathx import EFFECT_SIZE_KINDS, apply_correction, interpret_effect
 from ..spec import (
+    AUTOCORRELATION_HANDLINGS,
+    DOSE_SCORE_SCHEMES,
     ESTIMAND_KINDS,
     ICC_DEFINITIONS,
     ICC_MODELS,
     ICC_TYPES,
     KAPPA_WEIGHT_TOKENS,
     OPERAND_SCALES,
+    POSTHOC_FAMILY_MAP,
+    POWER_REPORTING_TYPES,
+    PROPORTION_CI_METHODS,
+    RESAMPLING_METHODS,
+    SPHERICITY_CORRECTIONS,
+    VARIANCE_TEST_ROLES,
+    VARIANCE_TESTS,
     as_number,
     get,
     is_blank,
@@ -41,6 +50,18 @@ _MEMBERSHIP_FIELDS: "tuple[tuple[str, Any], ...]" = (
     ("outcome_type", OUTCOME_TYPES),
     ("estimand_kind", ESTIMAND_KINDS),
     ("operand_scale", OPERAND_SCALES),
+    # Phase 19 (REQ-P19-01/02/06/07): the six SCALAR closed-vocab routing fields.
+    # A mis-slotted value is loud via the same DSX-STA-040 for free — zero new
+    # code for the recognition half. The NESTED analysis.resampling.method and the
+    # str-or-list analysis.trend_test are validated in the Wave-2 (19-C) gate
+    # helpers, not this flat loop; analysis.dose_score_scheme is deliberately NOT
+    # registered here (its gate trigger is dose_scores presence, not membership).
+    ("sphericity_correction", SPHERICITY_CORRECTIONS),
+    ("autocorrelation_handling", AUTOCORRELATION_HANDLINGS),
+    ("variance_test", VARIANCE_TESTS),
+    ("variance_test_role", VARIANCE_TEST_ROLES),
+    ("power_reporting_type", POWER_REPORTING_TYPES),
+    ("proportion_ci_method", PROPORTION_CI_METHODS),
 )
 
 # The correlation-coefficient family DSX-STA-051 keys on: a declared test that measures
@@ -211,6 +232,239 @@ def recommend_association(estimand_kind: str) -> dict[str, object]:
         )
     tests, effect_size, citation = _ASSOCIATION_ROUTES[kind]
     return {"tests": tests, "effect_size": effect_size, "citation": citation}
+
+
+# ── Phase 19 dataless routing tables (REQ-P19-01/02/04/05/06/07) ───────────────
+#
+# Seven pure, DATALESS routing functions modelled EXACTLY on recommend_association:
+# each takes ONLY declared-context string argument(s) — NO data, NO n, NO
+# distribution flag — normalizes its input, looks up an acceptable SET, and returns
+# a dict carrying at least a `tests` frozenset plus a citation label; each raises
+# ValueError for an out-of-route declared context. The absence of any data/n
+# parameter is the mechanical anti-two-stage proof (REQ-P18-06), asserted by the
+# two no-autoswitch modules. NO route ever names a DEPRECATED procedure (D-04):
+# no Mauchly-conditional (recommend_rm), no SNK / unprotected-LSD (recommend_posthoc,
+# via POSTHOC_FAMILY_MAP), no Wald default (recommend_proportion_ci), no observed /
+# post-hoc power (recommend_power). No numeric boundary is encoded (D-07).
+
+# Declared RM measurement kind -> acceptable RM-omnibus SET. The continuous route
+# is the UNCONDITIONAL Greenhouse-Geisser one-way RM-ANOVA (the RM analog of
+# always-Welch) — never a two-stage / Mauchly-conditional procedure.
+_RM_ROUTES: "dict[str, tuple[frozenset[str], str]]" = {
+    "continuous": (frozenset({"rm_anova_gg"}), "unconditional Greenhouse-Geisser RM-ANOVA (1959)"),
+    "ranks": (frozenset({"friedman", "page_l"}), "Friedman; Page's L for an ordered alternative"),
+    "ordinal": (frozenset({"friedman", "page_l"}), "Friedman; Page's L for an ordered alternative"),
+    "binary": (frozenset({"cochran_q"}), "Cochran's Q for binary repeated measures"),
+}
+
+# Declared trend context -> acceptable ordered-trend SET.
+_TREND_ROUTES: "dict[str, tuple[frozenset[str], str]]" = {
+    "ordered_trend": (
+        frozenset({"cochran_armitage", "jonckheere_terpstra", "mann_kendall", "sens_slope"}),
+        "Cochran-Armitage / Jonckheere-Terpstra / Mann-Kendall + Sen's slope",
+    ),
+    "dose_response": (
+        frozenset({"cochran_armitage", "jonckheere_terpstra"}),
+        "Cochran-Armitage (declared dose scores) / Jonckheere-Terpstra",
+    ),
+    "temporal": (
+        frozenset({"mann_kendall", "sens_slope"}),
+        "Mann-Kendall + Sen's slope (declared autocorrelation handling, Hamed-Rao 1998)",
+    ),
+}
+
+# Declared variance-test ROLE -> acceptable disposition SET (OQ-6). The
+# precondition role's ONLY acceptable disposition is to NOT pretest — use Welch
+# unconditionally — so it never endorses a variance pretest as a location gate.
+_VARIANCE_ROLE_ROUTES: "dict[str, tuple[frozenset[str], str]]" = {
+    "scale_estimand": (
+        frozenset({"levene", "brown_forsythe", "fligner_killeen", "bartlett"}),
+        "a variance test reported as a scale estimand with a CI (Zimmerman 2004, extended)",
+    ),
+    "precondition_to_location": (
+        frozenset({"use_welch_unconditionally"}),
+        "no variance pretest gates the location test — use Welch unconditionally",
+    ),
+}
+
+# Declared resampling PURPOSE -> acceptable method SET drawn from RESAMPLING_METHODS,
+# with the house default. BCa is the house default for an interval; a permutation
+# test is the default for a hypothesis test. The full {method, seed, unit, B}
+# quadruple is validated in the Wave-2 gate, not here; B's value is never checked.
+_RESAMPLING_ROUTES: "dict[str, tuple[frozenset[str], str, str]]" = {
+    "interval": (
+        frozenset({"percentile_bootstrap", "bca"}), "bca",
+        "BCa / percentile bootstrap interval (Efron-Tibshirani 1993; Davidson-MacKinnon 2000)",
+    ),
+    "confidence_interval": (
+        frozenset({"percentile_bootstrap", "bca"}), "bca",
+        "BCa / percentile bootstrap interval (Efron-Tibshirani 1993; Davidson-MacKinnon 2000)",
+    ),
+    "hypothesis_test": (
+        frozenset({"permutation"}), "permutation",
+        "permutation test for an exchangeable null (Davidson-MacKinnon 2000)",
+    ),
+    "test": (
+        frozenset({"permutation"}), "permutation",
+        "permutation test for an exchangeable null (Davidson-MacKinnon 2000)",
+    ),
+}
+
+# Declared proportion/count CONTEXT -> acceptable interval-method SET, house
+# default Wilson. Wald is NEVER a member (Brown-Cai-DasGupta 2001; the n cutoff
+# below which Wald misbehaves is confirm-at-source, not encoded).
+_PROPORTION_CI_ROUTES: "dict[str, tuple[frozenset[str], str, str]]" = {
+    "proportion": (
+        frozenset({"wilson", "clopper_pearson", "jeffreys", "agresti_coull"}), "wilson",
+        "Wilson score interval, house default (Brown-Cai-DasGupta 2001)",
+    ),
+    "single_proportion": (
+        frozenset({"wilson", "clopper_pearson", "jeffreys", "agresti_coull"}), "wilson",
+        "Wilson score interval, house default (Brown-Cai-DasGupta 2001)",
+    ),
+    "binomial": (
+        frozenset({"wilson", "clopper_pearson", "jeffreys", "agresti_coull"}), "wilson",
+        "Wilson score interval, house default (Brown-Cai-DasGupta 2001)",
+    ),
+}
+
+# The power-reporting forms this project ENDORSES — deliberately excludes the
+# tautological observed / post-hoc power (Hoenig-Heisey 2001). recommend_power
+# routes EVERY recognised reporting type (including a declared observed/post_hoc)
+# to this endorsed set, so the misuse is redirected, never echoed back.
+_ENDORSED_POWER_FORMS = frozenset({"a_priori", "design", "mde_sensitivity"})
+_DEPRECATED_POWER_FORMS = frozenset({"observed", "post_hoc"})
+
+
+def recommend_rm(measure_kind: str) -> dict[str, object]:
+    """Dataless declared-RM-measurement-kind -> acceptable RM-omnibus SET.
+
+    Takes ONLY the declared measurement kind (continuous / ranks / binary) — no
+    data, no n, no sphericity estimate. The continuous route is the UNCONDITIONAL
+    Greenhouse-Geisser RM-ANOVA and NEVER a two-stage / Mauchly-conditional
+    procedure (D-04). Raises ValueError for a non-repeated-measure kind.
+    """
+    kind = normalize(measure_kind)
+    if kind not in _RM_ROUTES:
+        raise ValueError(
+            f"no repeated-measures routing for measure_kind {measure_kind!r}; "
+            f"expected one of {', '.join(sorted(_RM_ROUTES))}"
+        )
+    tests, citation = _RM_ROUTES[kind]
+    return {"tests": tests, "citation": citation}
+
+
+def recommend_trend(trend_context: str) -> dict[str, object]:
+    """Dataless declared-trend-context -> acceptable ordered-trend SET.
+
+    Takes ONLY the declared trend context — no data, no n. Raises ValueError for a
+    context with no trend route.
+    """
+    ctx = normalize(trend_context)
+    if ctx not in _TREND_ROUTES:
+        raise ValueError(
+            f"no trend routing for trend_context {trend_context!r}; "
+            f"expected one of {', '.join(sorted(_TREND_ROUTES))}"
+        )
+    tests, citation = _TREND_ROUTES[ctx]
+    return {"tests": tests, "citation": citation}
+
+
+def recommend_variance_role(role: str) -> dict[str, object]:
+    """Dataless declared-variance-test-ROLE -> acceptable disposition SET (OQ-6).
+
+    Takes ONLY the declared role — no data, no n, no location-test result. The
+    precondition role NEVER endorses a variance pretest as a location-choice gate:
+    its only acceptable disposition is to use Welch unconditionally. Raises
+    ValueError for an unrecognised role.
+    """
+    r = normalize(role)
+    if r not in _VARIANCE_ROLE_ROUTES:
+        raise ValueError(
+            f"no variance-role routing for role {role!r}; "
+            f"expected one of {', '.join(sorted(_VARIANCE_ROLE_ROUTES))}"
+        )
+    tests, citation = _VARIANCE_ROLE_ROUTES[r]
+    return {"tests": tests, "citation": citation}
+
+
+def recommend_resampling(purpose: str) -> dict[str, object]:
+    """Dataless declared-resampling-PURPOSE -> acceptable method SET + house default.
+
+    Takes ONLY the declared purpose — no data, no B, no seed. The returned `tests`
+    is drawn from RESAMPLING_METHODS with `default` the house choice (BCa for an
+    interval). Raises ValueError for an unrecognised purpose.
+    """
+    p = normalize(purpose)
+    if p not in _RESAMPLING_ROUTES:
+        raise ValueError(
+            f"no resampling routing for purpose {purpose!r}; "
+            f"expected one of {', '.join(sorted(_RESAMPLING_ROUTES))}"
+        )
+    tests, default, citation = _RESAMPLING_ROUTES[p]
+    return {"tests": tests, "default": default, "citation": citation}
+
+
+def recommend_posthoc(omnibus: str) -> dict[str, object]:
+    """Dataless declared-OMNIBUS -> acceptable post-hoc SET (exactly POSTHOC_FAMILY_MAP).
+
+    Takes ONLY the declared omnibus (family) — no data, no n. The returned `tests`
+    is exactly POSTHOC_FAMILY_MAP[family] and therefore NEVER contains a DEPRECATED
+    post-hoc (snk, unprotected_lsd — never a member of any acceptable set, D-04).
+    Raises ValueError for an omnibus with no post-hoc family.
+    """
+    family = normalize(omnibus)
+    if family not in POSTHOC_FAMILY_MAP:
+        raise ValueError(
+            f"no post-hoc routing for omnibus {omnibus!r}; "
+            f"expected one of {', '.join(sorted(POSTHOC_FAMILY_MAP))}"
+        )
+    return {
+        "tests": POSTHOC_FAMILY_MAP[family],
+        "citation": "protected post-hoc matched to the declared omnibus family "
+        "(Games-Howell 1976; Hayter 1986)",
+    }
+
+
+def recommend_power(reporting_type: str) -> dict[str, object]:
+    """Dataless declared-power-reporting-TYPE -> ENDORSED reporting-form SET.
+
+    Takes ONLY the declared reporting type — no data, no observed effect. EVERY
+    recognised type (including a declared observed / post_hoc) routes to the
+    endorsed set {a_priori, design, mde_sensitivity}; the tautological observed /
+    post-hoc power is NEVER echoed back as endorsed (Hoenig-Heisey 2001). Raises
+    ValueError for an unrecognised reporting type.
+    """
+    t = normalize(reporting_type)
+    if t not in POWER_REPORTING_TYPES:
+        raise ValueError(
+            f"no power routing for reporting_type {reporting_type!r}; "
+            f"expected one of {', '.join(sorted(POWER_REPORTING_TYPES))}"
+        )
+    return {
+        "tests": _ENDORSED_POWER_FORMS,
+        "deprecated": _DEPRECATED_POWER_FORMS,
+        "citation": "a-priori / design / sensitivity power only; observed and "
+        "post-hoc power are tautological (Hoenig-Heisey 2001; Lakens 2022)",
+    }
+
+
+def recommend_proportion_ci(context: str) -> dict[str, object]:
+    """Dataless declared-proportion-CONTEXT -> acceptable interval-method SET.
+
+    Takes ONLY the declared context — no data, no n. The returned `tests` contains
+    Wilson (house `default`), Clopper-Pearson, Jeffreys and Agresti-Coull and
+    NEVER Wald (Brown-Cai-DasGupta 2001; the n cutoff is confirm-at-source, not
+    encoded). Raises ValueError for an unrecognised context.
+    """
+    ctx = normalize(context)
+    if ctx not in _PROPORTION_CI_ROUTES:
+        raise ValueError(
+            f"no proportion-CI routing for context {context!r}; "
+            f"expected one of {', '.join(sorted(_PROPORTION_CI_ROUTES))}"
+        )
+    tests, default, citation = _PROPORTION_CI_ROUTES[ctx]
+    return {"tests": tests, "default": default, "citation": citation}
 
 
 # ── Checks ───────────────────────────────────────────────────────────────────
