@@ -483,6 +483,7 @@ def check(spec: dict) -> Report:
         if analysis:
             _check_declared_test(analysis, spec, report)
             _check_declared_association(analysis, spec, report)
+            _check_declared_advanced_stats(analysis, spec, report)
         return report
 
     pvalues: list[float] = []
@@ -499,6 +500,7 @@ def check(spec: dict) -> Report:
     _check_correction_applied(spec, pvalues, alpha, report)
     _check_declared_test(section(spec, "analysis"), spec, report)
     _check_declared_association(section(spec, "analysis"), spec, report)
+    _check_declared_advanced_stats(section(spec, "analysis"), spec, report)
     return report
 
 
@@ -1048,3 +1050,321 @@ def _check_agreement_completeness(analysis: dict, report: Report) -> None:
                 remedy="Declare both analysis.p_pos and analysis.p_neg alongside the kappa.",
                 where="spec.analysis",
             )
+
+
+def _check_declared_advanced_stats(analysis: dict, spec: dict, report: Report) -> None:
+    """Dispatch the seven declaration-only Phase-19 advanced-stats gate groups.
+
+    Mirrors ``_check_declared_association`` (D-01's "hybrid, not fold-in"): a thin
+    dispatcher over per-family helpers, each carrying its OWN attributable D-05
+    docstring (19-RESEARCH.md Pattern 1) because ``gen-finding-catalogue.py`` resolves
+    each code's ``Citation:`` from its nearest-enclosing ``FunctionDef`` — a monolith
+    emitting all ten under one docstring would launder seven distinct citation
+    obligations. Every predicate compares DECLARED strings/structures against a closed
+    vocabulary or a presence check — never data (the anti-two-stage invariant,
+    REQ-P19-*). Wired at BOTH ``check()`` call sites (the not-tests early return and the
+    post-loop return, 19-RESEARCH.md Pattern 2), so a pure declaration-only Phase-19 spec
+    with no ``results.tests`` is still gated.
+    """
+    if not analysis:
+        return
+    _check_declared_rm_sphericity(analysis, report)
+    _check_declared_trend(analysis, report)
+    _check_declared_resampling(analysis, report)
+    _check_declared_posthoc(analysis, report)
+    _check_declared_variance_role(analysis, report)
+    _check_declared_power_reporting(analysis, report)
+    _check_declared_proportion_count(analysis, report)
+
+
+def _check_declared_rm_sphericity(analysis: dict, report: Report) -> None:
+    """DSX-STA-070: a declared two-stage Mauchly-conditional sphericity correction.
+
+    Citation: Greenhouse, S.W. and Geisser, S. (1959), Psychometrika 24(2):95-112 — the
+    unconditional epsilon-adjusted RM-ANOVA this gate steers toward, named as a
+    bibliographic locator ONLY: the epsilon is computed from the data at source, never a
+    boundary printed here, and this is NOT the reversed 1958 Annals paper. Maxwell, S.E.
+    and Delaney, H.D. (2004), Designing Experiments and Analyzing Data, ch.11-12, is a
+    catalog-paraphrase for the two-stage critique.
+    Structural criterion: declaration-only string comparison against the declared
+    analysis.sphericity_correction; fires only on the exact 'mauchly_conditional' two-stage
+    token and NEVER on the mere presence of a repeated-measures design (D-06 over-block
+    guard — the mixed-model/GEE route has no sphericity step).
+    """
+    if normalize(analysis.get("sphericity_correction", "")) == "mauchly_conditional":
+        report.add(
+            "DSX-STA-070",
+            "HIGH",
+            "Two-stage Mauchly-conditional sphericity correction declared",
+            detail=(
+                "'mauchly_conditional' is the two-stage 'test Mauchly, then decide whether "
+                "to correct' procedure: the pre-test's low power inflates the Type I error "
+                "of the conditional path. The house route is the unconditional "
+                "Greenhouse-Geisser (or Huynh-Feldt) correction applied always — the RM "
+                "analog of always-Welch."
+            ),
+            remedy=(
+                "Declare sphericity_correction as unconditional_gg or unconditional_hf and "
+                "apply it unconditionally."
+            ),
+            where="spec.analysis.sphericity_correction",
+        )
+
+
+def _check_declared_trend(analysis: dict, report: Report) -> None:
+    """DSX-STA-080/081: a declared trend test missing its required companion.
+
+    Citation: Cochran, W.G. (1954), Biometrics 10(4):417-451 and Armitage, P. (1955),
+    Biometrics 11(3):375-386 [DSX-STA-080, the dose-score requirement]. Hamed, K.H. and
+    Rao, A.R. (1998), Journal of Hydrology 204(1-4):182-196 [DSX-STA-081, the
+    effective-sample-size autocorrelation correction], named as a bibliographic locator
+    ONLY — the lag threshold at which autocorrelation must be handled is NOT hard-coded here.
+    Structural criterion: declaration-only presence checks against the declared
+    analysis.trend_test (str OR list — non-blank normalized tokens collected into a set) and
+    its declared companions. DSX-STA-080 fires on a declared cochran_armitage with
+    is_blank(analysis.dose_scores); DSX-STA-081 on a declared mann_kendall/sens_slope with
+    is_blank(analysis.autocorrelation_handling) — an is_blank predicate, NOT membership, so a
+    declared 'none'/'independent' is non-blank and SATISFIES (Pitfall 5).
+    """
+    raw = analysis.get("trend_test")
+    if isinstance(raw, (list, tuple, set)):
+        tokens = {normalize(token) for token in raw if not is_blank(token)}
+    elif not is_blank(raw):
+        tokens = {normalize(raw)}
+    else:
+        tokens = set()
+
+    if "cochran_armitage" in tokens and is_blank(analysis.get("dose_scores")):
+        report.add(
+            "DSX-STA-080",
+            "HIGH",
+            "Cochran-Armitage trend declared without dose scores",
+            detail=(
+                "A Cochran-Armitage trend test is defined by the dose scores assigned to the "
+                "ordered categories; with a blank analysis.dose_scores the trend is undefined. "
+                "The scores must be declared, not inferred from the data."
+            ),
+            remedy=(
+                "Declare analysis.dose_scores (a scheme such as equally_spaced / midrank, or "
+                "explicit values)."
+            ),
+            where="spec.analysis.dose_scores",
+        )
+
+    if tokens & {"mann_kendall", "sens_slope"} and is_blank(
+        analysis.get("autocorrelation_handling")
+    ):
+        report.add(
+            "DSX-STA-081",
+            "HIGH",
+            "Mann-Kendall / Sen's slope trend declared without an autocorrelation handling",
+            detail=(
+                "Mann-Kendall and Sen's slope assume serially independent observations; an "
+                "autocorrelated temporal series inflates the trend test unless the handling is "
+                "declared. A declared 'none' or 'independent' is a non-blank, explicit "
+                "satisfaction — this fires only on a blank declaration."
+            ),
+            remedy=(
+                "Declare analysis.autocorrelation_handling (none / independent if truly iid, or "
+                "hamed_rao / prewhitening / yue_pilon)."
+            ),
+            where="spec.analysis.autocorrelation_handling",
+        )
+
+
+def _check_declared_resampling(analysis: dict, report: Report) -> None:
+    """DSX-STA-090: a declared resampling block missing part of its {method, seed, B, unit}.
+
+    Citation: Davidson, R. and MacKinnon, J.G. (2000), Econometric Reviews 19(1):55-68,
+    named as catalog-only — B's VALUE is never checked, only its presence (the exactness
+    floor vs recommended-minimum-B distinction is confirm-at-source, never printed). Efron,
+    B. (1987), JASA 82(397):171-185, is a bibliographic locator ONLY; the BCa acronym is NOT
+    attributed to that text.
+    Structural criterion: presence-only completeness check over the declared
+    analysis.resampling block. Fires ONCE naming the missing member(s) of {method, seed, B,
+    unit}; never four codes, never a check of B's value.
+    """
+    resampling = analysis.get("resampling")
+    if not isinstance(resampling, dict):
+        return
+    missing = [name for name in ("method", "seed", "B", "unit") if is_blank(resampling.get(name))]
+    if missing:
+        report.add(
+            "DSX-STA-090",
+            "HIGH",
+            "Resampling declared without a complete {method, seed, B, unit} quadruple",
+            detail=(
+                "A reproducible resample is defined by all four of method, seed, B (the number "
+                "of resamples) and unit (the exchangeability unit FOR the resample — cluster/block "
+                "vs iid, not a reuse of the design's randomization unit). Missing: "
+                f"{', '.join(missing)}. (B's value is not checked — only that it is declared.)"
+            ),
+            remedy=f"Declare the missing analysis.resampling member(s): {', '.join(missing)}.",
+            where="spec.analysis.resampling",
+        )
+
+
+def _check_declared_posthoc(analysis: dict, report: Report) -> None:
+    """DSX-STA-100: a declared post-hoc not in the acceptable family for the declared omnibus.
+
+    Citation: Hayter, A.J. (1986), JASA 81(396):1000-1004, named as catalog-only (NOT the
+    1984 Annals paper; no numeric alpha printed). Games, P.A. and Howell, J.F. (1976),
+    Journal of Educational Statistics 1(2):113-125, a period-correct bibliographic locator.
+    Structural criterion: membership test of normalize(analysis.posthoc) against
+    POSTHOC_FAMILY_MAP.get(normalize(analysis.omnibus), frozenset()); both fields must be
+    non-blank (is_blank short-circuit). A deprecated post-hoc is never a member of any
+    acceptable set.
+    """
+    if is_blank(analysis.get("omnibus")) or is_blank(analysis.get("posthoc")):
+        return
+    omnibus = normalize(analysis.get("omnibus", ""))
+    posthoc = normalize(analysis.get("posthoc", ""))
+    if posthoc not in POSTHOC_FAMILY_MAP.get(omnibus, frozenset()):
+        report.add(
+            "DSX-STA-100",
+            "HIGH",
+            f"Post-hoc '{posthoc}' is not matched to the declared '{omnibus}' omnibus family",
+            detail=(
+                "A post-hoc procedure is only valid for the omnibus family whose error "
+                "structure it corrects for. The declared post-hoc is not in the acceptable set "
+                "for the declared omnibus (a deprecated post-hoc such as SNK is never a member "
+                "of any acceptable set)."
+            ),
+            remedy=(
+                "Declare a post-hoc matched to the omnibus family (e.g. games_howell/dunnett_t3 "
+                "for welch_anova; dunn/nemenyi for kruskal_wallis)."
+            ),
+            where="spec.analysis.posthoc",
+        )
+
+
+def _check_declared_variance_role(analysis: dict, report: Report) -> None:
+    """DSX-STA-110: a declared variance test used as a location-test precondition.
+
+    Citation: Zimmerman, D.W. (2004), British Journal of Mathematical and Statistical
+    Psychology 57(1):173-181, a bibliographic locator. The finding is catalog-scoped to the
+    two-group case with an explicit principled-extension flag: the mechanism (a variance
+    pre-test gating a location test corrupts the location test's error rate) is invariant to
+    group count, but the empirical k-group magnitude is UNVERIFIED. Bancroft, T.A. (1944) is
+    a not-in-hand backlog item, named not pinned.
+    Structural criterion: keys on the DECLARED analysis.variance_test_role after membership
+    of analysis.variance_test in VARIANCE_TESTS — fires on a blank role (declaration
+    incompleteness) OR precondition_to_location. SILENT on scale_estimand (the scale test IS
+    the correct primary analysis when scale is the estimand); never keys on the presence of
+    Levene/BF/Bartlett/Fligner alone (D-06).
+    """
+    if normalize(analysis.get("variance_test", "")) not in VARIANCE_TESTS:
+        return
+    role = analysis.get("variance_test_role")
+    if is_blank(role) or normalize(role) == "precondition_to_location":
+        report.add(
+            "DSX-STA-110",
+            "HIGH",
+            "Variance test declared as a precondition to a location test",
+            detail=(
+                "Gating a location test (t / ANOVA) on a variance pre-test corrupts the "
+                "location test's error rate — the pre-test's own error compounds with it. When "
+                "scale is genuinely the estimand, declare variance_test_role: scale_estimand and "
+                "the scale test IS the primary analysis. A blank role is a declaration-"
+                "incompleteness block."
+            ),
+            remedy=(
+                "Drop the pre-test and use a heteroscedasticity-robust location test (e.g. "
+                "Welch), or declare variance_test_role: scale_estimand if scale is the estimand."
+            ),
+            where="spec.analysis.variance_test_role",
+        )
+
+
+def _check_declared_power_reporting(analysis: dict, report: Report) -> None:
+    """DSX-STA-111: a declared observed / post-hoc power reporting.
+
+    Citation: Hoenig, J.M. and Heisey, D.M. (2001), The American Statistician 55(1):19-24,
+    named as catalog-only — the observed-power/p-value identity is scope-pinned and this gate
+    fires NARROWLY (only observed / post_hoc). Lakens, D. (2022), Collabra: Psychology
+    8(1):33267, a bibliographic locator; the MDE-sensitivity framing is the catalog's
+    paraphrase, NOT attributed to Lakens.
+    Structural criterion: membership of normalize(analysis.power_reporting_type) in
+    {observed, post_hoc}. a_priori / design / mde_sensitivity do NOT fire (D-06 narrow;
+    broadening is a D-13 deferral).
+    """
+    if normalize(analysis.get("power_reporting_type", "")) in {"observed", "post_hoc"}:
+        report.add(
+            "DSX-STA-111",
+            "HIGH",
+            "Observed / post-hoc power reporting declared",
+            detail=(
+                "Observed (post-hoc) power is a deterministic transform of the p-value — it "
+                "adds no information beyond it and cannot justify accepting a null. Power is a "
+                "design-time quantity; report an a-priori power or an MDE-sensitivity analysis "
+                "instead."
+            ),
+            remedy=(
+                "Declare power_reporting_type as a_priori, design, or mde_sensitivity; do not "
+                "report observed/post-hoc power in a readout."
+            ),
+            where="spec.analysis.power_reporting_type",
+        )
+
+
+def _check_declared_proportion_count(analysis: dict, report: Report) -> None:
+    """DSX-STA-120/121/122: proportion-interval and count-model declaration defects.
+
+    Citation: Brown, L.D., Cai, T.T. and DasGupta, A. (2001), Statistical Science
+    16(2):101-133 [DSX-STA-120, the Wald-interval critique — n-independent, the n<=40 cutoff
+    is NOT hard-coded]. McCullagh, P. and Nelder, J.A. (1989), Generalized Linear Models
+    (2nd ed.), Ch.6 Log-Linear Models, chapter-granular [DSX-STA-121, exposure without offset
+    — section 6.2 is NOT pinned]. For DSX-STA-122 the internal completeness doctrine — a point
+    NNT ships with its interval because its sampling distribution is discontinuous — with
+    Altman, D.G., Deeks, J.J. and Sackett, D.L. (1998), BMJ 317:1309-1312 named as a
+    row-bibliography confirm-at-execute item, NOT an owed gate-code read.
+    Structural criterion: declaration-only equality/presence checks. DSX-STA-120 fires on
+    normalize(analysis.proportion_ci_method) == 'wald' (n-independent). DSX-STA-121 on a
+    declared analysis.exposure with is_blank(analysis.offset). DSX-STA-122 on a declared
+    analysis.nnt with is_blank(analysis.nnt_ci).
+    """
+    if normalize(analysis.get("proportion_ci_method", "")) == "wald":
+        report.add(
+            "DSX-STA-120",
+            "HIGH",
+            "Wald proportion interval declared",
+            detail=(
+                "The Wald interval for a proportion has poor coverage (it can even run below 0 "
+                "or above 1) and misbehaves worst near 0/1 and at small n — n-independently a "
+                "worse default than the score-based alternatives. The n below which it is "
+                "unusable is not printed here."
+            ),
+            remedy=(
+                "Declare proportion_ci_method as wilson, clopper_pearson, jeffreys, or "
+                "agresti_coull (Wilson is the house default)."
+            ),
+            where="spec.analysis.proportion_ci_method",
+        )
+    if not is_blank(analysis.get("exposure")) and is_blank(analysis.get("offset")):
+        report.add(
+            "DSX-STA-121",
+            "HIGH",
+            "Exposure declared without an offset",
+            detail=(
+                "A declared analysis.exposure means the counts are over unequal exposure "
+                "windows; a rate model needs that exposure entered as a fixed-coefficient offset "
+                "(log exposure), not as a free covariate. A blank analysis.offset leaves the "
+                "exposure unmodelled."
+            ),
+            remedy="Declare analysis.offset (e.g. log_person_years) alongside the exposure.",
+            where="spec.analysis.offset",
+        )
+    if not is_blank(analysis.get("nnt")) and is_blank(analysis.get("nnt_ci")):
+        report.add(
+            "DSX-STA-122",
+            "HIGH",
+            "NNT declared without a confidence interval",
+            detail=(
+                "A point number-needed-to-treat is uninterpretable alone: its sampling "
+                "distribution is discontinuous (it passes through infinity when the risk "
+                "difference crosses zero), so a declared analysis.nnt must ship with its "
+                "interval."
+            ),
+            remedy="Declare analysis.nnt_ci (the confidence interval) alongside the point NNT.",
+            where="spec.analysis.nnt_ci",
+        )
