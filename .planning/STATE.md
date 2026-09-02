@@ -2,24 +2,24 @@
 gsd_state_version: 1.0
 milestone: v2.3
 milestone_name: Test Catalog
-current_phase: 20
-current_phase_name: calibration-and-reporting-close
-status: executing
-stopped_at: "S5-4 DONE — `/gsd-audit-milestone v2.3` → status: PASSED (close-out S5). This firing (2026-09-02T17:01Z): reconciled ledger vs repo (brief §0.4) — HEAD 8997cbb == ledger's S5-3-DONE claim, branch up-to-date with origin; no correction. Ran audit-milestone inline as orchestrator: 3-source requirements cross-reference = 22/22 satisfied, 0 unsatisfied, 0 orphaned (12 REQ-IDs flagged 'partial' by the mechanical SUMMARY-frontmatter rule — 17-03 no YAML, 18-A/B + 20-A/B/C/D use provides:-shape — all manually verified satisfied via VERIFICATION.md PASS + requirements_verified arrays). Cross-phase integration = 5/5 seams WIRED (gsd-integration-checker haiku + orchestrator direct evidence, no divergence). Nyquist 4/4 COMPLIANT. Orchestrator re-gate from a clean tree: sh scripts/check.sh → Ran 1462 tests OK, all checks passed, catalogue current @275, capability conformant, gate contract + determinism green. Tech-debt = named D-13 deferrals only, no blockers. Report: .planning/v2.3-MILESTONE-AUDIT.md. Stopped at the S5-4 boundary — NO further headless-runnable unit remains. S5-2 (4 operator security sign-offs HQ-19/21/23/25 + veto windows HQ-20/22/24 — §4 human read, loop may NOT self-sign), S5-5 (complete-milestone — interactive, NOT headless-safe), S5-6 (ship — outward-facing) all remain human-gated. The loop now waits on the operator at S5-2. Never handle_branching."
-last_updated: "2026-09-02T17:01:00Z"
+status: completed
+stopped_at: v2.3 fully scoped and the ceremony repointed; no ledger unit attempted yet.
+last_updated: "2026-09-02T20:51:04.951Z"
 last_activity: 2026-09-02
-last_activity_desc: "S5-4 DONE — /gsd-audit-milestone v2.3 → status: PASSED. 22/22 reqs satisfied (0 unsatisfied, 0 orphaned); 4/4 phases PASSED; 5/5 cross-phase seams WIRED (integration-checker + orchestrator, no divergence); nyquist 4/4 COMPLIANT. Orchestrator re-gate clean tree: check.sh 1462 OK, catalogue @275, capability conformant. Tech-debt = named D-13 deferrals only. Report .planning/v2.3-MILESTONE-AUDIT.md. S5-1/S5-3/S5-4 done. NO headless-runnable unit remains — S5-2 (operator sign-offs HQ-19/21/23/25), S5-5 (complete-milestone interactive), S5-6 (ship) all human-gated; loop waits on operator at S5-2."
+last_activity_desc: Milestone v2.3 completed and archived
 progress:
   total_phases: 4
   completed_phases: 4
-  total_plans: 7
-  completed_plans: 7
-  percent: 90
+  total_plans: 11
+  completed_plans: 11
+  percent: 100
+current_phase: 20
+current_phase_name: calibration-and-reporting-close
 ---
 
 # Project state
 
-**Status:** v2.3 Test Catalog — OPEN, in **close-out (S5)** under the autonomous ceremony (all four phases complete)
+**Status:** v2.3 milestone complete
 **Progress:** [██████████████████░░] v2.3 — 4/4 phases complete → close-out S5 (17 foundation ✅ → 18 correlation/agreement ✅ → 19 RM/trend/categorical/resampling/post-hoc ✅ → 20 calibration ✅ CLOSED [S4-1 discuss ✅ · S4-2 plan ✅ · S4-3 execute ✅ (catalogue 275, zero mint) · S4-4 review+verify ✅ (PASSED, suite 1462 OK) · S4-5 secure+validate ✅ (21 threats threats_open:0; 4/4 reqs nyquist_compliant:true)]) · **S5 close-out: S5-1 audit-uat ✅ (4/4 PASSED) · S5-3 extract-learnings ✅ (105 items) · S5-4 audit-milestone ✅ (PASSED, 22/22, 5/5 seams) — headless units DONE; remaining are operator-gated: S5-2 drain HUMAN-QUEUE (HQ-19/21/23/25 sign-offs) · S5-5 complete-milestone (interactive) · S5-6 ship (operator-approved merge+tag)**
 **Predecessors:** v2.2 Analytic Surface SHIPPED 2026-08-29 (tag `v2.2.0`); v2.0.0 DSX Validity Frame SHIPPED 2026-08-28 (tag `v2.1.0`). Archives under `.planning/milestones/`.
 
@@ -43,10 +43,10 @@ See: .planning/PROJECT.md (updated 2026-08-29; Key Decisions table there is the 
 
 ## Current Position
 
-Phase: 20 (calibration-and-reporting-close) — **S4-1 discuss ✅ + S4-2 plan ✅ + S4-3 execute ✅ (all four plans + Wave-2 merge gate GREEN, catalogue 275) + S4-4 review+verify ✅ (1 LOW fixed, verification PASSED, suite 1462 OK)**. Remaining: **S4-5 secure+validate** (then Phase 20 CLOSED → S5 close-out). Phase 19 CLOSED (S3-1…S3-5).
-Plan: **4 plans written & checked; Wave 1 (20-C ∥ 20-D) executed (S4-3 continues with Wave 2 next)** — 20-A/B/C/D, file-disjoint single-writer across 2 waves (W1 = 20-C ✅ + 20-D ✅ structural guards `depends_on:[]` ∥ W2 = 20-A + 20-B calibration `depends_on:[20-C,20-D]`); execute INLINE on the ceremony branch, never `handle_branching`. **20-C DONE** (REQ-P20-03): no-autoswitch category-complete + fallthrough-position regression; zero codes, byte-frozen. **20-D DONE** (REQ-P20-04): new read-only `tests/test_doc_code_agreement.py` (8 tests) — Tier-1 cell-equality of all 15 Decision rows ↔ `recommend_test` (+ Boschloo fallback), Tier-2 set-membership of the six `recommend_*` mirror tables, visible skip-list + exhaustiveness (57 rows = 31 bound + 26 skip); NO divergence → `test-selection.md` + `stats.py` byte-frozen; zero codes; suite **1455 OK**, catalogue @275. Discuss settled: **D-03 load-bearing** — the 15 new Phase-18/19 codes are HIGH/verify-ship-only, so the existing CRITICAL/plan-execute `test_stratified_catch_rate_and_fpr_report` is a provable no-op on them → EXTEND the one harness with a live HIGH verify/ship stratum (read via `_gate_findings`, never `_GOLDEN_SHIP_FINDINGS` = D-09). **D-02** REQ-P20-04 = cross-check test (rows 8–24 cell-equality ↔ `recommend_test` + set-membership for the six `recommend_*` tables + skip-list), not a generated mirror. **D-04** all 15 PRESENT-caught, none ABSENT; the 5 Phase-18 codes (050/051/060/061/062) fire nowhere in examples/ → dedicated PRESENT fixtures; floor stays 3. **D-05** add good-corpus negative controls (FPR silent-not-clean on the 15). **D-06** only `_GOLDEN_SHIP_FINDINGS` moves; anchor (0.25,0.3) + floor 3 frozen. **D-07** two-wave rigour split (C+D structural guards → A+B calibration), file-disjoint single-writer. **D-01** zero-mint @275. Veto = HQ-24 (non-blocking).
-Status: Executing — Phase 17 CLOSED (S1-1…S1-5); Phase 18 CLOSED (S2-1…S2-5); Phase 19 CLOSED (S3-1…S3-5); Phase 20 S4-1 + S4-2 + S4-3 + **S4-4 DONE** (review+verify PASSED); next firing runs **S4-5** (`/gsd-secure-phase 20` + `/gsd-validate-phase 20`; sign-off batched to HUMAN-QUEUE), which closes Phase 20 → S5 close-out (audit-uat → drain HUMAN-QUEUE → extract-learnings → audit-milestone → complete-milestone → ship). Branch-safety unchanged: never run the framework `handle_branching` (milestone-template name `gsd/v2.3-test-catalog` mismatches the ceremony branch `gsd/v2.3.0-test-catalog`).
-Last activity: 2026-09-02T13:30Z — S4-4 DONE (Phase 20 code review + fix + verification PASSED, REQ-P20-01..04): reviewed the tests/fixtures-only execute diff (production+catalogue byte-frozen, zero-mint); one LOW finding (dead `dist_key` local in test_doc_code_agreement.py) FIXED; six adversarial false-pass probes cleared; goal-backward verification PASSED all 4 reqs. Orchestrator gate from a clean tree: full suite **1462 OK**, targeted Phase-20 oracles 77 OK, catalogue `--check` @275, `git diff -- dsx scripts references` empty. Stopped at the S4-4 boundary; S4-5 (secure+validate) remains to close Phase 20.
+Phase: Milestone v2.3 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-09-02 — Milestone v2.3 completed and archived
 
 ## Performance Metrics
 
@@ -85,3 +85,7 @@ Carried forward from v2.0.0 close — captured future ideas, not gaps:
 Last session: 2026-08-29 (interactive session — v2.2 ship + v2.3 open)
 Stopped at: v2.3 fully scoped and the ceremony repointed; no ledger unit attempted yet.
 Resume file: None — the next firing takes S0-1 from LOOP-LEDGER.md.
+
+## Operator Next Steps
+
+- Start the next milestone with /gsd-new-milestone

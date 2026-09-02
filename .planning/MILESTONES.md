@@ -1,5 +1,36 @@
 # Milestones
 
+## v2.3 Test Catalog (Shipped: 2026-09-02)
+
+**Phases completed:** 4 phases (17–20), 11 plans
+
+**Delivered:** the statistical-test decision surface expanded from ~15 to ~75 rows
+across 11 categories (correlation/association, agreement/reliability, repeated
+measures, trend, categorical, resampling, variance/scale, proportions, counts,
+post-hoc, power conventions), backed by 15 new declaration-only gate checks under
+full D-05 citation discipline — every citation independently re-verified against
+primary sources in an interactive session before shipping (27 citations checked,
+7 corrected, including one real defect: a proposed Krippendorff-alpha fixture value
+that didn't actually appear anywhere in its cited paper). Milestone audit `passed`
+(22/22 requirements, 0 unsatisfied/orphaned); finding catalogue grows 260 → 275
+codes, additively, with the frozen Phase-12 snapshot unmutated.
+
+**Key accomplishments:**
+
+- Reconciled a live Boschloo doc/code divergence (the reference doc already prescribed the correct small-cell fallback; `recommend_test` still emitted the wrong one) by fixing the routing table to match, pinned by a new regression test. No new finding codes.
+- Pinned the `time_to_event` → log-rank unconditional fallthrough with a behavioural + source-scan regression test, so future outcome-type rows cannot silently change routing.
+- Added the `estimand_kind` closed spec vocabulary (6 members, including the D-06/D-12a-disposed `nominal_association`) and a shared `DSX-STA-040` declaration-completeness guard, with the D-05 allowlist and doc mirror landing in the same commit.
+- Correlation/association routing (`recommend_association`) plus a five-code declaration-only gate (`DSX-STA-050/051/060/061/062`, all HIGH) covering scale/kind mismatches, agreement-vs-correlation routing, and ICC/kappa declaration completeness — catalogue to 265.
+- Report-only correlation/agreement effect-size bands (kappa, ICC, Kendall's W, Krippendorff) added to `dsx/mathx.py` as labeled conventions — the blocking `EFFECT_SIZE_KINDS` domain stays frozen at `{d, h, r}`; bands wire only into the ungated APA template.
+- Eight closed Phase-19 declared sub-vocabularies, `POSTHOC_FAMILY_MAP`, and seven dataless `recommend_*` routing functions (repeated measures, trend, resampling, post-hoc, variance role, power, proportion CI) — all keyed on declared context only, extending the anti-two-stage doctrine to six new families.
+- Ten HIGH declaration-only gate codes (`DSX-STA-070/080/081/090/100/110/111/120/121/122`) covering two-stage sphericity, undeclared dose scores/autocorrelation handling, incomplete resampling quadruples, post-hoc/omnibus family mismatches, variance-test-as-precondition, observed-power-in-a-readout, Wald-for-proportion, and undeclared exposure offsets — each with its own attributable citation docstring (no shared-block citation laundering). Catalogue to 275.
+- Five dedicated known-bad fixtures and three good-corpus negative controls for the Phase-18 codes (which fired nowhere in `examples/` before), making the false-positive rate a real negative control rather than a vacuous pass.
+- The single calibration harness (`test_stratified_catch_rate_and_fpr_report`) extended with a live HIGH verify/ship stratum — computed from real gate findings, never from the golden-ship reference set (D-09 no-self-reference) — since the 15 new HIGH milestone codes are otherwise a provable no-op on the existing CRITICAL/plan-execute-only stratum.
+- The no-autoswitch structural guard made category-complete across every new routing family, plus a fallthrough-position regression test.
+- A read-only doc/code agreement cross-check (`test_doc_code_agreement.py`) binding `references/test-selection.md`'s decision-table rows to the live `recommend_test`/`recommend_*` engines by strict cell equality — the exact structural gap the Boschloo divergence exploited, now closed permanently rather than just repaired once.
+
+---
+
 ## v2.2 Analytic Surface (Shipped: 2026-08-29)
 
 **Phases completed:** 4 phases (13–16), 20 plans

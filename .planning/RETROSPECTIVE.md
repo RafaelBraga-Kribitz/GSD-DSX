@@ -182,6 +182,119 @@ unmutated.
   confirm, incomplete-requirements proceed/abort, branch-merge choice) that a
   headless firing correctly refused to self-approve.
 
+## Milestone: v2.3 — Test Catalog
+
+**Shipped:** 2026-09-02
+**Phases:** 4 (17, 18, 19, 20) | **Plans:** 11
+
+### What Was Built
+
+The analyst-facing test-selection surface, expanded as close to exhaustion as
+stayed manageable and citable: the `recommend_test` decision table grew from
+~15 to ~75 rows across 11 categories (correlation/association, agreement/
+reliability, repeated measures, trend, categorical, resampling, variance/scale,
+proportions, counts, post-hoc, power conventions), backed by 15 new
+declaration-only gate checks (`DSX-STA-050`…`122`, all HIGH) under full D-05
+citation discipline. Every check reads declared fields only — the anti-two-stage
+doctrine already proven for Shapiro-Wilk was extended structurally to six new
+families, including two new NEGATIVE gates (a variance test declared as a
+precondition to a location-test choice blocks; observed/post-hoc power declared
+in a readout blocks). Finding catalogue: 260 → 275 codes, additive, both frozen
+snapshots (Phase-12 at 256, v2.2's set) unmutated.
+
+### What Worked
+
+- **Front-loading the repairs.** Phase 17 fixed the inherited Boschloo doc/code
+  divergence and added the missing `estimand_kind` spec vocabulary *before* any
+  new gate check was written, so nothing later inherited a known defect.
+- **Filing both D-05 evidence packs at bootstrap (S0-3/S0-4), before Phase 17
+  even planned.** The two packs (HQ-16, HQ-17 — 27 citations combined) were the
+  milestone's long pole; filing them at open let the operator read
+  asynchronously while Phase 17 built, exactly the pattern that worked for
+  v2.2's HQ-8.
+- **Citation granularity as an explicit, load-bearing ruling.** One human D-05
+  read per new gate CODE, one bibliographic citation per catalog ENTRY — stated
+  and held to. Without it, a ~75-row table would have demanded ~90 human reads
+  instead of the 27 actually needed, stalling the ceremony's one human-gated
+  step for a milestone of this size.
+- **Independent re-verification of every citation before shipping, not after.**
+  An interactive session re-derived all 27 citations against primary sources
+  (7 parallel research agents) rather than trusting the loop's bibliographic
+  corroboration alone. This caught a real defect: a proposed Krippendorff's-
+  alpha fixture value (0.743, with a claimed "0.734 textbook typo") that does
+  not appear anywhere in the cited 2007 paper — its own worked example gives
+  0.7598. Six smaller corrections followed the same pattern (a citation
+  attributing a broader claim than its source supports; a locator pinned more
+  precisely than the original guess; a claimed replacement-test recommendation
+  the source doesn't actually make).
+- **Real independent security re-gates, not trusted reports.** All four phases'
+  sign-offs (54 threats total, 7 of them HIGH in Phases 19-20) were backed by
+  the orchestrator re-running every non-accepted mitigation from a clean tree —
+  including confirming citation-laundering and self-reference threats were
+  structurally closed (per-family docstrings, not shared blocks; HIGH catch
+  computed live, never from the golden reference set) — before the operator
+  ever saw the sign-off request.
+
+### What Was Inefficient
+
+- **A weekly usage-limit hit exposed a real gap in the backoff design.**
+  Anthropic released the account's weekly limit early; the wrapper's
+  dead-reckoning wait (park until the computed deadline) had no way to notice,
+  and needed a manual clear plus a same-day fix (a periodic re-probe every 30
+  minutes during any hold) before the loop could self-correct on future early
+  releases. Caught only because the operator was watching the clock, not
+  because the system noticed on its own.
+- **`init.manager`'s `verification_status` read "missing" for all four phases**
+  despite every one having a real, PASSED `NN-VERIFICATION.md` — the same class
+  of framework-CLI naming-convention blind spot as v2.0.0's/v2.2's audit-uat
+  issues, just manifesting on a different code path. Required direct evidence
+  (reading the actual verification files) to safely override at close-out.
+- **The milestone-complete CLI's accomplishment extraction was still unreliable**
+  a second time (v2.2 had the same defect) — several bullets truncated
+  mid-sentence or captured YAML frontmatter instead of prose. Hand-corrected
+  again from the real `SUMMARY.md` files rather than fixing the extractor
+  itself, which remains a standing, accepted cost of milestone close.
+
+### Patterns Established
+
+- **Deprecated methods ship as first-class routing-off catalog rows**, not
+  silent omissions — Yates' correction, unprotected LSD at k>3, Vuong-for-zero-
+  inflation, observed power all get a named row stating why they're wrong and
+  what replaces them, mirroring the honesty already shipped for Fisher-vs-
+  Boschloo in the original 15-row table.
+- **Negative gates for doctrine, not just positive gates for coverage.** Where
+  the anti-two-stage rule needed active enforcement rather than passive
+  avoidance, the milestone shipped gates that block the wrong pattern directly
+  (variance-test-as-precondition; observed-power-in-a-readout) instead of only
+  documenting the right one.
+- **A permanent doc/code agreement cross-check**, not just a one-time repair —
+  `test_doc_code_agreement.py` binds `references/test-selection.md`'s decision
+  rows to the live routing engines by strict cell equality, closing the
+  structural gap the Boschloo divergence exploited so that class of bug cannot
+  recur silently again.
+
+### Key Lessons
+
+- A citation pack that has already self-flagged its own uncertain spots (locator
+  traps, edition ambiguities, disputed values) is a *better* pack, not a weaker
+  one — it is exactly what let the independent re-verification focus effort
+  where it mattered and confirm the rest quickly.
+- An automated backoff/retry mechanism needs to periodically re-test its own
+  precondition, not just wait out a computed deadline — any dead-reckoned
+  estimate of an external system's state can be wrong in either direction.
+- The same class of defect (generated milestone-close output needing hand
+  verification) recurring at a second consecutive milestone close means it is
+  now a standing operating cost to budget for, not a one-off surprise.
+
+### Process Observations
+
+- Delivered by the same headless completion ceremony as v2.0.0/v2.2, with the
+  operator traveling and reachable only intermittently for this milestone's
+  close-out — all seven remaining human-gated items (four security sign-offs,
+  three D-06/methodology veto windows) and the ship decision were reviewed and
+  approved in a single batched interactive session on the operator's explicit
+  go-ahead, rather than split across several round-trips.
+
 ## Cross-Milestone Trends
 
 | Milestone | Phases | Plans | Shipped |
@@ -189,3 +302,4 @@ unmutated.
 | v1.1.0–v1.5.0 | 5 | — | (incremental) |
 | v2.0.0 DSX Validity Frame | 11 | 89 | 2026-08-28 |
 | v2.2 Analytic Surface | 4 | 20 | 2026-08-29 |
+| v2.3 Test Catalog | 4 | 11 | 2026-09-02 |
