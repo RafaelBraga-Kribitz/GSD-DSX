@@ -811,8 +811,16 @@ mechanics.
 | A6 | `analysis.power_reporting_type` sub-vocab `{a_priori, design, observed, post_hoc, mde_sensitivity}` lives on `analysis:` (not `results:`) for DSX-STA-111 | OQ-7 | Low — the gate path reads `analysis`; a `results.`-placed field would be unreachable by the current dispatcher without a second read |
 | A7 | Flat `analysis.proportion_ci_method` (sub-vocab), `analysis.exposure`+`analysis.offset` (presence), `analysis.nnt`+`analysis.nnt_ci` (presence) for DSX-STA-120/121/122 | OQ-7 | Low — presence/membership shapes are unambiguous; only names are proposals |
 
-## Open Questions
+## Open Questions (RESOLVED — bound at S3-2 plan, 2026-09-02)
 
+> **RESOLVED:** all eight below were bound by the planner in `19-A-PLAN.md`
+> `field_bindings` (read by `19-C-PLAN.md` `gate_predicates`) and confirmed by
+> gsd-plan-checker (VERIFICATION PASSED, Dim-11). Notable planner overrides:
+> OQ-2/OQ-3 → dedicated `analysis.trend_test` (str-or-list) not the single-valued
+> `analysis.test`; OQ-6 → dedicated `analysis.variance_test` + role-only exemption,
+> **no** scale `estimand_kind` member added. The bindings in the plans supersede
+> the recommendations here on any divergence.
+>
 > All ten are declared-field NAME bindings D-03 explicitly defers to "a plan-time
 > binding for S3-2." The SHAPES are fixed by D-03; these are concrete, reasoned
 > NAME/vocab recommendations for the planner to confirm or override — NOT
