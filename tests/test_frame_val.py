@@ -1417,6 +1417,16 @@ _EXPECTED_VAL_CODES: "dict[str, set[str]]" = {
     "icc-incomplete-triple-ANALYSIS-SPEC.yaml": set(),
     "weighted-kappa-missing-weights-ANALYSIS-SPEC.yaml": set(),
     "kappa-missing-companions-ANALYSIS-SPEC.yaml": set(),
+    # Measured 2026-09-03 (plan 24-02, REQ-P24-02) against each fixture as committed:
+    # loaded via dsx.loader.load(), ran dsx.frame.val.check(spec), recorded
+    # {f.code for f in report.findings} — the empty set for all four. These four
+    # bad-CHART-choice fixtures encode their defect entirely in the visuals: block
+    # (DSX-VIZ-001 / DSX-VIZ-071, dsx/checks/viz.py); each is a copy of a clean
+    # good-corpus control whose validity_frame is untouched, so no DSX-VAL-* code fires.
+    "chart-gauge-single-kpi-ANALYSIS-SPEC.yaml": set(),
+    "chart-word-cloud-text-ANALYSIS-SPEC.yaml": set(),
+    "chart-radar-multimetric-ANALYSIS-SPEC.yaml": set(),
+    "chart-uncertainty-mark-misuse-ANALYSIS-SPEC.yaml": set(),
 }
 
 

@@ -234,6 +234,24 @@ _GOLDEN_SHIP_FINDINGS: "dict[str, frozenset[str]]" = {
     "examples/known-bad/kappa-missing-companions-ANALYSIS-SPEC.yaml": frozenset({
         "DSX-STA-062",
     }),
+    # Phase 24 (REQ-P24-02, GA-2): the four bad-CHART-choice fixtures. Each is a copy
+    # of a clean good-corpus control (measured golden frozenset() above) plus exactly
+    # one bad visual. The three banned-type fixtures fire DSX-VIZ-001 HIGH (the shared
+    # banned-mark code, no new mint); their incidental DSX-VIZ-010/DSX-VIZ-014 are
+    # MEDIUM and so excluded from this CRITICAL/HIGH set. The uncertainty fixture fires
+    # only DSX-VIZ-071 MEDIUM, below this tier entirely, so its CRITICAL/HIGH set is
+    # empty. Each set measured 2026-09-03 against a fresh tempfile.TemporaryDirectory()
+    # per fixture via _ship_findings above — never guessed.
+    "examples/known-bad/chart-gauge-single-kpi-ANALYSIS-SPEC.yaml": frozenset({
+        "DSX-VIZ-001",
+    }),
+    "examples/known-bad/chart-word-cloud-text-ANALYSIS-SPEC.yaml": frozenset({
+        "DSX-VIZ-001",
+    }),
+    "examples/known-bad/chart-radar-multimetric-ANALYSIS-SPEC.yaml": frozenset({
+        "DSX-VIZ-001",
+    }),
+    "examples/known-bad/chart-uncertainty-mark-misuse-ANALYSIS-SPEC.yaml": frozenset(),
 }
 
 
