@@ -241,7 +241,13 @@ visuals:
 
 reproducibility:
   entrypoint: analysis/activation_readout.py
-  reproduce_report: good-REPRO-REPORT.md   # REQ-P24-01: opts into the strict repro check (DSX-REP-060/061)
+  # REQ-P24-01: opts into the strict repro check (DSX-REP-060/061). Unlike narrative.path
+  # and artifact_path (which resolve against the spec's parent via resolve_root), the repro
+  # check resolves this against the GSD phase dir / CWD (repro.py locates it as it locates
+  # the entrypoint). The exemplar is always gated from repo root, so the path is written
+  # repo-root-relative — this resolves under `dsx gate ... --spec examples/good-...yaml`
+  # and under the test harness (run_checks with phase_dir=None), with or without --phase-dir.
+  reproduce_report: examples/good-REPRO-REPORT.md
   random_seed: 42
   language_version: "python 3.12.4"
   lockfile: analysis/requirements.lock

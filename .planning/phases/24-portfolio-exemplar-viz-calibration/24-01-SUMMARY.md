@@ -1,7 +1,7 @@
 # 24-01 SUMMARY — Portfolio exemplar upgraded in place (REQ-P24-01)
 
 **Plan:** 24-01 (Wave 1) · **Requirement:** REQ-P24-01 · **Status:** DONE
-**Gate:** `dsx gate ship --spec examples/good-ANALYSIS-SPEC.yaml --phase-dir examples` → **exit 0** (CRITICAL=0 HIGH=0 MEDIUM=3 INFO=1)
+**Gate:** `dsx gate ship --spec examples/good-ANALYSIS-SPEC.yaml` → **exit 0** (CRITICAL=0 HIGH=0 MEDIUM=3 INFO=1); full suite **1507 OK** from a clean tree.
 
 ## What was built
 
@@ -36,7 +36,8 @@ keeping the three `claims[]` sentences verbatim (DSX-NAR-020 requires each claim
 and not overstating the effect (2.4pp, 95% CI 1.0–3.8pp; h≈0.05 acknowledged; the case rests on the CI clearing
 the +1.0pp floor, not on significance). Authored `good-REPRO-REPORT.md` from the template: `status: reproduced`,
 `activation_rate: 0.024` (== `results.tests[0].effect`, within DSX-REP-061's rel_tol). Wired
-`reproducibility.reproduce_report: good-REPRO-REPORT.md` (opts into DSX-REP-060/061).
+`reproducibility.reproduce_report: examples/good-REPRO-REPORT.md` (repo-root-relative — see the regression note
+below; opts into DSX-REP-060/061).
 
 ## Determinism (GA-3) — proven this run
 
@@ -47,29 +48,40 @@ returned identical `sha256:` digests both times for all three figures, and those
 
 ## Gate evidence (orchestrator-run, final tree)
 
-- `dsx gate ship --spec examples/good-ANALYSIS-SPEC.yaml --phase-dir examples` → **exit 0**,
-  `gate:ship: PASS (blocking at HIGH) — CRITICAL=0 HIGH=0 MEDIUM=3 LOW=0 INFO=1`.
+- `dsx gate ship --spec examples/good-ANALYSIS-SPEC.yaml` → **exit 0**,
+  `gate:ship: PASS (blocking at HIGH) — CRITICAL=0 HIGH=0 MEDIUM=3 LOW=0 INFO=1` (no `--phase-dir` needed).
+- **Full suite 1507 OK** from a clean tree (43.5s) — same count as Phase 23 close (24-01 adds no test module);
+  every good-fixture-gating test in `test_dsx.py` / `test_good_fixture_phase15.py` / `test_reproduce_report.py` green.
 - `python -m unittest tests.test_gate_path_hermetic` → **2 OK** (matplotlib stays in FORBIDDEN — charts.py off the gate path).
 - `python scripts/gen-finding-catalogue.py --check` → **exit 0, "finding catalogue is current"** (zero mint; the 9
   pre-existing "declared twice" warnings unchanged — Phase 24 touched no `dsx/` code).
-- Changed files == exactly the 8 in `files_modified`; no gate code touched.
+- Committed SVG index blobs seal EXACTLY to their spec values (1ab8459 / f44091c2 / 52023ee8) via the
+  `.gitattributes` `examples/figures/*.svg binary` rule — the seal survives checkout on any platform.
 
 ## Honest notes (not folded into the pass claim)
 
 - **3 pre-existing MEDIUM `DSX-STA-011`** fire on `results.tests[0..2]` (negligible standardized effect sizes
-  h=0.052 / h=0.038 / d=0.031). These live in the untouched `results` block — NOT introduced by 24-01 — and do
-  not block at HIGH. My visual/narrative/repro delta added **zero** new findings.
-- **Deviation (recorded, minimal, honest): the gate is invoked with `--phase-dir examples`.** `dsx/cli.py`
-  wires `repro.check(spec, phase_dir)` with the raw `phase_dir` (None when the flag is omitted), while every
-  other check receives `resolve_root` (the spec's parent). By design (`repro.py:313`, "locate the report exactly
-  as the entrypoint is located"), the repro module resolves `entrypoint`/`reproduce_report` against the GSD
-  **phase directory**, not the generic resolve-root. Once `reproduce_report` is declared, the report only resolves
-  when the phase directory is named — so the capstone is gated with `--phase-dir examples`, the phase-directory-aware
-  form. This is strictly MORE rigorous (the repro checks actually run and validate), keeps the report path
-  spec-dir-relative and consistent with every other path field, and touches no `dsx/` code. NOT patched in 24-01
-  (out of scope — exemplar-only).
+  h=0.052 / h=0.038 / d=0.031). Confirmed pre-existing by gating the pre-24-01 spec (08a65bf) — the same three
+  fire there. They live in the untouched `results` block, do not block at HIGH, and my delta added **zero** new
+  findings.
+- **Regression caught and fixed within this plan (honest record).** My first pass set
+  `reproducibility.reproduce_report: good-REPRO-REPORT.md` (spec-dir-relative, matching `narrative.path`). But
+  unlike every other path field, the repro check resolves this against the GSD **phase dir / CWD**, not
+  `resolve_root` — `dsx/cli.py` passes raw `phase_dir` (None when `--phase-dir` is omitted) to `repro.check`, and
+  `repro.py` locates the report as it locates the entrypoint (CWD-relative fallback). The good-fixture-gating
+  tests (`test_good_fixture_phase15.py`, `test_dsx.py`) call `run_checks(..., phase_dir=None, resolve_root=examples)`
+  from repo-root CWD, so `good-REPRO-REPORT.md` did not resolve → **DSX-REP-060 HIGH → 16 tests flipped RED**. Fix:
+  the exemplar is always gated from repo root, so the path is written **repo-root-relative**
+  (`examples/good-REPRO-REPORT.md`); it now resolves under the CLI (`--spec examples/good-…yaml`, no `--phase-dir`)
+  and under the test harness alike. This restored the full suite to **1507 OK** and removed the earlier
+  `--phase-dir` workaround. No `dsx/` gate code touched (the phase_dir-vs-resolve_root asymmetry is a real
+  latent inconsistency, but fixing it is out of 24-01's exemplar-only scope).
 - Fixed one authoring bug during Task 1: direct color args need a `#` prefix (`#5c5859`, `#222222`); the
   `.mplstyle` prop_cycle hexes are bare because the cycler parses them, but `axhline(color=…)` does not.
+- **Seal-durability fix (separate commit 11e2df7):** added `.gitattributes` marking `examples/figures/*.svg binary`
+  so git stores the exact sealed CRLF bytes (matplotlib's Windows output). Without it, autocrlf normalised the
+  committed blob (ci blob c9717f64 ≠ spec 52023ee8); on this machine it round-trips, but a fresh/cross-platform
+  checkout would fire DSX-FIG-010. Verified the index blobs now seal to the recorded spec values exactly.
 
 ## Zero-mint (D-06)
 
