@@ -20,6 +20,8 @@ import pathlib
 import re
 import unittest
 
+from dsx.checks.viz import RELATIONSHIP_CHARTS
+
 _ROOT = pathlib.Path(__file__).resolve().parents[1]
 _REFS = _ROOT / "references"
 _CHART_SELECTION = _REFS / "chart-selection.md"
@@ -68,6 +70,20 @@ class TestSelectionHeuristicDocs(unittest.TestCase):
         self.assertEqual(missing, [], f"SKILL.md missing relationship names: {missing}")
         # Non-vacuity: the eleventh key is the whole point of this ripple.
         self.assertIn("uncertainty", skill)
+
+    def test_doc_relationship_names_bind_to_the_live_dict_both_directions(self):
+        """(a2) REQ-P24-03 (GA-3) direct drift-guard: the hand-maintained
+        relationship enumeration this file uses to check the docs must equal the
+        LIVE ``RELATIONSHIP_CHARTS`` keys in *both* directions -- no live key
+        missing from the doc list, no doc name absent from the live dict. Adding
+        a twelfth relationship key, or renaming one, now fails HERE directly,
+        not only transitively via test_viz_vocabulary_invariant's len==11 pin."""
+        self.assertEqual(
+            set(RELATIONSHIP_CHARTS),
+            set(_RELATIONSHIPS),
+            "chart-selection relationship vocabulary has drifted from the live "
+            "dsx.checks.viz.RELATIONSHIP_CHARTS keys",
+        )
 
     def test_perceptual_line_is_d1_six_rank_with_ties(self):
         """(b) chart-selection.md carries D-1's tie language + the Cleveland &
