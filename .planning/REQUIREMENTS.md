@@ -54,22 +54,22 @@ re-verified at 275 before this milestone opened), D-12a (paradigm pairs).
 
 ## Phase 23 — Style and snippet layer
 
-- [ ] REQ-P23-01 `styles/*.mplstyle` set: dsx-538 (forked from matplotlib,
+- [x] REQ-P23-01 `styles/*.mplstyle` set: dsx-538 (forked from matplotlib,
   BSD), dsx-urban (Apache-2.0 palette, vendored OFL Lato — house default),
   dsx-econ and dsx-bbc reimplemented from published doctrine only (no GPL
   port, no unlicensed PDF embedding); per-file license/attribution headers;
   license audit as an explicit plan-review item.
-- [ ] REQ-P23-02 `templates/dsx_plotstyle.py` analyst-side helper
+- [x] REQ-P23-02 `templates/dsx_plotstyle.py` analyst-side helper
   (matplotlib-only, off the gate path): `finalise_figure()`, `direct_label()`,
   `save_deterministic()`.
-- [ ] REQ-P23-03 Determinism recipe proven: vendored OFL font registered via
+- [x] REQ-P23-03 Determinism recipe proven: vendored OFL font registered via
   font_manager, `svg.fonttype: path`, `svg.hashsalt`, metadata date stripped,
   pinned matplotlib recorded in the manifest — verified by a double-render
   hash-equality test kept off the gate path (skipIf matplotlib absent);
   `test_gate_path_hermetic` stays true.
-- [ ] REQ-P23-04 A per-chart-type snippet catalog that imports the helper and
+- [x] REQ-P23-04 A per-chart-type snippet catalog that imports the helper and
   routes to finding codes — snippets never restate gate thresholds.
-- [ ] REQ-P23-05 WCAG AA contrast-verified palettes ship in the style files
+- [x] REQ-P23-05 WCAG AA contrast-verified palettes ship in the style files
   with per-palette citations; any palette *gate* defers with a D-13 entry
   condition.
 
