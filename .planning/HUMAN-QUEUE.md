@@ -20,6 +20,36 @@ a persona round and records loudly):
 
 ## Open
 
+### HQ-31 — Phase 22 end-of-phase security sign-off (filed S2-5, 2026-09-03)
+
+**Type:** security sign-off — a `SECURITY.md` approval line (brief §4 item 4). The
+loop verified the mitigations; it may not self-sign the approval. **Non-blocking**
+for Phase 22 advancement; must be signed by **S5-2** close-out.
+
+**File:** `.planning/phases/22-catalog-spine-uncertainty-heuristic/22-SECURITY.md`
+(State B create; `status: verified`, `threats_open: 0`, ASVS L1).
+
+**What the loop verified (machine gate, re-run by the orchestrator — not trusted):**
+all twelve plan-time threats (T-22-01…T-22-12, authored across the four
+`22-0N-PLAN.md` STRIDE registers) CLOSED by in-tree tests + the D-05 build gate,
+re-run GREEN 2026-09-03. None rises to `high` → nothing blocks under ASVS-L1
+block-on-`high`. Evidence: six mitigation modules (`test_viz_vocabulary_invariant`,
+`test_uncertainty_vocabulary`, `test_finding_catalogue_invariant`,
+`test_chart_catalog_invariant`, `test_selection_heuristic_docs`,
+`test_gen_finding_catalogue`) = **79 tests OK**; `scripts/gen-finding-catalogue.py
+--check` **exit 0 @276** (D-05 enforcement for DSX-VIZ-071); **full suite 1495 OK**
+(41.6s). No new packages → no supply-chain gate.
+
+**UAT note:** Phase 22 has no user-facing runtime behavior — its acceptance test IS
+the automated invariant/gate set (validated: `nyquist_compliant: true`, all 5
+requirements COVERED). The one residual human read (per-citation *authenticity* at
+the locator, D-05) is already tracked under **HQ-27** (signed evidence pack), not
+duplicated here.
+
+**To sign:** confirm the audit and write the approval line in `22-SECURITY.md`
+(`Approval: verified <initials> <date>`, flip the pending line); an interactive
+session then checks HQ-31 off here.
+
 ### HQ-30 — Phase 22 discuss persona decisions + D-06 numbering (veto window, filed S2-1, 2026-09-03)
 
 **Type:** persona-decision veto window + D-06 numeric assignment (brief §4 — recorded
