@@ -1,0 +1,6 @@
+# Sealed exemplar figures are content-addressed by dsx seal (spec.visuals[].svg_sha256).
+# They must be stored byte-exact so the seal survives commit/checkout on any platform —
+# never line-ending-normalised. matplotlib writes the repo's native CRLF on Windows; the
+# recorded seals are of those exact bytes and the off-gate-path double-render determinism
+# test re-renders on the same platform. Marking them binary preserves both.
+examples/figures/*.svg binary
