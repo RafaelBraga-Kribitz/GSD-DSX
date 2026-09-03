@@ -8,6 +8,10 @@
 # file is for multi-figure coverage and generator ownership.
 
 manifest_version: 1
+# Pinned render environment for reproducible svg_sha256 seals (REQ-P23-03).
+# Additive: dsx/checks/figures.py never reads this key. Bump when the analyst-side
+# matplotlib version changes and figures are re-sealed.
+matplotlib_version: "3.11.1"
 run_id: "<shared readout id>"
 figures:
   - chart_id: <stable_id>

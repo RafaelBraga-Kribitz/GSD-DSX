@@ -2,10 +2,18 @@
 
 The deterministic ``dsx`` gate path must stay stdlib-pure and profiler-free: no gate
 module — nor anything in its transitive internal import closure — may pull in a data
-library (``pandas``/``scipy``/``numpy``) or the CSV-opening profiler. Phase 14 is a
-doc/skill/template phase; the single way it could regress this is by a later "just
-call the analysis entrypoint" simplification creeping onto the gate path. This module
-pins the bound structurally so such a regression turns a test red rather than shipping.
+library (``pandas``/``scipy``/``numpy``), ``matplotlib``, or the CSV-opening profiler.
+Phase 14 is a doc/skill/template phase; the single way it could regress this is by a
+later "just call the analysis entrypoint" simplification creeping onto the gate path.
+This module pins the bound structurally so such a regression turns a test red rather
+than shipping.
+
+``matplotlib`` was added to ``FORBIDDEN`` in Phase 23 (D-P23-03, REQ-P23-03): the
+analyst-side ``templates/dsx_plotstyle.py`` render helper imports matplotlib (a large
+native surface — FreeType, HarfBuzz, Qhull), and this guard turns a future "just render
+the chart inline on the gate path" simplification red. Safe today: the gate path is
+stdlib-pure (``dsx/checks/figures.py`` hashes with ``hashlib`` only; the render helper
+lives in ``templates/``, outside the ``dsx/`` AST closure this test walks).
 
 It reads ``dsx/`` source via ``ast`` only — it imports no third-party package and adds
 no ``report.add``, so it mints no finding code. It resolves the gate modules from the
@@ -29,7 +37,10 @@ ROOT = Path(__file__).resolve().parent.parent
 DSX = ROOT / "dsx"
 
 # Top-level import names that must never reach a gate module's import closure.
-FORBIDDEN = {"pandas", "scipy", "numpy", "csv"}
+# "matplotlib" added Phase 23 (D-P23-03/REQ-P23-03) — a strictly-strengthening guard
+# against a future inline-render regression pulling the render path into the hermetic
+# dsx/ closure; safe today (no gate module imports it).
+FORBIDDEN = {"pandas", "scipy", "numpy", "csv", "matplotlib"}
 
 
 def _load_gate_profiles() -> dict:
