@@ -5,15 +5,15 @@ milestone_name: Visual Excellence
 current_phase: 22
 current_phase_name: catalog-spine-uncertainty-heuristic
 status: executing
-stopped_at: "S2-2 (Phase 22 plan) COMPLETE — plan-checker VERIFICATION PASSED. 4 plans / 4 waves via gsd-plan-phase: researcher(sonnet, 22-RESEARCH.md) → VALIDATION.md seed → planner(opus, 22-01..04-PLAN.md) → plan-checker(opus, brief §3 override of the adaptive-profile haiku default). Mints exactly DSX-VIZ-071 (additive 275→276); DSX-VIZ-072 loudly NOT minted (the ten §5.6 marks are paradigm-symmetric, so no mark→paradigm partition exists to gate — persona-round decision, recorded under HQ-30). All five REQ-P22-01..05 covered; the three RESEARCH gaps each homed (uncertainty marks → CHART_CAPABILITIES[interval-range] so Phase 21's every-mark-home invariant stays green; test_finding_catalogue_invariant.py _EXPECTED_TOTAL 275→276 + _MINTED_CODES; DSX-VIZ-071 → gen-finding-catalogue.py _D05_ALLOWLIST_CODES). BRANCH REMEDIATION (loud): the planner subagent created + switched to an erroneous branch gsd/v2.4-visual-excellence (no .0) mid-plan, violating plan-phase §0's Git Branch Invariant; the orchestrator ff-merged its plans commit 81ea14c back onto the canonical gsd/v2.4.0-visual-excellence (linear descendant, no commit lost) and safe-deleted the stray branch — stale gsd/* count restored to 5. NEXT: S2-3 (Phase 22 execute — waves 1→4 in order; 22-01 lands the vocabulary first)."
-last_updated: "2026-09-03T03:19Z"
+stopped_at: "S2-3 (Phase 22 execute) IN PROGRESS — Wave 1 (22-01) COMPLETE, waves 2-4 remain. Wave 1 landed the vocabulary spine via inline orchestrator execution (persona-lite, S1-3 precedent: plan left zero design judgment, gates must be re-run by orchestrator anyway, STATE is single-writer). TDD RED→GREEN→GREEN: (1) extended tests/test_viz_vocabulary_invariant.py with TestUncertaintyFamilyAndFacet (7 methods) — RED-confirmed; (2) added RELATIONSHIP_CHARTS['uncertainty'] 11th key = ten Wilke §5.6 marks (error_bars first), homed all ten into CHART_CAPABILITIES['interval-range'], regenerated dsx/data/input_types.json (IT040 admits all ten); (3) completed BANNED_TYPES to seven records (gauge + word_cloud added, radar PROVISIONAL→Duan et al. 2023, all code=DSX-VIZ-001, zero mint), routed DSX-SMELL-007 remedy to facet_by. GATES (orchestrator-run, final tree): invariant module 18 OK; gen-finding-catalogue --check exit 0 @275 (zero mint); full suite 1478 OK (1471+7). 22-01-SUMMARY.md written. NEXT: Wave 2 (22-02) — mint DSX-VIZ-071, regen catalogue 275→276."
+last_updated: "2026-09-03T03:28Z"
 last_activity: 2026-09-03
-last_activity_desc: "S2-2 Phase 22 plan COMPLETE (4 plans, plan-checker PASSED; mints DSX-VIZ-071 only, 275→276; planner's stray-branch error remediated onto canonical branch); next = S2-3 execute"
+last_activity_desc: "S2-3 Wave 1 (22-01) COMPLETE — uncertainty vocabulary spine + seven refusal records + facet routing; zero mint held @275; full suite 1478 OK. Waves 2-4 remain."
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 5
-  completed_plans: 1
+  completed_plans: 2
   percent: 25
 ---
 

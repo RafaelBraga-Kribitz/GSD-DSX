@@ -26,6 +26,19 @@ RELATIONSHIP_CHARTS: dict[str, tuple[str, ...]] = {
     "flow": ("sankey", "chord", "funnel"),
     "geographic": ("choropleth", "symbol_map", "cartogram"),
     "composition_over_time": ("stacked_area", "stacked_bar", "stream"),
+    # The 11th function: uncertainty (D-2, Wilke 2019 §5.6 — the ten marks below;
+    # error_bars first = the default recommendation). Wilke treats Uncertainty as
+    # a peer top-level function alongside Amounts / Distributions / Proportions /
+    # x-y relationships / Geospatial (ch.5), so this is category addition, not a
+    # generalisation of an existing key. The set is D-12a-clean by construction:
+    # it spans frequentist marks (error_bars, graded_error_bars, confidence_strips,
+    # confidence_band) and Bayesian marks (eye, half_eye, quantile_dot_plot,
+    # graded_confidence_band, fitted_draws) symmetrically (Wilke §16.2), so no
+    # mark implies a single paradigm. eye = violin + error bar; half_eye =
+    # ridgeline half + error bar — distinct marks, not one named twice.
+    "uncertainty": ("error_bars", "graded_error_bars", "error_bars_2d",
+                    "confidence_strips", "eye", "half_eye", "quantile_dot_plot",
+                    "confidence_band", "graded_confidence_band", "fitted_draws"),
 }
 
 # Chart families whose visual encoding is length from a baseline. Truncating the
@@ -61,13 +74,30 @@ BANNED_TYPES: dict[str, dict[str, str]] = {
     "radar": {
         "reason": "Radar area scales with the square of the value and depends on axis order.",
         "code": "DSX-VIZ-001",
-        "citation": "Tufte 1983 / Munzner 2014 proportional-encoding doctrine — PROVISIONAL, "
-                    "no exact Tier-3 source pre-mapped; flagged for HQ-27 S5-2 confirmation",
+        "citation": "Duan et al. 2023 (J Clin Epidemiol 156:85-94), Introduction — "
+                    "area-vs-axis-order and area-proportional-to-square-of-value criticisms; "
+                    "HQ-27 Tier-3",
     },
     "dual_axis_line": {
         "reason": "Two y-scales let any pair of series be made to look correlated.",
         "code": "DSX-VIZ-001",
         "citation": "Muth 2018 (Datawrapper) — HQ-27 T3-4; see also DSX-VIZ-030 (_check_dual_axis)",
+    },
+    "gauge": {
+        "reason": "A radial gauge wastes space with its circular form, gives no context for "
+                  "the single number, and leaves its scale unlabelled. (The arbitrary-maximum "
+                  "criticism is DSX's own reasoning, not Few's.)",
+        "code": "DSX-VIZ-001",
+        "citation": "Few 2006 (Information Dashboard Design) §3.2 / §6.2.1.1 — HQ-27 T3-GAUGE; "
+                    "arbitrary-maximum criticism is DSX's own, not Few's",
+    },
+    "word_cloud": {
+        "reason": "A word cloud supports only the crudest textual analysis: it sizes words by "
+                  "raw length/frequency rather than meaning, strips context, and carries no "
+                  "narrative.",
+        "code": "DSX-VIZ-001",
+        "citation": "Jacob Harris, 'Word clouds considered harmful', Nieman Journalism Lab "
+                    "2011-10-13 — HQ-27; editorial rationale, not perceptual",
     },
 }
 

@@ -19,6 +19,7 @@ import pathlib
 import unittest
 
 from dsx.checks.smells import DENSITY_MARKS, STACKED_MARKS
+from dsx.checks.smells import check as smells_check
 from dsx.checks.viz import BANNED_TYPES, LENGTH_ENCODED, RELATIONSHIP_CHARTS
 from dsx.checks.viz import check as viz_check
 from dsx.spec import CHART_CAPABILITIES
@@ -53,6 +54,25 @@ CAPABILITY_ONLY = frozenset({
     "column", "grouped_bar", "multi_line", "bubble", "donut", "sunburst",
     "icicle", "circle_pack", "timeline", "gantt", "big_number",
     "candlestick", "ohlc_bar", "column_range",
+})
+
+
+# The ten uncertainty marks Wilke enumerates in §5.6 (D-2). This frozenset is a
+# cross-check only: RELATIONSHIP_CHARTS["uncertainty"] is the single source of
+# truth (Plan 22-01, Research Pattern 1 — no parallel authority). eye (a violin
+# with an error bar) and half_eye (a ridgeline half with an error bar) are two
+# distinct marks per D-2, not the same mark named twice.
+UNCERTAINTY_MARKS_D2 = frozenset({
+    "error_bars", "graded_error_bars", "error_bars_2d", "confidence_strips",
+    "eye", "half_eye", "quantile_dot_plot", "confidence_band",
+    "graded_confidence_band", "fitted_draws",
+})
+
+# The complete seven-key refusal set after Phase 22 adds gauge + word_cloud to
+# Phase 21's five (D-4 sibling; GA-1 drift guard). BANNED_TYPES must equal this
+# set exactly — a stray eighth ban is caught, not merely a missing one.
+SEVEN_BANNED_TYPES = frozenset({
+    "3d_bar", "3d_pie", "3d_line", "radar", "dual_axis_line", "gauge", "word_cloud",
 })
 
 
@@ -190,6 +210,84 @@ class TestRefusalEntryCompleteness(unittest.TestCase):
         found = [f for f in viz_check(spec).findings if f.code == "DSX-VIZ-001"]
         self.assertEqual(len(found), 1)
         self.assertEqual(found[0].detail, BANNED_TYPES["radar"]["reason"])
+
+
+class TestUncertaintyFamilyAndFacet(unittest.TestCase):
+    """Phase 22 REQ-P22-02/03: the 11th 'uncertainty' relationship key carries
+    Wilke's ten §5.6 marks (D-2), all capability-homed; the refusal doctrine is
+    completed to seven (gauge + word_cloud added, radar's PROVISIONAL citation
+    replaced by the signed Duan 2023); and facet_by is an orthogonal declaration
+    (a route named by the DSX-SMELL-007 remedy), never a chart type."""
+
+    def test_uncertainty_is_the_eleventh_relationship_key(self):
+        self.assertIn("uncertainty", RELATIONSHIP_CHARTS)
+        self.assertEqual(
+            set(RELATIONSHIP_CHARTS["uncertainty"]),
+            set(UNCERTAINTY_MARKS_D2),
+            "RELATIONSHIP_CHARTS['uncertainty'] must be exactly the ten §5.6 marks (D-2)",
+        )
+
+    def test_relationship_count_is_eleven(self):
+        self.assertEqual(len(RELATIONSHIP_CHARTS), 11)
+
+    def test_every_uncertainty_mark_is_capability_homed(self):
+        homed = _capability_homed()
+        for mark in sorted(UNCERTAINTY_MARKS_D2):
+            with self.subTest(mark):
+                self.assertIn(
+                    mark, homed, f"{mark} has no capability home (D-01 invariant)"
+                )
+
+    def test_banned_types_are_exactly_the_seven_complete_records(self):
+        self.assertEqual(
+            set(BANNED_TYPES),
+            set(SEVEN_BANNED_TYPES),
+            "BANNED_TYPES must be exactly the seven refusal keys (five + gauge + word_cloud)",
+        )
+        for mark, record in BANNED_TYPES.items():
+            with self.subTest(mark):
+                self.assertIsInstance(record, dict)
+                for field in ("reason", "code", "citation"):
+                    self.assertIn(field, record)
+                    self.assertTrue(str(record[field]).strip(), f"{mark}.{field} is empty")
+                self.assertEqual(record["code"], "DSX-VIZ-001")
+
+    def test_radar_citation_is_the_signed_duan_replacement(self):
+        citation = BANNED_TYPES["radar"]["citation"]
+        self.assertIn("Duan", citation)
+        self.assertNotIn("PROVISIONAL", citation)
+
+    def test_facet_by_is_orthogonal_not_a_chart_type(self):
+        # A standing guard: facet_by is a declaration, not a mark. It must never
+        # appear in a relationship or capability value, nor as a banned key. This
+        # passes today (vacuously) and stays green to catch a future misuse.
+        for key, group in RELATIONSHIP_CHARTS.items():
+            self.assertNotIn(
+                "facet_by", group, f"facet_by leaked into RELATIONSHIP_CHARTS[{key!r}]"
+            )
+        for key, group in CHART_CAPABILITIES.items():
+            self.assertNotIn(
+                "facet_by", group, f"facet_by leaked into CHART_CAPABILITIES[{key!r}]"
+            )
+        self.assertNotIn("facet_by", BANNED_TYPES)
+
+    def test_density_smell_remedy_routes_to_facet_by(self):
+        # DSX-SMELL-007 fires for a density/KDE/violin mark on atomic data; its
+        # remedy must offer faceting (small multiples via a facet_by declaration)
+        # as a route (REQ-P22-03), alongside the existing ECDF/stem/strip advice.
+        spec = {
+            "visuals": [
+                {
+                    "name": "atoms",
+                    "relationship": "distribution",
+                    "type": "violin",
+                    "atomicity": True,
+                }
+            ]
+        }
+        found = [f for f in smells_check(spec).findings if f.code == "DSX-SMELL-007"]
+        self.assertEqual(len(found), 1, "DSX-SMELL-007 should fire for violin on atomic data")
+        self.assertIn("facet_by", found[0].remedy)
 
 
 if __name__ == "__main__":
