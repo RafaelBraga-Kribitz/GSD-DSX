@@ -106,6 +106,40 @@ Three gray areas settled + one D-06 note:
   276→276 at S4-4. Recorded loudly, **not** escalated (D-06 numeric assignments are persona-round
   decisions per brief §4).
 
+### HQ-36 — Phase 24 end-of-phase security sign-off (NON-BLOCKING until S5-2)
+
+Filed at S4-5 (2026-09-03), mirroring the Phase 21 (HQ-29), Phase 22 (HQ-31), and Phase 23
+(HQ-34) sign-offs: non-blocking, the loop keeps working; only S5-2 waits on it. The technical
+gate is already **SECURED** — the approval you are asked to grant is the human sign-off line in
+`24-SECURITY.md`.
+
+**Basis, independently re-run by the loop this firing (not trusted from the 24-01/24-02/24-03
+execute or S4-4 review reports), on the clean tree `ef13b27`:**
+
+- `threats_open: 0`; **13/13 threats T-24-01-01…T-24-03-04 CLOSED**. One is `critical`
+  (T-24-01-01, stale-seal) and several `high`, but all are closed, so nothing blocks under the
+  block-on-`high` policy. Register authored at plan time across the three `24-0N-PLAN.md` STRIDE
+  models.
+- Seven mitigation modules re-run = **90 tests OK** (`test_known_bad_corpus` + `test_gate_path_hermetic`
+  + `test_selection_heuristic_docs` + `test_doc_code_agreement` + `test_viz_vocabulary_invariant`
+  + `test_chart_catalog_invariant` + `test_finding_catalogue_invariant`).
+- The exemplar acceptance ran as the **full `dsx gate plan→execute→verify→ship` sequence on a swept
+  `examples/DECISIONS.jsonl`** (the trail-sensitive acceptance from the S4-4 methodology note): plan/execute
+  PASS (blocking at CRITICAL, CRITICAL=0 HIGH=0 MEDIUM=0), verify/ship PASS (blocking at HIGH,
+  **CRITICAL=0 HIGH=0** MEDIUM=3 = 3× pre-existing `DSX-STA-011` on the untouched `results.tests` block,
+  INFO=1). The CRITICAL stale-seal guards `DSX-FIG-010`/`DSX-FIG-011` and the HIGH lead-number guards
+  `DSX-REP-06x` are all silent → T-24-01-01 (re-seal) and T-24-01-03 (repro lead-number) discharged.
+- `scripts/gen-finding-catalogue.py --check` exit 0 at catalogue **276** — zero mint; `git diff dsx/`
+  EMPTY across the phase range `08a65bf..ef13b27` → zero gate/catalogue-code change by construction
+  (T-24-01-04 / T-24-02-04 / T-24-03-01); set-identity 276→276.
+- Full suite **1508 OK / 45.5s** from a clean tree (stray `DECISIONS.jsonl` swept per standing note).
+
+UAT: Phase 24 adds no user-facing runtime behavior beyond the exemplar/fixtures (all gated), so its
+acceptance test IS the automated invariant/gate set — `nyquist_compliant: true`, 3/3 requirements
+REQ-P24-01..03 COVERED (`24-VALIDATION.md`). The two Manual-Only rows (per-fixture chart-defect
+authenticity, catch-rate/FPR re-baseline honesty) are non-D-05 judgment reads discharged at code
+review S4-4, not escalated.
+
 ## Will be added by the loop when reached
 
 - ~~S0-3: Phase 22 D-05 evidence pack~~ — FILED 2026-09-03 as HQ-27 (see Open).
