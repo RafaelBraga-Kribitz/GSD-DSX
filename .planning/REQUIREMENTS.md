@@ -75,12 +75,12 @@ re-verified at 275 before this milestone opened), D-12a (paradigm pairs).
 
 ## Phase 24 — Portfolio exemplar and viz calibration
 
-- [ ] REQ-P24-01 One end-to-end portfolio exemplar: question → ANALYSIS-SPEC →
+- [x] REQ-P24-01 One end-to-end portfolio exemplar: question → ANALYSIS-SPEC →
   tests via the v2.3 catalog → figures via the style layer → sealed
   FIGURE-MANIFEST → What/So What/Now What narrative → REPRO-REPORT — passing
   every gate at ship threshold.
-- [ ] REQ-P24-02 Known-bad chart-choice fixtures per new code; catch rate and
+- [x] REQ-P24-02 Known-bad chart-choice fixtures per new code; catch rate and
   FPR re-baselined.
-- [ ] REQ-P24-03 Milestone audit prerequisites: catalogue current, snapshots
+- [x] REQ-P24-03 Milestone audit prerequisites: catalogue current, snapshots
   unmutated, doc/code agreement tests green for both selection surfaces
   (test-selection.md and chart-selection.md).
