@@ -20,6 +20,33 @@ a persona round and records loudly):
 
 ## Open
 
+### HQ-30 — Phase 22 discuss persona decisions + D-06 numbering (veto window, filed S2-1, 2026-09-03)
+
+**Type:** persona-decision veto window + D-06 numeric assignment (brief §4 — recorded
+loudly, **non-blocking**; silence = accept). **Not** a scope change, not a sign-off. Full
+rationale in `.planning/phases/22-catalog-spine-uncertainty-heuristic/22-CONTEXT.md`
+(GA-1, GA-2, GA-3). All four operator decisions D-1…D-4 from HQ-27 are applied as binding.
+
+Three decisions the loop made for you to veto if you disagree:
+
+- **GA-1 (catalog entry-set & count).** The merged catalog reaches REQ-P22-01's 75–90 band
+  as: 50 DSX-admissible marks + 10 Wilke §5.6 uncertainty marks (frozen core = 60) + 7
+  refusal rows + ~15 **reference-only** rows (spine-attested chart types not in DSX's gate
+  vocabulary, own descriptions per D-3, flagged reference-only so they never widen what the
+  gate admits). Target ~80; exact reference-row set pinned at plan. **Also:** execute adds
+  `gauge` + `word_cloud` to `BANNED_TYPES` (code=DSX-VIZ-001, so zero new code) so every
+  catalog refusal row is backed by a live ban (no drift), citing Few 2006 / Jacob Harris
+  2011 from the signed HQ-27 pack.
+- **GA-2 (uncertainty vocabulary shape).** Adopt an **11th `RELATIONSHIP_CHARTS` key
+  `"uncertainty"`** (Wilke's 10 §5.6 marks), not new input-type ids — the paradigm-faithful
+  modeling; the existing property check `DSX-VIZ-070` is retained as a complementary surface.
+- **GA-3 (D-06 numbering).** New gate codes take the next-free 07x band: **`DSX-VIZ-071`**
+  (uncertainty-vocabulary check), and **`DSX-VIZ-072`** contingently (only if plan finds a
+  second check warranted). Verified against the re-measured live **275** baseline. The
+  perceptual tie-break (REQ-P22-05), faceting routing, and catalog↔vocabulary conformance
+  are repo-integrity tests off the gate path → **zero code**. Phase-end mint diff = 275→276
+  (or 277), additive-only.
+
 ### HQ-28 — Phase 21 discuss persona decisions (veto window, filed S1-1, 2026-09-03)
 
 **Type:** persona-decision veto window (brief §4 — recorded loudly, **non-blocking**;

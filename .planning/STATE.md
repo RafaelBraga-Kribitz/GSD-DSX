@@ -5,10 +5,10 @@ milestone_name: Visual Excellence
 current_phase: 22
 current_phase_name: catalog-spine-uncertainty-heuristic
 status: executing
-stopped_at: "S1-5 (Phase 21 secure + validate) COMPLETE — Phase 21 full ceremony done (S1-1..S1-5). /gsd-secure-phase 21: State B create, 21-SECURITY.md status:verified threats_open:0 ASVS-L1; all 3 plan-time threats (T-21-01/02/03) CLOSED, mitigation tests re-run GREEN by orchestrator (55 invariant+catalogue tests OK) not trusted from S1-4; ASVS-L1 short-circuit valid (register authored at plan time). /gsd-validate-phase 21: State A, 21-VALIDATION.md status:validated nyquist_compliant:true; gap analysis all 3 reqs COVERED with green automated tests, 0 gaps → no auditor spawn; full suite re-run 1471 OK (40.4s measured). Security human sign-off filed HQ-29 (non-blocking until S5-2); Phase-21 UAT is fully automated (no manual steps); refusal-citation authenticity read stays under HQ-27 Tier-3. NEXT: S2-1 (Phase 22 discuss) is BLOCKED on HQ-27 (D-05 evidence pack unsigned) — all downstream units gated behind it by numeric phase order. Loop is in all-remaining-blocked-on-HUMAN-QUEUE state until the operator answers HQ-27."
-last_updated: "2026-09-02T23:33Z"
-last_activity: 2026-09-02
-last_activity_desc: "S1-5 Phase 21 secure+validate COMPLETE (threats_open:0, nyquist_compliant:true, full suite 1471 OK); Phase 21 fully shipped; loop now blocked on HQ-27 for Phase 22 start"
+stopped_at: "S2-1 (Phase 22 discuss) COMPLETE. HQ-27 was answered by an interactive session (D-05 pack signed with corrections, 4 binding decisions D-1..D-4), unblocking S2-1. 22-CONTEXT.md written via inline opus/high persona round (Architect+Statistician+Auditor). Catalogue re-measured 3 ways = 275 (D-06 baseline). Three gray areas settled: GA-1 catalog entry-set = ROADMAP's fixed synonym-merge (do-not-re-litigate), composition 50 admissible + 10 Wilke uncertainty + 7 refusal + ~15 reference-only → 75-90 band target ~80, execute adds gauge+word_cloud to BANNED_TYPES reusing DSX-VIZ-001; GA-2 uncertainty = 11th RELATIONSHIP_CHARTS key 'uncertainty' (Wilke 10 §5.6 marks) not input-type ids, DSX-VIZ-070 retained complementary; GA-3 D-06 = DSX-VIZ-071 (+072 contingent) in the free 07x band, tie-break/faceting/conformance are off-gate-path tests → zero code, mint 275→276(/277) additive. Persona decisions filed HQ-30 (non-blocking, silence=accept). Boundary held: did NOT advance to S2-2. NEXT: S2-2 (Phase 22 plan, opus/high) — unblocked, ready for the next firing."
+last_updated: "2026-09-03T02:24Z"
+last_activity: 2026-09-03
+last_activity_desc: "S2-1 Phase 22 discuss COMPLETE (22-CONTEXT.md; GA-1/GA-2/GA-3 settled honoring D-1..D-4; catalogue re-measured 275; HQ-30 veto window filed); next = S2-2 plan"
 progress:
   total_phases: 4
   completed_phases: 1
