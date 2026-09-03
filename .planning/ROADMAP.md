@@ -164,6 +164,14 @@ and a rigour project most needs — D-12a-clean by construction), faceting as an
 orthogonal declaration, and the 5-layer question→chart selection heuristic
 route-and-cited into the existing taxonomy files.
 **Requirements**: REQ-P22-01 … REQ-P22-05.
+**Plans**: 4 plans (4 waves). Mints exactly one code (DSX-VIZ-071); DSX-VIZ-072
+deliberately NOT minted (paradigm-symmetric marks have no clean partition to gate);
+additive-only 275 → 276. Planned 2026-09-03 (S2-2).
+Plans:
+- [ ] 22-01-PLAN.md — uncertainty relationship family (11th key, ten §5.6 marks), capability home, gauge/word_cloud/radar refusal records, facet_by (REQ-P22-02, -03)
+- [ ] 22-02-PLAN.md — mint DSX-VIZ-071 uncertainty-vocabulary gate; additive-only 275 → 276 set-identity proof (REQ-P22-05)
+- [ ] 22-03-PLAN.md — merged references/chart-catalog.md (~80 rows, three axes + citation) + repo-integrity conformance and perceptual tie-break tests (REQ-P22-01, -05)
+- [ ] 22-04-PLAN.md — 5-layer heuristic route-and-cite + skill ripple (10→11 relationships) + Pitfall-3 perceptual-line correction (REQ-P22-04)
 
 ### Phase 23: Style and snippet layer
 
