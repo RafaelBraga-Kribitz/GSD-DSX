@@ -89,6 +89,7 @@
       "admissible": [
         "bar",
         "bullet",
+        "diverging_bar",
         "donut",
         "dot_plot",
         "horizontal_bar",
@@ -129,7 +130,8 @@
         "stacked_area",
         "stacked_bar",
         "treemap",
-        "waffle"
+        "waffle",
+        "waterfall"
       ]
     },
     {
@@ -194,8 +196,10 @@
       "family": "categorical-multi",
       "admissible": [
         "bar",
+        "bump",
         "butterfly",
         "dot_plot",
+        "dumbbell",
         "grouped_bar",
         "horizontal_bar",
         "population_pyramid",
@@ -250,9 +254,24 @@
         "bar",
         "box",
         "bullet",
+        "confidence_band",
+        "confidence_strips",
+        "density",
         "dot_plot",
+        "ecdf",
+        "error_bars",
+        "error_bars_2d",
+        "eye",
+        "fitted_draws",
         "gantt",
+        "graded_confidence_band",
+        "graded_error_bars",
+        "half_eye",
+        "histogram",
         "horizontal_bar",
+        "kde",
+        "quantile_dot_plot",
+        "strip",
         "timeline",
         "violin"
       ]
@@ -290,7 +309,8 @@
         "stacked_area",
         "stacked_bar",
         "treemap",
-        "waffle"
+        "waffle",
+        "waterfall"
       ]
     },
     {
@@ -358,7 +378,8 @@
         "stacked_area",
         "stacked_bar",
         "treemap",
-        "waffle"
+        "waffle",
+        "waterfall"
       ]
     },
     {
@@ -372,7 +393,8 @@
       "family": "matrix",
       "admissible": [
         "chord",
-        "heatmap"
+        "heatmap",
+        "sankey"
       ]
     },
     {
@@ -408,7 +430,8 @@
         "stacked_area",
         "stacked_bar",
         "treemap",
-        "waffle"
+        "waffle",
+        "waterfall"
       ]
     },
     {
@@ -455,6 +478,7 @@
       "admissible": [
         "bar",
         "bullet",
+        "diverging_bar",
         "donut",
         "dot_plot",
         "horizontal_bar",
@@ -473,7 +497,9 @@
       "family": "categorical-multi",
       "admissible": [
         "bar",
+        "bump",
         "dot_plot",
+        "dumbbell",
         "grouped_bar",
         "horizontal_bar",
         "slope",
@@ -491,7 +517,8 @@
       "family": "matrix",
       "admissible": [
         "chord",
-        "heatmap"
+        "heatmap",
+        "sankey"
       ]
     },
     {
@@ -505,7 +532,9 @@
       "family": "categorical-multi",
       "admissible": [
         "bar",
+        "bump",
         "dot_plot",
+        "dumbbell",
         "grouped_bar",
         "horizontal_bar",
         "slope",
@@ -524,6 +553,7 @@
       "admissible": [
         "bar",
         "bullet",
+        "diverging_bar",
         "donut",
         "dot_plot",
         "horizontal_bar",
@@ -542,7 +572,9 @@
       "family": "categorical-multi",
       "admissible": [
         "bar",
+        "bump",
         "dot_plot",
+        "dumbbell",
         "grouped_bar",
         "horizontal_bar",
         "slope",
@@ -560,7 +592,9 @@
       "family": "categorical-multi",
       "admissible": [
         "bar",
+        "bump",
         "dot_plot",
+        "dumbbell",
         "grouped_bar",
         "horizontal_bar",
         "slope",
@@ -618,7 +652,8 @@
         "stacked_area",
         "stacked_bar",
         "treemap",
-        "waffle"
+        "waffle",
+        "waterfall"
       ]
     },
     {
@@ -634,9 +669,24 @@
         "bar",
         "box",
         "bullet",
+        "confidence_band",
+        "confidence_strips",
+        "density",
         "dot_plot",
+        "ecdf",
+        "error_bars",
+        "error_bars_2d",
+        "eye",
+        "fitted_draws",
         "gantt",
+        "graded_confidence_band",
+        "graded_error_bars",
+        "half_eye",
+        "histogram",
         "horizontal_bar",
+        "kde",
+        "quantile_dot_plot",
+        "strip",
         "timeline",
         "violin"
       ]
@@ -686,7 +736,9 @@
       "family": "categorical-multi",
       "admissible": [
         "bar",
+        "bump",
         "dot_plot",
+        "dumbbell",
         "grouped_bar",
         "horizontal_bar",
         "slope",
@@ -706,8 +758,23 @@
         "bar",
         "box",
         "bullet",
+        "confidence_band",
+        "confidence_strips",
+        "density",
         "dot_plot",
+        "ecdf",
+        "error_bars",
+        "error_bars_2d",
+        "eye",
+        "fitted_draws",
+        "graded_confidence_band",
+        "graded_error_bars",
+        "half_eye",
+        "histogram",
         "horizontal_bar",
+        "kde",
+        "quantile_dot_plot",
+        "strip",
         "violin"
       ]
     }

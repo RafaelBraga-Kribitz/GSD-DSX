@@ -30,9 +30,11 @@ _CATALOGUE = ROOT / "references" / "finding-codes.md"
 
 # The pinned live total — REQ-P19-03 (categorical) mints nothing, but Wave 2 (19-C)
 # additively mints the ten DSX-STA-070..122 gate codes over the Phase-18 baseline of
-# 265, so the live catalogue is 275 (kept in lockstep with
-# tests/test_finding_catalogue_invariant.py::_EXPECTED_TOTAL).
-_EXPECTED_TOTAL = 275
+# 265 (→275), and Phase 22 additively mints DSX-VIZ-071 (→276). This is a live-total
+# pin kept in lockstep with tests/test_finding_catalogue_invariant.py::_EXPECTED_TOTAL;
+# the categorical-minted-nothing proof is carried by the rows-present assertions and
+# the absent DSX-STA-06x decade, not by this absolute total.
+_EXPECTED_TOTAL = 276
 _TOTAL_RE = re.compile(r"\*\*Total:\s*(\d+)\s*codes\.\*\*")
 
 
@@ -73,16 +75,17 @@ class CategoricalRowsPresentTest(unittest.TestCase):
 
 
 class CategoricalMintedNothingTest(unittest.TestCase):
-    def test_catalogue_declares_exactly_275(self):
+    def test_catalogue_declares_exactly_the_expected_total(self):
         collapsed = " ".join(_CATALOGUE.read_text(encoding="utf-8").split())
         match = _TOTAL_RE.search(collapsed)
         self.assertIsNotNone(match, "no '**Total: N codes.**' line found in the catalogue")
         self.assertEqual(
             int(match.group(1)), _EXPECTED_TOTAL,
             f"catalogue declares {match.group(1)} codes, expected {_EXPECTED_TOTAL} — "
-            "REQ-P19-03 (categorical) mints zero codes; the only sanctioned movement over "
-            "the Wave-1 baseline of 265 is Wave 2's ten DSX-STA-070..122 gate codes (275). "
-            "Any other change means a report.add site slipped in",
+            "REQ-P19-03 (categorical) mints zero codes; the sanctioned movement over "
+            "the Wave-1 baseline of 265 is Wave 2's ten DSX-STA-070..122 gate codes (275) "
+            "plus Phase 22's DSX-VIZ-071 (276). Any other change means a report.add site "
+            "slipped in",
         )
 
 

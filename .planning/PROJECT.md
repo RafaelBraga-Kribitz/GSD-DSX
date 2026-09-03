@@ -90,6 +90,24 @@ written profile.
   holds **275 codes**, grown additively from 260 with both frozen snapshots
   (Phase-12 at 256, v2.2's set) unmutated. Full detail archived under
   `.planning/milestones/v2.3-*`.
+- **v2.4 Visual Excellence — SHIPPED 2026-09-03** (tag `v2.4.0`). All 4 phases
+  (21, 22, 23, 24) complete — 11 plans. Every phase is verified (`threats_open: 0`
+  across 36 threats) and human-signed-off; the milestone audit reached `passed`
+  (16/16 requirements, 5/5 cross-phase integration seams, Nyquist compliant, 0
+  unsatisfied/orphaned). Delivered: an 81-row merged chart catalog across five
+  named taxonomies with three citable axes per entry; Wilke's real 10-mark
+  uncertainty vocabulary as an 11th `RELATIONSHIP_CHARTS` key; a 5-layer
+  question→chart selection heuristic with Cleveland & McGill's real 6-rank tied
+  perceptual ordering; a license-audited style layer (four `.mplstyle` files,
+  one vendored OFL font, a proven SVG-determinism recipe); a snippet catalog
+  routing to existing codes; and a portfolio exemplar upgraded in place with a
+  real 95%-CI uncertainty figure plus the project's first bad-chart-choice
+  fixtures. Two independent verification rounds caught defects before ship: 7
+  of 13 D-05 citations needed correction (HQ-27), and a house-default style's
+  palette license/attribution was found wrong and corrected (HQ-33). The
+  finding catalogue now holds **276 codes**, grown additively from 275 with all
+  three frozen snapshots (Phase-12 at 256, v2.2's set, v2.3's set) unmutated.
+  Full detail archived under `.planning/milestones/v2.4-*`.
 
 ## Shipped Milestone: v2.0.0 DSX Validity Frame (shipped 2026-08-28)
 
@@ -202,20 +220,50 @@ wording; a Wilson (2015) DEPRECATED row stripped of an unsupported
 replacement-test claim; a Maxwell & Delaney claim softened pending further
 source access.
 
-## Queued Milestone: v2.4 Visual Excellence
+## Shipped Milestone: v2.4 Visual Excellence (shipped 2026-09-03)
 
-**Status:** Queued. Entry condition (D-13): v2.3 shipped.
+**Goal (delivered):** The exhaustive-but-manageable chart catalog (81 entries
+on the FT Visual Vocabulary spine + Wilke's uncertainty family + rigour
+staples, three citable axes per entry), the 5-layer question→chart selection
+heuristic (Munzner → FT function → data signature → shortlist →
+Cleveland-McGill tie-break), the license-audited publication style layer
+(dsx-urban default, dsx-538, dsx-econ/dsx-bbc reimplemented from published
+doctrine), the SVG determinism recipe, and a portfolio exemplar capstone that
+exercises both v2.3 and v2.4 end-to-end.
 
-**Goal:** The exhaustive-but-manageable chart catalog (~80 entries on the FT
-Visual Vocabulary spine + Wilke's uncertainty family + rigour staples, three
-citable axes per entry), the 5-layer question→chart selection heuristic
-(Munzner → FT function → data signature → shortlist → Cleveland-McGill
-tie-break), the license-audited publication style layer (dsx-urban default,
-dsx-538, dsx-econ/dsx-bbc reimplemented from published doctrine), the SVG
-determinism recipe, and a portfolio exemplar capstone that exercises both
-milestones end-to-end. Phases 21–24; requirements REQ-P21-* … REQ-P24-* queued
-in `.planning/REQUIREMENTS.md`. Pre-agreed contingency: split style/exemplar
-off as v2.5 if v2.3's D-05 queue outruns the ceremony cadence.
+**Entry condition met:** v2.3 shipped 2026-09-02 (tag `v2.3.0`, 22/22
+requirements `passed`). Scope re-verified against the live tree at open
+(`dsx/checks/viz.py` untouched since before v2.3; catalogue confirmed at 275)
+— no fresh scoping round needed.
+
+**Delivered features:** Phases 21–24, archived at
+`.planning/milestones/v2.4-ROADMAP.md`. All 16 requirements (REQ-P21-* …
+REQ-P24-*) satisfied — archived traceability at
+`.planning/milestones/v2.4-REQUIREMENTS.md`. Milestone audit `passed` (16/16
+requirements, 4/4 phases, 5/5 integration seams, 0 critical gaps); catalogue
+grew 275 → 276, additively.
+
+**The independent verification that mattered — two rounds, mirroring v2.3's
+discipline:**
+
+1. *Citations (HQ-27, 5 parallel research agents).* 7 of 13 proposed citations
+   needed correction before Phase 22 shipped; the most consequential:
+   Cleveland & McGill (1984) publish 6 perceptual-accuracy ranks over 10 tasks
+   **with ties** — their own p.537 states there is not enough information to
+   separate ranks 3/5/6 — not the proposed 7-item strict order with
+   `length > angle`, a relation neither cited paper supports. Also caught:
+   2 of 4 proposed Wilke uncertainty-mark names did not exist in the source;
+   the "FT Visual Vocabulary is MIT-licensed" claim was false (the FT
+   explicitly reserves its content); a word-cloud citation had conflated two
+   different people named Harris; a Datawrapper source had been publicly
+   amended after the original citation was drafted.
+2. *License audit (HQ-33, at ship-prep, one week after HQ-27).* The
+   house-default style's palette was independently re-checked against its
+   claimed source rather than merely confirmed: Urban Institute's own README
+   states GPL-3.0, not the Apache-2.0 that GitHub's detector read from
+   unmodified template boilerplate; and 3 of the palette's 6 hex colors were
+   ColorBrewer's PRGn/PuOr stops mislabeled as "Urban shades." Corrected
+   before ship — same colors, accurate attribution.
 
 **v3.0 (models) remains future scope** — nothing here touches it.
 
@@ -247,15 +295,18 @@ off as v2.5 if v2.3's D-05 queue outruns the ceremony cadence.
 - ✓ Correlation/association routing (`recommend_association`) and agreement/reliability gates — scale/kind mismatch (`DSX-STA-050/051`), ICC/kappa declaration completeness (`DSX-STA-060/061/062`) — plus report-only effect-size conventions in `dsx/mathx.py` — Phase 18 (REQ-P18-01 … REQ-P18-06) — v2.3
 - ✓ Repeated-measures/trend/categorical/resampling/post-hoc routing and ten declaration-only gates (`DSX-STA-070` … `122`) — unconditional Greenhouse-Geisser, declared dose scores/autocorrelation, resampling quadruples, post-hoc/omnibus matching, variance-test-as-precondition ban, observed-power ban, Wilson-not-Wald, declared exposure offsets — Phase 19 (REQ-P19-01 … REQ-P19-07; REQ-P19-03 verified zero-mint) — v2.3
 - ✓ Calibration close — known-bad fixtures + FPR negative controls for the 15 new codes, a live HIGH verify/ship calibration stratum, category-complete no-autoswitch coverage, and a permanent doc/code agreement cross-check — Phase 20 (REQ-P20-01 … REQ-P20-04; zero-mint verified, catalogue stays 275) — v2.3
+- ✓ Viz vocabulary reconciliation — every chart mark given a capability home, `BANNED_TYPES` refusal entries enriched in place to `{reason, code, citation}` records, zero-mint (275→275) — Phase 21 (REQ-P21-01 … REQ-P21-03) — v2.4
+- ✓ Catalog spine, uncertainty family, selection heuristic — 81-row merged chart catalog across five named taxonomies, Wilke's real 10-mark uncertainty vocabulary as an 11th `RELATIONSHIP_CHARTS` key, 5-layer question→chart selection heuristic, Cleveland & McGill's real 6-rank tied perceptual ordering (not a fabricated 7-item strict order) — Phase 22 (REQ-P22-01 … REQ-P22-05; mints `DSX-VIZ-071`, 275→276) — v2.4
+- ✓ License-audited style and snippet layer — four `.mplstyle` files (dsx-urban house default, dsx-538 fork, dsx-econ/dsx-bbc reimplemented from doctrine), one vendored OFL font, a proven SVG-determinism recipe, and a snippet catalog routing to existing codes — Phase 23 (REQ-P23-01 … REQ-P23-05; zero-mint, 276→276) — v2.4
+- ✓ Portfolio exemplar and viz calibration — the onboarding-activation exemplar upgraded in place with a real 95%-CI uncertainty figure and sealed manifest, plus the project's first bad-chart-choice fixtures — Phase 24 (REQ-P24-01 … REQ-P24-03; zero-mint, 276→276) — v2.4
 
 ### Active
 
-(None — all v2.0.0, v2.2, and v2.3 requirements shipped and validated. Full
-requirement sets with final traceability are archived at
-`.planning/milestones/v2.0.0-REQUIREMENTS.md`, `v2.2-REQUIREMENTS.md`, and
-`v2.3-REQUIREMENTS.md`.) v2.4 Visual Excellence is queued (REQ-P21-* …
-REQ-P24-* in `.planning/REQUIREMENTS.md` under **Queued**) and becomes Active
-when started.
+(None — all v2.0.0, v2.2, v2.3, and v2.4 requirements shipped and validated.
+Full requirement sets with final traceability are archived at
+`.planning/milestones/v2.0.0-REQUIREMENTS.md`, `v2.2-REQUIREMENTS.md`,
+`v2.3-REQUIREMENTS.md`, and `v2.4-REQUIREMENTS.md`. The next milestone's
+requirements are defined via `/gsd-new-milestone`.)
 
 ### Out of Scope
 
@@ -297,8 +348,16 @@ when started.
     (2026-08-26). That file does not authorise finding codes.
   - The capability now registers 14 skills (v2.2 added `dsx-cohort`, `dsx-funnel`,
     `dsx-root-cause`, `dsx-segment`, `dsx-reproduce`); the finding catalogue holds
-    260 codes (v2.0.0 shipped 256; Phase 15 added `DSX-EXP-070`/`DSX-MET-021`,
-    Phase 16 added `DSX-REP-060`/`061`).
+    276 codes (v2.0.0 shipped 256; Phase 15 added `DSX-EXP-070`/`DSX-MET-021`,
+    Phase 16 added `DSX-REP-060`/`061`; v2.3 added 15 `DSX-STA-*` codes to 275;
+    Phase 22 added `DSX-VIZ-071` to 276).
+  - v2.4 shipped: `references/chart-catalog.md` (81-row merged chart catalog,
+    three citable axes per entry), `styles/*.mplstyle` (four license-audited
+    styles, `dsx-urban` house default), `templates/dsx_plotstyle.py`
+    (analyst-side, off the gate path), `references/chart-snippets.md`
+    (route-to-codes snippet catalog), and an 11th `RELATIONSHIP_CHARTS` key
+    `"uncertainty"` (10 Wilke marks). `dsx/checks/viz.py`'s `BANNED_TYPES`
+    entries are now full `{reason, code, citation}` records.
 
 ## Constraints
 
@@ -336,6 +395,11 @@ when started.
 | **v2.3-01** Citation granularity: one human D-05 read per new gate CODE, one bibliographic citation per catalog ENTRY | A ~75-row decision table with a human read per row would put ~90 reads in front of one milestone, stalling the ceremony's one human-gated step; reads are only load-bearing for the codes that actually gate | Delivered Phases 18–19 — 15 new gate codes drew ~27 human reads (2 evidence packs, HQ-16/17), not 75+; row-level catalog citations confirmed at execute-time bibliography passes instead |
 | **v2.3-02** All 15 new gate checks are declaration-only, keyed on DECLARED fields, never on inspecting data then choosing | The anti-two-stage doctrine (already shipped for Shapiro–Wilk) extends structurally: a routing key that reads "skew observed → pick test" recreates the exact banned pattern under a new name | Delivered Phases 18–19 — `inspect.signature` structural proofs + the no-autoswitch test suite extended to every new category; two new NEGATIVE gates (variance-test-as-precondition ban, observed-power ban) enforce the doctrine rather than merely avoiding violating it |
 | **v2.3-03** Independent re-verification of all 27 D-05 citations against primary sources before shipping, not after | The Krippendorff-alpha citation (HQ-16 B4) would have shipped a fixture value (0.743) that appears nowhere in its cited paper — caught only by reading the actual paper, exactly the CUPED-author-misattribution failure mode from v2.2's HQ-8 | Delivered at S5-2 close-out — 7 of 27 citations corrected (1 wrong fixture value, 6 smaller wording/scope/locator fixes); corrections recorded in `HUMAN-QUEUE.md` HQ-16/17 before the codes' citations were considered in hand |
+| **v2.4-01** Perceptual ordering ships as Cleveland & McGill's real 6-rank order WITH ties (D-1), not the originally proposed 7-item strict order | The 1984 paper's own p.537 states there is not enough information to separate ranks 3/5/6; the `length > angle` relation the strict order implied has no support in either cited paper (Heer & Bostock independently found angle not worse than length) | Delivered Phase 22 — `perceptual_ranks` ties length/direction/angle at rank 3; `test_perceptual_tie_break_structural_criterion` asserts `<=` throughout, never a strict `<`; `density` asserted absent |
+| **v2.4-02** Uncertainty vocabulary adopts Wilke's actual 10 §5.6 marks (D-2), not the 4 originally proposed | 2 of the 4 proposed names ("fan chart", "gradient CI band") do not exist anywhere in the source; verified against the book's full-text index | Delivered Phase 22 — 11th `RELATIONSHIP_CHARTS` key `"uncertainty"` carries all 10 real marks; mints `DSX-VIZ-071` |
+| **v2.4-03** FT Visual Vocabulary's nine-category axis is attributed, not vendored (D-3) | The "FT content is MIT-licensed" claim was false — the FT explicitly reserves its content in writing, twice, in the same repo whose code license is MIT | Delivered Phase 22 — own descriptions written per category; no FT prose or poster PDF copied |
+| **v2.4-04** `dual_axis_line`'s ban cites Muth 2018 "as amended July 2026" and is scoped to general audiences (D-4) | Datawrapper publicly reversed its dual-axis position in July 2026, carving out expert (finance) audiences; the ban now stands as DSX's own general-audience position rather than an appeal to a since-softened claim | Delivered Phase 22 (citation), corrected into the shipped tree at v2.4 close-out after an independent re-check found it had not actually landed in `dsx/checks/viz.py` at the time of Phase 22's own security sign-off |
+| **v2.4-05** Independent license re-verification of the house-default style's vendored palette before ship, not just its citation | Urban Institute's own README states GPL-3.0; the Apache-2.0 claim traced to GitHub's detector misreading unmodified Jekyll-theme boilerplate. 3 of 6 vendored hex colors were ColorBrewer's PRGn/PuOr stops, mislabeled as "Urban shades." Same discipline as v2.3-03, applied to a license claim instead of a citation | Delivered at ship-prep (HQ-33) — palette unchanged (bare hex values are not independently copyrightable regardless of license), header and two planning docs corrected to state the real license position and split attribution |
 
 ## Non-goals
 
@@ -368,5 +432,5 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-09-02 — v2.3 Test Catalog milestone complete and shipped
-(tag `v2.3.0`). v2.4 Visual Excellence is queued next.*
+*Last updated: 2026-09-03 — v2.4 Visual Excellence milestone complete and shipped
+(tag `v2.4.0`). Next milestone not yet opened — start via `/gsd-new-milestone`.*

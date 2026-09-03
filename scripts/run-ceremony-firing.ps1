@@ -33,12 +33,12 @@
 $ErrorActionPreference = 'Stop'
 
 $Repo   = 'C:\Users\Benutzer1\Dev\AI\gsd-dsx'
-# Milestone branch. Updated 2026-08-29 when v2.2 Analytic Surface shipped (merged
-# to main, tag v2.2.0) and the loop was repointed at v2.3 Test Catalog.
+# Milestone branch. Updated 2026-09-02 when v2.3 Test Catalog shipped (merged
+# to main, tag v2.3.0) and the loop was repointed at v2.4 Visual Excellence.
 # The branch guard below deliberately ABORTS rather than checking out: if this value
 # and the working tree disagree, something unexpected has happened and a headless
 # firing must not guess.
-$Branch = 'gsd/v2.3.0-test-catalog'
+$Branch = 'gsd/v2.4.0-visual-excellence'
 $LogDir = Join-Path $Repo '.planning\loop-logs'
 $Lock   = Join-Path $LogDir '.firing.lock'
 $Backoff = Join-Path $LogDir '.backoff-until'

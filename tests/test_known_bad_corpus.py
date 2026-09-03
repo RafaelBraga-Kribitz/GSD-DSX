@@ -479,6 +479,20 @@ _EXPECTED_CAUGHT_DEFECTS: "dict[str, frozenset[str]]" = {
     "icc-incomplete-triple": frozenset(),
     "weighted-kappa-missing-weights": frozenset(),
     "kappa-missing-companions": frozenset(),
+    # Phase 24 (REQ-P24-02, GA-2): the first bad-CHART-choice fixtures. Empty by
+    # design, not by omission — for the same reason as the Phase-20-A stats
+    # fixtures above. The three banned-type fixtures fire DSX-VIZ-001 HIGH and the
+    # `viz` gate is registered at verify/ship, so none of them fires at a
+    # CRITICAL-threshold point; each HIGH catch lives in _HIGH_TARGET_DEFECT_CODES
+    # below (read LIVE by the HIGH stratum, D-03/D-09), never here. The uncertainty
+    # fixture fires DSX-VIZ-071 MEDIUM — below the default HIGH threshold entirely —
+    # so its catch lives in _MEDIUM_TARGET_DEFECT_CODES, measured under
+    # --block-on MEDIUM. All four keys are required here solely so
+    # test_expected_caught_defects_keys_match_the_corpus_on_disk stays green.
+    "chart-gauge-single-kpi": frozenset(),
+    "chart-word-cloud-text": frozenset(),
+    "chart-radar-multimetric": frozenset(),
+    "chart-uncertainty-mark-misuse": frozenset(),
 }
 
 
@@ -508,6 +522,34 @@ _HIGH_TARGET_DEFECT_CODES: "dict[str, dict[str, str]]" = {
     "icc-incomplete-triple": {"verify": "DSX-STA-060", "ship": "DSX-STA-060"},
     "weighted-kappa-missing-weights": {"verify": "DSX-STA-061", "ship": "DSX-STA-061"},
     "kappa-missing-companions": {"verify": "DSX-STA-062", "ship": "DSX-STA-062"},
+    # Phase 24 (REQ-P24-02, GA-2): the three banned-type bad-CHART-choice fixtures.
+    # Each declares one banned mark (gauge / word_cloud / radar), so `_check_banned`
+    # refuses it with the EXISTING DSX-VIZ-001 (HIGH) — the shared banned-mark code,
+    # no new mint (D-06). The `viz` gate is registered at verify/ship, so this is the
+    # point-set where the HIGH code actually fires, disjoint from
+    # _CRITICAL_THRESHOLD_POINTS exactly like the Phase-18 stats codes above. Read
+    # LIVE by the HIGH stratum in test_stratified_catch_rate_and_fpr_report and by
+    # test_high_stratum_target_codes_fire_and_are_named — never a measured ledger.
+    "chart-gauge-single-kpi": {"verify": "DSX-VIZ-001", "ship": "DSX-VIZ-001"},
+    "chart-word-cloud-text": {"verify": "DSX-VIZ-001", "ship": "DSX-VIZ-001"},
+    "chart-radar-multimetric": {"verify": "DSX-VIZ-001", "ship": "DSX-VIZ-001"},
+}
+
+
+# Per-fixture MEDIUM-tier target-defect declaration (Phase 24, REQ-P24-02, GA-2 /
+# 24-RESEARCH Risk P1): the one bad-CHART-choice fixture whose defect fires at the
+# MEDIUM tier rather than HIGH. DSX-VIZ-071 (an uncertainty mark outside the closed
+# §5.6 vocabulary) is MEDIUM by design, so it does NOT block at the default HIGH gate
+# threshold — the stratum that classifies it re-runs the gate under `--block-on MEDIUM`
+# so a fired MEDIUM produces exit 1 and _classify_target_defect(severity="MEDIUM") can
+# credit the catch. Kept a FOURTH map, disjoint from the three above for the same
+# partition-integrity reason: a MEDIUM verify/ship code belongs in neither the CRITICAL
+# maps nor the HIGH map without corrupting their tiers. Its MEDIUM catch rate is reported
+# BESIDE the (miss-rate, FPR) headline, NEVER folded into it (Risk P1 / T-24-02-02),
+# mirroring the HIGH stratum's D-06 headline-invariance. This is a DECLARATION of intent,
+# exactly like _HIGH_TARGET_DEFECT_CODES — the LIVE catch is never lifted from it (D-09).
+_MEDIUM_TARGET_DEFECT_CODES: "dict[str, dict[str, str]]" = {
+    "chart-uncertainty-mark-misuse": {"verify": "DSX-VIZ-071", "ship": "DSX-VIZ-071"},
 }
 
 
@@ -847,9 +889,18 @@ class TestKnownBadCorpus(unittest.TestCase):
     def _attribution_paths(self) -> list[Path]:
         return sorted(CORPUS_DIR.glob(f"*{ATTRIBUTION_SUFFIX}"))
 
-    def _gate_findings(self, spec_path: Path, point: str) -> tuple[int, list[dict]]:
+    def _gate_findings(
+        self, spec_path: Path, point: str, block_on: "str | None" = None
+    ) -> tuple[int, list[dict]]:
         """Run one real ``dsx gate <point>`` against one fixture and return
         ``(exit_code, findings)``.
+
+        ``block_on`` (Phase 24, REQ-P24-02): when set, ``--block-on <level>`` is
+        appended to the ``dsx gate`` argv so a finding at that tier produces exit 1.
+        It defaults to ``None`` — no ``--block-on`` flag — so every pre-Phase-24 call
+        is byte-for-byte unchanged and the CRITICAL/HIGH strata behave exactly as
+        before. The MEDIUM stratum passes ``block_on="MEDIUM"`` so the MEDIUM-tier
+        DSX-VIZ-071 fixture blocks and can be classified as a catch.
 
         ``--phase-dir`` is a fresh ``tempfile.TemporaryDirectory()`` per call so
         the ``DECISIONS.jsonl`` trail write (``dsx/cli.py::cmd_gate``,
@@ -888,11 +939,12 @@ class TestKnownBadCorpus(unittest.TestCase):
             _seed_entrypoint(tmp, spec_path)
             if point in ("verify", "ship"):
                 seed_plan_header(tmp, spec_path)
+            argv = ["gate", point, "--spec", str(spec_path), "--phase-dir", tmp, "--json"]
+            if block_on is not None:
+                argv += ["--block-on", block_on]
             out, err = io.StringIO(), io.StringIO()
             with redirect_stdout(out), redirect_stderr(err):
-                code = cli.main(
-                    ["gate", point, "--spec", str(spec_path), "--phase-dir", tmp, "--json"]
-                )
+                code = cli.main(argv)
             raw = err.getvalue() or out.getvalue()
             # The --json flag is silently ignored on the CheckError path — the
             # exception handler in main() runs entirely outside the emitter —
@@ -1813,6 +1865,64 @@ class TestKnownBadCorpus(unittest.TestCase):
             headline, _headline(present, absent, fpr),
             "the HIGH verify/ship stratum moved the (miss-rate, FPR) pair — the HIGH "
             "catch must be a third readout beside the pair, never folded into it (D-06)",
+        )
+
+        # ── Phase 24 (REQ-P24-02, GA-2 / Risk P1): the live MEDIUM verify/ship stratum ──
+        # A FOURTH readout reported BESIDE the (miss-rate, FPR) pair, NEVER folded into
+        # it. DSX-VIZ-071 is MEDIUM and does not block at the default HIGH threshold, so
+        # both the CRITICAL plan/execute partition and the HIGH stratum above are provably
+        # no-ops on it; this stratum re-runs the gate under `--block-on MEDIUM` (threaded
+        # through self._gate_findings) so the fired MEDIUM produces exit 1 and the catch
+        # classifies. Every cell is derived LIVE via self._gate_findings(..., block_on=
+        # "MEDIUM") and _classify_target_defect(..., severity="MEDIUM") — never lifted
+        # from a stored map (the D-09 no-self-reference rule); _MEDIUM_TARGET_DEFECT_CODES
+        # supplies only WHICH cell to expect. Classification is on finding CODE identity
+        # within the MEDIUM tier only; no numeric magnitude or effect-size band (D-08).
+        medium_points = ("verify", "ship")
+        medium_present_denom = 0
+        medium_present_caught = 0
+        medium_detail: "dict[tuple[str, str], tuple[str, bool]]" = {}
+        for slug, points in _MEDIUM_TARGET_DEFECT_CODES.items():
+            spec_path = CORPUS_DIR / f"{slug}{SPEC_SUFFIX}"
+            for point in medium_points:
+                expected_code = points.get(point)
+                if not expected_code:
+                    continue
+                medium_present_denom += 1
+                code, findings = self._gate_findings(spec_path, point, block_on="MEDIUM")
+                problems = _classify_target_defect(
+                    slug, point, code, findings, _MEDIUM_TARGET_DEFECT_CODES,
+                    severity="MEDIUM",
+                )
+                caught = problems == []
+                medium_present_caught += int(caught)
+                medium_detail[(slug, point)] = (expected_code, caught)
+        # The MEDIUM stratum must carry a real, non-empty denominator — its whole reason
+        # for existing is that neither the CRITICAL partition nor the HIGH stratum can
+        # measure a MEDIUM-tier defect.
+        self.assertGreater(
+            medium_present_denom, 0,
+            "the MEDIUM verify/ship stratum has no cells — the DSX-VIZ-071 fixture must "
+            "be measured under --block-on MEDIUM where its MEDIUM code actually fires "
+            "(REQ-P24-02, Risk P1)",
+        )
+        # The fourth readout, computed live and reported beside the pair (never in it).
+        medium_catch_rate = medium_present_caught / medium_present_denom
+        self.assertGreaterEqual(medium_catch_rate, 0.0)
+        self.assertLessEqual(medium_catch_rate, 1.0)
+
+        # The MEDIUM stratum is reported BESIDE the pair and cannot move it (Risk P1,
+        # mirroring the HIGH stratum's D-06 invariance): the synthetic anchor and the
+        # ABSENT floor are UNMOVED, and the pair recomputed after this stratum ran is
+        # byte-identical to the pair computed before it — present/absent/fpr are untouched
+        # by the MEDIUM readout, by construction (it reads only known-bad fixtures whose
+        # _effective_target_map entries are empty and which carry no attribution sidecar).
+        self.assertEqual(_headline((2, 5), (1, 4), (3, 10)), (0.25, 0.3))
+        self.assertEqual(_ABSENT_PARTITION_FLOOR, 3)
+        self.assertEqual(
+            headline, _headline(present, absent, fpr),
+            "the MEDIUM verify/ship stratum moved the (miss-rate, FPR) pair — the MEDIUM "
+            "catch must be a fourth readout beside the pair, never folded into it (Risk P1)",
         )
 
     def test_high_stratum_target_codes_fire_and_are_named(self):

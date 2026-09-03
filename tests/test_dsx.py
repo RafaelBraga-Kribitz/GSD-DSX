@@ -556,6 +556,12 @@ class TestSpecStructure(unittest.TestCase):
         # are the fifteenth through nineteenth; count updated from 14 to 19 in the same
         # commit that adds them. Each clones the clean minimal-reference validity_frame
         # (estimand.type difference_in_means), so all satisfy the same assertion.
+        # Plan 24-02 (REQ-P24-02): the four bad-CHART-choice fixtures
+        # (chart-gauge-single-kpi, chart-word-cloud-text, chart-radar-multimetric,
+        # chart-uncertainty-mark-misuse) are the twentieth through twenty-third; count
+        # updated from 19 to 23 in the same commit that adds them. Each is a copy of a
+        # clean good-corpus control (which already declares a valid estimand.type) plus
+        # exactly one bad visual, so all satisfy the same assertion.
         from dsx.loader import load
         from dsx.spec import ESTIMAND_TYPES
 
@@ -565,7 +571,7 @@ class TestSpecStructure(unittest.TestCase):
             + sorted((root / "examples" / "known-bad").glob("*-ANALYSIS-SPEC.yaml"))
             + sorted((root / "templates").glob("ANALYSIS-SPEC.yaml"))
         )
-        self.assertEqual(len(paths), 19, [str(p) for p in paths])
+        self.assertEqual(len(paths), 23, [str(p) for p in paths])
         bad = []
         for p in paths:
             estimand_type = load(str(p)).get("validity_frame", {}).get("estimand", {}).get("type")

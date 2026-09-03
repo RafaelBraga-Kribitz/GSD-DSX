@@ -1,17 +1,20 @@
 """REQ-P20-02 — the zero-mint / catalogue-close proof (D-01, D-08).
 
-Phase 20 is the *terminal* phase and mints ZERO codes: it adds no ``report.add``
-call site, so the finding catalogue stays at exactly 275 and the pre-allocated
-``DSX-STA`` range stops at 122 with the 123-129 band unused and the 130s reserve
-untouched. This module turns that "mints zero codes" claim into a runnable oracle
+Phase 20 is the *terminal* phase of its milestone and mints ZERO codes: it adds no
+``report.add`` call site, so the finding catalogue closed at exactly 275 and the
+pre-allocated ``DSX-STA`` range stops at 122 with the 123-129 band unused and the
+130s reserve untouched. (A later milestone, Phase 22, additively mints DSX-VIZ-071,
+moving the live total to 276 — the count-pin below tracks the live total in
+lockstep, while the zero-mint tell here is the untouched DSX-STA reserve band.) This module turns that "mints zero codes" claim into a runnable oracle
 rather than an unverified assertion, and also pins two standing invariants already
 satisfied during Phases 18-19 (all fifteen milestone codes are D-05-allowlisted by
 EXACT string; ``DSX-STA-`` is not an allowlisted prefix).
 
 Five checks, each a machine oracle:
 
-  1. references/finding-codes.md declares a total of 275 (the generated catalogue,
-     never hand-edited).
+  1. references/finding-codes.md declares the pinned live total (275 at the Phase-20
+     zero-mint close; 276 after Phase 22's additive DSX-VIZ-071 mint — the generated
+     catalogue, never hand-edited).
   2. tests/fixtures/finding-codes-phase12.md declares 256 (the byte-frozen Phase-12
      snapshot) and its parsed code-set is a SUBSET of the current catalogue — the
      catalogue only ever grows additively, so nothing in the frozen snapshot may
@@ -85,11 +88,17 @@ def _load_generator():
 
 
 class TestPhase20ZeroMintClose(unittest.TestCase):
-    def test_catalogue_declares_275(self) -> None:
-        """The generated catalogue stays at exactly 275 — zero mint this phase."""
+    def test_catalogue_declares_expected_total(self) -> None:
+        """The generated catalogue declares the pinned live total. Phase 20 minted
+        zero (the catalogue closed at 275); Phase 22 then additively minted
+        DSX-VIZ-071, moving the live total to 276. This leg stays in lockstep with
+        tests/test_finding_catalogue_invariant.py::_EXPECTED_TOTAL; Phase 20's
+        zero-mint tell is carried by the reserve-band-absent and snapshot-subset
+        checks below, not by this absolute total."""
         self.assertEqual(
-            _declared_total(_CATALOGUE), 275,
-            "references/finding-codes.md must declare 275 codes (zero-mint close)",
+            _declared_total(_CATALOGUE), 276,
+            "references/finding-codes.md must declare 276 codes (275 at the Phase-20 "
+            "zero-mint close, +1 for Phase 22's additive DSX-VIZ-071 mint)",
         )
 
     def test_phase12_snapshot_frozen_at_256_and_subset(self) -> None:

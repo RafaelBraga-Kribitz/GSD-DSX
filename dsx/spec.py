@@ -298,23 +298,35 @@ CHART_CAPABILITIES: dict[str, frozenset[str]] = {
     "bivariate-dual": frozenset({"line", "area", "bar", "horizontal_bar", "grouped_bar", "multi_line"}),
     "trivariate": frozenset({"scatter", "bubble", "heatmap", "hexbin"}),
     "categorical-value": frozenset(
-        {"bar", "horizontal_bar", "pie", "donut", "waffle", "dot_plot", "bullet"}
+        {"bar", "horizontal_bar", "pie", "donut", "waffle", "dot_plot", "bullet", "diverging_bar"}
     ),
     "categorical-multi": frozenset(
-        {"grouped_bar", "stacked_bar", "horizontal_bar", "bar", "slope", "dot_plot"}
+        {"grouped_bar", "stacked_bar", "horizontal_bar", "bar", "slope", "dot_plot",
+         "dumbbell", "bump"}
     ),
     "time-series": frozenset(
         {"line", "area", "stacked_area", "sparkline", "slope", "bar", "stream"}
     ),
-    "interval-range": frozenset({"box", "violin", "dot_plot", "bar", "horizontal_bar", "bullet"}),
+    "interval-range": frozenset(
+        {"box", "violin", "dot_plot", "bar", "horizontal_bar", "bullet",
+         "histogram", "density", "ecdf", "strip", "kde",
+         # The ten Wilke §5.6 uncertainty marks (Phase 22, D-2). An uncertainty
+         # band, an error bar and a box plot are all interval-shaped renderings
+         # of a distribution or estimate, so interval-range is the honest data
+         # signature home — no new input-type id (GA-2). Homing them here keeps
+         # Phase 21's every-mark-has-a-home invariant green.
+         "error_bars", "graded_error_bars", "error_bars_2d", "confidence_strips",
+         "eye", "half_eye", "quantile_dot_plot", "confidence_band",
+         "graded_confidence_band", "fitted_draws"}
+    ),
     "grouped-categorical": frozenset(
         {"grouped_bar", "stacked_bar", "horizontal_bar", "bar", "dot_plot", "heatmap"}
     ),
     "composition": frozenset(
-        {"stacked_bar", "pie", "donut", "treemap", "waffle", "stacked_area"}
+        {"stacked_bar", "pie", "donut", "treemap", "waffle", "stacked_area", "waterfall"}
     ),
     "hierarchical": frozenset({"treemap", "sunburst", "icicle", "circle_pack"}),
-    "matrix": frozenset({"heatmap", "chord"}),
+    "matrix": frozenset({"heatmap", "chord", "sankey"}),
     "event-time": frozenset({"line", "scatter", "timeline", "funnel", "gantt"}),
     # A single number has no relationship to encode, so the honest marks are the
     # ones that do not imply one. Gauges are excluded deliberately: the arc is a

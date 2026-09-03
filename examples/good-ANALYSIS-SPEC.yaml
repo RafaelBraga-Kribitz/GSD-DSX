@@ -177,7 +177,7 @@ visuals:
     data_input_type: categorical-value
     renderer: matplotlib
     artifact_path: figures/activation_uplift.svg
-    svg_sha256: "sha256:b28c2586533d49da811084975855b3cdb8487e319c72b845ce40712ca826ea5e"
+    svg_sha256: "sha256:1ab8459fc501777167a628553baa3e38a6988be05ab6fc5403f4f4320e902f4f"
     generator: analysis/charts.py
     run_id: "2026-06-readout"
     expected_categories: [control, treatment]
@@ -200,7 +200,7 @@ visuals:
     data_input_type: time-series
     renderer: matplotlib
     artifact_path: figures/daily_activation_trend.svg
-    svg_sha256: "sha256:78a7cf4d2fd6139365a74ff1a4e396db0c28d0234091e974bb389fffcc6249b4"
+    svg_sha256: "sha256:f44091c2080fb22f4bc6b2f3e186007097c5592adc1ded0ab597a1cee073f11e"
     generator: analysis/charts.py
     run_id: "2026-06-readout"
     series_role: component
@@ -212,9 +212,42 @@ visuals:
     shows_estimates: true
     shows_uncertainty: true
     source: "warehouse.fct_signups, 2026-06-01..06-14"
+  # Phase-24 (REQ-P24-01): one honest uncertainty figure — the activation uplift drawn
+  # with its real 95% CI (1.0-3.8pp) as error bars. relationship: uncertainty +
+  # uncertainty_mark: error_bars routes through DSX-VIZ-071 / RELATIONSHIP_CHARTS
+  # ["uncertainty"] (a valid member passes silently); data_input_type: interval-range
+  # admits error_bars (dsx/spec.py CHART_CAPABILITIES) so no DSX-VIZ-013 fires. The CI
+  # numbers are anchored to results.tests[0] (effect 0.024, ci [0.0101, 0.0384]).
+  - name: "activation uplift with 95% CI"
+    chart_id: activation_uplift_ci
+    relationship: uncertainty
+    type: error_bars
+    uncertainty_mark: error_bars
+    data_input_type: interval-range
+    renderer: matplotlib
+    artifact_path: figures/activation_uplift_ci.svg
+    svg_sha256: "sha256:52023ee892b8dcd28c4468b5aec4562b59f9cc097c51fe6e05ed5857ec6c7ade"
+    generator: analysis/charts.py
+    run_id: "2026-06-readout"
+    series_role: component
+    encodings: { x: metric, y: activation_uplift, color: null }
+    y_axis_starts_at_zero: true
+    dual_axis: false
+    units: "percentage points"
+    takeaway: "The 2.4pp activation uplift has a 95% CI of 1.0 to 3.8pp, clearing the +1.0pp decision floor."
+    shows_estimates: true
+    shows_uncertainty: true
+    source: "warehouse.fct_signups, 2026-06-01..06-14"
 
 reproducibility:
   entrypoint: analysis/activation_readout.py
+  # REQ-P24-01: opts into the strict repro check (DSX-REP-060/061). Unlike narrative.path
+  # and artifact_path (which resolve against the spec's parent via resolve_root), the repro
+  # check resolves this against the GSD phase dir / CWD (repro.py locates it as it locates
+  # the entrypoint). The exemplar is always gated from repo root, so the path is written
+  # repo-root-relative — this resolves under `dsx gate ... --spec examples/good-...yaml`
+  # and under the test harness (run_checks with phase_dir=None), with or without --phase-dir.
+  reproduce_report: examples/good-REPRO-REPORT.md
   random_seed: 42
   language_version: "python 3.12.4"
   lockfile: analysis/requirements.lock

@@ -1,5 +1,37 @@
 # Milestones
 
+## v2.4 Visual Excellence (Shipped: 2026-09-03)
+
+**Phases completed:** 4 phases (21–24), 11 plans
+
+**Delivered:** a chart-and-style visual-excellence layer on top of v2.3's test
+catalogue. Phase 21 reconciled the inherited chart-type vocabulary — every mark
+now has a capability home, `BANNED_TYPES` refusal entries enriched in place to
+full `{reason, code, citation}` records. Phase 22 built a merged catalog spine
+(81 rows spanning five named taxonomies), a Wilke-sourced 10-mark uncertainty
+vocabulary family, and a 5-layer chart-selection heuristic (mints `DSX-VIZ-071`).
+Phase 23 shipped a license-audited analyst-side style layer (four `.mplstyle`
+files, one vendored OFL font) with a proven SVG-determinism recipe (off-gate-path
+double-render hash-equality test) and a snippet catalog that routes to existing
+codes rather than restating thresholds — zero new codes minted. Phase 24 proved
+the whole stack end-to-end: the existing onboarding-activation exemplar upgraded
+in place with a real 95%-CI uncertainty figure, a sealed manifest, and the
+project's first bad-chart-choice fixtures.
+
+Milestone audit `passed` (16/16 requirements, 4/4 phases, 5/5 integration seams,
+0 critical gaps); finding catalogue grows 275 → 276 codes, additively; full
+suite green throughout (1471 → 1508 tests). Independent primary-source
+verification (mirroring v2.3's discipline) caught two classes of defect before
+ship: a citation round (HQ-27, 5 parallel research agents) found 7 of 13
+proposed citations needed correction, including a perceptual-ranking claim with
+no support in either cited paper — Cleveland & McGill (1984) publish 6 ranks
+with ties, not the proposed 7-item strict order; and a license-audit round
+(HQ-33) found the house-default style's palette was mislabeled — claimed
+Apache-2.0/Urban Institute, actually GPL-3.0-disputed with 3 of 6 colors being
+unattributed ColorBrewer stops.
+
+---
+
 ## v2.3 Test Catalog (Shipped: 2026-09-02)
 
 **Phases completed:** 4 phases (17–20), 11 plans

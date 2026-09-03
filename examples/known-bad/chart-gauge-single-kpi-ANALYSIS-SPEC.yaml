@@ -1,0 +1,201 @@
+# Clean control spec — good-side FPR corpus (REQ-P12-03 / D-04).
+# Paradigm: frequentist. Outcome shape: count/ratio.
+# A per-account ratio metric (integrations installed / active accounts), a
+# ratio_of_means estimand analysed by the delta method. No cell-count test is
+# declared (DSX-STA-041 does not apply); the admissibility ontology resolves the
+# delta-method family for this frame.
+
+spec_version: 1
+title: "Integrations installed per account (shown, badly, on a gauge)"
+owner: "r.braga"
+created: "2026-08-07"
+spec_id: "chart-gauge-single-kpi"
+
+question_type: causal
+
+decision:
+  owner: "Head of Platform"
+  decision_rule: >
+    Roll out the integrations gallery if the 95% CI lower bound on the uplift in
+    integrations installed per account exceeds +0.05 and no guardrail degrades
+    beyond tolerance. Otherwise hold and iterate.
+  action_if_null: "Keep the current integrations page; close the initiative."
+  minimum_practical_effect: 0.05
+  reversible: true
+  deadline: "2026-09-28"
+  revisit_when: "installs_per_account 95% CI lower bound below +0.05 at the 2026-Q4 review"
+  replay:
+    metric: installs_per_account
+    ci_lower_min: 0.05
+    on_pass: rollout
+    on_fail: hold
+
+metrics:
+  - name: installs_per_account
+    type: ratio
+    definition: "Integrations installed per active account in the period"
+    grain: account
+    numerator: "count(integration_installs) in period"
+    denominator: "count(distinct active account_id) in period"
+    timezone: UTC
+    source: platform_marts.fct_installs
+    owner: platform-analytics
+
+data:
+  - name: installs
+    source: platform_marts.fct_installs
+    period: "2026-07-01..2026-07-14"
+    rows: 27540
+    snapshot_at: "2026-07-16T03:00:00Z"
+    known_gaps: "Sandbox accounts excluded upstream. No outages in window."
+
+design:
+  kind: experiment
+  identification: randomized_experiment
+  randomization_unit: account
+  analysis_unit: account
+  arms: [control, treatment]
+  expected_allocation: [0.5, 0.5]
+  baseline_rate: 0.33
+  mde: 0.02
+  alpha: 0.05
+  power: 0.80
+  planned_n_per_arm: 10000
+  duration_days: 14
+  guardrail_metrics: [installs_per_account]
+  peeking_policy: fixed_horizon
+
+analysis:
+  outcome_type: count
+  n_groups: 2
+  paired: false
+  n_per_group: 10100
+  normality_ok: true
+  equal_variance: true
+  independence_ok: true
+
+results:
+  observed_n: [10100, 10060]
+  interim_looks: 1
+  comparisons_looked_at: 1
+  overall_effect: 0.12
+  tests:
+    - metric: installs_per_account
+      p_value: 0.0013
+      effect: 0.12
+      ci: [0.07, 0.17]
+      interpretation: "Treatment raises installs per account; the interval clears the +0.05 floor."
+      minimum_practical_effect: 0.05
+
+claims:
+  - text: >
+      The integrations gallery raises integrations installed by 0.12 per active
+      account (95% CI 0.07 to 0.17) in the test window.
+    type: causal
+    evidence: "examples/good-corpus/freq-count-installs-NARRATIVE.md"
+    population: "Active accounts, 2026-07-01 to 2026-07-14"
+    identification: randomized_experiment
+
+assumptions:
+  - assumption: "Assignment is stable for a given account_id across sessions."
+    rationale: "Bucketing is hashed on account_id and persisted server-side."
+    impact_if_wrong: "Cross-arm contamination would bias the estimate toward zero."
+    checked: true
+
+limitations:
+  - "Counts installs, not sustained integration usage."
+  - "Measured over two weeks; adoption is seasonal."
+
+reproducibility:
+  entrypoint: examples/good-corpus/_control_readout.py
+  language_version: "python 3.12.10"
+  package_versions: "numpy 2.1.0, statsmodels 0.14.2"
+  runs_clean_top_to_bottom: true
+  repro_lock:
+    schema_version: "1"
+    stochasticity_declaration: >
+      Analysis outputs depend on data extracts and library versions recorded
+      elsewhere in this block; this lock documents configuration, not
+      byte-identical replay.
+    dsx_version: "2.0.0"
+
+narrative:
+  path: examples/good-corpus/freq-count-installs-NARRATIVE.md
+  audience: executive
+  lead_claim: 0
+
+validity_frame:
+  estimand:
+    quantity: "ratio of integrations installed per active account between arms"
+    type: ratio_of_means
+    population: "active accounts, 2026-07-01 to 2026-07-14"
+    contrast: "integrations gallery vs current integrations page"
+    time_window: "14 days"
+    falsifier: "95% CI on the uplift includes zero, or its lower bound sits below +0.05"
+
+  units:
+    observation: account
+    assignment: account
+    analysis: account
+
+  identification:
+    strength: strong
+    evidence: "Assignment is hashed on account_id and persisted server-side; see design.identification"
+    constraint_source: none
+    constraint_justification: ""
+
+  dependence:
+    structure: none
+    cluster_var: ""
+
+  interference:
+    risk: none
+    mechanism: ""
+    mitigation: none
+    residual_note: ""
+
+  triggering:
+    eligible_population: "all active accounts in the test window"
+    triggered_definition: "was active in the period"
+    analysis_population: eligible
+    expected_trigger_rate: 1.0
+    dilution_adjusted: true
+
+  stability:
+    window: "14 days"
+    novelty_primacy_assessed: true
+    evidence: "internal readout; the installs-per-account gap held flat after day 3"
+
+  sampling_frame:
+    source: "platform_marts.fct_installs, no region filter"
+    claim_population: "all active accounts in the test window"
+    known_exclusions: ["sandbox accounts"]
+    selection_risk: "none identified"
+
+  missingness:
+    mechanism: MAR
+    rate: 0.0
+    method_implied: multiple_imputation
+
+  measurement:
+    construct: "integration adoption"
+    operationalisation: "integrations installed per active account in the period"
+    known_gaps: "none identified"
+
+inference:
+  paradigm: frequentist
+  paradigm_justification: team_convention
+  declared_at: pre_data
+  primary_procedure: delta_method
+  alpha_spending: null
+  fallback_rule: >
+    If any arm's observed n falls below 80% of planned_n_per_arm, extend to the
+    pre-declared duration_days ceiling before analysing; do not analyse early.
+
+# --- 24-02 bad-CHART-choice fixture: exactly one bad visual on a clean base ---
+visuals:
+  - name: "Integrations installed — radial gauge"
+    type: gauge
+    units: "integrations per account"
+    takeaway: "Accounts installed 1.8 integrations on average, up 0.4 on baseline."
+    source: "product_marts.fct_installs, 2026-07-01..2026-07-14"

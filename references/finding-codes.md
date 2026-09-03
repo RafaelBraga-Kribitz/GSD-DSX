@@ -13,7 +13,7 @@ a suppression or a reference in a review stays valid across versions.
 **Gate thresholds.** `plan` and `execute` block at CRITICAL; `verify` and
 `ship` block at HIGH.
 
-**Total: 275 codes.**
+**Total: 276 codes.**
 
 ## Contract structure — `DSX-SPEC-*`
 
@@ -303,6 +303,7 @@ Encoding correctness, proportionality, uncertainty, access.
 | `DSX-VIZ-063` | HIGH | '<…>' takeaway is blank or identical to the chart name |
 | `DSX-VIZ-064` | MEDIUM | '<…>' takeaway has no magnitude or comparison |
 | `DSX-VIZ-070` | HIGH | '<…>' plots estimates without any uncertainty |
+| `DSX-VIZ-071` | MEDIUM | '<…>' declares an unrecognised uncertainty mark <…> |
 | `DSX-VIZ-080` | LOW | '<…>' orders categories <…> |
 
 ## Reproducibility — `DSX-REP-*`

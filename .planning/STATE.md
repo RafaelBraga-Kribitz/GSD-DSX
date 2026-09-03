@@ -1,66 +1,74 @@
 ---
 gsd_state_version: 1.0
-milestone: v2.3
-milestone_name: Test Catalog
+milestone: v2.4
+milestone_name: Visual Excellence
 status: completed
-stopped_at: v2.3 fully scoped and the ceremony repointed; no ledger unit attempted yet.
-last_updated: "2026-09-02T20:51:04.951Z"
-last_activity: 2026-09-02
-last_activity_desc: Milestone v2.3 completed and archived
+stopped_at: v2.4 fully shipped -- all 4 phases complete, milestone audit PASSED, archived.
+last_updated: "2026-09-03T22:26:46.347Z"
+last_activity: 2026-09-03
+last_activity_desc: Milestone v2.4 completed and archived
 progress:
   total_phases: 4
   completed_phases: 4
   total_plans: 11
   completed_plans: 11
   percent: 100
-current_phase: 20
-current_phase_name: calibration-and-reporting-close
+current_phase: null
+current_phase_name: null
 ---
 
 # Project state
 
-**Status:** v2.3 milestone complete
-**Progress:** [██████████████████░░] v2.3 — 4/4 phases complete → close-out S5 (17 foundation ✅ → 18 correlation/agreement ✅ → 19 RM/trend/categorical/resampling/post-hoc ✅ → 20 calibration ✅ CLOSED [S4-1 discuss ✅ · S4-2 plan ✅ · S4-3 execute ✅ (catalogue 275, zero mint) · S4-4 review+verify ✅ (PASSED, suite 1462 OK) · S4-5 secure+validate ✅ (21 threats threats_open:0; 4/4 reqs nyquist_compliant:true)]) · **S5 close-out: S5-1 audit-uat ✅ (4/4 PASSED) · S5-3 extract-learnings ✅ (105 items) · S5-4 audit-milestone ✅ (PASSED, 22/22, 5/5 seams) — headless units DONE; remaining are operator-gated: S5-2 drain HUMAN-QUEUE (HQ-19/21/23/25 sign-offs) · S5-5 complete-milestone (interactive) · S5-6 ship (operator-approved merge+tag)**
-**Predecessors:** v2.2 Analytic Surface SHIPPED 2026-08-29 (tag `v2.2.0`); v2.0.0 DSX Validity Frame SHIPPED 2026-08-28 (tag `v2.1.0`). Archives under `.planning/milestones/`.
+**Status:** v2.4 milestone complete and archived — ship pending (this session, S5-6)
+**Progress:** [████████████████████] v2.4 — 4/4 phases shipped (21 viz vocabulary reconciliation → 22 catalog spine/uncertainty/heuristic → 23 style/snippet layer → 24 portfolio exemplar/calibration)
+**Predecessors:** v2.3 Test Catalog SHIPPED 2026-09-02 (tag `v2.3.0`); v2.2 Analytic Surface SHIPPED 2026-08-29 (tag `v2.2.0`); v2.0.0 DSX Validity Frame SHIPPED 2026-08-28 (tag `v2.1.0`). Archives under `.planning/milestones/`.
 
-**Loop control:** the autonomous ceremony drives this milestone. Contract:
-`.planning/LOOP-BRIEF.md`; backlog + gates: `.planning/LOOP-LEDGER.md`; human-only
-items: `.planning/HUMAN-QUEUE.md`. Branch `gsd/v2.3.0-test-catalog`, ships as tag
-`v2.3.0` by explicit named merge (never the auto-detected branch).
+**Loop control:** the autonomous ceremony drove this milestone through S5-4 (milestone
+audit PASSED) headlessly; S5-5/S5-6 (this completion + the ship) are interactive-only
+per `.planning/LOOP-LEDGER.md`'s own design. Once shipped, the loop is idle until
+`/gsd-new-milestone` opens v2.5 and repoints `LOOP-BRIEF.md`/`LOOP-LEDGER.md`.
 
-**Usage-limit posture (operator-directed 2026-08-29):** the weekly token allowance
-is expected to exhaust this week. The firing wrapper (`scripts/run-ceremony-firing.ps1`)
-detects limit hits, backs off gracefully, and resumes by itself at the weekly reset
-(Wednesday 10:00 América/São_Paulo = 13:00 UTC). Firings must not retry in a loop —
-log one line and stop; the wrapper owns the pacing.
+**Usage-limit posture (proven 2026-08-30 through 2026-09-02):** the firing
+wrapper (`scripts/run-ceremony-firing.ps1`) detects limit hits, backs off
+gracefully, and — critically — re-probes every 30 minutes during any hold to
+catch an early release rather than blindly waiting the full computed window
+(fixed 2026-09-01 after Anthropic released a weekly limit early and the
+original dead-reckoning design missed it). Observed live: four separate
+5-hour-window hits on 2026-09-02 each self-recovered in 2–7 minutes. Firings
+must not retry in a loop — log one line and stop; the wrapper owns the pacing.
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-08-29; Key Decisions table there is the full decision log)
+See: .planning/PROJECT.md (updated 2026-09-03; Key Decisions table there is the full decision log)
 
 **Core value:** Gate analytical work on validity before the data is touched.
-**Current focus:** Phase 20 — the terminal calibration + reporting close (REQ-P20-01…04): known-bad fixtures for every new blocking code, the stratified catch-rate/FPR re-measured, and the REQ-P20-04 doc/code agreement test. Phases 17/18/19 are CLOSED (15 codes minted, catalogue @275). Phase 20 mints ZERO codes.
+**Current focus:** v2.4 Visual Excellence is complete (4/4 phases, 16/16 requirements,
+milestone audit PASSED) and archived to `.planning/milestones/`. The ship itself
+(merge `gsd/v2.4.0-visual-excellence` into `main`, tag `v2.4.0`) is this session's
+next action. After ship: open v2.5 via `/gsd-new-milestone`.
 
 ## Current Position
 
-Phase: Milestone v2.3 complete
+Phase: Milestone v2.4 complete — ship pending
 Plan: —
-Status: Awaiting next milestone
-Last activity: 2026-09-02 — Milestone v2.3 completed and archived
+Status: Awaiting ship (S5-6), then next milestone
+Last activity: 2026-09-03 — Milestone v2.4 completed and archived
 
 ## Performance Metrics
 
-No v2.3 plans executed yet. v2.2 and v2.0.0 velocity are archived with their milestone artifacts.
+v2.4: 4 phases, 11 plans, 54 commits, 113 files changed (+15324/-161), 2026-09-02 → 2026-09-03.
+v2.3, v2.2, and v2.0.0 velocity are archived with their milestone artifacts.
 
 ## Accumulated Context
 
 ### Decisions
 
-Full decision log: PROJECT.md Key Decisions. Standing v2.3 decisions (operator-directed at open, 2026-08-29):
+Full decision log: PROJECT.md Key Decisions. Standing v2.4 decisions (carried from the original v2.3/v2.4 scoping, operator-directed 2026-08-29, re-confirmed at open):
 
-- **Two sequential milestones, tests first** (v2.3 tests → v2.4 visual excellence) — both subjects write the same single-writer files and D-06 makes range collisions permanent; tests carry the heavier D-05 burden (~15–20 reads vs ~8–12) and start with mandatory repairs. Contingency: v2.4 splits into v2.4+v2.5 if v2.3's D-05 queue outruns cadence.
-- **Citation granularity:** human D-05 read per new CODE; bibliographic citation per catalog ENTRY. Without this ruling the read burden triples to 90+.
-- **The gate stays declaration-only** — the decision-table expansion is routing surface (`recommend_test` + references), not a per-test gate catalog; `families.yaml` stays the admissibility ontology.
+- **The chart catalog is citable, not exhaustive-for-its-own-sake** — union of five named taxonomies (FT Visual Vocabulary, Wilke, Graphic Continuum, DVC, Datawrapper) after synonym merge and principled exclusions, target band 75–90 entries.
+- **License audit is a plan-review gate, not an afterthought** — dsx-538/dsx-urban forked or built from permissively-licensed sources; dsx-econ/dsx-bbc reimplemented from published doctrine only, never porting GPL code (bbplot) or embedding an unlicensed PDF (the 2017 Economist styleguide).
+- **Faceting is a declaration, not a chart type** — `facet_by` orthogonal to the mark, per the scope research's completeness-critic finding.
+- **Contingency:** split Phase 23–24 off as v2.5 if the D-05 queue materially outruns cadence (expected lighter than v2.3's — ~8–12 reads vs 27).
 
 ### Pending Todos
 
@@ -68,8 +76,7 @@ None beyond the ledger.
 
 ### Blockers/Concerns
 
-Weekly usage limit expected to hit this week — handled by wrapper backoff (see
-Usage-limit posture above). Not a work blocker; a pacing fact.
+None open.
 
 ## Deferred Items
 
@@ -77,15 +84,30 @@ Carried forward from v2.0.0 close — captured future ideas, not gaps:
 
 | Category | Item | Status | Deferred At |
 |----------|------|--------|-------------|
-| seed | SEED-001-deepen-dsx-explore-data-eda-protocol | dormant — natural v2.4/v2.5 candidate | 2026-08-28 |
-| seed | SEED-002-grow-data-profile-hermetic-eda-artifacts | dormant — natural v2.4/v2.5 candidate | 2026-08-28 |
+| seed | SEED-001-deepen-dsx-explore-data-eda-protocol | dormant — natural v2.5 candidate, not touched by v2.4 | 2026-08-28 |
+| seed | SEED-002-grow-data-profile-hermetic-eda-artifacts | dormant — natural v2.5 candidate, not touched by v2.4 | 2026-08-28 |
+
+Acknowledged at v2.4 milestone close (`gsd_run query audit-open`, 2026-09-03) — the two
+seeds above, genuinely deferred; plus 3 items the CLI flags as open that are **not**
+actually open:
+
+| Category | Item | Status | Deferred At |
+|----------|------|--------|-------------|
+| context-question | 21-CONTEXT.md open questions (HQ-28) | **false positive** — HQ-28 answered 2026-09-03 (accepted, no veto); the CLI text-matches "open question" bullet markers in CONTEXT.md, which are never rewritten once the linked HUMAN-QUEUE item resolves. Standing CLI blind spot, same class as `/gsd-audit-uat`'s documented under-reporting. | 2026-09-03 |
+| context-question | 22-CONTEXT.md open questions (HQ-30) | same false positive — HQ-30 answered 2026-09-03 (accepted, no veto) | 2026-09-03 |
+| context-question | 23-CONTEXT.md open questions (HQ-32) | same false positive — HQ-32 answered 2026-09-03 (accepted, no veto) | 2026-09-03 |
 
 ## Session Continuity
 
-Last session: 2026-08-29 (interactive session — v2.2 ship + v2.3 open)
-Stopped at: v2.3 fully scoped and the ceremony repointed; no ledger unit attempted yet.
-Resume file: None — the next firing takes S0-1 from LOOP-LEDGER.md.
+Last session: 2026-09-03 (interactive session — drained HUMAN-QUEUE HQ-27..HQ-37, ran
+`/gsd-complete-milestone v2.4`, proceeding to ship)
+Stopped at: v2.4 archived; `/gsd-complete-milestone`'s two standing defects hand-corrected
+(MILESTONES.md accomplishment bullets were truncated/garbage text, not prose; STATE.md's
+generated body contradicted its own 100%-complete frontmatter). Ship (S5-6) is this
+session's immediate next action.
+Resume file: None — after ship, the next firing (or `/gsd-new-milestone`) starts fresh.
 
 ## Operator Next Steps
 
-- Start the next milestone with /gsd-new-milestone
+- Ship v2.4: merge `gsd/v2.4.0-visual-excellence` into `main` by explicit branch name, tag `v2.4.0`.
+- Then start the next milestone with `/gsd-new-milestone`.

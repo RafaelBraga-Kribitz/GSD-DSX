@@ -1,25 +1,29 @@
 # LOOP-BRIEF — autonomous milestone ceremony
 
-**Current milestone: v2.3 Test Catalog** (Phases 17–20, 22 requirements).
-Branch `gsd/v2.3.0-test-catalog`. Opened 2026-08-29 by operator direction.
+**Current milestone: v2.4 Visual Excellence** (Phases 21–24, 16 requirements).
+Branch `gsd/v2.4.0-visual-excellence`. Opened 2026-09-02 by operator direction.
 
 **Purpose:** This file is the standing contract for the **scheduled headless
 firings** that drive the current milestone to completion. The work backlog lives in
 `LOOP-LEDGER.md`; items only a human can answer live in `HUMAN-QUEUE.md`.
 
-**Predecessors — both driven end-to-end by this same brief:** v2.2 Analytic Surface
-SHIPPED 2026-08-29 (tag `v2.2.0`, 4 phases / 20 plans, audit `passed`); v2.0.0 DSX
-Validity Frame SHIPPED 2026-08-28 (tag `v2.1.0`). Ledgers and queues archived under
-`.planning/milestones/v2.2-*` and `v2.0.0-*`.
+**Predecessors — all driven end-to-end by this same brief:** v2.3 Test Catalog
+SHIPPED 2026-09-02 (tag `v2.3.0`, 4 phases / 11 plans, audit `passed`, 27 D-05
+citations independently re-verified — 7 corrected); v2.2 Analytic Surface
+SHIPPED 2026-08-29 (tag `v2.2.0`); v2.0.0 DSX Validity Frame SHIPPED 2026-08-28
+(tag `v2.1.0`). Ledgers and queues archived under `.planning/milestones/v2.3-*`,
+`v2.2-*`, `v2.0.0-*`.
 
-**Scope source:** `.planning/research/V2.3-V2.4-SCOPE.md` (2026-08-29) — research
-provenance, per-row citations, doctrine dispositions, the critique register, and
-the milestone-split rationale. The scope was researched and written at open;
-**this milestone does not need a fresh scoping round; it needs execution.**
+**Scope source:** `.planning/research/V2.3-V2.4-SCOPE.md` §3 (2026-08-29) —
+research provenance, per-source citations, license audit findings, and the
+critique register. The scope was researched at v2.3's open and re-verified
+against the live tree at v2.4's own open (2026-09-02): `dsx/checks/viz.py`
+untouched since before v2.3; catalogue confirmed at 275. **This milestone does
+not need a fresh scoping round; it needs execution.**
 
 **Definition of done:** every item in LOOP-LEDGER.md checked; milestone audit run and
 `passed` (not gaps-accepted); `/gsd-complete-milestone` archived; branch merged to
-`main` **by explicit name** and tagged `v2.3.0`; HUMAN-QUEUE.md empty or every
+`main` **by explicit name** and tagged `v2.4.0`; HUMAN-QUEUE.md empty or every
 remaining item explicitly accepted by the operator.
 
 **Why this project's standard is high — read once, then hold it.** This repository is
@@ -87,6 +91,14 @@ in the Log line. If a unit is too large for one firing, stop cleanly at a safe
 boundary — GSD's own STATE/PLAN tracking is resumable; write down exactly where
 you stopped.
 
+**If you find uncommitted changes in the working tree at the start of a firing**
+that don't match the ledger's claimed state (e.g. an interactive session's
+in-progress close-out work): do NOT commit them and do NOT discard them. Leave
+them exactly as found, note it in your Log line, and hold — this is the
+operator's in-progress work, not yours to finalize or destroy. (Observed for
+real at v2.3's close: a firing correctly detected and held rather than
+interfering with a concurrent interactive `/gsd-complete-milestone` run.)
+
 ## 2. Cadence and the usage-limit backoff
 
 The Scheduled Task polls every 15 minutes — a retry rhythm, not a work rhythm; a
@@ -94,21 +106,19 @@ lock file makes overlapping polls exit in a second, so work runs effectively
 back-to-back whenever the machine is free. Firings missed to sleep/shutdown are
 simply skipped; a missed window costs time, never correctness.
 
-**Usage limits (operator-directed 2026-08-29): the wrapper owns limit pacing —
-you own nothing about it except honesty.**
+**Usage limits: the wrapper owns limit pacing — you own nothing about it except
+honesty.** Proven in production across v2.3 (2026-08-30 through 2026-09-02): the
+weekly-reset backoff self-healed once, and the periodic early-release probe
+(every 30 minutes during a hold) caught and self-recovered from four separate
+5-hour-window hits, each resolved in 2–7 minutes.
 
-- The weekly token allowance is expected to exhaust during heavy weeks. When
-  that happens, `run-ceremony-firing.ps1` detects the limit in the transcript,
-  writes `.planning/loop-logs/.backoff-until`, and **skips every poll until the
-  weekly reset — Wednesday 10:00 América/São_Paulo (13:00 UTC) — then resumes by
-  itself.** A 5-hour-window limit backs off ~60 minutes instead. No human action
-  is needed for either case.
 - Inside a firing: on a rate-limit / usage-window error on any tool call, do NOT
   retry in a loop. Append one Log line
   (`YYYY-MM-DDTHH:MMZ | <unit> | rate-limited, deferred | -`), commit+push if
   anything changed, and stop the firing. Being limited occasionally is the
   expected steady state of a run using its capacity properly — it is not a fault.
-- Never edit or delete `.backoff-until` yourself; it is the wrapper's file.
+- Never edit or delete `.planning/loop-logs/.backoff-until` or
+  `.backoff-last-probe` yourself; they are the wrapper's files.
 
 A firing that finds every remaining unit blocked on `HUMAN-QUEUE.md` says so in
 the Log once and stops; later firings in the same all-blocked state do a TRUE
@@ -147,8 +157,8 @@ Escalate to HUMAN-QUEUE.md **only** for:
 5. An outward-facing ship action (merge to `main`, release tag, opening a PR).
 
 D-06 numeric code assignments are persona-round decisions ("next free number in
-family, from the pre-allocated ranges — REQ-P17-04"), recorded loudly with a veto
-window, NOT escalated.
+family — verify the live catalogue count first, do not assume 275"), recorded
+loudly with a veto window, NOT escalated.
 
 **No one is watching — never wait on `AskUserQuestion` or interactive prompts.**
 Drive skills with the safe default: continue past advisory prompts, never past a
@@ -174,41 +184,46 @@ HUMAN-QUEUE item).
 - Never skip verification, security, or Nyquist gates to save time. If schedule
   is at risk, shrink scope via a recorded, consented re-scope — rigour is not the
   variable.
-- **v2.3-specific standing rules:** every new routing key reads DECLARED fields
-  only (the anti-two-stage doctrine — no inspect-data-then-pick, ever); doc table
-  and `recommend_test` change in the same commit (lockstep until REQ-P20-04's
-  agreement test exists); new codes come only from the REQ-P17-04 pre-allocated
-  ranges; effect-size bands ship labeled as conventions, never as blocking
-  thresholds.
+- **v2.4-specific standing rules:** every new gate check needs D-05 (citation +
+  published reference value); license audit is a plan-review item for the style
+  layer, never an afterthought (no GPL ports of bbplot, no embedding the
+  unlicensed Economist styleguide PDF — cite, never vendor); the catalog's
+  perceptual tie-break ordering is asserted as a structural criterion against
+  the published Cleveland–McGill ranking, never computed; the SVG determinism
+  recipe is proven by a double-render hash-equality test kept OFF the gate path.
 
 ## 6. Stages (execute in stage order)
 
 The authoritative stage/unit list is `LOOP-LEDGER.md`. Orientation summary:
 
 - **S0 — Bootstrap.** Verify state pointing; re-verify the inherited scope
-  against the live tree; file the Phase 18 and Phase 19 D-05 citation evidence
-  packs EARLY so the operator reads asynchronously while Phase 17 builds.
-- **S1 — Phase 17** (foundation repairs + spec vocabulary) — full ceremony:
-  discuss → plan → execute → review/verify → secure/validate. Hard-blocks S2/S3.
-- **S2 — Phase 18** (correlation, association, agreement) — same ceremony.
-- **S3 — Phase 19** (RM, trend, categorical, resampling, post-hoc) — same.
-- **S4 — Phase 20** (calibration + reporting close) — same; terminal by design.
-- **S5 — Close-out:** `/gsd-audit-uat` (hand-checked — the CLI under-reports, two
-  known defects) → drain HUMAN-QUEUE → `/gsd-extract-learnings` →
+  against the live tree (viz.py vocabulary, live catalogue count); file the
+  Phase 22 D-05 citation evidence pack EARLY so the operator reads
+  asynchronously while Phase 21 builds.
+- **S1 — Phase 21** (viz vocabulary reconciliation) — full ceremony: discuss →
+  plan → execute → review/verify → secure/validate. Hard-blocks S2.
+- **S2 — Phase 22** (catalog spine, uncertainty family, selection heuristic) —
+  same ceremony. Carries the milestone's D-05 load.
+- **S3 — Phase 23** (style and snippet layer) — same ceremony. Light D-05 load;
+  license audit is its own plan-review item.
+- **S4 — Phase 24** (portfolio exemplar and viz calibration) — same ceremony;
+  terminal by design, exercises both v2.3 and v2.4.
+- **S5 — Close-out:** `/gsd-audit-uat` (hand-checked — known CLI under-reporting
+  defects) → drain HUMAN-QUEUE → `/gsd-extract-learnings` →
   `/gsd-audit-milestone` (must reach `passed`) → `/gsd-complete-milestone`
   (interactive session — NOT headless-safe) → ship by **explicit named** direct
-  merge + `v2.3.0` tag (never the framework's alphabetical branch auto-detect;
-  this repo has stale `gsd/*` branches it would pick instead).
+  merge + `v2.4.0` tag (never the framework's alphabetical branch auto-detect;
+  this repo now has five stale `gsd/*` branches it would pick instead).
 
-Phases run in numeric order this milestone (17 → 18 → 19 → 20): 17 is the
-foundation everything reads, 20 is terminal calibration.
+Phases run in numeric order this milestone (21 → 22 → 23 → 24): 21 is the
+foundation the catalog spine builds on, 24 is terminal and consumes both v2.3
+and v2.4's surfaces.
 
 ## 7. Pacing
 
 No fixed per-stage calendar. Work the ledger in order; log a schedule-risk line
-when a phase visibly overruns its neighbours. The week of 2026-08-31 is expected
-to lose days to the weekly usage limit (§2) — that is planned-for, not schedule
-risk; do not re-scope in response to backoff idle time alone.
+when a phase visibly overruns its neighbours. The usage-limit backoff (§2) is
+proven working; expect occasional short holds, not multi-day stalls.
 
 ## 8. Reporting
 

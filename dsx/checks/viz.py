@@ -15,16 +15,30 @@ from ..spec import CHART_CAPABILITIES, DATA_INPUT_TYPES, as_number, is_blank, it
 
 # Relationship → admissible chart types. The first entry is the default choice.
 RELATIONSHIP_CHARTS: dict[str, tuple[str, ...]] = {
-    "comparison": ("bar", "horizontal_bar", "dot_plot", "bullet"),
+    "comparison": ("bar", "horizontal_bar", "dot_plot", "bullet", "butterfly"),
     "trend": ("line", "area", "sparkline", "slope"),
     "part_to_whole": ("stacked_bar", "treemap", "waffle", "pie"),
-    "distribution": ("histogram", "box", "violin", "density", "ecdf", "strip"),
+    "distribution": ("histogram", "box", "violin", "density", "ecdf", "strip", "kde",
+                     "population_pyramid"),
     "correlation": ("scatter", "hexbin", "heatmap"),
     "deviation": ("diverging_bar", "waterfall", "dumbbell"),
     "ranking": ("horizontal_bar", "dot_plot", "slope", "bump"),
     "flow": ("sankey", "chord", "funnel"),
     "geographic": ("choropleth", "symbol_map", "cartogram"),
     "composition_over_time": ("stacked_area", "stacked_bar", "stream"),
+    # The 11th function: uncertainty (D-2, Wilke 2019 §5.6 — the ten marks below;
+    # error_bars first = the default recommendation). Wilke treats Uncertainty as
+    # a peer top-level function alongside Amounts / Distributions / Proportions /
+    # x-y relationships / Geospatial (ch.5), so this is category addition, not a
+    # generalisation of an existing key. The set is D-12a-clean by construction:
+    # it spans frequentist marks (error_bars, graded_error_bars, confidence_strips,
+    # confidence_band) and Bayesian marks (eye, half_eye, quantile_dot_plot,
+    # graded_confidence_band, fitted_draws) symmetrically (Wilke §16.2), so no
+    # mark implies a single paradigm. eye = violin + error bar; half_eye =
+    # ridgeline half + error bar — distinct marks, not one named twice.
+    "uncertainty": ("error_bars", "graded_error_bars", "error_bars_2d",
+                    "confidence_strips", "eye", "half_eye", "quantile_dot_plot",
+                    "confidence_band", "graded_confidence_band", "fitted_draws"),
 }
 
 # Chart families whose visual encoding is length from a baseline. Truncating the
@@ -33,12 +47,65 @@ LENGTH_ENCODED = {"bar", "horizontal_bar", "stacked_bar", "area", "stacked_area"
                   "diverging_bar", "column", "histogram", "waffle", "funnel", "stream",
                   "grouped_bar"}
 
-BANNED_TYPES = {
-    "3d_bar": "3D bars distort length with perspective and occlude the back rows.",
-    "3d_pie": "3D pie exaggerates the slices nearest the viewer.",
-    "3d_line": "3D lines make position unreadable without adding information.",
-    "radar": "Radar area scales with the square of the value and depends on axis order.",
-    "dual_axis_line": "Two y-scales let any pair of series be made to look correlated.",
+# A banned mark is a first-class refusal record, never a silent absence
+# (REQ-P21-02). Each is {reason, code, citation}: `reason` is the distortion
+# the ban prevents, `code` is the finding _check_banned emits (DSX-VIZ-001 for
+# all five — a cross-reference to an existing code, not a new one), and
+# `citation` points at the perception-doctrine source (HQ-27, signed 2026-09-03).
+# Two citations carry a caveat the reader must see, not just the maintainer:
+# Munzner's anti-3D doctrine is justification-gated (she permits 3D for true 3D
+# spatial data), so ch.6 supplies the presumption and the hard ban is DSX's own
+# application of it for abstract data; and Datawrapper amended its dual-axis
+# position in July 2026 (D-4 below).
+BANNED_TYPES: dict[str, dict[str, str]] = {
+    "3d_bar": {
+        "reason": "3D bars distort length with perspective and occlude the back rows.",
+        "code": "DSX-VIZ-001",
+        "citation": "Munzner 2014 ch.6 (no unjustified 3D); Tufte 1983 (chartjunk) — HQ-27 T2-6/T3-3",
+    },
+    "3d_pie": {
+        "reason": "3D pie exaggerates the slices nearest the viewer.",
+        "code": "DSX-VIZ-001",
+        "citation": "Munzner 2014 ch.6 (no unjustified 3D); Tufte 1983 (chartjunk) — HQ-27 T2-6/T3-3",
+    },
+    "3d_line": {
+        "reason": "3D lines make position unreadable without adding information.",
+        "code": "DSX-VIZ-001",
+        "citation": "Munzner 2014 ch.6 (no unjustified 3D); Tufte 1983 (chartjunk) — HQ-27 T2-6/T3-3",
+    },
+    "radar": {
+        "reason": "Radar area scales with the square of the value and depends on axis order.",
+        "code": "DSX-VIZ-001",
+        "citation": "Duan et al. 2023 (J Clin Epidemiol 156:85-94), Introduction — "
+                    "area-vs-axis-order and area-proportional-to-square-of-value criticisms; "
+                    "HQ-27 Tier-3",
+    },
+    "dual_axis_line": {
+        "reason": "Two y-scales let any pair of series be made to look correlated; "
+                  "banned for the general-audience default this project assumes.",
+        "code": "DSX-VIZ-001",
+        "citation": "Muth 2018 (Datawrapper), as amended July 2026 — HQ-27 T3-4 / D-4. "
+                    "Datawrapper later carved out expert audiences (finance) while still "
+                    "holding that general audiences misread dual axes; the unconditional "
+                    "ban is DSX's own position, not an appeal to the amended claim. "
+                    "See also DSX-VIZ-030 (_check_dual_axis)",
+    },
+    "gauge": {
+        "reason": "A radial gauge wastes space with its circular form, gives no context for "
+                  "the single number, and leaves its scale unlabelled. (The arbitrary-maximum "
+                  "criticism is DSX's own reasoning, not Few's.)",
+        "code": "DSX-VIZ-001",
+        "citation": "Few 2006 (Information Dashboard Design) §3.2 / §6.2.1.1 — HQ-27 T3-GAUGE; "
+                    "arbitrary-maximum criticism is DSX's own, not Few's",
+    },
+    "word_cloud": {
+        "reason": "A word cloud supports only the crudest textual analysis: it sizes words by "
+                  "raw length/frequency rather than meaning, strips context, and carries no "
+                  "narrative.",
+        "code": "DSX-VIZ-001",
+        "citation": "Jacob Harris, 'Word clouds considered harmful', Nieman Journalism Lab "
+                    "2011-10-13 — HQ-27; editorial rationale, not perceptual",
+    },
 }
 
 MAX_PIE_SLICES = 5
@@ -71,6 +138,7 @@ def check(spec: dict) -> Report:
         _check_color(visual, label, where, report)
         _check_labelling(visual, label, where, report)
         _check_uncertainty(visual, label, where, report)
+        _check_uncertainty_vocabulary(visual, label, where, report)
         _check_ordering(visual, chart_type, label, where, report)
 
     report.ok(f"{len(visuals)} visual(s) audited")
@@ -83,7 +151,7 @@ def _check_banned(chart_type: str, label: str, where: str, report: Report) -> No
             "DSX-VIZ-001",
             "HIGH",
             f"'{label}' uses {chart_type}, which distorts the data",
-            detail=BANNED_TYPES[chart_type],
+            detail=BANNED_TYPES[chart_type]["reason"],
             remedy="Use a 2D length- or position-encoded chart instead.",
             where=f"{where}.type",
         )
@@ -407,6 +475,39 @@ def _check_uncertainty(visual: dict, label: str, where: str, report: Report) -> 
         remedy="Add confidence intervals, error bars, or a shaded band. Say what they represent.",
         where=f"{where}.shows_uncertainty",
     )
+
+
+def _check_uncertainty_vocabulary(
+    visual: dict, label: str, where: str, report: Report
+) -> None:
+    """Validate a declared uncertainty mark against the closed §5.6 vocabulary.
+
+    Complementary to DSX-VIZ-070 (``_check_uncertainty``), which asks whether any
+    uncertainty is shown at all; this asks whether the chosen mark is a recognised
+    member. Membership only — a set lookup against
+    ``RELATIONSHIP_CHARTS["uncertainty"]`` (the single source of truth), never a
+    computed threshold.
+
+    Citation: Wilke, C.O. (2019), Fundamentals of Data Visualization, O'Reilly, ch.5 §5.6 (the ten-mark set) and ch.16 §16.2 (frequentist/Bayesian paradigm symmetry).
+    Structural criterion: a declared uncertainty mark must be one of the ten named §5.6 members; no computed threshold.
+    """
+    raw = visual.get("uncertainty_mark")
+    if is_blank(raw):
+        return
+    mark = normalize(str(raw))
+    members = set(RELATIONSHIP_CHARTS["uncertainty"])
+    if mark not in members:
+        report.add(
+            "DSX-VIZ-071",
+            "MEDIUM",
+            f"'{label}' declares an unrecognised uncertainty mark {raw!r}",
+            detail=(
+                "A declared uncertainty mark must be one of Wilke's ten §5.6 members: "
+                + ", ".join(sorted(members)) + "."
+            ),
+            remedy="Pick one of the ten recognised uncertainty marks (error_bars is the default).",
+            where=f"{where}.uncertainty_mark",
+        )
 
 
 def _check_ordering(
