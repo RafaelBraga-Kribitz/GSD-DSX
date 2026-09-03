@@ -191,6 +191,14 @@ _D05_ALLOWLIST_CODES = frozenset(
         "DSX-STA-050", "DSX-STA-051", "DSX-STA-060", "DSX-STA-061", "DSX-STA-062",
         "DSX-STA-070", "DSX-STA-080", "DSX-STA-081", "DSX-STA-090", "DSX-STA-100",
         "DSX-STA-110", "DSX-STA-111", "DSX-STA-120", "DSX-STA-121", "DSX-STA-122",
+        # Phase 22 (REQ-P22-05) adds DSX-VIZ-071 here by EXACT CODE, not via a
+        # "DSX-VIZ-" prefix: DSX-VIZ-* is a pre-existing family (~20 legacy codes)
+        # carrying no Citation:/Structural criterion: docstring line and no
+        # `# D-05:` marker, so a prefix add would fail the build red on all of
+        # them. DSX-VIZ-071 lives in the brand-new `_check_uncertainty_vocabulary`
+        # helper this phase wrote (cites Wilke §5.6 + §16.2); same exact-code
+        # precedent as the DSX-STA-* blocks above.
+        "DSX-VIZ-071",
     }
 )
 

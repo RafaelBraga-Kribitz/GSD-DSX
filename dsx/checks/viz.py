@@ -131,6 +131,7 @@ def check(spec: dict) -> Report:
         _check_color(visual, label, where, report)
         _check_labelling(visual, label, where, report)
         _check_uncertainty(visual, label, where, report)
+        _check_uncertainty_vocabulary(visual, label, where, report)
         _check_ordering(visual, chart_type, label, where, report)
 
     report.ok(f"{len(visuals)} visual(s) audited")
@@ -467,6 +468,39 @@ def _check_uncertainty(visual: dict, label: str, where: str, report: Report) -> 
         remedy="Add confidence intervals, error bars, or a shaded band. Say what they represent.",
         where=f"{where}.shows_uncertainty",
     )
+
+
+def _check_uncertainty_vocabulary(
+    visual: dict, label: str, where: str, report: Report
+) -> None:
+    """Validate a declared uncertainty mark against the closed §5.6 vocabulary.
+
+    Complementary to DSX-VIZ-070 (``_check_uncertainty``), which asks whether any
+    uncertainty is shown at all; this asks whether the chosen mark is a recognised
+    member. Membership only — a set lookup against
+    ``RELATIONSHIP_CHARTS["uncertainty"]`` (the single source of truth), never a
+    computed threshold.
+
+    Citation: Wilke, C.O. (2019), Fundamentals of Data Visualization, O'Reilly, ch.5 §5.6 (the ten-mark set) and ch.16 §16.2 (frequentist/Bayesian paradigm symmetry).
+    Structural criterion: a declared uncertainty mark must be one of the ten named §5.6 members; no computed threshold.
+    """
+    raw = visual.get("uncertainty_mark")
+    if is_blank(raw):
+        return
+    mark = normalize(str(raw))
+    members = set(RELATIONSHIP_CHARTS["uncertainty"])
+    if mark not in members:
+        report.add(
+            "DSX-VIZ-071",
+            "MEDIUM",
+            f"'{label}' declares an unrecognised uncertainty mark {raw!r}",
+            detail=(
+                "A declared uncertainty mark must be one of Wilke's ten §5.6 members: "
+                + ", ".join(sorted(members)) + "."
+            ),
+            remedy="Pick one of the ten recognised uncertainty marks (error_bars is the default).",
+            where=f"{where}.uncertainty_mark",
+        )
 
 
 def _check_ordering(
