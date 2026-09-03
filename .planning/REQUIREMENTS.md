@@ -33,21 +33,21 @@ re-verified at 275 before this milestone opened), D-12a (paradigm pairs).
 
 ## Phase 22 — Catalog spine, uncertainty family, selection heuristic
 
-- [ ] REQ-P22-01 A merged chart catalog (~80 entries, band 75–90) with three
+- [x] REQ-P22-01 A merged chart catalog (~80 entries, band 75–90) with three
   axes per entry (function; data signature; Cleveland–McGill perceptual rank)
   and a per-entry citation (FT Visual Vocabulary spine; Wilke chapters; DVC
   stable URLs; Datawrapper cardinality bands).
-- [ ] REQ-P22-02 The **uncertainty** function family enters the vocabulary (fan
+- [x] REQ-P22-02 The **uncertainty** function family enters the vocabulary (fan
   chart, quantile dot plot, half-eye, gradient CI band — Wilke ch. 16), with
   the vocabulary decision (11th relationship key vs new input-type ids) made
   at discuss and rippled across `viz.py`, skills, references, templates.
   D-12a-clean (covers frequentist CIs and Bayesian posteriors symmetrically).
-- [ ] REQ-P22-03 Faceting ships as an orthogonal `facet_by` declaration, not a
+- [x] REQ-P22-03 Faceting ships as an orthogonal `facet_by` declaration, not a
   chart type; smells remedies route to it.
-- [ ] REQ-P22-04 The 5-layer question→chart heuristic ships as edits to
+- [x] REQ-P22-04 The 5-layer question→chart heuristic ships as edits to
   `references/question-taxonomy.md` / `chart-selection.md` plus skill
   pointers — route-and-cite, no parallel decision tree.
-- [ ] REQ-P22-05 Gates extended for the new vocabulary; every new code carries
+- [x] REQ-P22-05 Gates extended for the new vocabulary; every new code carries
   a D-05 citation; the perceptual tie-break ordering is asserted against the
   published Cleveland–McGill ranking as a named structural criterion (pure
   ordering assertion, no computation).
