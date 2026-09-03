@@ -46,6 +46,34 @@ The two cite-only styles (dsx-econ, dsx-bbc) vendor nothing and cannot contamina
 (reimplemented-from-doctrine posture; CONTEXT GA-1 Auditor robustness note) — no license
 read is owed for them; their `Source:` URLs are public-doctrine provenance only.
 
+### HQ-34 — Phase 23 end-of-phase security sign-off (NON-BLOCKING until S5-2)
+
+Filed at S3-5 (2026-09-03), mirroring the Phase 21 (HQ-29) and Phase 22 (HQ-31) sign-offs:
+non-blocking, the loop keeps working; only S5-2 waits on it. The technical gate is already
+**SECURED** — the approval you are asked to grant is the human sign-off line in
+`23-SECURITY.md`.
+
+**Basis, independently re-run by the loop this firing (not trusted from the S3-3/S3-4
+reports), on the clean tree `f96bb1c`:**
+
+- `threats_open: 0`; **8/8 threats T-23-01…T-23-08 CLOSED** (all medium/low — none reaches
+  the `high` block threshold; register authored at plan time across the three plans).
+- Seven mitigation modules re-run = **16 tests OK**, including
+  `test_double_render_hash_equality` — the REQ-P23-03 off-gate-path determinism oracle —
+  which **ran (not skipped) and passed** under matplotlib 3.11.1.
+- `test_gate_path_hermetic` GREEN with `matplotlib` now in `FORBIDDEN` (T-23-02).
+- `scripts/gen-finding-catalogue.py --check` exit 0 at catalogue **276** — zero mint
+  (T-23-07).
+- Lato `.ttf` SHA-256 re-verified **exact** against the recorded values (Regular
+  `d636e468…5b251`, Bold `8a0aace7…d16be1`); `OFL.txt` carries the SIL OFL 1.1 preamble +
+  `Reserved Font Name "Lato"` (T-23-01).
+- Full suite **1507 OK / 41.4s** from a clean tree.
+
+UAT: Phase 23 adds no user-facing runtime behavior, so its acceptance test IS the automated
+invariant/gate set — `nyquist_compliant: true`, 5/5 requirements COVERED (`23-VALIDATION.md`).
+The residual license-audit *authenticity* read (Urban Apache-2.0 palette) is tracked
+separately under **HQ-33**, not duplicated here.
+
 ## Will be added by the loop when reached
 
 - ~~S0-3: Phase 22 D-05 evidence pack~~ — FILED 2026-09-03 as HQ-27 (see Open).
