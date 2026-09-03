@@ -14,6 +14,17 @@ primary-source *reads* are owed. Its distinctive gate is the **license audit** �
 explicit plan-review item (REQ-P23-01), not a citation-authenticity read. This discuss
 makes that audit a named checklist and settles the three design gray areas.
 
+> **CORRECTION 2026-09-03 (HQ-33 at-locator read, interactive session):** every
+> "Apache-2.0" reference to the Urban Institute source below is **wrong as written**.
+> Urban's own README states GPL-3.0; the Apache-2.0 reading traced to GitHub's detector
+> misreading unmodified Jekyll-theme boilerplate. Also, only 2 of the 6 vendored hexes
+> are genuinely Urban's — 3 are ColorBrewer's PRGn/PuOr. The shipped fix (in
+> `styles/dsx-urban.mplstyle` and `23-01-SUMMARY.md`) keeps all 6 colors, unchanged —
+> bare hex values are not independently copyrightable regardless of license terms — but
+> corrects the header's factual claims. This note is left here rather than silently
+> editing the discuss-round text below, so the original persona-round reasoning stays
+> legible; treat every "Apache-2.0" below as superseded by this note.
+
 ## Binding inputs (fixed upstream — recorded so execute/plan honour them, not re-opened)
 
 - **Scope §3.3 license findings (from the 2026-08-29 research round)** are the binding

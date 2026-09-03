@@ -20,125 +20,8 @@ a persona round and records loudly):
 
 ## Open
 
-### HQ-33 — Phase 23 license-audit at-locator confirmation (NON-BLOCKING until S5-2)
-
-Filed at S3-3 Wave 1 (2026-09-03) with the concrete evidence gathered while vendoring the
-assets — mirrors the security sign-offs (HQ-29/HQ-31): non-blocking, the loop keeps working;
-only S5-2 waits on it. REQ-P23-01's explicit plan-review item. Full six-point checklist +
-checksums in `.planning/phases/23-style-snippet-layer/23-01-SUMMARY.md`.
-
-**Three vendored (load-bearing) assets to confirm at their locators:**
-
-1. **matplotlib `fivethirtyeight` fork** — VERIFIED by the loop: the installed matplotlib
-   3.11.1 LICENSE §2/§3 permit verbatim vendoring of a bundled style sheet, conditioned on
-   retaining the MDT copyright + a brief change summary (both in the dsx-538 header). Please
-   confirm you accept this reading.
-2. **Urban Institute palette (Apache-2.0)** — ASSUMED (carried from Scope §3.3, 2026-08-29,
-   not re-fetched this firing). Only palette hexes + rcParams are vendored, no guide prose.
-   **This is the one item still needing an at-locator human read** — the house-default style
-   rests on it.
-3. **Lato `.ttf` (SIL OFL 1.1)** — VERIFIED at-locator by the loop: fetched from the pinned
-   canonical Google Fonts OFL source; `OFL.txt` carries the SIL OFL 1.1 text and the Lato
-   copyright/reserved-name line; checksums recorded (Regular
-   `d636e468…5b251`, Bold `8a0aace7…d16be1`). Please confirm the checksums are acceptable.
-
-The two cite-only styles (dsx-econ, dsx-bbc) vendor nothing and cannot contaminate
-(reimplemented-from-doctrine posture; CONTEXT GA-1 Auditor robustness note) — no license
-read is owed for them; their `Source:` URLs are public-doctrine provenance only.
-
-### HQ-34 — Phase 23 end-of-phase security sign-off (NON-BLOCKING until S5-2)
-
-Filed at S3-5 (2026-09-03), mirroring the Phase 21 (HQ-29) and Phase 22 (HQ-31) sign-offs:
-non-blocking, the loop keeps working; only S5-2 waits on it. The technical gate is already
-**SECURED** — the approval you are asked to grant is the human sign-off line in
-`23-SECURITY.md`.
-
-**Basis, independently re-run by the loop this firing (not trusted from the S3-3/S3-4
-reports), on the clean tree `f96bb1c`:**
-
-- `threats_open: 0`; **8/8 threats T-23-01…T-23-08 CLOSED** (all medium/low — none reaches
-  the `high` block threshold; register authored at plan time across the three plans).
-- Seven mitigation modules re-run = **16 tests OK**, including
-  `test_double_render_hash_equality` — the REQ-P23-03 off-gate-path determinism oracle —
-  which **ran (not skipped) and passed** under matplotlib 3.11.1.
-- `test_gate_path_hermetic` GREEN with `matplotlib` now in `FORBIDDEN` (T-23-02).
-- `scripts/gen-finding-catalogue.py --check` exit 0 at catalogue **276** — zero mint
-  (T-23-07).
-- Lato `.ttf` SHA-256 re-verified **exact** against the recorded values (Regular
-  `d636e468…5b251`, Bold `8a0aace7…d16be1`); `OFL.txt` carries the SIL OFL 1.1 preamble +
-  `Reserved Font Name "Lato"` (T-23-01).
-- Full suite **1507 OK / 41.4s** from a clean tree.
-
-UAT: Phase 23 adds no user-facing runtime behavior, so its acceptance test IS the automated
-invariant/gate set — `nyquist_compliant: true`, 5/5 requirements COVERED (`23-VALIDATION.md`).
-The residual license-audit *authenticity* read (Urban Apache-2.0 palette) is tracked
-separately under **HQ-33**, not duplicated here.
-
-### HQ-35 — Phase 24 discuss persona decisions + D-06 zero-mint note (VETO WINDOW — silence = accept)
-
-Filed at S4-1 (2026-09-03), mirroring the Phase 21/22/23 discuss veto windows (HQ-28/HQ-30/HQ-32):
-**non-blocking, silence = accept** — the loop keeps working; no operator action is required unless
-you want to veto. Full rationale (persona round Architect + Statistician + Auditor) in
-`.planning/phases/24-portfolio-exemplar-viz-calibration/24-CONTEXT.md`.
-
-Three gray areas settled + one D-06 note:
-
-- **GA-1 (the main design choice) — upgrade the existing `examples/good-*` onboarding-activation
-  exemplar *in place* into the full v2.4 capstone**, rather than authoring a net-new analytical
-  question. Reuses a spec already proven green through every dsx gate; adds the v2.4 presentation
-  delta only — figures re-rendered through the `dsx-urban` style layer + `dsx_plotstyle.py`, **one
-  uncertainty figure** showing the real 95% CI on the activation uplift (routed via `DSX-VIZ-071`),
-  a **sealed** FIGURE-MANIFEST (`dsx seal`), a strict What/So What/Now What NARRATIVE, and a
-  REPRO-REPORT. Unanimous persona vote; rigour > reliability > flexibility (net-new re-opens
-  estimand/power/SRM on a terminal phase for no coverage gain). Rejected: (b) net-new exemplar.
-- **GA-2 — author the first bad-*chart*-choice fixtures** (none exist today; the corpus is all
-  bad-test-choice) mirroring the `known-bad/` convention, extend `test_known_bad_corpus.py`, and
-  re-baseline catch-rate / FPR. Minimal-honest "per new code" set: one fixture tripping `DSX-VIZ-071`,
-  one each for the new `gauge`/`word_cloud` refusal rows under `DSX-VIZ-001`, and ≥1 pre-existing
-  banned-type control. The exact gate *surface* a chart defect is caught on is deliberately left as an
-  **S4-2 plan-research item** (read `viz.py`) — flagged, not guessed.
-- **GA-3 — REQ-P24-03 is verify-not-build:** both selection surfaces already have doc/code agreement
-  tests (`test_doc_code_agreement.py` for test-selection.md; `test_selection_heuristic_docs.py` for
-  chart-selection.md). Phase 24 verifies both green + catalogue current + snapshots unmutated; it
-  closes a gap only if S4-2 finds a real one (e.g. one test asserts only doc⊆code, not both directions).
-- **D-06 note — Phase 24 mints ZERO new codes** (calibration + exemplar + audit-prereqs all route to
-  existing codes; re-measure the live count at plan time, currently 276): target set-identity
-  276→276 at S4-4. Recorded loudly, **not** escalated (D-06 numeric assignments are persona-round
-  decisions per brief §4).
-
-### HQ-36 — Phase 24 end-of-phase security sign-off (NON-BLOCKING until S5-2)
-
-Filed at S4-5 (2026-09-03), mirroring the Phase 21 (HQ-29), Phase 22 (HQ-31), and Phase 23
-(HQ-34) sign-offs: non-blocking, the loop keeps working; only S5-2 waits on it. The technical
-gate is already **SECURED** — the approval you are asked to grant is the human sign-off line in
-`24-SECURITY.md`.
-
-**Basis, independently re-run by the loop this firing (not trusted from the 24-01/24-02/24-03
-execute or S4-4 review reports), on the clean tree `ef13b27`:**
-
-- `threats_open: 0`; **13/13 threats T-24-01-01…T-24-03-04 CLOSED**. One is `critical`
-  (T-24-01-01, stale-seal) and several `high`, but all are closed, so nothing blocks under the
-  block-on-`high` policy. Register authored at plan time across the three `24-0N-PLAN.md` STRIDE
-  models.
-- Seven mitigation modules re-run = **90 tests OK** (`test_known_bad_corpus` + `test_gate_path_hermetic`
-  + `test_selection_heuristic_docs` + `test_doc_code_agreement` + `test_viz_vocabulary_invariant`
-  + `test_chart_catalog_invariant` + `test_finding_catalogue_invariant`).
-- The exemplar acceptance ran as the **full `dsx gate plan→execute→verify→ship` sequence on a swept
-  `examples/DECISIONS.jsonl`** (the trail-sensitive acceptance from the S4-4 methodology note): plan/execute
-  PASS (blocking at CRITICAL, CRITICAL=0 HIGH=0 MEDIUM=0), verify/ship PASS (blocking at HIGH,
-  **CRITICAL=0 HIGH=0** MEDIUM=3 = 3× pre-existing `DSX-STA-011` on the untouched `results.tests` block,
-  INFO=1). The CRITICAL stale-seal guards `DSX-FIG-010`/`DSX-FIG-011` and the HIGH lead-number guards
-  `DSX-REP-06x` are all silent → T-24-01-01 (re-seal) and T-24-01-03 (repro lead-number) discharged.
-- `scripts/gen-finding-catalogue.py --check` exit 0 at catalogue **276** — zero mint; `git diff dsx/`
-  EMPTY across the phase range `08a65bf..ef13b27` → zero gate/catalogue-code change by construction
-  (T-24-01-04 / T-24-02-04 / T-24-03-01); set-identity 276→276.
-- Full suite **1508 OK / 45.5s** from a clean tree (stray `DECISIONS.jsonl` swept per standing note).
-
-UAT: Phase 24 adds no user-facing runtime behavior beyond the exemplar/fixtures (all gated), so its
-acceptance test IS the automated invariant/gate set — `nyquist_compliant: true`, 3/3 requirements
-REQ-P24-01..03 COVERED (`24-VALIDATION.md`). The two Manual-Only rows (per-fixture chart-defect
-authenticity, catch-rate/FPR re-baseline honesty) are non-D-05 judgment reads discharged at code
-review S4-4, not escalated.
+(none — HQ-33 through HQ-36 all answered 2026-09-03; see Answered
+below. Nothing is blocking the loop.)
 
 ## Will be added by the loop when reached
 
@@ -248,6 +131,80 @@ the tree and correctly left it untouched (neither committed nor discarded),
 logging the observation instead. This is the correct behavior, not a bug to fix.
 
 ## Answered
+
+### HQ-33 — Phase 23 license-audit at-locator confirmation (answered 2026-09-03 — CORRECTED)
+
+**Operator verdict:** the loop's two VERIFIED readings are accepted as-is; the third
+(Urban Institute) is **corrected**, not merely confirmed — an independent primary-source
+fetch found it materially wrong.
+
+1. **matplotlib `fivethirtyeight` fork — ACCEPTED.** Independently re-checked against the
+   installed matplotlib 3.11.1's actual `LICENSE` file (not the loop's summary): §2/§3 do
+   permit a derivative style sheet, conditioned on retaining the MDT copyright notice and a
+   brief change summary. `dsx-538.mplstyle`'s header carries both. Confirmed correct as
+   written.
+2. **Urban Institute palette — CORRECTED, not confirmed.** An independent fetch of the real
+   `UrbanInstitute/graphics-styleguide` repo found: (a) the repo's own README states
+   *"Copyright 2016 Urban Institute. Code released under the GNU General Public License
+   v3.0"* — the Apache-2.0 reading the plan carried from Scope §3.3 traced to GitHub's
+   detector misreading unmodified Jekyll-theme boilerplate (the `LICENSE` file's copyright
+   line names an unrelated party, "Iron Summit Media Strategies, LLC"); (b) of the 6 vendored
+   hex codes, only 2 (`1696d2`, `ec008b`) are genuinely Urban's own published palette
+   (confirmed against `urbnthemes::palette_urbn` and the style guide's own
+   `variables.less`) — the other 3 (`1b7837`, `b35806`, `762a83`) are ColorBrewer's PRGn/PuOr
+   diverging-palette stops (Brewer/Harrower/Penn State, Apache-2.0), mislabeled as "Urban
+   shade equivalents." **Resolution:** kept all 6 colors unchanged — bare hex values are not
+   independently copyrightable in most jurisdictions regardless of license terms — but
+   corrected `styles/dsx-urban.mplstyle`'s header, `23-01-SUMMARY.md`, and `23-CONTEXT.md`
+   to state the real license position and the real, split attribution. Re-tested clean:
+   `test_style_headers` + `test_style_wcag_contrast`, 4 OK; palette hexes byte-identical
+   before/after.
+3. **Lato `.ttf` checksums — ACCEPTED** as recorded (SIL OFL 1.1, `OFL.txt` present,
+   Regular/Bold SHA-256 internally consistent). Not independently re-fetched — disproportionate
+   scrutiny for a ubiquitous, unambiguously OFL font once the one load-bearing claim in this
+   set (Urban's license) had already been found wrong and fixed.
+
+### HQ-34 — Phase 23 end-of-phase security sign-off (answered 2026-09-03)
+
+**Operator verdict:** Approved — signed in `23-SECURITY.md`'s Approval line.
+
+Basis, **independently re-verified in this session**: `threats_open: 0`, 8/8 threats
+CLOSED; 7 mitigation modules re-run = 82 tests green (superset of the 16 T-23-0x-specific
+tests cited). One claim needed a second look: the report states the off-gate-path
+determinism oracle "ran (not skipped) and passed under matplotlib 3.11.1" — a first re-run
+showed it **skipped**, traced to an interpreter-resolution artifact in the verifying shell
+(a bare stub Python with no packages resolved ahead of the real interpreter on PATH), not a
+defect. Re-run against the interpreter with matplotlib 3.11.1 actually installed (confirmed
+via `pip show`): the test **runs and passes**, full suite **1508 OK**. The claim holds.
+HQ-33's Urban Institute correction (above) does not affect this sign-off's scope — the
+threat register concerns tampering/hermeticity/determinism, not citation accuracy — and the
+palette fix re-tested clean regardless.
+
+### HQ-35 — Phase 24 discuss persona decisions + D-06 zero-mint note (answered 2026-09-03 — accepted, no veto)
+
+**Operator verdict:** Accepted all three gray areas + the D-06 note. GA-1 (upgrade the
+existing `examples/good-*` onboarding-activation exemplar in place into the v2.4 capstone,
+rather than a net-new analytical question — reuses a spec already proven green through
+every gate; adds only the presentation delta: `dsx-urban` styling, one uncertainty figure
+via `DSX-VIZ-071`, a sealed manifest, a strict What/So What/Now What narrative, a
+repro-report). GA-2 (author the first bad-chart-choice fixtures — one tripping
+`DSX-VIZ-071`, one each for the new `gauge`/`word_cloud` refusal rows, ≥ 1 pre-existing
+banned-type control — with the exact gate surface left as an S4-2 plan-research item rather
+than guessed). GA-3 (REQ-P24-03 verified as already-covered by existing doc/code-agreement
+tests; Phase 24 closes a gap only if S4-2 finds a real one). D-06 note (zero new codes,
+target set-identity 276→276). No veto.
+
+### HQ-36 — Phase 24 end-of-phase security sign-off (answered 2026-09-03)
+
+**Operator verdict:** Approved — signed in `24-SECURITY.md`'s Approval line. This is the
+milestone's final phase security sign-off — all four v2.4 phases (21, 22, 23, 24) are now
+technically verified and human-approved.
+
+Basis, **independently re-verified in this session**: `threats_open: 0`, 13/13 threats
+CLOSED (one critical — stale-seal — and several high, all closed under the block-on-high
+policy). 7 mitigation modules re-run = **90 tests green**, matching the register's count
+exactly. `gen-finding-catalogue.py --check` re-confirmed exit 0 at catalogue **276**.
+
 
 ### HQ-28 — Phase 21 discuss persona decisions (answered 2026-09-03 — accepted, no veto)
 

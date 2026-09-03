@@ -1,9 +1,23 @@
 # DSX style: dsx-urban  (HOUSE DEFAULT)
 # Source: Urban Institute Data Visualization Style Guide https://urbaninstitute.github.io/graphics-styleguide/
-# License: Apache-2.0 (palette hexes + rcParams only)
-# Vendoring: palette hexes + rcParams only — no guide prose is copied
+# License: DISPUTED at repo level — GitHub's detector reads Apache-2.0 from the LICENSE
+#   file, but that file's copyright line names "Iron Summit Media Strategies, LLC" (an
+#   unrelated Jekyll theme), while the repo's own README states "Copyright 2016 Urban
+#   Institute. Code released under the GNU General Public License v3.0" — treat GPL-3.0
+#   as Urban's real stated position. Moot regardless: only bare hex values are vendored
+#   below, and color values are not independently copyrightable in most jurisdictions
+#   (facts/data, not expression) — HQ-27/HQ-33.
+# Vendoring: palette hexes + rcParams only — no guide prose, code, or images are copied
 # Font: resolves font.family to vendored Lato (SIL OFL 1.1), styles/fonts/Lato-Regular.ttf
-# Palette: WCAG-AA verified (tests/test_style_wcag_contrast.py); Urban categorical palette — brand blue (1696d2) and magenta (ec008b) retained, the lighter green/yellow/grey darkened to their Urban shade equivalents so every series clears 3:1 on white
+# Palette: WCAG-AA verified (tests/test_style_wcag_contrast.py). Only 2 of 6 colors are
+#   genuinely Urban's own published categorical palette — brand blue 1696d2 and magenta
+#   ec008b (both confirmed against urbnthemes::palette_urbn and the style guide's own
+#   variables.less). 5c5859 is Urban's own black/gray sequential-ramp stock value. The
+#   remaining 3 (1b7837, b35806, 762a83) are NOT Urban's — they are ColorBrewer's PRGn
+#   and PuOr diverging-palette stops (Brewer/Harrower/Penn State, Apache-2.0,
+#   colorbrewer2.org), correctly attributed here rather than mislabeled as "Urban
+#   shades" as an earlier draft of this header did. Chosen for WCAG-AA: the upstream
+#   Urban lighter categorical hues fell below 3:1 on a white panel.
 
 axes.prop_cycle: cycler('color', ['1696d2', 'ec008b', '1b7837', 'b35806', '5c5859', '762a83'])
 axes.facecolor: ffffff

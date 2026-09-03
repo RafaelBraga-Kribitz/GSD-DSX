@@ -61,9 +61,22 @@ Lato copyright/reserved-name line — the genuine Lato distribution, not a repac
 1. **matplotlib LICENSE permits verbatim vendoring of `fivethirtyeight`** — VERIFIED
    (23-RESEARCH §2: §2/§3 grant reproduce/derive/distribute, conditioned on retaining the
    MDT copyright + a brief change summary; both are in the dsx-538 header). *Vendored, load-bearing.*
-2. **Urban Institute source is Apache-2.0; vendored artefact is palette hexes/rcParams, not
-   prose** — ASSUMED (carried from Scope §3.3, 2026-08-29); vendoring is hexes only (no guide
-   prose copied). *Vendored, load-bearing — at-locator re-confirm owed (HQ-33).*
+2. **Urban Institute source Apache-2.0 assumption — CORRECTED 2026-09-03 (HQ-33
+   at-locator read, interactive session).** The Scope §3.3 Apache-2.0 assumption does
+   NOT hold: an independent fetch of the actual repo found its own README states
+   "Copyright 2016 Urban Institute. Code released under the GNU General Public License
+   v3.0" — the Apache-2.0 reading came from GitHub's detector picking up unmodified
+   Jekyll-theme boilerplate whose copyright line names an unrelated party ("Iron Summit
+   Media Strategies, LLC"), not Urban Institute. Separately, only 2 of the 6 vendored
+   hexes (`1696d2`, `ec008b`) are genuinely Urban's own published palette (confirmed
+   against `urbnthemes::palette_urbn` and the style guide's own `variables.less`); 3
+   more (`1b7837`, `b35806`, `762a83`) are ColorBrewer's PRGn/PuOr diverging-palette
+   stops, mislabeled here as "Urban shade equivalents." **Resolution:** kept all 6
+   colors (bare hex values are not independently copyrightable in most jurisdictions
+   regardless of license terms) but corrected `styles/dsx-urban.mplstyle`'s header to
+   state Urban's real position (GPL-3.0, moot given only facts are vendored) and to
+   attribute the 3 ColorBrewer hexes correctly. *Vendored, load-bearing — corrected,
+   not merely confirmed.*
 3. **Lato is SIL OFL 1.1; `OFL.txt` bundled alongside the `.ttf`** — VERIFIED at-locator this
    firing (OFL.txt preamble + checksums above). *Vendored, load-bearing.*
 4. **dsx-econ embeds no Economist-PDF text and no proprietary font; rcParams our own
