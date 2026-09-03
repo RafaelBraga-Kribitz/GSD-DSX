@@ -20,48 +20,6 @@ a persona round and records loudly):
 
 ## Open
 
-### HQ-27 — Phase 22 D-05 citation evidence pack (filed S0-3, 2026-09-03)
-
-**Type:** D-05 primary-source read (item 1). **Blocks:** S2-1 discuss for any
-Phase 22 code whose Tier-1 source is unsigned; non-blocking for Phase 21.
-**Full pack:** `.planning/v2.4-D05-EVIDENCE-PACK.md` (per-citation table: locator,
-exact claim, confirmed-by-loop vs UNVERIFIED-for-human split). Prepared by the
-loop; **NOT signed** — the loop may prepare, it may not sign.
-
-Sources to confirm at their locators (granularity: one deep read per code-critical
-source, one authenticity confirmation per per-entry source):
-
-- **Tier 1 — mandatory deep read (code-critical):** T1-1 Cleveland & McGill 1984
-  (JASA 79:531-554, the perceptual ranking the REQ-P22-05 tie-break asserts);
-  T1-2 Heer & Bostock 2010 (CHI, the paired replication); T1-3 Wilke 2019 ch.16
-  (the fan/quantile-dot/half-eye/gradient-CI uncertainty family, REQ-P22-02).
-- **Tier 2 — authenticity confirm (per-entry spine + heuristic):** T2-1 FT Visual
-  Vocabulary 2016 (MIT repo, the spine); T2-2 Wilke ch.5 directory; T2-3 Graphic
-  Continuum; T2-4 Data Visualisation Catalogue (stable URLs); T2-5 Datawrapper
-  cardinality bands; T2-6 Munzner 2014 (ch.2/3/6).
-- **Tier 3 — refusal-entry doctrine (batch when refusal entries land):** Few,
-  Harris, Tufte, Muth 2018.
-
-**Tier-3 refusal entries HAVE LANDED (Phase 21 S1-3, 2026-09-02).** The five
-`BANNED_TYPES` refusal records in `dsx/checks/viz.py` now carry a `citation`
-field. Per-banned-type → source mapping to confirm at S5-2:
-
-| Banned mark | citation shipped | Tier-3 row | Confidence |
-|---|---|---|---|
-| `3d_bar` | Munzner 2014 ch.6 (no unjustified 3D); Tufte 1983 (chartjunk) | T2-6 / T3-3 | good fit — anti-3D doctrine is exactly ch.6 |
-| `3d_pie` | Munzner 2014 ch.6; Tufte 1983 | T2-6 / T3-3 | good fit |
-| `3d_line` | Munzner 2014 ch.6; Tufte 1983 | T2-6 / T3-3 | good fit |
-| `dual_axis_line` | Muth 2018 (Datawrapper); see also DSX-VIZ-030 | T3-4 | exact — already coded, citation-confirm only |
-| `radar` | Tufte 1983 / Munzner proportional-encoding doctrine — **PROVISIONAL** | (none) | **LEAST CERTAIN of the five — no exact Tier-3 source is pre-mapped to radar. Confirm the doctrine fit or supply a better source at S5-2.** |
-
-Non-blocking for Phase 21 ship: `DSX-VIZ-001` already fires and the `reason`
-strings shipped long ago; this adds only citation *metadata* (zero new codes,
-proven 275→275). The `radar` gap is the one row to give closest attention.
-
-**To sign:** confirm each row in the pack file (`SIGNED <initials> <date>`), then an
-interactive session checks HQ-27 off here. ~9 core + 4 refusal = within the ~8–12
-estimate.
-
 ### HQ-28 — Phase 21 discuss persona decisions (veto window, filed S1-1, 2026-09-03)
 
 **Type:** persona-decision veto window (brief §4 — recorded loudly, **non-blocking**;
@@ -205,6 +163,73 @@ the tree and correctly left it untouched (neither committed nor discarded),
 logging the observation instead. This is the correct behavior, not a bug to fix.
 
 ## Answered
+
+### HQ-27 — Phase 22 D-05 citation evidence pack (answered 2026-09-03)
+
+**Operator verdict: ANSWERED with corrections.** Before the operator signed, an
+interactive session ran an **independent primary-source verification pass** (5
+parallel research agents, each instructed to actually fetch and read the sources
+rather than re-confirm the loop's bibliographic record). **7 of 13 citations
+required correction; 2 were load-bearing enough to change what Phase 22 builds.**
+
+**Four binding decisions (D-1 … D-4), recorded in full in
+`.planning/v2.4-D05-EVIDENCE-PACK.md`:**
+
+- **D-1 — REQ-P22-05 tie-break: encode the REAL 6-rank order WITH ties.** The
+  7-item strict ordering was never Cleveland & McGill's. Their p.536 list is 6
+  ranks over 10 tasks; rank 3 is "Length, direction, angle" TOGETHER, and p.537
+  states "there is not enough information to separate the ties." Heer & Bostock
+  p.206 independently: "Theory also suggests that angle should perform worse than
+  length, but the results do not support this." The `length > angle` link the test
+  would have asserted has **no support in either cited paper**. Test must assert
+  `rank(a) <= rank(b)`, never a strict total order. ("density" is also absent from
+  the 1984 paper entirely; "curvature" and "shading" were silently dropped from
+  their tied ranks.)
+- **D-2 — REQ-P22-02 uncertainty family: adopt Wilke's actual 10 marks from
+  §5.6.** Two of the four proposed names do not exist in the book: "fan chart"
+  appears nowhere (verified against the full-text index, all 34 pages), and
+  "gradient CI band" is not his term — he has two DISTINCT marks, "confidence
+  strips" (continuous fade) and "graded confidence band" (nested levels).
+  "half-eye" is real but lives in §5.6, not ch.16. Paradigm symmetry IS strongly
+  confirmed.
+- **D-3 — catalog spine: attribute the nine-category axis, write our own
+  descriptions.** The "FT Visual Vocabulary is MIT-licensed" claim is wrong: the
+  repo is MIT but the FT carves out its content in writing, twice — "does not
+  cover any FT content … all rights reserved." Never vendor the PDF or copy its
+  blurbs. Also drop any "exhaustive" claim resting on the FT: the poster
+  disclaims exhaustiveness in its own words.
+- **D-4 — `dual_axis_line`: cite "Muth 2018, as amended July 2026"** and scope the
+  reason string to a **general audience**. Datawrapper publicly reversed its
+  position ("we've changed our minds"), carving out expert users; they still hold
+  general audiences misread these charts. The ban stands as a deliberate DSX
+  position, not an appeal to a softened claim.
+
+**Other corrections signed (no design change):** radar's PROVISIONAL placeholder
+is **replaced** by a peer-reviewed source that supports both stated criticisms
+nearly verbatim (Duan et al. 2023, J Clin Epidemiol 156:85-94, DOI
+10.1016/j.jclinepi.2023.02.020) — and Few 2005 is explicitly NOT usable for those
+grounds; the word-cloud citation mix-up is corrected to **Jacob Harris** (Nieman
+Lab, 13 Oct 2011), not Robert L. Harris's *Information Graphics* (OUP 1999);
+Few's gauge criticism is real but "arbitrary maximum" is **DSX's own reasoning,
+not Few's**; Datawrapper's `>5` and `>7` thresholds are **confirmed verbatim** (no
+demotion needed) but dated **2018**, not 2025; chart counts corrected (DVC = 60,
+not ~77; FT = 74 entries / 66 distinct, not 72); Munzner ch.6's anti-3D doctrine
+is **justification-gated**, not absolute, so the hard ban is DSX's application of
+her presumption rather than her rule.
+
+**Cross-cutting finding recorded:** the three "spine" sources are **not
+independent** — Ribecca authored both the Graphic Continuum and the Data
+Visualisation Catalogue, and the FT poster credits the Graphic Continuum as its
+inspiration. One design lineage, not three corroborating authorities.
+
+**Eight items remain explicitly unverified** and are listed as such in the pack
+(Mackinlay 1986 primary text; the Harris 1999 index; Tufte's verbatim chartjunk
+sentence; Few's 2013 edition; the Graphic Continuum's counts from the primary
+artifact; FT's stance on axis reuse; Munzner "cardinality"; one Duan et al.
+phrasing that would not reproduce on a second fetch and was deliberately dropped).
+
+**Effect:** S2-1 (Phase 22 discuss) is **UNBLOCKED**, subject to D-1 … D-4.
+
 
 (v2.0.0's items HQ-1…HQ-7, v2.2's items HQ-8…HQ-15, and v2.3's items
 HQ-16…HQ-26 are archived at `.planning/milestones/v2.0.0-HUMAN-QUEUE*.md`,
