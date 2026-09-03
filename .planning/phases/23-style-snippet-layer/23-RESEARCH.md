@@ -785,9 +785,16 @@ subject to near-term deprecation.
 for at-locator confirmation at the S3-2 license-audit gate per GA-1's own checklist, so
 no *additional* user confirmation is needed beyond what CONTEXT.md already scheduled.
 
-## Open Questions
+## Open Questions (RESOLVED at plan — S3-2)
 
-1. **Exact `svg.hashsalt` string value.**
+> All three were resolved in the Phase 23 plans (plan-checker `VERIFICATION PASSED`, commit
+> `353230d`): **(1)** `svg.hashsalt` pinned to `"dsx"` (23-01/23-02); **(2)** snippet catalog
+> located at `references/chart-snippets.md`, wired into `skills/dsx-visualize/SKILL.md`'s
+> `<references>` block (23-03); **(3)** per-function scope adopted — the 10 Function-axis
+> categories of `references/chart-catalog.md` (23-03). The per-question detail below records
+> the reasoning that led to each choice.
+
+1. **Exact `svg.hashsalt` string value.** *(RESOLVED: `"dsx"`, pinned in 23-01/23-02.)*
    - What we know: CONTEXT.md suggests `"dsx"` as an example; any fixed non-`None` string
      works mechanically (verified above — `_make_id` treats it as an opaque salt string).
    - What's unclear: Whether the plan wants a more specific/versioned salt (e.g.
