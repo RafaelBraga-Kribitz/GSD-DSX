@@ -20,8 +20,38 @@ a persona round and records loudly):
 
 ## Open
 
-(none — HQ-33 through HQ-36 all answered 2026-09-03; see Answered
-below. Nothing is blocking the loop.)
+### HQ-37 — v2.4 close-out: run `/gsd-complete-milestone` (interactive) + approve the ship (merge to `main` + tag `v2.4.0`)
+
+**What's done:** S5-4 `/gsd-audit-milestone` **PASSED** on 2026-09-03 (report:
+`.planning/v2.4-MILESTONE-AUDIT.md`, HEAD `13c6472`). 16/16 requirements satisfied,
+4/4 phases verified PASSED, 5/5 integration seams wired, Nyquist 4/4 compliant, full
+suite **1508 OK**, catalogue current @276 (zero-mint). No critical gaps. This was the
+last unit the loop can run headless.
+
+**Why this is here:** the two remaining close-out units are both human-gated and the
+loop may not perform them itself:
+
+1. **S5-5 `/gsd-complete-milestone v2.4`** — interactive-only, NOT headless-safe
+   (interactive prompts + `git rm REQUIREMENTS.md`). Run it in an interactive Claude
+   session. **Standing defect to expect** (hit at both v2.2's and v2.3's close): its
+   generated accomplishment bullets truncate / capture YAML instead of prose, and the
+   archived REQUIREMENTS.md carries rows forward still unchecked — hand-verify both.
+   **Also fold in the one doc-consistency fix the audit flagged:** REQUIREMENTS.md
+   REQ-P23-01 still describes dsx-538 as "BSD" and the dsx-urban palette as
+   "Apache-2.0"; HQ-33's signed correction is GPL-3.0-disputed with a split
+   ColorBrewer/Urban attribution (the shipped style-file header, SUMMARY, CONTEXT and
+   LEARNINGS already carry the corrected position — only the requirement prose is stale).
+
+2. **S5-6 Ship** — outward-facing (brief §4 cat.5), needs your approval:
+   - `git merge --no-ff gsd/v2.4.0-visual-excellence` into `main` **by explicit branch
+     name** — NEVER the framework's alphabetical `gsd/*` auto-detect (it picks
+     `gsd/v1.1.0-milestone`, always wrong here); verify on a throwaway branch first;
+     full suite + `scripts/check.sh` green BEFORE touching `main`.
+   - tag **`v2.4.0`** (next free tag; never force-move a published tag).
+   - NEVER `/gsd-pr-branch` (does not survive this long ceremony branch).
+
+**To answer:** run the interactive completion and confirm the ship here; an interactive
+session records the ship and checks S5-5 + S5-6 off in LOOP-LEDGER.md.
 
 ## Will be added by the loop when reached
 
@@ -33,7 +63,9 @@ below. Nothing is blocking the loop.)
   re-measured live catalogue count; silence = accept).
 - ~~The Phase 23 license-audit confirmation~~ — FILED 2026-09-03 as HQ-33 (see Open),
   non-blocking until S5-2.
-- The S5-6 ship decisions: merge to `main` and the `v2.4.0` release tag.
+- ~~The S5-6 ship decisions: merge to `main` and the `v2.4.0` release tag.~~ — FILED
+  2026-09-03 as HQ-37 (see Open), together with the S5-5 interactive-complete step,
+  after S5-4 audit PASSED.
 - Any persona decision the operator vetoes from a daily summary.
 
 ## Standing framework notes (not queue items — nothing to answer, just remember)
