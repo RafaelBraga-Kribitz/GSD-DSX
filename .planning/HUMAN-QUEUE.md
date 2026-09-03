@@ -74,6 +74,38 @@ invariant/gate set — `nyquist_compliant: true`, 5/5 requirements COVERED (`23-
 The residual license-audit *authenticity* read (Urban Apache-2.0 palette) is tracked
 separately under **HQ-33**, not duplicated here.
 
+### HQ-35 — Phase 24 discuss persona decisions + D-06 zero-mint note (VETO WINDOW — silence = accept)
+
+Filed at S4-1 (2026-09-03), mirroring the Phase 21/22/23 discuss veto windows (HQ-28/HQ-30/HQ-32):
+**non-blocking, silence = accept** — the loop keeps working; no operator action is required unless
+you want to veto. Full rationale (persona round Architect + Statistician + Auditor) in
+`.planning/phases/24-portfolio-exemplar-viz-calibration/24-CONTEXT.md`.
+
+Three gray areas settled + one D-06 note:
+
+- **GA-1 (the main design choice) — upgrade the existing `examples/good-*` onboarding-activation
+  exemplar *in place* into the full v2.4 capstone**, rather than authoring a net-new analytical
+  question. Reuses a spec already proven green through every dsx gate; adds the v2.4 presentation
+  delta only — figures re-rendered through the `dsx-urban` style layer + `dsx_plotstyle.py`, **one
+  uncertainty figure** showing the real 95% CI on the activation uplift (routed via `DSX-VIZ-071`),
+  a **sealed** FIGURE-MANIFEST (`dsx seal`), a strict What/So What/Now What NARRATIVE, and a
+  REPRO-REPORT. Unanimous persona vote; rigour > reliability > flexibility (net-new re-opens
+  estimand/power/SRM on a terminal phase for no coverage gain). Rejected: (b) net-new exemplar.
+- **GA-2 — author the first bad-*chart*-choice fixtures** (none exist today; the corpus is all
+  bad-test-choice) mirroring the `known-bad/` convention, extend `test_known_bad_corpus.py`, and
+  re-baseline catch-rate / FPR. Minimal-honest "per new code" set: one fixture tripping `DSX-VIZ-071`,
+  one each for the new `gauge`/`word_cloud` refusal rows under `DSX-VIZ-001`, and ≥1 pre-existing
+  banned-type control. The exact gate *surface* a chart defect is caught on is deliberately left as an
+  **S4-2 plan-research item** (read `viz.py`) — flagged, not guessed.
+- **GA-3 — REQ-P24-03 is verify-not-build:** both selection surfaces already have doc/code agreement
+  tests (`test_doc_code_agreement.py` for test-selection.md; `test_selection_heuristic_docs.py` for
+  chart-selection.md). Phase 24 verifies both green + catalogue current + snapshots unmutated; it
+  closes a gap only if S4-2 finds a real one (e.g. one test asserts only doc⊆code, not both directions).
+- **D-06 note — Phase 24 mints ZERO new codes** (calibration + exemplar + audit-prereqs all route to
+  existing codes; re-measure the live count at plan time, currently 276): target set-identity
+  276→276 at S4-4. Recorded loudly, **not** escalated (D-06 numeric assignments are persona-round
+  decisions per brief §4).
+
 ## Will be added by the loop when reached
 
 - ~~S0-3: Phase 22 D-05 evidence pack~~ — FILED 2026-09-03 as HQ-27 (see Open).
