@@ -21,7 +21,7 @@ so the gate can prove the bytes match the declaration.
 
 1. **Name the relationship before the chart type.** comparison, trend,
    part_to_whole, distribution, correlation, deviation, ranking, flow,
-   geographic, composition_over_time.
+   geographic, composition_over_time, uncertainty.
 
 2. **Name the data_input_type.** See `references/data-input-types.md` / `dsx vocab`.
    The mark must sit in both the relationship list and the input-type matrix.
@@ -39,7 +39,11 @@ so the gate can prove the bytes match the declaration.
    Paste into `visuals[].svg_sha256`. Set `chart_id`, `artifact_path`, `generator`,
    and a shared `run_id` across figures from the same readout.
 
-6. **Show uncertainty** wherever you show an estimate.
+6. **Show uncertainty** wherever you show an estimate. Choose the uncertainty
+   mark from the ten Wilke §5.6 members under the Uncertainty function in
+   `references/chart-catalog.md` (`error_bars` is the default); the gate
+   enforces this through DSX-VIZ-071 (vocabulary) and the retained DSX-VIZ-070
+   (property check).
 
 7. **Audit.**
    ```bash
@@ -60,6 +64,7 @@ so the gate can prove the bytes match the declaration.
 </hard_rules>
 
 <references>
+@references/chart-catalog.md
 @references/chart-selection.md
 @references/data-input-types.md
 @references/viz-smells.md

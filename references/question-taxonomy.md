@@ -36,3 +36,16 @@ foundations. Skipping a level does not save time; it moves the failure later.
 is what changed and when, and here is the experiment that would answer it" is a
 better deliverable than a confident regression coefficient. Deliver the downgrade
 explicitly rather than silently.
+
+## Selection heuristic — Layer 1 (question → task)
+
+This table is also Layer 1 of the five-layer chart-selection heuristic: the
+question type fixes the analytical **task** before any chart is chosen. Read the
+task off Munzner's task taxonomy (2014, ch.3 — Actions × Targets): descriptive
+and diagnostic questions *present* and *discover* within observed data;
+predictive and causal questions *derive* a new quantity and *compare*
+alternatives; prescriptive questions *decide* between actions. Once the task is
+named, route onward — `references/chart-selection.md` carries Layers 2–5
+(relationship → mark → encoding → uncertainty) and `references/chart-catalog.md`
+carries the marks themselves. This reuses the table above; it does not restate
+it or add a parallel decision tree.
