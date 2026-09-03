@@ -5,15 +5,15 @@ milestone_name: Visual Excellence
 current_phase: 22
 current_phase_name: catalog-spine-uncertainty-heuristic
 status: executing
-stopped_at: "S2-3 (Phase 22 execute) IN PROGRESS — Waves 1-2 (22-01, 22-02) COMPLETE, waves 3-4 remain. Executed inline by orchestrator (persona-lite, S1-3 precedent). Wave 1: RELATIONSHIP_CHARTS['uncertainty'] 11th key = ten Wilke §5.6 marks, all homed into CHART_CAPABILITIES['interval-range'], input_types.json regenerated; BANNED_TYPES completed to seven (gauge + word_cloud, radar→Duan 2023); DSX-SMELL-007 routes to facet_by. Wave 2: minted DSX-VIZ-071 in _check_uncertainty_vocabulary (Citation: Wilke §5.6+§16.2, Structural criterion:, wired into check()), allowlisted by exact string, regenerated finding-codes.md 275→276; set-identity diff added={DSX-VIZ-071} removed={} (additive-only proof); DSX-VIZ-072 deliberately NOT minted (HQ-30). Two sibling lockstep count-pins (test_p19_categorical_rows.py, test_phase20_zero_mint_close.py) bumped 275→276 — necessary ripple, recorded loudly in 22-02-SUMMARY. GATES (orchestrator-run, final tree): gen-finding-catalogue --check exit 0 @276; catalogue Total=276 with DSX-VIZ-071 row; full suite 1481 OK. 22-01/22-02-SUMMARY.md written. NEXT: Wave 3 (22-03) — author references/chart-catalog.md (75-90 rows, three axes + citation) + test_chart_catalog_invariant.py; then Wave 4 (22-04) heuristic route-and-cite. LARGE unit — start Wave 3 fresh (authoring the full catalog against the now-final 60-mark universe)."
-last_updated: "2026-09-03T03:37Z"
+stopped_at: "S2-3 (Phase 22 execute) IN PROGRESS — Waves 1-3 (22-01, 22-02, 22-03) COMPLETE, wave 4 remains. Executed inline by orchestrator (persona-lite, S1-3 precedent). Wave 1: RELATIONSHIP_CHARTS['uncertainty'] 11th key = ten Wilke §5.6 marks, all homed into CHART_CAPABILITIES['interval-range'], input_types.json regenerated; BANNED_TYPES completed to seven (gauge + word_cloud, radar→Duan 2023); DSX-SMELL-007 routes to facet_by. Wave 2: minted DSX-VIZ-071, catalogue 275→276 additive-only; DSX-VIZ-072 NOT minted (HQ-30). Wave 3: authored references/chart-catalog.md (81 rows = 60 dsx_admissible generated from live _mark_universe() + 14 reference_only FT/Wilke-sourced + 7 refusal = live BANNED_TYPES keys) with a fenced json payload (perceptual_ranks D-1 six-rank-with-ties map, length==angle tie, no density); added tests/test_chart_catalog_invariant.py (8 clauses green: band, three-axes+citation, conformance both directions, refusal drift guard, reference-only isolation, D-1 tie-break, citation traceability, non-vacuity). Reference-only rows deliberately FT/Wilke-cited (no DVC-URL) — recorded loudly in 22-03-SUMMARY (rigour > reliability; can't verify live DVC URLs this firing). Temp generator run once + deleted; only the .md ships. Zero new code minted (mint stays 276). GATES (orchestrator-run, final tree): catalog module 8 OK; full suite 1489 OK (1481→1489, +8). 22-03-SUMMARY.md written. NEXT: Wave 4 (22-04) — 5-layer heuristic route-and-cite into question-taxonomy.md (L1) + chart-selection.md (L2-L5, + correct the pre-HQ-27 perceptual line to D-1 six-rank-with-ties, + uncertainty relationship row), ripple skills/dsx-visualize/SKILL.md 10→11 relationships + chart-catalog.md pointer, add tests/test_selection_heuristic_docs.py. Then S2-3 checkbox is complete → S2-4."
+last_updated: "2026-09-03T04:33Z"
 last_activity: 2026-09-03
-last_activity_desc: "S2-3 Waves 1-2 COMPLETE — uncertainty vocabulary spine + DSX-VIZ-071 mint (275→276 additive-only); full suite 1481 OK. Waves 3-4 (catalog + heuristic) remain."
+last_activity_desc: "S2-3 Waves 1-3 COMPLETE — uncertainty spine + DSX-VIZ-071 mint (Wave 1-2) + merged chart-catalog.md (81 rows, three axes + citation) with conformance/tie-break invariant (Wave 3); full suite 1489 OK. Wave 4 (heuristic route-and-cite) remains."
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 5
-  completed_plans: 3
+  completed_plans: 4
   percent: 25
 ---
 
