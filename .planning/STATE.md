@@ -19,14 +19,15 @@ current_phase_name: null
 
 # Project state
 
-**Status:** v2.4 milestone complete and archived — ship pending (this session, S5-6)
+**Status:** v2.4 milestone complete, archived, and shipped (tag `v2.4.0`)
 **Progress:** [████████████████████] v2.4 — 4/4 phases shipped (21 viz vocabulary reconciliation → 22 catalog spine/uncertainty/heuristic → 23 style/snippet layer → 24 portfolio exemplar/calibration)
 **Predecessors:** v2.3 Test Catalog SHIPPED 2026-09-02 (tag `v2.3.0`); v2.2 Analytic Surface SHIPPED 2026-08-29 (tag `v2.2.0`); v2.0.0 DSX Validity Frame SHIPPED 2026-08-28 (tag `v2.1.0`). Archives under `.planning/milestones/`.
 
 **Loop control:** the autonomous ceremony drove this milestone through S5-4 (milestone
-audit PASSED) headlessly; S5-5/S5-6 (this completion + the ship) are interactive-only
-per `.planning/LOOP-LEDGER.md`'s own design. Once shipped, the loop is idle until
-`/gsd-new-milestone` opens v2.5 and repoints `LOOP-BRIEF.md`/`LOOP-LEDGER.md`.
+audit PASSED) headlessly; S5-5/S5-6 (completion + ship) ran interactively per
+`.planning/LOOP-LEDGER.md`'s own design and are now complete (merge commit `89f77eb`,
+tag `v2.4.0`). The loop is idle until `/gsd-new-milestone` opens v2.5 and repoints
+`LOOP-BRIEF.md`/`LOOP-LEDGER.md`.
 
 **Usage-limit posture (proven 2026-08-30 through 2026-09-02):** the firing
 wrapper (`scripts/run-ceremony-firing.ps1`) detects limit hits, backs off
@@ -43,16 +44,16 @@ See: .planning/PROJECT.md (updated 2026-09-03; Key Decisions table there is the 
 
 **Core value:** Gate analytical work on validity before the data is touched.
 **Current focus:** v2.4 Visual Excellence is complete (4/4 phases, 16/16 requirements,
-milestone audit PASSED) and archived to `.planning/milestones/`. The ship itself
-(merge `gsd/v2.4.0-visual-excellence` into `main`, tag `v2.4.0`) is this session's
-next action. After ship: open v2.5 via `/gsd-new-milestone`.
+milestone audit PASSED), archived to `.planning/milestones/`, and shipped (merge
+commit `89f77eb`, tag `v2.4.0`). Next milestone not yet opened — start via
+`/gsd-new-milestone`.
 
 ## Current Position
 
-Phase: Milestone v2.4 complete — ship pending
+Phase: Milestone v2.4 complete and shipped
 Plan: —
-Status: Awaiting ship (S5-6), then next milestone
-Last activity: 2026-09-03 — Milestone v2.4 completed and archived
+Status: Shipped (S5-6 done); next milestone not yet opened
+Last activity: 2026-09-03 — Milestone v2.4 completed, archived, and shipped
 
 ## Performance Metrics
 
@@ -99,15 +100,22 @@ actually open:
 
 ## Session Continuity
 
-Last session: 2026-09-03 (interactive session — drained HUMAN-QUEUE HQ-27..HQ-37, ran
-`/gsd-complete-milestone v2.4`, proceeding to ship)
-Stopped at: v2.4 archived; `/gsd-complete-milestone`'s two standing defects hand-corrected
-(MILESTONES.md accomplishment bullets were truncated/garbage text, not prose; STATE.md's
-generated body contradicted its own 100%-complete frontmatter). Ship (S5-6) is this
-session's immediate next action.
-Resume file: None — after ship, the next firing (or `/gsd-new-milestone`) starts fresh.
+Last session: 2026-09-03/04 (interactive session — drained HUMAN-QUEUE HQ-27..HQ-37, ran
+`/gsd-complete-milestone v2.4`, shipped v2.4.0, then ran a post-ship self-audit)
+Stopped at: v2.4 archived and shipped; `/gsd-complete-milestone`'s two standing defects
+hand-corrected (MILESTONES.md accomplishment bullets were truncated/garbage text, not
+prose; STATE.md's generated body contradicted its own 100%-complete frontmatter — this
+STATE.md body itself briefly carried a second instance of that exact defect afterward,
+correctly stating "ship pending" for a few edits after the ship had actually happened;
+caught and fixed by the post-ship audit). A comprehensive post-ship audit (26 confirmed
+findings across doc/code consistency, citations, and test coverage) was applied — see
+`.planning/POST-SHIP-AUDIT-2026-09.md` for the full report and 2 items escalated for
+operator decision (a metric-direction bug in DSX-ML-051/060/061, and a calibration-corpus
+coverage gap across 17 of 21 DSX-VIZ codes).
+Resume file: None — the next firing (or `/gsd-new-milestone`) starts fresh.
 
 ## Operator Next Steps
 
-- Ship v2.4: merge `gsd/v2.4.0-visual-excellence` into `main` by explicit branch name, tag `v2.4.0`.
-- Then start the next milestone with `/gsd-new-milestone`.
+- Review `.planning/POST-SHIP-AUDIT-2026-09.md`'s 2 escalated items and decide whether/when
+  to act on them (both are additive/fixable without touching this milestone's shipped scope).
+- Start the next milestone with `/gsd-new-milestone`.

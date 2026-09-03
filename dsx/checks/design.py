@@ -488,7 +488,7 @@ def _check_exploratory_looks(
         report.add(
             "DSX-EXP-052",
             "MEDIUM",
-            "Multiple tests with a declared family but comparisons_looked_at is missing",
+            "Multiple tests reported but comparisons_looked_at is missing",
             detail=(
                 "Without a count of cuts actually examined, the multiplicity family cannot "
                 "be audited against exploratory work."

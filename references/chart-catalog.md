@@ -16,10 +16,17 @@ rank data obeys the Cleveland–McGill ordering.
 
 - **Function** — the nine-category axis of the *Financial Times Visual Vocabulary*
   (2016), attributed to the FT: <https://github.com/ft-interactive/chart-doctor/tree/main/visual-vocabulary>.
-  All descriptions here are **our own** — the FT reserves its content, so nothing is
-  copied from the poster, and no claim of *exhaustiveness* rests on it (the poster
-  disclaims that in its own words). Wilke's **Uncertainty** category (2019 §5.6) is
-  carried as an eleventh function for the ten uncertainty marks.
+  All descriptions here are **our own**. The FT's own repo is internally
+  inconsistent about its license: `visual-vocabulary/README.md` states
+  "Copyright © The Financial Times Limited, all rights reserved," while the
+  poster image itself (`poster.png`) prints "© Financial Times 2016-2019. This
+  work is licensed under a Creative Commons Attribution-ShareAlike 4.0
+  International License" in its own footer — confirmed by direct inspection of
+  both, 2026-09 post-ship audit. We rely on neither claim: nothing is copied
+  from the poster or README regardless (own descriptions only), and no claim of
+  *exhaustiveness* rests on it (the poster disclaims that in its own words).
+  Wilke's **Uncertainty** category (2019 §5.6) is carried as an eleventh
+  function for the ten uncertainty marks.
 - **Data signature** — a DSX input-type shape (a `CHART_CAPABILITIES` family, or an
   `IT0NN` inventory id) describing the column pattern the mark reads.
 - **Perceptual channel** — the elementary channel the mark uses to encode its value,
@@ -100,9 +107,9 @@ comes from Cleveland & McGill (perception) and Wilke (uncertainty).
 | Part-to-whole | `treemap` | composition | area | dsx_admissible | FT Visual Vocabulary 2016, Part-to-whole (function axis, D-3, HQ-27); DSX admissible mark |
 | Distribution | `violin` | interval-range | area | dsx_admissible | FT Visual Vocabulary 2016, Distribution (function axis, D-3, HQ-27); DSX admissible mark |
 | Part-to-whole | `waffle` | categorical-value | area | dsx_admissible | FT Visual Vocabulary 2016, Part-to-whole (function axis, D-3, HQ-27); DSX admissible mark |
-| Deviation | `waterfall` | composition | length | dsx_admissible | FT Visual Vocabulary 2016, Deviation (function axis, D-3, HQ-27); DSX admissible mark |
+| Part-to-whole | `waterfall` | composition | length | dsx_admissible | FT Visual Vocabulary 2016, Part-to-whole (function axis, D-3, HQ-27); DSX admissible mark |
 | Deviation | `surplus_deficit_filled_line` | time-series | length | reference_only | FT Visual Vocabulary 2016, Deviation (reference-only; D-3, HQ-27) |
-| Deviation | `spine_chart` | categorical-value | length | reference_only | FT Visual Vocabulary 2016, Deviation/Magnitude (reference-only; D-3, HQ-27) |
+| Deviation | `spine_chart` | categorical-value | length | reference_only | FT Visual Vocabulary 2016, Deviation (reference-only; D-3, HQ-27) |
 | Correlation | `connected_scatterplot` | bivariate-simple | position_common | reference_only | FT Visual Vocabulary 2016, Correlation (reference-only; D-3, HQ-27) |
 | Distribution | `contour` | trivariate | shading | reference_only | Wilke 2019 ch.18 (2D distributions; reference-only; T2-2, HQ-27) |
 | Ranking | `lollipop` | categorical-value | position_common | reference_only | FT Visual Vocabulary 2016, Ranking (reference-only; D-3, HQ-27) |
@@ -673,11 +680,11 @@ comes from Cleveland & McGill (perception) and Wilke (uncertainty).
     },
     {
       "mark": "waterfall",
-      "function": "Deviation",
+      "function": "Part-to-whole",
       "description": "A waterfall mark.",
       "data_signature": "composition",
       "perceptual_channel": "length",
-      "citation": "FT Visual Vocabulary 2016, Deviation (function axis, D-3, HQ-27); DSX admissible mark",
+      "citation": "FT Visual Vocabulary 2016, Part-to-whole (function axis, D-3, HQ-27); DSX admissible mark",
       "flag": "dsx_admissible"
     },
     {
@@ -695,7 +702,7 @@ comes from Cleveland & McGill (perception) and Wilke (uncertainty).
       "description": "Two opposed magnitudes per category, split about a central axis.",
       "data_signature": "categorical-value",
       "perceptual_channel": "length",
-      "citation": "FT Visual Vocabulary 2016, Deviation/Magnitude (reference-only; D-3, HQ-27)",
+      "citation": "FT Visual Vocabulary 2016, Deviation (reference-only; D-3, HQ-27)",
       "flag": "reference_only"
     },
     {

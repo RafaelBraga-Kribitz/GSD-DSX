@@ -82,7 +82,7 @@ Power, allocation, units, duration, multiplicity, peeking.
 | `DSX-EXP-040` | MEDIUM | No guardrail metrics declared for the experiment |
 | `DSX-EXP-050` | HIGH | <…> hypotheses tested with no multiplicity correction |
 | `DSX-EXP-051` | HIGH | comparisons_looked_at=<…> exceeds the reported test count <…> |
-| `DSX-EXP-052` | MEDIUM | Multiple tests with a declared family but comparisons_looked_at is missing |
+| `DSX-EXP-052` | MEDIUM | Multiple tests reported but comparisons_looked_at is missing |
 | `DSX-EXP-053` | HIGH | Multiplicity family declares <…> test(s) but <…> are reported |
 | `DSX-EXP-060` | CRITICAL | <…> interim looks were taken under a fixed-horizon design |
 | `DSX-EXP-070` | CRITICAL | CUPED declared with a covariate that is not pre-experiment |

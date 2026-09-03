@@ -649,7 +649,17 @@ def _all_fixture_paths() -> "list[Path]":
 # edit this guard exists to force into the open, not a regression. (The 15-04 feature
 # commit edited design.py without updating this anchor; the S4-4 full-suite gate caught
 # the stale hash, which is exactly what this guard is for.)
-_DESIGN_PY_SHA256 = "a4f296c2b7ca879a96248d0bcc736b571df8e462802b9332317b2bad6e80c271"
+# Updated 2026-09-04 (post-ship audit, safe_doc_fix): DSX-EXP-052's report.add
+# message string read "Multiple tests with a declared family but
+# comparisons_looked_at is missing," implying a declared-family precondition
+# the firing guard (`if strict and len(tests) >= 2 and looked is None:`) never
+# actually checks -- `family` is read only to compute DSX-EXP-051's `base`, per
+# D-02's family-independence decision (Phase 11.3, 11.3-CONTEXT.md). Corrected
+# the message to "Multiple tests reported but comparisons_looked_at is
+# missing," matching the real, intended (D-02) firing condition. No change to
+# any severity, threshold, or firing condition -- message text only. Sanctioned
+# deliberate edit this guard exists to force into the open, not a regression.
+_DESIGN_PY_SHA256 = "8605f6a38f00fe5729e91943e8d5ed36ab3519ce6c81429e763fc49c504b4f3b"
 
 
 def _design_py_hash() -> str:

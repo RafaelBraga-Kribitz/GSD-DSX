@@ -36,8 +36,10 @@ outcome. The agent stays flexible; the output stops being a matter of opinion.
 
 **Finding codes** across check families (contract, experiment, causal, stats, ML,
 metrics/SQL, claims, narrative, code, decision, data quality, coherence,
-visualization, reproducibility), each with a stable identifier, a severity,
-evidence in numbers, and a concrete fix.
+visualization, reproducibility, paradigm/monitoring, validity frame,
+interference, pre-registered inference, frequentist admissibility, chart
+review), each with a stable identifier, a severity, evidence in numbers, and a
+concrete fix.
 
 ---
 
@@ -329,6 +331,12 @@ gap.
 | **Plot smells** | `DSX-SMELL-*` | Dead series, density on atoms, stacked scenarios, category dropouts, self-correlation, disagreeing `run_id` |
 | **Visualization** | `DSX-VIZ-*` | Truncated baselines on length-encoded charts, dual axes, chart type wrong for the relationship or data_input_type, takeaway = name, >5 pie slices, 3D, red/green as sole distinction, rainbow scales, estimates with no uncertainty, missing units |
 | **Reproducibility** | `DSX-REP-*` | No seed on stochastic methods, unpinned environment, unidentifiable data extracts, missing entrypoint, notebooks not confirmed clean top-to-bottom, missing/`null`/incomplete `repro_lock` |
+| **Paradigm & monitoring** | `DSX-PAR-*` | Declared inferential paradigm manifest; uncontrolled continuous peeking with no monitoring discipline declared, frequentist or Bayesian |
+| **Validity frame** | `DSX-VAL-*` | Estimand missing attributes or non-discriminating, unit-triad mismatch, dependence with no admissible method, weak identification with no constraint, inconsistent sampling frame, missingness mechanism paired with an unlicensed method, unoperationalised measurement construct, unjustified exclusion rule |
+| **Interference & stability** | `DSX-INT-*` | Interference/SUTVA risk with no mitigation, an inadmissible mitigation, triggered-vs-eligible dilution with no adjustment, novelty/primacy over the declared stability window |
+| **Pre-registered inference** | `DSX-PRE-*` | Declared fallback rule that doesn't resolve, a pre-data plan that isn't what plan-time locked, executed procedure diverging from the declared branch, missing spec_id, an uncleared plan amendment |
+| **Frequentist admissibility** | `DSX-ADM-*` | A declared procedure admissible but dominated by a cited ordering; no admissible procedure at all for the declared frame |
+| **Chart review conformance** | `DSX-CRV-*` | Structural conformance of CHART-REVIEW.md — schema tag, the forbidden free-form scale, the terminal sentinel, finding-line traceability |
 
 Full catalogue: [`references/finding-codes.md`](references/finding-codes.md) —
 generated from the source, so it cannot drift from what the code emits.
@@ -348,10 +356,13 @@ Six specialists, each with a narrow adversarial brief:
 | `dsx-viz-critic` | Encoding correctness and proportional geometry |
 | `dsx-data-storyteller` | The decision-ready narrative, without outrunning the evidence |
 
-Eight skills covering the workflow end to end: `dsx-scope-analysis`,
+14 skills covering the workflow end to end: `dsx-scope-analysis`,
 `dsx-explore-data`, `dsx-design-experiment`, `dsx-define-metrics`,
 `dsx-build-model`, `dsx-visualize`, `dsx-chart-audit`, `dsx-narrate`,
-`dsx-review-analysis`.
+`dsx-review-analysis`, `dsx-cohort`, `dsx-funnel`, `dsx-root-cause`,
+`dsx-segment` (four task playbooks that route marketing-analytics questions to
+the existing gates instead of restating them), and `dsx-reproduce` (off-gate-path
+re-run verification).
 
 `dsx-chart-audit` is the standalone retroactive path: run `dsx check viz smells
 figures`, spawn `dsx-viz-critic`, write scored `CHART-REVIEW.md`
@@ -428,7 +439,7 @@ Tier presets are in [docs/gsd-tiers.md](docs/gsd-tiers.md).
 
 ```bash
 ./scripts/check.sh                           # the full gate: everything below
-python3 -m unittest discover -s tests -v     # 121 tests
+python3 -m unittest discover -s tests -v     # 1508 tests
 python3 scripts/validate-capability.py       # manifest conformance
 python3 scripts/gen-finding-catalogue.py --write
 ```

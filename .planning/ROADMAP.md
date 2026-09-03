@@ -36,7 +36,9 @@
 <details>
 <summary>✅ v2.0.0 DSX Validity Frame (Phases 6–12) — SHIPPED 2026-08-28</summary>
 
-Full phase detail archived at `.planning/milestones/v2.0.0-ROADMAP.md`.
+Phase detail (plan counts, completion dates) is recorded above.
+`.planning/milestones/v2.0.0-ROADMAP.md` is the milestone's pre-execution scoping
+snapshot, not a post-completion archive.
 
 - [x] Phase 6: Contract extension, decision record, paradigm manifest (M1) — 13/13 plans — completed 2026-08-10
 - [x] Phase 7: Validity frame checks (`DSX-VAL-*`) (M2a) — 8/8 plans — completed 2026-08-20
@@ -55,8 +57,10 @@ Full phase detail archived at `.planning/milestones/v2.0.0-ROADMAP.md`.
 <details>
 <summary>✅ v2.2 Analytic Surface (Phases 13–16) — SHIPPED 2026-08-29</summary>
 
-Full phase detail archived at `.planning/milestones/v2.2-ROADMAP.md` and
-`.planning/milestones/v2.2-phases/`. Milestone audit `passed`
+Phase detail (plan counts, completion dates) is recorded above.
+`.planning/milestones/v2.2-ROADMAP.md` is the milestone's pre-execution scoping
+snapshot (not a post-completion archive); `.planning/milestones/v2.2-phases/` holds
+the individual phase plans. Milestone audit `passed`
 (`.planning/milestones/v2.2-MILESTONE-AUDIT.md`): 23/23 requirements, 4/4
 phases verified, 10/10 cross-phase integration seams, Nyquist compliant, 0
 unsatisfied/orphaned. Finding catalogue grew 256 → 260 (additive; the frozen
@@ -72,8 +76,10 @@ Phase-12 snapshot at 256 was never mutated).
 <details>
 <summary>✅ v2.3 Test Catalog (Phases 17–20) — SHIPPED 2026-09-02</summary>
 
-Full phase detail archived at `.planning/milestones/v2.3-ROADMAP.md` and
-`.planning/milestones/v2.3-phases/`. Milestone audit `passed`
+Phase detail (plan counts, completion dates) is recorded above.
+`.planning/milestones/v2.3-ROADMAP.md` is the milestone's pre-execution scoping
+snapshot (not a post-completion archive); `.planning/milestones/v2.3-phases/` holds
+the individual phase plans. Milestone audit `passed`
 (`.planning/milestones/v2.3-MILESTONE-AUDIT.md`): 22/22 requirements, 4/4
 phases verified, 5/5 cross-phase integration seams, Nyquist compliant, 0
 unsatisfied/orphaned. Finding catalogue grew 260 → 275 (additive; both frozen
@@ -90,8 +96,10 @@ independently re-verified against primary sources at close-out; 7 corrected.
 <details>
 <summary>✅ v2.4 Visual Excellence (Phases 21–24) — SHIPPED 2026-09-03</summary>
 
-Full phase detail archived at `.planning/milestones/v2.4-ROADMAP.md` and
-`.planning/milestones/v2.4-phases/`. Milestone audit `passed`
+Phase detail (plan counts, completion dates) is recorded above.
+`.planning/milestones/v2.4-ROADMAP.md` is the milestone's pre-execution scoping
+snapshot (not a post-completion archive); `.planning/milestones/v2.4-phases/` holds
+the individual phase plans. Milestone audit `passed`
 (`.planning/milestones/v2.4-MILESTONE-AUDIT.md`): 16/16 requirements, 4/4
 phases verified, 5/5 cross-phase integration seams, Nyquist compliant, 0
 unsatisfied/orphaned. Finding catalogue grew 275 → 276 (additive; all three

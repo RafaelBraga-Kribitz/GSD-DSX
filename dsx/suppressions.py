@@ -55,7 +55,7 @@ def known_codes() -> set[str]:
 
 
 def validate_suppressions(spec: dict) -> Report:
-    """Structural checks on ``suppressions[]``. Codes DSX-SPEC-070…073."""
+    """Structural checks on ``suppressions[]``. Codes DSX-SPEC-070…072."""
     report = Report(check="suppressions")
     rows = items(spec, "suppressions")
     if not rows:
