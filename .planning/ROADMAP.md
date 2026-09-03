@@ -181,6 +181,12 @@ the only system whose real font is legally vendorable), the analyst-side
 `FIGURE-MANIFEST.yaml` seals, and a per-chart-type snippet catalog that routes
 to finding codes rather than restating thresholds.
 **Requirements**: REQ-P23-01 … REQ-P23-05.
+**Plans**: 3 plans (3 waves). Zero new codes (set-identity 276 → 276). Non-analytical
+style/tooling/licensing phase (no ANALYSIS-SPEC). Planned 2026-09-03 (S3-2).
+Plans:
+- [ ] 23-01-PLAN.md — `styles/` four license-audited `.mplstyle` + vendored OFL Lato (house default dsx-urban) + WCAG-AA palettes; header + contrast tests (REQ-P23-01, -05)
+- [ ] 23-02-PLAN.md — `templates/dsx_plotstyle.py` (finalise_figure/direct_label/save_deterministic) + GA-3 determinism recipe + `matplotlib_version` manifest field + `matplotlib`→FORBIDDEN hermeticity guard (REQ-P23-02, -03)
+- [ ] 23-03-PLAN.md — `references/chart-snippets.md` route-to-codes snippet catalog + dsx-visualize skill wiring + routing test + 276→276 zero-mint proof (REQ-P23-04)
 
 ### Phase 24: Portfolio exemplar and viz calibration
 

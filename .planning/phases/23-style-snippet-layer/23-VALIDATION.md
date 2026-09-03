@@ -43,7 +43,15 @@ created: 2026-09-03
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| _(planner fills — task IDs are minted when PLAN.md is written)_ | | | REQ-P23-01..05 | T-23-* | | unit | | | ⬜ pending |
+| 23-01-T1 (RED) | 23-01 | 1 | REQ-P23-01, REQ-P23-05 | T-23-03 | Header shape + WCAG-AA thresholds encoded before any style file | unit (stdlib text/luminance) | `python -m unittest tests.test_style_headers tests.test_style_wcag_contrast` | ❌ Wave 0 | ⬜ pending |
+| 23-01-T2 (font vendor) | 23-01 | 1 | REQ-P23-01 | T-23-01 | Pinned canonical OFL URL + recorded `.ttf` SHA-256 | build-order fixture | inline `python -c` (2 Lato `.ttf` + OFL.txt present, checksums printed) | ❌ Wave 0 | ⬜ pending |
+| 23-01-T3 (GREEN) | 23-01 | 1 | REQ-P23-01, REQ-P23-05 | T-23-03 | Four headered `.mplstyle` + WCAG-AA palettes; econ/bbc reimplemented-not-affiliated line | unit | `python -m unittest tests.test_style_headers tests.test_style_wcag_contrast -v` | ❌ Wave 0 | ⬜ pending |
+| 23-02-T1 (RED) | 23-02 | 2 | REQ-P23-02, REQ-P23-03 | T-23-04, T-23-05 | Signatures + mandatory-`source` TypeError; double-render determinism | unit (`skipIf` mpl absent) | `python -m unittest tests.test_dsx_plotstyle_api tests.test_dsx_plotstyle_determinism` | ❌ Wave 0 | ⬜ pending |
+| 23-02-T2 (GREEN) | 23-02 | 2 | REQ-P23-02, REQ-P23-03 | T-23-04, T-23-05 | GA-3 recipe; save_deterministic writes-only (no second hasher); `matplotlib_version` in manifest | unit | `python -m unittest tests.test_dsx_plotstyle_api tests.test_dsx_plotstyle_determinism -v` + manifest `python -c` | ❌ Wave 0 | ⬜ pending |
+| 23-02-T3 (hermeticity) | 23-02 | 2 | REQ-P23-03 | T-23-02 | `"matplotlib"` in FORBIDDEN; gate path stays stdlib-pure | unit (edit existing) | `python -m unittest tests.test_gate_path_hermetic -v` | ✅ exists, edit only | ⬜ pending |
+| 23-03-T1 (RED) | 23-03 | 3 | REQ-P23-04 | T-23-06, T-23-08 | Cited ⊆ defined; no live-threshold restatement (values read from viz.py) | unit | `python -m unittest tests.test_snippet_catalog_routing` | ❌ Wave 0 | ⬜ pending |
+| 23-03-T2 (GREEN) | 23-03 | 3 | REQ-P23-04 | T-23-06 | Route by code name only; skill `<references>` wired | unit | `python -m unittest tests.test_snippet_catalog_routing -v` + sections/skill `python -c` | ❌ Wave 0 | ⬜ pending |
+| 23-03-T3 (zero-mint prove) | 23-03 | 3 | REQ-P23-04 (D-P23-04) | T-23-07 | 276→276 set-identity; mint surfaces unedited | unit (existing) | `python -m unittest discover -s tests` + `python scripts/gen-finding-catalogue.py --check` | ✅ exists, no edit | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky. See `23-RESEARCH.md` §Validation Architecture "Phase Requirements → Test Map" for the seed mapping the planner expands.*
 
