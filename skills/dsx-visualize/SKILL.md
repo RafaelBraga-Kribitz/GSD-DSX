@@ -65,6 +65,7 @@ so the gate can prove the bytes match the declaration.
 
 <references>
 @references/chart-catalog.md
+@references/chart-snippets.md
 @references/chart-selection.md
 @references/data-input-types.md
 @references/viz-smells.md
