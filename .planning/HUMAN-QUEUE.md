@@ -20,6 +20,40 @@ a persona round and records loudly):
 
 ## Open
 
+### HQ-32 — Phase 23 discuss persona decisions + style/determinism design (veto window, filed S3-1, 2026-09-03)
+
+**Type:** persona-decision veto window (brief §4 — recorded loudly, **non-blocking**;
+silence = accept). **Not** a scope change, not a sign-off, not a license confirmation (that
+comes at S3-2). Full rationale in
+`.planning/phases/23-style-snippet-layer/23-CONTEXT.md` (GA-1, GA-2, GA-3, D-P23-03,
+D-P23-04). The scope §3.3 license findings are applied as binding inputs, not re-opened.
+
+Five decisions the loop made for you to veto if you disagree:
+
+- **GA-1 (style-file set & headers).** Exactly four `styles/*.mplstyle`: `dsx-538` (fork of
+  matplotlib's `fivethirtyeight`, Matplotlib License, vendored verbatim), `dsx-urban`
+  (Apache-2.0 palette + **vendored OFL Lato**, the **house default**), `dsx-econ` and
+  `dsx-bbc` (**reimplemented from doctrine only** — no Economist-PDF embed, no `bbplot` GPL
+  port, no proprietary font). **One** vendored OFL font (Lato) is the deterministic house
+  face all four styles resolve to; `dsx-econ`/`dsx-bbc` use it as an open stand-in for their
+  proprietary faces. Each file carries a license/attribution header.
+- **GA-2 (`dsx_plotstyle.py` signatures).** Three keyword-explicit functions:
+  `finalise_figure(fig, *, title, source, subtitle=None, note=None)` (mandatory `source`,
+  no default — enforces the mandatory-source-line doctrine), `direct_label(ax, *, ...)`,
+  `save_deterministic(fig, path, *, metadata=None, **savefig_kwargs) -> Path`.
+  `save_deterministic` **writes** the deterministic SVG but does **not** hash — sealing stays
+  with `dsx seal` (one hashing authority). Analyst-side, matplotlib-only, off the gate path.
+- **GA-3 (determinism recipe).** `svg.fonttype: path` + fixed `svg.hashsalt` +
+  `metadata={'Date': None}` + vendored OFL font via `font_manager.addfont` + pinned
+  matplotlib version recorded in `FIGURE-MANIFEST.yaml`; proven by an off-gate-path
+  double-render hash-equality test (`skipIf` matplotlib absent).
+- **D-P23-03 (hermeticity hardening).** Add `"matplotlib"` to
+  `test_gate_path_hermetic.FORBIDDEN` — a cheap structural guard against a future
+  "render inline on the gate path" regression (safe today: no gate module imports matplotlib).
+- **D-P23-04 (zero new codes).** Phase 23 mints **zero** code: the snippet catalog routes to
+  existing codes, the determinism test is off the gate path, and the palette gate defers
+  behind a D-13 entry condition. Proven by a set-identity diff `276 → 276` at S3-4.
+
 ### HQ-31 — Phase 22 end-of-phase security sign-off (filed S2-5, 2026-09-03)
 
 **Type:** security sign-off — a `SECURITY.md` approval line (brief §4 item 4). The
