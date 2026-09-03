@@ -1,0 +1,44 @@
+# DSX style: dsx-econ
+# Source: The Economist Graphic Detail published charting doctrine https://www.economist.com/graphic-detail (cited, not embedded)
+# License: rcParams are our own derivation; the 2017 Economist styleguide PDF is unlicensed — cited, never embedded or copied
+# Vendoring: none — our own rcParams; nothing is vendored from the source
+# Font: resolves font.family to vendored Lato (SIL OFL 1.1) as an open stand-in for the proprietary Econ Sans / Milo face, styles/fonts/Lato-Regular.ttf
+# Palette: WCAG-AA verified (tests/test_style_wcag_contrast.py); Economist-doctrine palette (signature red + dark blues), our own derivation; accents darkened so every series clears 3:1 on the ecru panel
+# Reimplemented from published doctrine; not affiliated with or endorsed by The Economist; no source-PDF text, no GPL code, and no proprietary font are included.
+
+axes.prop_cycle: cycler('color', ['e3120b', '006ba2', '1b3a5c', 'b35806', '636363'])
+axes.facecolor: fbf7f0
+axes.edgecolor: 222222
+axes.linewidth: 0.8
+axes.labelsize: large
+axes.axisbelow: true
+axes.grid: true
+axes.grid.axis: y
+axes.titlesize: x-large
+axes.labelcolor: 222222
+axes.spines.top: false
+axes.spines.right: false
+axes.spines.left: false
+
+legend.frameon: false
+
+text.color: 222222
+xtick.color: 222222
+ytick.color: 222222
+
+font.family: sans-serif
+font.sans-serif: Lato, DejaVu Sans
+
+svg.fonttype: path
+svg.hashsalt: dsx
+
+grid.linestyle: -
+grid.linewidth: 0.7
+grid.color: d8d0c4
+
+xtick.major.size: 0
+ytick.major.size: 0
+
+font.size: 13.0
+
+figure.facecolor: fbf7f0

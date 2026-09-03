@@ -1,0 +1,42 @@
+# DSX style: dsx-urban  (HOUSE DEFAULT)
+# Source: Urban Institute Data Visualization Style Guide https://urbaninstitute.github.io/graphics-styleguide/
+# License: Apache-2.0 (palette hexes + rcParams only)
+# Vendoring: palette hexes + rcParams only — no guide prose is copied
+# Font: resolves font.family to vendored Lato (SIL OFL 1.1), styles/fonts/Lato-Regular.ttf
+# Palette: WCAG-AA verified (tests/test_style_wcag_contrast.py); Urban categorical palette — brand blue (1696d2) and magenta (ec008b) retained, the lighter green/yellow/grey darkened to their Urban shade equivalents so every series clears 3:1 on white
+
+axes.prop_cycle: cycler('color', ['1696d2', 'ec008b', '1b7837', 'b35806', '5c5859', '762a83'])
+axes.facecolor: ffffff
+axes.edgecolor: 222222
+axes.linewidth: 0.8
+axes.labelsize: large
+axes.axisbelow: true
+axes.grid: true
+axes.grid.axis: y
+axes.titlesize: x-large
+axes.labelcolor: 222222
+axes.spines.top: false
+axes.spines.right: false
+
+legend.frameon: false
+
+text.color: 222222
+xtick.color: 222222
+ytick.color: 222222
+
+font.family: sans-serif
+font.sans-serif: Lato, DejaVu Sans
+
+svg.fonttype: path
+svg.hashsalt: dsx
+
+grid.linestyle: -
+grid.linewidth: 0.7
+grid.color: d2d2d2
+
+xtick.major.size: 0
+ytick.major.size: 0
+
+font.size: 13.0
+
+figure.facecolor: ffffff

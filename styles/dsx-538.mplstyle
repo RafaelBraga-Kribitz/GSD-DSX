@@ -1,0 +1,51 @@
+# DSX style: dsx-538
+# Source: matplotlib fivethirtyeight style https://github.com/matplotlib/matplotlib
+# License: Matplotlib License (BSD-compatible, PSF-derived) — MDT copyright retained (Matplotlib Development Team; https://matplotlib.org)
+# Vendoring: forked verbatim from the bundled fivethirtyeight style sheet; structural keys retained
+# Font: resolves font.family to vendored Lato (SIL OFL 1.1), styles/fonts/Lato-Regular.ttf
+# Palette: WCAG-AA verified (tests/test_style_wcag_contrast.py); adjusted from the FiveThirtyEight cycle for WCAG-AA — the upstream light hues (e5ae38, 8b8b8b, 008fd5) fell below 3:1 on the f0f0f0 panel
+# Changes: forked for DSX — font.family set to Lato; svg.hashsalt added for determinism; palette adjusted for WCAG-AA (Matplotlib License §3 — brief summary of changes)
+
+lines.linewidth: 4
+lines.solid_capstyle: butt
+
+legend.fancybox: true
+
+axes.prop_cycle: cycler('color', ['1f4e79', 'c0392b', '1b7837', 'b35806', '762a83', '636363'])
+axes.facecolor: f0f0f0
+axes.labelsize: large
+axes.axisbelow: true
+axes.grid: true
+axes.edgecolor: f0f0f0
+axes.linewidth: 3.0
+axes.titlesize: x-large
+axes.labelcolor: 222222
+
+patch.edgecolor: f0f0f0
+patch.linewidth: 0.5
+
+text.color: 222222
+xtick.color: 222222
+ytick.color: 222222
+
+font.family: sans-serif
+font.sans-serif: Lato, DejaVu Sans
+
+svg.fonttype: path
+svg.hashsalt: dsx
+
+grid.linestyle: -
+grid.linewidth: 1.0
+grid.color: cbcbcb
+
+xtick.major.size: 0
+xtick.minor.size: 0
+ytick.major.size: 0
+ytick.minor.size: 0
+
+font.size: 14.0
+
+figure.subplot.left: 0.08
+figure.subplot.right: 0.95
+figure.subplot.bottom: 0.07
+figure.facecolor: f0f0f0

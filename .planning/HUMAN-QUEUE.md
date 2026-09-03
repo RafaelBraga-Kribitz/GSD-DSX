@@ -20,8 +20,31 @@ a persona round and records loudly):
 
 ## Open
 
-(none — HQ-28 through HQ-32 all answered 2026-09-03; see Answered
-below. Nothing is blocking the loop.)
+### HQ-33 — Phase 23 license-audit at-locator confirmation (NON-BLOCKING until S5-2)
+
+Filed at S3-3 Wave 1 (2026-09-03) with the concrete evidence gathered while vendoring the
+assets — mirrors the security sign-offs (HQ-29/HQ-31): non-blocking, the loop keeps working;
+only S5-2 waits on it. REQ-P23-01's explicit plan-review item. Full six-point checklist +
+checksums in `.planning/phases/23-style-snippet-layer/23-01-SUMMARY.md`.
+
+**Three vendored (load-bearing) assets to confirm at their locators:**
+
+1. **matplotlib `fivethirtyeight` fork** — VERIFIED by the loop: the installed matplotlib
+   3.11.1 LICENSE §2/§3 permit verbatim vendoring of a bundled style sheet, conditioned on
+   retaining the MDT copyright + a brief change summary (both in the dsx-538 header). Please
+   confirm you accept this reading.
+2. **Urban Institute palette (Apache-2.0)** — ASSUMED (carried from Scope §3.3, 2026-08-29,
+   not re-fetched this firing). Only palette hexes + rcParams are vendored, no guide prose.
+   **This is the one item still needing an at-locator human read** — the house-default style
+   rests on it.
+3. **Lato `.ttf` (SIL OFL 1.1)** — VERIFIED at-locator by the loop: fetched from the pinned
+   canonical Google Fonts OFL source; `OFL.txt` carries the SIL OFL 1.1 text and the Lato
+   copyright/reserved-name line; checksums recorded (Regular
+   `d636e468…5b251`, Bold `8a0aace7…d16be1`). Please confirm the checksums are acceptable.
+
+The two cite-only styles (dsx-econ, dsx-bbc) vendor nothing and cannot contaminate
+(reimplemented-from-doctrine posture; CONTEXT GA-1 Auditor robustness note) — no license
+read is owed for them; their `Source:` URLs are public-doctrine provenance only.
 
 ## Will be added by the loop when reached
 
@@ -31,9 +54,8 @@ below. Nothing is blocking the loop.)
   phase; non-blocking until S5-2).
 - D-06 numbering veto windows for any new codes Phase 22 mints (from a freshly
   re-measured live catalogue count; silence = accept).
-- The Phase 23 license-audit confirmation (dsx-538/dsx-urban forked from
-  permissively-licensed sources; dsx-econ/dsx-bbc reimplemented from published
-  doctrine only, no GPL port, no unlicensed PDF embed).
+- ~~The Phase 23 license-audit confirmation~~ — FILED 2026-09-03 as HQ-33 (see Open),
+  non-blocking until S5-2.
 - The S5-6 ship decisions: merge to `main` and the `v2.4.0` release tag.
 - Any persona decision the operator vetoes from a daily summary.
 
