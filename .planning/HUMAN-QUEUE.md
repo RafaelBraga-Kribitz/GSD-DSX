@@ -217,6 +217,21 @@ milestone`'s `handle_branches` picks the alphabetically-first `gsd/*` branch
 v2.2 and v2.3 ship). `git merge --no-ff gsd/v2.4.0-visual-excellence` by name,
 verified on a throwaway branch first.
 
+**`gsd-tools query commit` (used by GSD planner/researcher/executor subagents)
+auto-creates the wrong branch mid-run — recurring, budget for it.** Confirmed
+**3×** (S2-2 once; S3-2 twice, one per subagent): when a `gsd-*` subagent commits
+via `gsd-tools query commit`, it can create + switch to a stray
+`gsd/v2.4-visual-excellence` (**no `.0`**) and land the commit there instead of the
+canonical `gsd/v2.4.0-visual-excellence`; the subagent's own return then confidently
+**misreports** the branch/push state. **After ANY subagent that may commit, the
+orchestrator must reconcile against the repo, not the report:** `git rev-parse
+--abbrev-ref HEAD` + `git branch -vv`; if a stray no-`.0` branch holds the work, it is
+a linear descendant of canonical → `git checkout` canonical → `git merge --ff-only
+<stray>` (no commit lost) → `git branch -d`/`-D` the stray → push; verify tree-hash
+identity / `git merge-base --is-ancestor` before deleting. This is exactly why the
+loop uses plain `git commit` for orchestrator-authored files, and why the `gsd/*`
+count must be re-asserted (5 stale + 1 active) every planning firing.
+
 **Release tags: never force-move a published one.** v2.0.0 shipped as tag
 `v2.1.0` for this reason; v2.2 shipped as `v2.2.0`; v2.3 shipped as `v2.3.0`.
 The next free tag for this milestone is `v2.4.0`.
