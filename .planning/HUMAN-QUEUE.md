@@ -20,38 +20,8 @@ a persona round and records loudly):
 
 ## Open
 
-### HQ-37 — v2.4 close-out: run `/gsd-complete-milestone` (interactive) + approve the ship (merge to `main` + tag `v2.4.0`)
-
-**What's done:** S5-4 `/gsd-audit-milestone` **PASSED** on 2026-09-03 (report:
-`.planning/v2.4-MILESTONE-AUDIT.md`, HEAD `13c6472`). 16/16 requirements satisfied,
-4/4 phases verified PASSED, 5/5 integration seams wired, Nyquist 4/4 compliant, full
-suite **1508 OK**, catalogue current @276 (zero-mint). No critical gaps. This was the
-last unit the loop can run headless.
-
-**Why this is here:** the two remaining close-out units are both human-gated and the
-loop may not perform them itself:
-
-1. **S5-5 `/gsd-complete-milestone v2.4`** — interactive-only, NOT headless-safe
-   (interactive prompts + `git rm REQUIREMENTS.md`). Run it in an interactive Claude
-   session. **Standing defect to expect** (hit at both v2.2's and v2.3's close): its
-   generated accomplishment bullets truncate / capture YAML instead of prose, and the
-   archived REQUIREMENTS.md carries rows forward still unchecked — hand-verify both.
-   **Also fold in the one doc-consistency fix the audit flagged:** REQUIREMENTS.md
-   REQ-P23-01 still describes dsx-538 as "BSD" and the dsx-urban palette as
-   "Apache-2.0"; HQ-33's signed correction is GPL-3.0-disputed with a split
-   ColorBrewer/Urban attribution (the shipped style-file header, SUMMARY, CONTEXT and
-   LEARNINGS already carry the corrected position — only the requirement prose is stale).
-
-2. **S5-6 Ship** — outward-facing (brief §4 cat.5), needs your approval:
-   - `git merge --no-ff gsd/v2.4.0-visual-excellence` into `main` **by explicit branch
-     name** — NEVER the framework's alphabetical `gsd/*` auto-detect (it picks
-     `gsd/v1.1.0-milestone`, always wrong here); verify on a throwaway branch first;
-     full suite + `scripts/check.sh` green BEFORE touching `main`.
-   - tag **`v2.4.0`** (next free tag; never force-move a published tag).
-   - NEVER `/gsd-pr-branch` (does not survive this long ceremony branch).
-
-**To answer:** run the interactive completion and confirm the ship here; an interactive
-session records the ship and checks S5-5 + S5-6 off in LOOP-LEDGER.md.
+(none — HQ-37 answered 2026-09-03, v2.4.0 shipped; see Answered
+below. The v2.4 ceremony is complete. Nothing is blocking.)
 
 ## Will be added by the loop when reached
 
@@ -163,6 +133,36 @@ the tree and correctly left it untouched (neither committed nor discarded),
 logging the observation instead. This is the correct behavior, not a bug to fix.
 
 ## Answered
+
+### HQ-37 — v2.4 close-out: `/gsd-complete-milestone` + ship (answered 2026-09-03 — DONE)
+
+**Operator verdict: executed end to end, both units complete. v2.4.0 is live on origin.**
+
+**S5-5** — ran `/gsd-complete-milestone v2.4` interactively. Pre-close audit-open
+surfaced 5 items; all acknowledged non-blocking (2 genuinely-deferred future seeds; 3
+CONTEXT.md "open question" false positives — a documented text-matching blind spot,
+since HQ-28/30/32 were already Answered). `init.manager` again misread
+`verification_status: missing` for all 4 phases (the same standing defect confirmed at
+v2.3's close); hand-checked all four `NN-VERIFICATION.md` directly (`verdict: PASSED`)
+before overriding. The CLI's generated output needed hand-correction a third consecutive
+time, worse than before: `MILESTONES.md`'s accomplishment bullets were arbitrary sentence
+fragments, and `STATE.md`'s generated body flatly contradicted its own
+`progress: {percent:100}` frontmatter. Both rewritten by hand. Folded in the milestone
+audit's flagged tech-debt (REQ-P23-01's stale license prose corrected to HQ-33's real
+position). Full PROJECT.md evolution review and RETROSPECTIVE.md v2.4 section written.
+
+**S5-6** — verified the merge on a throwaway branch from `origin/main` first (clean,
+zero conflicts, full `scripts/check.sh` green) before touching `main`. Real merge
+`git merge --no-ff gsd/v2.4.0-visual-excellence` onto `main` by explicit name
+(`89f77eb`) — full gate re-run green on `main` itself — then tagged **`v2.4.0`** on
+the merge commit (verified via `git rev-list -n1`, matching the `v2.3.0` precedent
+exactly). Pushed `main` + tag to origin.
+
+**Final state:** branch `main` at `89f77eb`, tag `v2.4.0` published, `gsd/v2.4.0-visual-excellence`
+fully merged. `.planning/LOOP-LEDGER.md` S5-5/S5-6 checked off with full evidence.
+
+**Next:** open v2.5 via `/gsd-new-milestone`, or the ceremony sits idle until then.
+
 
 ### HQ-33 — Phase 23 license-audit at-locator confirmation (answered 2026-09-03 — CORRECTED)
 
