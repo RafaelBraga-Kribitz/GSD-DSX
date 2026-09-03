@@ -20,145 +20,8 @@ a persona round and records loudly):
 
 ## Open
 
-### HQ-32 — Phase 23 discuss persona decisions + style/determinism design (veto window, filed S3-1, 2026-09-03)
-
-**Type:** persona-decision veto window (brief §4 — recorded loudly, **non-blocking**;
-silence = accept). **Not** a scope change, not a sign-off, not a license confirmation (that
-comes at S3-2). Full rationale in
-`.planning/phases/23-style-snippet-layer/23-CONTEXT.md` (GA-1, GA-2, GA-3, D-P23-03,
-D-P23-04). The scope §3.3 license findings are applied as binding inputs, not re-opened.
-
-Five decisions the loop made for you to veto if you disagree:
-
-- **GA-1 (style-file set & headers).** Exactly four `styles/*.mplstyle`: `dsx-538` (fork of
-  matplotlib's `fivethirtyeight`, Matplotlib License, vendored verbatim), `dsx-urban`
-  (Apache-2.0 palette + **vendored OFL Lato**, the **house default**), `dsx-econ` and
-  `dsx-bbc` (**reimplemented from doctrine only** — no Economist-PDF embed, no `bbplot` GPL
-  port, no proprietary font). **One** vendored OFL font (Lato) is the deterministic house
-  face all four styles resolve to; `dsx-econ`/`dsx-bbc` use it as an open stand-in for their
-  proprietary faces. Each file carries a license/attribution header.
-- **GA-2 (`dsx_plotstyle.py` signatures).** Three keyword-explicit functions:
-  `finalise_figure(fig, *, title, source, subtitle=None, note=None)` (mandatory `source`,
-  no default — enforces the mandatory-source-line doctrine), `direct_label(ax, *, ...)`,
-  `save_deterministic(fig, path, *, metadata=None, **savefig_kwargs) -> Path`.
-  `save_deterministic` **writes** the deterministic SVG but does **not** hash — sealing stays
-  with `dsx seal` (one hashing authority). Analyst-side, matplotlib-only, off the gate path.
-- **GA-3 (determinism recipe).** `svg.fonttype: path` + fixed `svg.hashsalt` +
-  `metadata={'Date': None}` + vendored OFL font via `font_manager.addfont` + pinned
-  matplotlib version recorded in `FIGURE-MANIFEST.yaml`; proven by an off-gate-path
-  double-render hash-equality test (`skipIf` matplotlib absent).
-- **D-P23-03 (hermeticity hardening).** Add `"matplotlib"` to
-  `test_gate_path_hermetic.FORBIDDEN` — a cheap structural guard against a future
-  "render inline on the gate path" regression (safe today: no gate module imports matplotlib).
-- **D-P23-04 (zero new codes).** Phase 23 mints **zero** code: the snippet catalog routes to
-  existing codes, the determinism test is off the gate path, and the palette gate defers
-  behind a D-13 entry condition. Proven by a set-identity diff `276 → 276` at S3-4.
-
-### HQ-31 — Phase 22 end-of-phase security sign-off (filed S2-5, 2026-09-03)
-
-**Type:** security sign-off — a `SECURITY.md` approval line (brief §4 item 4). The
-loop verified the mitigations; it may not self-sign the approval. **Non-blocking**
-for Phase 22 advancement; must be signed by **S5-2** close-out.
-
-**File:** `.planning/phases/22-catalog-spine-uncertainty-heuristic/22-SECURITY.md`
-(State B create; `status: verified`, `threats_open: 0`, ASVS L1).
-
-**What the loop verified (machine gate, re-run by the orchestrator — not trusted):**
-all twelve plan-time threats (T-22-01…T-22-12, authored across the four
-`22-0N-PLAN.md` STRIDE registers) CLOSED by in-tree tests + the D-05 build gate,
-re-run GREEN 2026-09-03. None rises to `high` → nothing blocks under ASVS-L1
-block-on-`high`. Evidence: six mitigation modules (`test_viz_vocabulary_invariant`,
-`test_uncertainty_vocabulary`, `test_finding_catalogue_invariant`,
-`test_chart_catalog_invariant`, `test_selection_heuristic_docs`,
-`test_gen_finding_catalogue`) = **79 tests OK**; `scripts/gen-finding-catalogue.py
---check` **exit 0 @276** (D-05 enforcement for DSX-VIZ-071); **full suite 1495 OK**
-(41.6s). No new packages → no supply-chain gate.
-
-**UAT note:** Phase 22 has no user-facing runtime behavior — its acceptance test IS
-the automated invariant/gate set (validated: `nyquist_compliant: true`, all 5
-requirements COVERED). The one residual human read (per-citation *authenticity* at
-the locator, D-05) is already tracked under **HQ-27** (signed evidence pack), not
-duplicated here.
-
-**To sign:** confirm the audit and write the approval line in `22-SECURITY.md`
-(`Approval: verified <initials> <date>`, flip the pending line); an interactive
-session then checks HQ-31 off here.
-
-### HQ-30 — Phase 22 discuss persona decisions + D-06 numbering (veto window, filed S2-1, 2026-09-03)
-
-**Type:** persona-decision veto window + D-06 numeric assignment (brief §4 — recorded
-loudly, **non-blocking**; silence = accept). **Not** a scope change, not a sign-off. Full
-rationale in `.planning/phases/22-catalog-spine-uncertainty-heuristic/22-CONTEXT.md`
-(GA-1, GA-2, GA-3). All four operator decisions D-1…D-4 from HQ-27 are applied as binding.
-
-Three decisions the loop made for you to veto if you disagree:
-
-- **GA-1 (catalog entry-set & count).** The merged catalog reaches REQ-P22-01's 75–90 band
-  as: 50 DSX-admissible marks + 10 Wilke §5.6 uncertainty marks (frozen core = 60) + 7
-  refusal rows + ~15 **reference-only** rows (spine-attested chart types not in DSX's gate
-  vocabulary, own descriptions per D-3, flagged reference-only so they never widen what the
-  gate admits). Target ~80; exact reference-row set pinned at plan. **Also:** execute adds
-  `gauge` + `word_cloud` to `BANNED_TYPES` (code=DSX-VIZ-001, so zero new code) so every
-  catalog refusal row is backed by a live ban (no drift), citing Few 2006 / Jacob Harris
-  2011 from the signed HQ-27 pack.
-- **GA-2 (uncertainty vocabulary shape).** Adopt an **11th `RELATIONSHIP_CHARTS` key
-  `"uncertainty"`** (Wilke's 10 §5.6 marks), not new input-type ids — the paradigm-faithful
-  modeling; the existing property check `DSX-VIZ-070` is retained as a complementary surface.
-- **GA-3 (D-06 numbering).** New gate codes take the next-free 07x band: **`DSX-VIZ-071`**
-  (uncertainty-vocabulary check), and **`DSX-VIZ-072`** contingently (only if plan finds a
-  second check warranted). Verified against the re-measured live **275** baseline. The
-  perceptual tie-break (REQ-P22-05), faceting routing, and catalog↔vocabulary conformance
-  are repo-integrity tests off the gate path → **zero code**. Phase-end mint diff = 275→276
-  (or 277), additive-only.
-
-### HQ-28 — Phase 21 discuss persona decisions (veto window, filed S1-1, 2026-09-03)
-
-**Type:** persona-decision veto window (brief §4 — recorded loudly, **non-blocking**;
-silence = accept). **Not** a scope change, not a sign-off. Full rationale in
-`.planning/phases/21-viz-vocabulary-reconciliation/21-CONTEXT.md` (D-01, D-02).
-
-Two decisions the loop made for you to veto if you disagree:
-
-- **D-01 (invariant scope).** The every-mark-has-a-home invariant is a repo-integrity
-  test (off the gate path) with two clauses: capability-completeness for all non-banned
-  marks, and relationship-completeness *or* an explicit frozen `CAPABILITY_ONLY`
-  allowlist. "Capability home" is defined gate-faithfully as `CHART_CAPABILITIES ∪
-  EXTRA_MARKS`. **Finding beyond S0-2:** `population_pyramid`/`butterfly` are
-  relationship-orphans only (not double orphans — capability-homed via `EXTRA_MARKS[IT011]`);
-  ~14 capability-only marks (`column`, `grouped_bar`, `bubble`, …) lack a relationship
-  home and are documented-exempt, not homed (promotion deferred to Phase 22).
-- **D-02 (refusal entries).** `BANNED_TYPES` enriched **in place** to
-  `{reason, code, citation}` records (single registry, no drift surface), not a parallel
-  sub-map. Refusal citations = HQ-27 Tier-3, batched to S5-2, non-blocking.
-
-### HQ-29 — Phase 21 end-of-phase security sign-off (filed S1-5, 2026-09-02)
-
-**Type:** security sign-off — a `SECURITY.md` approval line (brief §4 item 4). The
-loop verified the mitigations; it may not self-sign the approval. **Non-blocking**
-for Phase 21 advancement; must be signed by **S5-2** close-out.
-
-**File:** `.planning/phases/21-viz-vocabulary-reconciliation/21-SECURITY.md`
-(State B create; `status: verified`, `threats_open: 0`, ASVS L1).
-
-**What the loop verified (machine gate, re-run by the orchestrator — not trusted):**
-all three plan-time threats CLOSED by in-tree tests, re-run GREEN 2026-09-02:
-
-| Threat | Category | Mitigation (test) | Re-run |
-|---|---|---|---|
-| T-21-01 | Tampering | every-mark-has-a-home invariant (`TestEveryMarkHasAHome`) | GREEN |
-| T-21-02 | Repudiation | refusal-record completeness + code identity (`TestRefusalEntryCompleteness`, code=DSX-VIZ-001) | GREEN |
-| T-21-03 | Tampering | zero-mint set-identity (`test_finding_catalogue_invariant` + `test_gen_finding_catalogue`, 275→275) | GREEN |
-
-No threat rises to `high`; nothing blocks under ASVS-L1 block-on-`high`. No new
-packages → no supply-chain gate. **UAT note:** Phase 21 has no user-facing
-behavior — its acceptance test IS the automated invariant (55 tests OK; full
-suite 1471 OK), so there are no manual UAT steps to run. The one residual human
-read (refusal-citation *authenticity*, incl. the provisional `radar` row) is
-already tracked under **HQ-27 Tier-3**, not duplicated here.
-
-**To sign:** confirm the audit and write the approval line in `21-SECURITY.md`
-(`Approval: verified <initials> <date>`, flip the `- [ ]` Approval box); an
-interactive session then checks HQ-29 off here.
+(none — HQ-28 through HQ-32 all answered 2026-09-03; see Answered
+below. Nothing is blocking the loop.)
 
 ## Will be added by the loop when reached
 
@@ -269,6 +132,96 @@ the tree and correctly left it untouched (neither committed nor discarded),
 logging the observation instead. This is the correct behavior, not a bug to fix.
 
 ## Answered
+
+### HQ-28 — Phase 21 discuss persona decisions (answered 2026-09-03 — accepted, no veto)
+
+**Operator verdict:** Accepted both. D-01 (every-mark-has-a-home as an off-gate-path
+repo-integrity test, capability home defined gate-faithfully as `CHART_CAPABILITIES ∪
+EXTRA_MARKS`, ~14 capability-only marks documented-exempt with promotion deferred to
+Phase 22) and D-02 (`BANNED_TYPES` enriched in place to `{reason, code, citation}`
+rather than a parallel sub-map — single registry, no drift surface). No veto.
+
+### HQ-29 — Phase 21 end-of-phase security sign-off (answered 2026-09-03)
+
+**Operator verdict:** Approved — signed in `21-SECURITY.md`'s Approval line.
+
+Basis, **independently re-verified in this session rather than trusted from the
+report**: `threats_open: 0`, 3/3 threats CLOSED; the mitigation modules behind
+T-21-01/02/03 (`test_viz_vocabulary_invariant`, `test_finding_catalogue_invariant`,
+`test_gen_finding_catalogue`) re-run green as part of a 79-test run, and
+`gen-finding-catalogue.py --check` exit 0. The register's audit row reads 3 threats /
+3 closed / 0 open, and a scan for open threat rows found none (every "open" occurrence
+in the file is legend or audit-header boilerplate). UAT confirmed: no user-facing
+runtime behavior, `nyquist_compliant: true`, 3/3 requirements COVERED. The residual
+refusal-citation authenticity read — including the then-provisional `radar` row — was
+discharged separately under HQ-27.
+
+### HQ-30 — Phase 22 discuss persona decisions + D-06 numbering (answered 2026-09-03 — accepted, no veto)
+
+**Operator verdict:** Accepted all three. GA-1 (catalog entry-set: 50 admissible
+marks + 10 Wilke §5.6 uncertainty marks + 7 refusal rows + ~15 reference-only rows,
+landing at 81 — inside REQ-P22-01's 75–90 band; `gauge` and `word_cloud` added to
+`BANNED_TYPES` under the existing DSX-VIZ-001 so every catalog refusal row is backed
+by a live ban, zero new code). GA-2 (an 11th `RELATIONSHIP_CHARTS` key
+`"uncertainty"` carrying Wilke's 10 marks, rather than new input-type ids — the
+paradigm-faithful modeling, with `DSX-VIZ-070` retained as a complementary surface).
+GA-3 (D-06 numbering `DSX-VIZ-071` from the next-free 07x band, verified against a
+re-measured live baseline; `DSX-VIZ-072` contingent and correctly **not** minted —
+final diff 275→276, additive-only). No veto.
+
+**Verified at sign-off:** all four HQ-27 decisions were applied to the shipped tree —
+D-1 ranks encoded with ties and the tie-break test asserting `<=` never `<`, with
+`density` asserted absent; D-2 all 10 Wilke marks present and `fan_chart` /
+`gradient_ci_band` correctly absent; D-3 the FT axis attributed with DSX's own
+descriptions. **D-4 was found NOT applied** and was corrected in this session (see
+HQ-31 note).
+
+### HQ-31 — Phase 22 end-of-phase security sign-off (answered 2026-09-03)
+
+**Operator verdict:** Approved — signed in `22-SECURITY.md`'s Approval line.
+
+Basis, **independently re-verified in this session**: `threats_open: 0`, 12/12 threats
+T-22-01…T-22-12 CLOSED; the six mitigation modules re-run **79/79 green**, and
+`gen-finding-catalogue.py --check` exit 0 at catalogue **276** — matching the
+register's claims exactly. UAT confirmed: no user-facing runtime behavior,
+`nyquist_compliant: true`, 5/5 requirements COVERED.
+
+**One gap found and fixed at sign-off (not a threat — a citation-integrity defect):**
+operator decision **D-4** from HQ-27 had not been applied. `dual_axis_line` still cited
+"Muth 2018 (Datawrapper)" with no record that Datawrapper **publicly reversed that
+position in July 2026** ("we've changed our minds"), and no general-audience scoping.
+Left as-was, the project would have shipped a hard ban citing a source that had
+softened the very claim it rested on. Corrected in all three sites —
+`dsx/checks/viz.py` and both the markdown table and JSON payload of
+`references/chart-catalog.md` — to cite "Muth 2018, as amended July 2026", record
+Datawrapper's expert-audience carve-out, and state plainly that the unconditional ban
+is **DSX's own general-audience position**, not an appeal to the amended claim. The
+same commit also records that Munzner's anti-3D doctrine is **justification-gated**
+(she permits 3D for true 3D spatial data), so ch.6 supplies the presumption and the
+hard ban is DSX's application of it. `test_chart_catalog_invariant` +
+`test_viz_vocabulary_invariant` re-run green (24 OK) after the edit; JSON payload
+re-parsed clean at 81 rows.
+
+### HQ-32 — Phase 23 discuss persona decisions + style/determinism design (answered 2026-09-03 — accepted, no veto)
+
+**Operator verdict:** Accepted all five. GA-1 (four `styles/*.mplstyle`: `dsx-538`
+forked under the Matplotlib License, `dsx-urban` as house default on the Apache-2.0
+palette with vendored OFL Lato, `dsx-econ`/`dsx-bbc` reimplemented from published
+doctrine only — no Economist-PDF embed, no `bbplot` GPL port, no proprietary font;
+per-file license headers). GA-2 (`finalise_figure` with a **mandatory** `source`
+parameter and no default, `direct_label`, `save_deterministic` — which writes but
+deliberately does **not** hash, keeping `dsx seal` the single hashing authority).
+GA-3 (the determinism recipe: `svg.fonttype: path`, fixed `svg.hashsalt`,
+`metadata={'Date': None}`, vendored font via `font_manager.addfont`, pinned matplotlib
+recorded in `FIGURE-MANIFEST.yaml`, proven by an off-gate-path double-render
+hash-equality test). D-P23-03 (add `matplotlib` to `test_gate_path_hermetic.FORBIDDEN`
+as a structural guard against a future render-on-the-gate-path regression).
+D-P23-04 (zero new codes; set-identity 276→276 at S3-4). No veto.
+
+The license-audit confirmation correctly remains a **plan-review item at S3-2**
+(REQ-P23-01's own explicit requirement), not folded into this veto window — and the
+v2.4 scope's license findings are applied as binding inputs rather than re-opened.
+
 
 ### HQ-27 — Phase 22 D-05 citation evidence pack (answered 2026-09-03)
 

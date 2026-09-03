@@ -51,10 +51,12 @@ LENGTH_ENCODED = {"bar", "horizontal_bar", "stacked_bar", "area", "stacked_area"
 # (REQ-P21-02). Each is {reason, code, citation}: `reason` is the distortion
 # the ban prevents, `code` is the finding _check_banned emits (DSX-VIZ-001 for
 # all five — a cross-reference to an existing code, not a new one), and
-# `citation` points at the perception-doctrine source (HQ-27 Tier-3, drained at
-# S5-2). The radar citation is the least-certain of the five — no exact Tier-3
-# source is pre-mapped to it — and is flagged for operator confirmation in
-# HUMAN-QUEUE HQ-27.
+# `citation` points at the perception-doctrine source (HQ-27, signed 2026-09-03).
+# Two citations carry a caveat the reader must see, not just the maintainer:
+# Munzner's anti-3D doctrine is justification-gated (she permits 3D for true 3D
+# spatial data), so ch.6 supplies the presumption and the hard ban is DSX's own
+# application of it for abstract data; and Datawrapper amended its dual-axis
+# position in July 2026 (D-4 below).
 BANNED_TYPES: dict[str, dict[str, str]] = {
     "3d_bar": {
         "reason": "3D bars distort length with perspective and occlude the back rows.",
@@ -79,9 +81,14 @@ BANNED_TYPES: dict[str, dict[str, str]] = {
                     "HQ-27 Tier-3",
     },
     "dual_axis_line": {
-        "reason": "Two y-scales let any pair of series be made to look correlated.",
+        "reason": "Two y-scales let any pair of series be made to look correlated; "
+                  "banned for the general-audience default this project assumes.",
         "code": "DSX-VIZ-001",
-        "citation": "Muth 2018 (Datawrapper) — HQ-27 T3-4; see also DSX-VIZ-030 (_check_dual_axis)",
+        "citation": "Muth 2018 (Datawrapper), as amended July 2026 — HQ-27 T3-4 / D-4. "
+                    "Datawrapper later carved out expert audiences (finance) while still "
+                    "holding that general audiences misread dual axes; the unconditional "
+                    "ban is DSX's own position, not an appeal to the amended claim. "
+                    "See also DSX-VIZ-030 (_check_dual_axis)",
     },
     "gauge": {
         "reason": "A radial gauge wastes space with its circular form, gives no context for "

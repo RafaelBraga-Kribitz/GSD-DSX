@@ -118,7 +118,7 @@ comes from Cleveland & McGill (perception) and Wilke (uncertainty).
 | Magnitude | `3d_bar` | categorical-value | volume | refusal | Munzner 2014 ch.6 (no unjustified 3D); Tufte 1983 (chartjunk) — HQ-27 T2-6/T3-3 |
 | Change over Time | `3d_line` | time-series | volume | refusal | Munzner 2014 ch.6 (no unjustified 3D); Tufte 1983 (chartjunk) — HQ-27 T2-6/T3-3 |
 | Part-to-whole | `3d_pie` | categorical-value | volume | refusal | Munzner 2014 ch.6 (no unjustified 3D); Tufte 1983 (chartjunk) — HQ-27 T2-6/T3-3 |
-| Correlation | `dual_axis_line` | bivariate-dual | position_common | refusal | Muth 2018 (Datawrapper) — HQ-27 T3-4; see also DSX-VIZ-030 (_check_dual_axis) |
+| Correlation | `dual_axis_line` | bivariate-dual | position_common | refusal | Muth 2018 (Datawrapper), as amended July 2026 — HQ-27 T3-4/D-4; Datawrapper carved out expert audiences, the unconditional ban is DSX's own general-audience position; see also DSX-VIZ-030 |
 | Magnitude | `gauge` | single-value | angle | refusal | Few 2006 (Information Dashboard Design) §3.2 / §6.2.1.1 — HQ-27 T3-GAUGE; arbitrary-maximum criticism is DSX's own, not Few's |
 | Magnitude | `radar` | categorical-multi | area | refusal | Duan et al. 2023 (J Clin Epidemiol 156:85-94), Introduction — area-vs-axis-order and area-proportional-to-square-of-value criticisms; HQ-27 Tier-3 |
 | Magnitude | `word_cloud` | categorical-value | area | refusal | Jacob Harris, 'Word clouds considered harmful', Nieman Journalism Lab 2011-10-13 — HQ-27; editorial rationale, not perceptual |
@@ -845,7 +845,7 @@ comes from Cleveland & McGill (perception) and Wilke (uncertainty).
       "description": "Refused: Two y-scales let any pair of series be made to look correlated.",
       "data_signature": "bivariate-dual",
       "perceptual_channel": "position_common",
-      "citation": "Muth 2018 (Datawrapper) \u2014 HQ-27 T3-4; see also DSX-VIZ-030 (_check_dual_axis)",
+      "citation": "Muth 2018 (Datawrapper), as amended July 2026 \u2014 HQ-27 T3-4/D-4; Datawrapper carved out expert audiences, the unconditional ban is DSX's own general-audience position; see also DSX-VIZ-030 (_check_dual_axis)",
       "flag": "refusal",
       "banned_type": "dual_axis_line",
       "banning_code": "DSX-VIZ-001"
