@@ -295,6 +295,128 @@ snapshots (Phase-12 at 256, v2.2's set) unmutated.
   approved in a single batched interactive session on the operator's explicit
   go-ahead, rather than split across several round-trips.
 
+## Milestone: v2.4 — Visual Excellence
+
+**Shipped:** 2026-09-03
+**Phases:** 4 (21, 22, 23, 24) | **Plans:** 11
+
+### What Was Built
+
+A chart-and-style visual-excellence layer on top of v2.3's test catalogue.
+Phase 21 reconciled the inherited chart-type vocabulary — every mark now has a
+capability home, `BANNED_TYPES` refusal entries enriched in place to full
+`{reason, code, citation}` records. Phase 22 built a merged catalog spine (81
+rows across five named taxonomies), Wilke's real 10-mark uncertainty
+vocabulary as an 11th `RELATIONSHIP_CHARTS` key, and a 5-layer chart-selection
+heuristic (mints `DSX-VIZ-071`). Phase 23 shipped a license-audited
+analyst-side style layer (four `.mplstyle` files, one vendored OFL font) with
+a proven SVG-determinism recipe and a snippet catalog routing to existing
+codes — zero new codes. Phase 24 proved the whole stack end-to-end: the
+existing onboarding-activation exemplar upgraded in place with a real 95%-CI
+uncertainty figure, a sealed manifest, and the project's first bad-chart-choice
+fixtures. Finding catalogue: 275 → 276 codes, additive, all three frozen
+snapshots (Phase-12, v2.2's set, v2.3's set) unmutated.
+
+### What Worked
+
+- **The two-round independent-verification pattern held up under a harder
+  test than v2.3's.** v2.3 caught a wrong fixture *value*; v2.4's citation
+  round (HQ-27) caught a wrong *relation* — a proposed 7-item strict
+  perceptual ordering (`length > angle`) that neither cited paper supports.
+  Cleveland & McGill (1984) publish 6 ranks **with ties**, and both cited
+  papers explicitly decline to separate angle from length. This is the more
+  dangerous failure mode: a plausible, internally-consistent claim built from
+  two real citations, wrong only in how they were combined.
+- **A second, independent verification round at ship-prep caught a defect the
+  first round's own discipline had missed.** HQ-33's license-audit re-check
+  (not just a rubber-stamp confirmation) found the house-default style's
+  Apache-2.0/Urban Institute claim was wrong on both counts — Urban's own
+  README states GPL-3.0, and 3 of 6 vendored colors were ColorBrewer's, not
+  Urban's. Neither the original plan-time research nor Phase 23's own
+  security sign-off caught this; only a fresh fetch-and-read of the actual
+  source did. The lesson from v2.3 ("re-verify, don't just corroborate")
+  generalizes past citations to any claim with a checkable primary source —
+  licenses included.
+- **The loop's own citation pack self-flagged its weakest row again** (the
+  provisional `radar` citation, mirroring v2.3's pattern) — confirming this is
+  a repeatable, trustworthy signal from the loop, not a one-off. Honest
+  self-flagging continues to make independent verification cheaper, not more
+  expensive.
+- **Real independent security re-gates, not trusted reports, caught a
+  citation-integrity gap a threat register was never scoped to catch.**
+  Re-running Phase 22's mitigation suite for its sign-off (HQ-31) surfaced
+  that binding decision D-4 (from HQ-27) had never actually landed in
+  `dsx/checks/viz.py` — a citation to a since-amended source, not a security
+  threat, so the register correctly reported `threats_open: 0` while the
+  citation itself remained stale. Caught only because sign-off meant
+  independently re-verifying the underlying claims, not just re-running the
+  named tests.
+
+### What Was Inefficient
+
+- **`init.manager`'s `verification_status` read "missing" for all four phases
+  again** — the same class of framework-CLI naming-convention blind spot as
+  v2.0.0's/v2.2's/v2.3's audit-uat issues, on the same code path v2.3 already
+  documented. Required direct evidence (reading all four `NN-VERIFICATION.md`
+  files) to safely override at close-out, exactly as before — this is now a
+  confirmed-recurring cost, not a new discovery.
+- **The milestone-complete CLI's accomplishment extraction failed a third
+  consecutive time**, and worse than before: `summary-extract`'s `one_liner`
+  field pulled arbitrary sentence fragments and YAML-adjacent header lines
+  rather than anything resembling a summary, and the generated `STATE.md` body
+  prose actively contradicted its own frontmatter (claiming "0/4 phases,
+  no ledger unit attempted" while `progress: {percent: 100}` sat three lines
+  above it). Hand-corrected both `MILESTONES.md` and `STATE.md` from the real
+  `SUMMARY.md`/`VERIFICATION.md` files and the actual git history, as at every
+  prior close — but the STATE.md self-contradiction is a new, sharper failure
+  mode worth flagging if this recurs a fourth time.
+- **A one-week gap between a citation round (HQ-27) and its own downstream
+  ship-prep check (HQ-33) let one binding decision (D-4) go unapplied
+  undetected** until an independent re-verification happened to check the
+  shipped tree against the decision record rather than trusting that "signed"
+  meant "applied." Binding decisions from an evidence pack need their own
+  applied-to-tree check at the point they're supposed to land, not just at
+  the next unrelated audit that happens to re-read the same file.
+
+### Patterns Established
+
+- **License claims get the same independent-verification treatment as
+  citations, on the same D-05-adjacent discipline** — a claim about what a
+  source permits is exactly as checkable, and exactly as prone to
+  laundering-by-restatement, as a claim about what a source says.
+- **A "please confirm" queue item is not evidence the underlying claim is
+  correct** — HQ-33 was filed as a routine confirmation ask and turned out to
+  gate a real, ship-blocking correction. Treat every human-queue confirmation
+  as an open verification task, not a formality, regardless of how it was
+  filed.
+- **Binding decisions from a signed evidence pack need an explicit
+  applied-to-tree check**, not just a citation in the commit message — D-1
+  through D-3 landed cleanly; D-4 did not, and nothing caught it until an
+  unrelated sign-off re-verification happened to look.
+
+### Key Lessons
+
+- Two citations can each be individually correct and still combine into an
+  unsupported claim — verification has to check the *relation* asserted
+  between sources, not just whether each source, read alone, is accurately
+  quoted.
+- Re-verification discipline generalizes past "citations" to any checkable
+  claim about an external source — a license, a threshold, a count — the
+  common failure mode (trusting a plausible restatement over the primary
+  text) is the same regardless of what kind of claim it is.
+- A framework defect confirmed at three consecutive milestone closes
+  (`init.manager` verification-status blind spot) has crossed from "known
+  issue" to "standing operating cost" — stop re-discovering it and start
+  budgeting for the hand-check every time.
+
+### Process Observations
+
+- Delivered by the same headless completion ceremony as v2.0.0/v2.2/v2.3, with
+  all human-gated items (HQ-27 through HQ-37: one D-05 evidence pack, four
+  security sign-offs, four discuss-veto windows, one license-audit round, and
+  the ship decision) reviewed and approved across two batched interactive
+  sessions on the operator's explicit go-ahead.
+
 ## Cross-Milestone Trends
 
 | Milestone | Phases | Plans | Shipped |
@@ -303,3 +425,4 @@ snapshots (Phase-12 at 256, v2.2's set) unmutated.
 | v2.0.0 DSX Validity Frame | 11 | 89 | 2026-08-28 |
 | v2.2 Analytic Surface | 4 | 20 | 2026-08-29 |
 | v2.3 Test Catalog | 4 | 11 | 2026-09-02 |
+| v2.4 Visual Excellence | 4 | 11 | 2026-09-03 |
