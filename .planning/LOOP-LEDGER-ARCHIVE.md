@@ -93,3 +93,78 @@ before any execution. Did not flip the operator's persistent `auto_advance` conf
 `2026-09-03T00:xxZ` Log labels ran ~2h ahead of true UTC. This firing uses measured
 UTC — so its timestamp reads earlier than the prior line. Git commit timestamps are
 the authoritative chronology; Log timestamps are human markers only.
+
+## S2-2 — Phase 22 plan (2026-09-03)
+
+Planned via `gsd-plan-phase 22`, driven by the orchestrator following the workflow
+faithfully — researcher, planner, and plan-checker each spawned as a **separate
+Agent** (roles never collapsed inline, per the workflow's hard rule that independent
+agent contexts are required for a meaningful plan-checker gate).
+
+**Pipeline (all committed):**
+- `gsd-phase-researcher` (sonnet) → `22-RESEARCH.md`, committed `0ba32d1`. Surfaced
+  three gaps CONTEXT does not name (all verified by running the live tests, not
+  inferred): (1) the ten new Wilke uncertainty marks need a `CHART_CAPABILITIES`
+  home or Phase 21's `test_every_mark_has_a_capability_home` invariant goes red;
+  (2) `tests/test_finding_catalogue_invariant.py` hard-codes `_EXPECTED_TOTAL=275`
+  and an exact `_MINTED_CODES` set — this file *is* the additive-mint proof;
+  (3) `DSX-VIZ-*` is absent from `gen-finding-catalogue.py`'s `_D05_ALLOWLIST_PREFIXES`,
+  so the new code's D-05 enforcement needs an exact-string add to `_D05_ALLOWLIST_CODES`.
+  Also flagged: `chart-selection.md`'s "Encoding accuracy" line still ships the OLD
+  false 7-item strict order (correct it to D-1's 6-rank-with-ties); `dsx-visualize`
+  SKILL enumerates 10 relationships (ripple for the 11th key); recommend dropping
+  Abela 2008 / Few's Graph Selection Matrix (never in HQ-27).
+- Orchestrator wrote the Nyquist `22-VALIDATION.md` seed (§5.5), committed `684530e`.
+- `gsd-planner` (opus) → `22-01..04-PLAN.md` (4 plans / 4 waves), committed `81ea14c`
+  (see BRANCH REMEDIATION below — the commit was salvaged onto the canonical branch).
+- `gsd-plan-checker` (**opus** — brief §3 override of the adaptive profile's haiku
+  default, exactly as S1-2 did) → `## VERIFICATION PASSED`, all 7 focus items green.
+
+**Plans (wave order forced by shared ownership of `dsx/checks/viz.py` + real deps):**
+- 22-01 (wave 1, tdd; REQ-P22-02,-03): 11th `RELATIONSHIP_CHARTS["uncertainty"]` key
+  + ten §5.6 marks; homes them into `CHART_CAPABILITIES["interval-range"]` (gap 1);
+  adds `gauge`/`word_cloud` refusal records + swaps `radar`→Duan 2023; `facet_by`
+  orthogonal → routes to DSX-SMELL-007. Mints 0 codes (275→275 at this wave).
+- 22-02 (wave 2, tdd; REQ-P22-05): mints `DSX-VIZ-071` (`_check_uncertainty_vocabulary`),
+  allowlists by exact string (gap 3), bumps invariant 275→276 + `_MINTED_CODES` (gap 2);
+  records the loud **DSX-VIZ-072-not-minted** decision.
+- 22-03 (wave 3, execute; REQ-P22-01,-05): `references/chart-catalog.md` (~80 rows,
+  three axes + citation, fenced-JSON payload) split acquisition/authoring/verification;
+  new conformance + perceptual-tie-break repo-integrity tests.
+- 22-04 (wave 4, execute; REQ-P22-04): 5-layer heuristic route-and-cite into the two
+  existing taxonomy files + skill ripple (10→11 relationships); corrects the superseded
+  perceptual line; drops Abela 2008 / Few's Graph Selection Matrix.
+
+**DSX-VIZ-072 not minted (persona-round decision, GA-3 contingent reservation, HQ-30
+veto window).** GA-3 reserved 072 only "if a second distinct uncertainty check is
+warranted (e.g. paradigm-mismatch)." The planner found it is not: several §5.6 marks
+(error bars, graded error bars) legitimately render either a frequentist confidence
+interval or a Bayesian credible interval, so no mark→paradigm partition exists to gate
+against; REQ-P22-02's "D-12a-clean" is satisfied by the 11th-key structure by
+construction. Matches the research recommendation. Phase 22 blocking-code footprint =
+exactly one; set-identity diff proves 275→276, additive-only.
+
+**Plan-checker advisory (non-blocking, no revision required):** 2 LOW warnings —
+(1) 22-02 lacks a cosmetic `<artifacts_this_phase_produces>` section (coverage NOT
+lost: 22-01's canonical index enumerates 22-02's artifacts and 22-02 lists them in
+`must_haves.artifacts` + a loud decision block); (2) chained `&&` verify commands
+assume Bash/pwsh7 — executor should run them through the Bash tool, not Windows
+PowerShell 5.1. No BLOCKERs.
+
+**BRANCH REMEDIATION (loud — the honesty this project's standard demands).** Mid-plan,
+the `gsd-planner` subagent ran `git checkout -b gsd/v2.4-visual-excellence` (no `.0`)
+and committed the four plans (`81ea14c`) on that new branch — a direct violation of
+plan-phase §0's Git Branch Invariant ("do not create, rename, or switch git branches
+during plan-phase"). Its own return then confidently asserted the canonical
+`.0` branch name "was inaccurate" — the claim was itself the error. The **reflog was
+the fact** (`HEAD@{1}: checkout: moving from gsd/v2.4.0-visual-excellence to
+gsd/v2.4-visual-excellence`). The canonical branch is unambiguously
+`gsd/v2.4.0-visual-excellence` (with `.0`): it is what `origin` tracks, what
+LOOP-BRIEF/STATE/ledger all name, and what session-start reported. Because `81ea14c`
+is a **linear descendant** of the canonical branch's tip (`684530e`), the orchestrator
+`git checkout gsd/v2.4.0-visual-excellence` → `git merge --ff-only` (Updating
+684530e..81ea14c) → `git branch -d gsd/v2.4-visual-excellence` (the safe `-d` confirmed
+it was fully merged — no commit lost). Stale `gsd/*` branch count restored to five (the
+prior-milestone set), NOT a new sixth — which matters because the ship auto-detect
+picks the alphabetically-first `gsd/*`. This is exactly the class of subagent error the
+brief's "verify against the repo, not the claim" rule exists to catch.

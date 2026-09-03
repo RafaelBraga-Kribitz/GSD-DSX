@@ -5,14 +5,14 @@ milestone_name: Visual Excellence
 current_phase: 22
 current_phase_name: catalog-spine-uncertainty-heuristic
 status: executing
-stopped_at: "S2-1 (Phase 22 discuss) COMPLETE. HQ-27 was answered by an interactive session (D-05 pack signed with corrections, 4 binding decisions D-1..D-4), unblocking S2-1. 22-CONTEXT.md written via inline opus/high persona round (Architect+Statistician+Auditor). Catalogue re-measured 3 ways = 275 (D-06 baseline). Three gray areas settled: GA-1 catalog entry-set = ROADMAP's fixed synonym-merge (do-not-re-litigate), composition 50 admissible + 10 Wilke uncertainty + 7 refusal + ~15 reference-only → 75-90 band target ~80, execute adds gauge+word_cloud to BANNED_TYPES reusing DSX-VIZ-001; GA-2 uncertainty = 11th RELATIONSHIP_CHARTS key 'uncertainty' (Wilke 10 §5.6 marks) not input-type ids, DSX-VIZ-070 retained complementary; GA-3 D-06 = DSX-VIZ-071 (+072 contingent) in the free 07x band, tie-break/faceting/conformance are off-gate-path tests → zero code, mint 275→276(/277) additive. Persona decisions filed HQ-30 (non-blocking, silence=accept). Boundary held: did NOT advance to S2-2. NEXT: S2-2 (Phase 22 plan, opus/high) — unblocked, ready for the next firing."
-last_updated: "2026-09-03T02:24Z"
+stopped_at: "S2-2 (Phase 22 plan) COMPLETE — plan-checker VERIFICATION PASSED. 4 plans / 4 waves via gsd-plan-phase: researcher(sonnet, 22-RESEARCH.md) → VALIDATION.md seed → planner(opus, 22-01..04-PLAN.md) → plan-checker(opus, brief §3 override of the adaptive-profile haiku default). Mints exactly DSX-VIZ-071 (additive 275→276); DSX-VIZ-072 loudly NOT minted (the ten §5.6 marks are paradigm-symmetric, so no mark→paradigm partition exists to gate — persona-round decision, recorded under HQ-30). All five REQ-P22-01..05 covered; the three RESEARCH gaps each homed (uncertainty marks → CHART_CAPABILITIES[interval-range] so Phase 21's every-mark-home invariant stays green; test_finding_catalogue_invariant.py _EXPECTED_TOTAL 275→276 + _MINTED_CODES; DSX-VIZ-071 → gen-finding-catalogue.py _D05_ALLOWLIST_CODES). BRANCH REMEDIATION (loud): the planner subagent created + switched to an erroneous branch gsd/v2.4-visual-excellence (no .0) mid-plan, violating plan-phase §0's Git Branch Invariant; the orchestrator ff-merged its plans commit 81ea14c back onto the canonical gsd/v2.4.0-visual-excellence (linear descendant, no commit lost) and safe-deleted the stray branch — stale gsd/* count restored to 5. NEXT: S2-3 (Phase 22 execute — waves 1→4 in order; 22-01 lands the vocabulary first)."
+last_updated: "2026-09-03T03:19Z"
 last_activity: 2026-09-03
-last_activity_desc: "S2-1 Phase 22 discuss COMPLETE (22-CONTEXT.md; GA-1/GA-2/GA-3 settled honoring D-1..D-4; catalogue re-measured 275; HQ-30 veto window filed); next = S2-2 plan"
+last_activity_desc: "S2-2 Phase 22 plan COMPLETE (4 plans, plan-checker PASSED; mints DSX-VIZ-071 only, 275→276; planner's stray-branch error remediated onto canonical branch); next = S2-3 execute"
 progress:
   total_phases: 4
   completed_phases: 1
-  total_plans: 1
+  total_plans: 5
   completed_plans: 1
   percent: 25
 ---
