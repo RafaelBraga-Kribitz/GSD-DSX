@@ -59,6 +59,36 @@ function Write-Log($msg) {
   Add-Content -Path $Log -Value $line
 }
 
+# --- Operator pause switch ---------------------------------------------------
+# Checked FIRST, before the lock, the backoff and the branch guard: a paused loop
+# must do nothing at all, not even churn the lock file. Added 2026-09-04 because
+# the Windows Scheduled Task itself cannot be disabled from automation on this
+# box (`Disable-ScheduledTask` returns "Access is denied" without elevation), so
+# the wrapper needs its own honest off switch that does not require admin.
+#
+#   PAUSE:  New-Item -ItemType File .planning\loop-logs\.paused
+#   RESUME: Remove-Item .planning\loop-logs\.paused
+#
+# Deliberately NOT the same thing as the branch guard. The branch guard aborts on
+# an UNEXPECTED tree state; this is an INTENTIONAL, operator-set stop that holds
+# regardless of which branch is checked out. Any text written into the file is
+# echoed to the log as the stated reason, so a future reader learns why.
+# Deliberately does NOT use Write-Log: that opens a per-firing `firing-<stamp>.log`,
+# and a paused loop writing 96 near-identical files a day is not meaningfully
+# stopped. A paused poll appends ONE line to a single rolling `paused.log` and
+# creates nothing else.
+$PauseFlag = Join-Path $LogDir '.paused'
+if (Test-Path $PauseFlag) {
+  $reason = (Get-Content $PauseFlag -Raw -ErrorAction SilentlyContinue)
+  if ($reason) { $reason = ($reason -replace '\s+', ' ').Trim() }
+  if ([string]::IsNullOrWhiteSpace($reason)) { $reason = '(no reason recorded)' }
+  $line = "[{0}Z] PAUSED by operator: {1}" -f `
+    (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ss'), $reason
+  Write-Output $line
+  Add-Content -Path (Join-Path $LogDir 'paused.log') -Value $line
+  exit 0
+}
+
 function Get-NextWeeklyReset {
   # Weekly allowance renews Wednesday 10:00 America/Sao_Paulo = 13:00 UTC
   # (Brazil abolished DST in 2019, so the offset is a constant -3).
