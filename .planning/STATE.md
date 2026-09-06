@@ -116,6 +116,13 @@ Resume file: None — the next firing (or `/gsd-new-milestone`) starts fresh.
 
 ## Operator Next Steps
 
-- Review `.planning/POST-SHIP-AUDIT-2026-09.md`'s 2 escalated items and decide whether/when
-  to act on them (both are additive/fixable without touching this milestone's shipped scope).
-- Start the next milestone with `/gsd-new-milestone`.
+- ~~Escalated item 1 (metric-direction inversion)~~ — FIXED and shipped as **v2.4.1**
+  (2026-09-06, commit `07d3db0`). Four checks, not three: DSX-ML-053 was affected too.
+- Escalated item 2 (calibration-corpus coverage — 17 of 21 `DSX-VIZ-*` codes have never
+  fired against a constructed fixture, including the family's only CRITICAL code
+  `DSX-VIZ-020`) is still open. It needs a scope decision, because closing it reopens
+  Phase 24's deliberate "fixtures per new code" ruling.
+- Start the next milestone with `/gsd-new-milestone`. Candidates: escalated item 2, and
+  the two dormant exploratory-data-analysis seeds in Deferred Items above.
+- The ceremony loop is PAUSED (`.planning/loop-logs/.paused`). Resuming needs both the
+  flag removed and `$Branch` in `scripts/run-ceremony-firing.ps1` repointed.

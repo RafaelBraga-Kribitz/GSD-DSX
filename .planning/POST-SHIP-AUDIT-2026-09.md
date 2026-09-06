@@ -7,6 +7,8 @@ findings_raw: 28
 findings_confirmed_real: 26
 findings_applied: 21
 findings_escalated: 2
+findings_escalated_resolved: 1   # metric-direction inversion, fixed in v2.4.1 (07d3db0)
+findings_escalated_open: 1       # calibration-corpus coverage, needs a scope decision
 findings_investigated_and_dropped: 2
 ---
 
@@ -132,6 +134,17 @@ shared the same file, so the total distinct fix locations is 10 files.)*
 ## Escalated for operator decision (2) — not touched, need your call
 
 ### 1. DSX-ML-051/060/061 silently invert their verdict for lower-is-better metrics
+
+> **RESOLVED in v2.4.1 (2026-09-06, commit `07d3db0`).** Fixed as an operator-approved
+> patch release. Scope correction found while fixing it: **DSX-ML-053 was affected
+> too** (its margin-over-baseline is negative for an improving error metric), so the
+> fix covers four codes, not the three listed below. Adds an optional
+> `model.metric_direction` field; absent, blank or unrecognised all resolve to
+> `higher_is_better`, preserving every existing verdict. Zero codes minted,
+> catalogue still 276, full suite 1524 OK. One limitation deliberately left open and
+> documented in code, tests and template: a misspelled direction is not reported,
+> because catching it needs a new `DSX-SPEC-*` code and a mint is irreversible under
+> D-06. The original finding is kept below unedited, as the record of what was found.
 
 `dsx/checks/ml.py`'s baseline-beat check (`DSX-ML-051`) and overfit check
 (`DSX-ML-060`/`061`) both do raw numeric comparisons that hard-code
