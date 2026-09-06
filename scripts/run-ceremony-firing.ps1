@@ -40,6 +40,9 @@ $Repo   = 'C:\Users\Benutzer1\Dev\AI\gsd-dsx'
 # and the working tree disagree, something unexpected has happened and a headless
 # firing must not guess.
 $Branch = 'gsd/v2.6.0-exploration-depth'
+# Model for the headless firing itself (GSD subagents are routed by model_profile).
+# See the comment above the `claude -p` call for why this is pinned here.
+$Model  = 'opus'
 $LogDir = Join-Path $Repo '.planning\loop-logs'
 $Lock   = Join-Path $LogDir '.firing.lock'
 $Backoff = Join-Path $LogDir '.backoff-until'
@@ -331,7 +334,18 @@ of any previous firing. Everything you need to know is on disk.
   try {
     # --dangerously-skip-permissions is required: a headless run has no human to
     # answer a permission prompt, so without it the firing stalls and does nothing.
+    #
+    # --model is pinned on purpose (2026-09-06). Without it the firing inherits the
+    # `model` key of ~/.claude/settings.json, which is whatever the operator last
+    # chose with /model in an interactive session. The v2.6 open firing died in five
+    # seconds that way: the interactive session had selected a Fable-tier model, and
+    # the npm `claude` on this machine's PATH (2.1.218) refuses it ("version 2.1.251
+    # or newer is required"). The loop's model is a recorded decision of this script,
+    # not a side effect of the operator's last terminal session. `opus` is the alias
+    # the brief's routing table names for orchestration-grade work; change it here,
+    # with a Log line, never via /model.
     & claude -p $prompt `
+        --model $Model `
         --permission-mode bypassPermissions `
         --dangerously-skip-permissions 2>&1 |
       ForEach-Object { $_.ToString() } |
