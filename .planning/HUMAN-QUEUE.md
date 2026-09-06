@@ -20,14 +20,42 @@ a persona round and records loudly):
 
 ## Open
 
-(none yet — S0-3 will file the v2.6 D-05 citation evidence pack as HQ-40.)
+### HQ-40 — v2.6 D-05 citation evidence pack (filed 2026-09-06 by S0-3; UNSIGNED — needs a human primary-source read)
+
+**What this is.** The loop PREPARED the evidence for every citation a v2.6 minted
+check would carry. Per D-05 the loop may prepare but **must not sign** — a citation
+is authentic only when a human confirms it *at its locator*. Until then each row's
+primary-source claim is UNVERIFIED. **Non-blocking for Phases 25–26.** Blocks: the
+Hyndman & Fan row blocks nothing gate-side (it is a definition test, not a mint) but
+Phase 25's plan must pin the type; the Kaufman row blocks **S3-1** (Phase 27); the
+Wilkinson/JARS row blocks **S4-1** (Phase 28); the Gail & Simon row blocks **S5-1**
+(Phase 29). A row answered in isolation unblocks only its phase.
+
+**How to answer.** For each row, read the cited locator and mark the primary-source
+claim **CONFIRMED** (optionally correcting the locator/wording) or **REJECTED** (the
+source does not state the claim → the phase falls back to the structural criterion
+alone with the citation demoted to context, or mints nothing). An interactive Claude
+session then records the verdict in the phase's docstring `# D-05:` marker and
+`_D05_ALLOWLIST_CODES`, and checks this item off.
+
+| # | Citation (as the code will render it) | Locator to read | Exact claim the code cites | Confirmed by the loop (secondary / mechanical) | UNVERIFIED — needs your read |
+|---|---|---|---|---|---|
+| 40a | Hyndman, R. J. & Fan, Y. (1996). *Sample Quantiles in Statistical Packages.* The American Statistician **50(4)**: 361–365. | The paper's Table 1 / the nine sample-quantile type definitions; and CPython docs for `statistics.quantiles` (Python 3.12). | `statistics.quantiles(method='exclusive')` (the stdlib default the profiler uses) computes the Hyndman & Fan **type 6** sample quantile; `method='inclusive'` computes **type 7**. Phase 25 pins whichever it uses (default = exclusive = type 6). | On Python 3.12.10, `quantiles([1..10], n=4)` = `[2.75, 5.5, 8.25]` (exclusive) and `[3.25, 5.5, 7.75]` (inclusive) — reproducible reference values; the CPython docs describe "exclusive"/"inclusive" **without naming an H&F type number**. | That "exclusive = type 6" and "inclusive = type 7" **in the Hyndman & Fan (1996) taxonomy** — the paper's own type numbering. The docs do not assert it; only the paper does. Confirm the type number the profiler's method maps to. |
+| 40b | Kaufman, S., Rosset, S., Perlich, C. & Stitelman, O. (2012). *Leakage in Data Mining: Formulation, Detection, and Avoidance.* ACM TKDD **6(4)**, Article 15. | The TKDD 6(4) article 15 front matter (author list) + its *legitimacy* definition. | A feature is **legitimate** for a prediction iff its value would be available at the moment of prediction; a feature whose value depends on the outcome window is a leak regardless of its name. (Phase 27's `feature_provenance` / `available_at` check enforces exactly this as a declaration.) | `references/leakage-taxonomy.md` already states this rule in DSX's own words; `LEAKAGE_PATTERNS` (10 name patterns) demonstrably does **not** catch a pre-joined innocuously-named column — the gap the citation attaches a primary source to. | The **author list and year at the TKDD locator** (the 2011 KDD conference version and the 2012 TKDD journal version differ — the code must cite the one actually read), and that the legitimacy condition is stated as above in that source. |
+| 40c | Wilkinson, L. & the Task Force on Statistical Inference (1999). *Statistical Methods in Psychology Journals: Guidelines and Explanations.* American Psychologist **54(8)**: 594–604. | The "Effect Sizes" / results-reporting guidance section. | Primary results must report an effect-size magnitude and its interval, not significance alone — the operational basis for requiring a claimed magnitude to trace to a computed test (Phase 28). | DSX already enforces the adjacent rule (`DSX-STA-012` fires on a reported test with no effect size); Phase 28's check is the text-to-declared-number overlap (`DSX-REP-061` precedent), not a recomputation. | **Which of the two candidates states the *operational* rule** the check enforces (this one **or** 40d), read at the locator. If neither states it operationally, record that and the check falls back to the structural criterion with the citation as context. |
+| 40d | Appelbaum, M. et al. (2018). *Journal Article Reporting Standards for Quantitative Research in Psychology (APA JARS–Quant).* American Psychologist **73(1)**: 3–25. | The JARS–Quant reporting tables for inferential results. | Every reported inferential claim must be accompanied by the estimate, its precision (interval), and the test it derives from. | Same as 40c — the DSX mechanism is a declared cross-reference, not a computed test. | The **author list** and whether JARS–Quant, rather than 40c, is the cleaner locator for the operational rule. Pick exactly one of 40c/40d for the minted code (or neither → structural-only). |
+| 40e | Gail, M. & Simon, R. (1985). *Testing for Qualitative Interactions between Treatment Effects and Patient Subsets.* Biometrics **41(2)**: 361–372. | The definition of a *qualitative* (crossover) interaction. | A **qualitative interaction** exists when a treatment's effect is of **opposite sign** across pre-declared subsets — the published definition of "this subgroup is harmed while the average benefits" (Phase 29's `subgroup_harm` declaration criterion). | `dsx/checks/metrics.py` confirms `DSX-MET-030/031` fire only when ALL / ≥HALF of segments oppose the aggregate, so a single minority segment (1-of-4) is structurally uncaught today — the real gap Phase 29 measures. The **test statistic itself is never computed on the gate path** (D-02); only the definition is enforced as a declaration. | That Gail & Simon (1985) **states the opposite-sign-across-subsets definition** at this locator, and the author list / pages. |
+
+**Scope note.** The Phase 29 *documented public case* where an average benefit masked
+subgroup harm (REQ-P29-02) is a **Phase 29 research deliverable**, not part of this
+pack; if research finds a case whose authenticity needs a human read, that arrives as
+a separate queue item at S5-2. "Not found" is a valid, recorded outcome.
 
 ## Will be added by the loop when reached
 
-- S0-3: the v2.6 D-05 citation evidence pack (Hyndman & Fan 1996 quantile type;
-  Kaufman et al. 2012 legitimacy condition; Wilkinson & TFSI 1999 / APA JARS–Quant
-  2018; Gail & Simon 1985 qualitative interaction). Non-blocking for Phases 25–26;
-  blocks S3-1, S4-1 and S5-1 for the rows each phase's code would cite.
+- ~~S0-3: the v2.6 D-05 citation evidence pack~~ — **FILED as HQ-40 (2026-09-06)**,
+  see Open above. Non-blocking for Phases 25–26; the Kaufman/Wilkinson-or-JARS/Gail
+  rows block S3-1, S4-1 and S5-1 respectively.
 - Phase 25/26/27/28/29/30 end-of-phase security sign-off + UAT rounds (batched per
   phase; non-blocking until S7-2).
 - D-06 numbering veto windows for any code Phases 27–29 mint, and for any number

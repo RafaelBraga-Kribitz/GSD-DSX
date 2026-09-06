@@ -58,7 +58,7 @@ read + structural criterion + `# D-05:` test marker + exact-code allowlist entry
   (`gen-finding-catalogue.py --check` "current" + 276 rows counted). Two cosmetic
   discrepancies noted (scope's `time_column` is the profile's `time.column`, not a
   DQ assertion key; `source_path` omitted from §2 list) — neither touches a gate.
-- [ ] S0-3 File the **v2.6 D-05 citation evidence pack** to HUMAN-QUEUE as one item:
+- [x] S0-3 File the **v2.6 D-05 citation evidence pack** to HUMAN-QUEUE as one item:
   Hyndman & Fan 1996 (which type `statistics.quantiles` implements — with the
   Python documentation locator); Kaufman et al. 2012 TKDD (legitimacy condition;
   confirm the author list at the locator); Wilkinson & TFSI 1999 and APA JARS–Quant
@@ -66,7 +66,11 @@ read + structural criterion + `# D-05:` test marker + exact-code allowlist entry
   qualitative-interaction definition). Per-citation table: locator, the exact claim
   the code will cite, confirmed-by-loop vs UNVERIFIED-for-human split. **Do not sign
   — D-05 is a human read.** The documented subgroup-harm case is a Phase 29 research
-  deliverable, not part of this pack.
+  deliverable, not part of this pack. **DONE 2026-09-06** — filed as HQ-40 (5 rows
+  40a–40e), UNSIGNED. Confirmed-by-loop column grounded on live measurement (Python
+  3.12.10 `quantiles` reference values; `LEAKAGE_PATTERNS`=10 name-only; MET-030/031
+  all/≥half thresholds); primary-source claims left UNVERIFIED for the human read.
+  Blocks recorded row-by-row (Kaufman→S3-1, Wilkinson/JARS→S4-1, Gail&Simon→S5-1).
 
 ## S1 — Phase 25: Hermetic profile depth (3 requirements)
 
@@ -178,3 +182,4 @@ entries here; older entries move to `LOOP-LEDGER-ARCHIVE.md` (never deleted).
 2026-09-06T22:20Z | milestone-open (follow-up) | First firing (22:04Z) died in 5 s: the headless `claude -p` inherited the interactive session's `/model` choice (a Fable-tier model) via ~/.claude/settings.json, and the npm `claude` on the task's PATH is 2.1.218, which refuses it. Fixed in the wrapper, not in settings: `scripts/run-ceremony-firing.ps1` now pins `--model $Model` ($Model = 'opus', the brief's orchestration-grade alias), proven with a PROBE-OK on the same binary. The loop's model is now a recorded decision of the script, independent of the operator's terminal. Next = S0-1. | scripts/run-ceremony-firing.ps1; .planning/loop-logs/firing-20260906-220427.log
 2026-09-06T22:35Z | S0-1 | DONE — GSD state confirmed at v2.6 against repo. Reconciled ledger vs repo first: HEAD `4905e32` on `gsd/v2.6.0-exploration-depth`, up to date with origin, only operator-local untracked files — ledger accurate, no correction. STATE.md fm + `init.milestone-op` (v2.6 / 6 phases / 0 complete) + empty `.planning/phases/` all agree. Next = S0-2. | ledger S0-1 evidence
 2026-09-06T22:50Z | S0-2 | DONE — scope re-verified live, executable as written; no re-scoping round. 13 §2 premises re-measured (profiler still shallow-only; dq.py vocab+codes frozen; 5 skills 0 read-cues; LEAKAGE_PATTERNS=10; MET-030 all-oppose / MET-031 >=half so 1-of-4 fires neither → P29 gap real; corpus 39/15; §6.5 ids hold items 7/8/9; catalogue LIVE=276; spec count=42). 18/18 reqs still-valid, 0 already-satisfied, 0 contradicted. 2 cosmetic scope-table nits noted. Next = S0-3. | .planning/v2.6-SCOPE-RECHECK.md
+2026-09-06T23:02Z | S0-3 | DONE — D-05 citation evidence pack filed as HQ-40 (rows 40a–40e), UNSIGNED per D-05. Loop prepared the confirmed-by-loop split on live evidence only (Python 3.12.10 quantile reference values; LEAKAGE_PATTERNS name-only; MET thresholds); every primary-source claim left UNVERIFIED for the human read. Non-blocking for P25–26; Kaufman→S3-1, Wilkinson/JARS→S4-1, Gail&Simon→S5-1. **S0 bootstrap complete; next = S1-1 (Phase 25 discuss).** | HUMAN-QUEUE.md HQ-40
