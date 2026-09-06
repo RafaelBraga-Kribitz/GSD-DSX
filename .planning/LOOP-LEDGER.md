@@ -44,7 +44,7 @@ read + structural criterion + `# D-05:` test marker + exact-code allowlist entry
   percent: 0`; `init.milestone-op` → `milestone_version: v2.6, phase_count: 6,
   completed_phases: 0, all_phases_complete: false`; `.planning/phases/` holds only
   `.gitkeep`.
-- [ ] S0-2 Re-verify the scope against the live tree before planning on it:
+- [x] S0-2 Re-verify the scope against the live tree before planning on it:
   per-requirement verdict table (still-valid / already-satisfied / contradicted)
   written to `.planning/v2.6-SCOPE-RECHECK.md`. Premises to re-confirm from
   V2.6-SCOPE.md §2: the profiler's output keys; the DQ assertion vocabulary; the
@@ -52,7 +52,12 @@ read + structural criterion + `# D-05:` test marker + exact-code allowlist entry
   read step; `LEAKAGE_PATTERNS` count; `DSX-MET-030/031` thresholds; the corpus
   counts (39 / 15) and harness obligations; `_SECTION_65_ITEM_IDS` holds items 7, 8,
   9; live catalogue count re-measured (do NOT assume 276). Gate: the recheck file
-  with evidence.
+  with evidence. **DONE 2026-09-06** — `.planning/v2.6-SCOPE-RECHECK.md`: 13 §2
+  premises re-measured, all confirmed; 18/18 requirements still-valid (5 conditional
+  per D-13), 0 already-satisfied, 0 contradicted. Live catalogue = 276
+  (`gen-finding-catalogue.py --check` "current" + 276 rows counted). Two cosmetic
+  discrepancies noted (scope's `time_column` is the profile's `time.column`, not a
+  DQ assertion key; `source_path` omitted from §2 list) — neither touches a gate.
 - [ ] S0-3 File the **v2.6 D-05 citation evidence pack** to HUMAN-QUEUE as one item:
   Hyndman & Fan 1996 (which type `statistics.quantiles` implements — with the
   Python documentation locator); Kaufman et al. 2012 TKDD (legitimacy condition;
@@ -172,3 +177,4 @@ entries here; older entries move to `LOOP-LEDGER-ARCHIVE.md` (never deleted).
 2026-09-06T20:45Z | milestone-open | v2.6 opened interactively by operator direction (HQ-39, reversing HQ-38): branch `gsd/v2.6.0-exploration-depth` cut from `main` at `d2f0140`; v2.4 loop artifacts archived to `.planning/milestones/v2.4-LOOP-LEDGER*.md` and `v2.4-HUMAN-QUEUE.md`; LOOP-BRIEF/LEDGER/QUEUE rewritten; REQUIREMENTS.md (18) + ROADMAP.md (Phases 25–30) + PROJECT.md + STATE.md written; wrapper `$Branch` repointed; `.paused` removed. Next = S0-1. | V2.6-SCOPE.md; REQUIREMENTS.md
 2026-09-06T22:20Z | milestone-open (follow-up) | First firing (22:04Z) died in 5 s: the headless `claude -p` inherited the interactive session's `/model` choice (a Fable-tier model) via ~/.claude/settings.json, and the npm `claude` on the task's PATH is 2.1.218, which refuses it. Fixed in the wrapper, not in settings: `scripts/run-ceremony-firing.ps1` now pins `--model $Model` ($Model = 'opus', the brief's orchestration-grade alias), proven with a PROBE-OK on the same binary. The loop's model is now a recorded decision of the script, independent of the operator's terminal. Next = S0-1. | scripts/run-ceremony-firing.ps1; .planning/loop-logs/firing-20260906-220427.log
 2026-09-06T22:35Z | S0-1 | DONE — GSD state confirmed at v2.6 against repo. Reconciled ledger vs repo first: HEAD `4905e32` on `gsd/v2.6.0-exploration-depth`, up to date with origin, only operator-local untracked files — ledger accurate, no correction. STATE.md fm + `init.milestone-op` (v2.6 / 6 phases / 0 complete) + empty `.planning/phases/` all agree. Next = S0-2. | ledger S0-1 evidence
+2026-09-06T22:50Z | S0-2 | DONE — scope re-verified live, executable as written; no re-scoping round. 13 §2 premises re-measured (profiler still shallow-only; dq.py vocab+codes frozen; 5 skills 0 read-cues; LEAKAGE_PATTERNS=10; MET-030 all-oppose / MET-031 >=half so 1-of-4 fires neither → P29 gap real; corpus 39/15; §6.5 ids hold items 7/8/9; catalogue LIVE=276; spec count=42). 18/18 reqs still-valid, 0 already-satisfied, 0 contradicted. 2 cosmetic scope-table nits noted. Next = S0-3. | .planning/v2.6-SCOPE-RECHECK.md
