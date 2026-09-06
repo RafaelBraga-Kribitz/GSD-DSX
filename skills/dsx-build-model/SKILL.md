@@ -34,7 +34,11 @@ The sequence is not stylistic. Each step makes the next one checkable.
 
 4. **Choose the primary metric before training.** For an imbalanced target,
    accuracy and ROC-AUC both flatter. Use PR-AUC or balanced accuracy. For
-   regression, pair R² with an error metric in the target's own units.
+   regression, pair R² with an error metric in the target's own units. If that
+   primary metric is an error measure — RMSE, MAE, MAPE, log loss — declare
+   `model.metric_direction: lower_is_better`. The gate compares scores but does
+   not guess which way they point, so leaving it out makes a halved error read
+   as a loss against the baseline.
 
 5. **Build features inside a pipeline.** Every transform fitted on the training
    fold only. This is not a style preference — a scaler fitted on the full frame

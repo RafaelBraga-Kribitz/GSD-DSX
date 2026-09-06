@@ -81,6 +81,43 @@ SCORE_SOURCES = frozenset({"cv_mean", "holdout", "nested_cv", "best_fold", "unkn
 # valid in the other.
 SELECTION_BASES = frozenset({"train", "validation", "test", "cv_same_fold", "nested_cv"})
 
+# v2.4.1: which way `results.model_score`, `baseline_score`, `train_score` and
+# `test_score` point. Every comparison of two scores in this module used to
+# assume a larger number is better -- true for accuracy, ROC-AUC and F1, and
+# exactly inverted for the error metrics conventional in `regression` and
+# `forecasting` work (RMSE, MAE, MAPE, log loss), both of which are members of
+# `spec.ML_TASKS`. Under that assumption a model that halved its baseline's
+# error fired DSX-ML-051 CRITICAL "does not beat its baseline", while a model
+# with twice the error passed silently; DSX-ML-060/061 swapped verdicts the
+# same way.
+#
+# This is a DECLARATION, never an inference. The gate does not read
+# `model.primary_metric`'s name and look the orientation up: a name-based
+# lookup is the two-stage "inspect the values, then choose the rule" pattern
+# D-01/D-02 prohibit, and it would silently mis-handle any metric outside the
+# table. The analyst states the direction, exactly as they state the task.
+METRIC_DIRECTIONS = frozenset({"higher_is_better", "lower_is_better"})
+
+
+def _lower_is_better(model: dict) -> bool:
+    """Read the declared score orientation off the model block.
+
+    Absent, blank, or outside `METRIC_DIRECTIONS` all resolve to
+    higher-is-better, which is the behaviour every specification had before
+    this field existed -- so no already-passing spec changes its verdict.
+
+    The out-of-vocabulary fallback is deliberate and its limitation is
+    recorded rather than hidden: a misspelling (`lower_is_beter`) is not
+    reported. Catching it needs a new `DSX-SPEC-*` code, because each sibling
+    `model.*` field owns its own "is not recognised" code (DSX-SPEC-050 for
+    task, -051 for split) and the model block has no generic one. A code mint
+    is irreversible under D-06 and is a deliberate numbering decision, so it
+    is not folded in here. Falling back to the historical default leaves a
+    misdeclared spec exactly where it already was -- it adds no new hazard,
+    and it cannot be used to skip a check, because every check still runs.
+    """
+    return normalize(model.get("metric_direction", "")) == "lower_is_better"
+
 
 def check(spec: dict) -> Report:
     report = Report(check="ml")
@@ -746,7 +783,17 @@ def _check_baseline(model: dict, spec: dict, report: Report) -> None:
         report.ok(f"baseline declared ({baseline}); scores not yet reported")
         return
 
-    if model_score <= baseline_score:
+    # v2.4.1: `margin` is "how much better than baseline", so it is positive
+    # whenever the model wins, whichever way the metric points. Every downstream
+    # comparison (the verdict below, `lift`, and DSX-ML-053's margin-versus-fold-
+    # spread test) reads that one oriented quantity rather than re-deriving the
+    # direction, so they cannot drift apart.
+    lower_better = _lower_is_better(model)
+    baseline_margin = (
+        (baseline_score - model_score) if lower_better else (model_score - baseline_score)
+    )
+
+    if baseline_margin <= 0:
         report.add(
             "DSX-ML-051",
             "CRITICAL",
@@ -757,7 +804,7 @@ def _check_baseline(model: dict, spec: dict, report: Report) -> None:
         )
         return
 
-    lift = (model_score - baseline_score) / abs(baseline_score) if baseline_score else float("inf")
+    lift = baseline_margin / abs(baseline_score) if baseline_score else float("inf")
     report.ok(f"model beats baseline by {lift:.1%}")
 
     # Phase 11.1 (REQ-P11.1-05): score provenance. Blank source reads as "".
@@ -810,7 +857,11 @@ def _check_baseline(model: dict, spec: dict, report: Report) -> None:
     spread = margin = None
     if len(parsed_fold_scores) >= 2:
         spread = max(parsed_fold_scores) - min(parsed_fold_scores)
-        margin = model_score - baseline_score
+        # v2.4.1: the direction-oriented margin computed above, not a fresh
+        # subtraction. Re-deriving it here is what let this comparison keep the
+        # bigger-is-better assumption after the verdict above stopped making it.
+        # `spread` needs no orientation: it is a range, positive either way.
+        margin = baseline_margin
         # Strictly less-than: a margin exactly equal to the spread does not
         # fire. Do not widen this to <= without a reason.
         if margin < spread:
@@ -1041,7 +1092,14 @@ def _check_overfit(spec: dict, report: Report) -> None:
     test = as_number(get(spec, "results.test_score"))
     if train is None or test is None:
         return
-    gap = train - test
+    # v2.4.1: `gap` is "how much worse the test score is than the train score",
+    # so it is positive for the ordinary overfit signature whichever way the
+    # metric points. On an error metric that signature is train error far BELOW
+    # test error, which the old unconditional `train - test` scored negative and
+    # therefore reported as DSX-ML-061 leakage; the genuinely suspicious case
+    # (test error implausibly below train error) was reported as overfitting.
+    lower_better = _lower_is_better(section(spec, "model"))
+    gap = (test - train) if lower_better else (train - test)
     if gap > OVERFIT_GAP_THRESHOLD:
         report.add(
             "DSX-ML-060",

@@ -184,6 +184,14 @@ analysis:
 #   preprocessing_fit_on: train_only
 #   resampling_applied_to: train_only
 #   primary_metric: pr_auc
+#   # Optional; defaults to higher_is_better, which is how every score was read
+#   # before this field existed. Set it to lower_is_better whenever the primary
+#   # metric is an error measure (rmse, mae, mape, log_loss) -- otherwise the
+#   # baseline verdict (DSX-ML-051) and the overfitting pair (DSX-ML-060/061)
+#   # read a better model as worse. The gate never guesses the direction from
+#   # the metric's name: that would be the inspect-then-decide pattern D-01/D-02
+#   # prohibit, so it is declared here like any other closed vocabulary.
+#   metric_direction: higher_is_better  # higher_is_better | lower_is_better
 #   secondary_metrics: []
 #   baseline: majority_class
 #   positive_rate: null
