@@ -108,6 +108,19 @@ written profile.
   finding catalogue now holds **276 codes**, grown additively from 275 with all
   three frozen snapshots (Phase-12 at 256, v2.2's set, v2.3's set) unmutated.
   Full detail archived under `.planning/milestones/v2.4-*`.
+- **v2.4.1 and v2.5.0 — SHIPPED 2026-09-06** (tags `v2.4.1` on `07d3db0`, `v2.5.0`
+  on `ad43ec6`), both executed interactively by operator direction rather than
+  through the ceremony. v2.4.1 fixed an inverted verdict in four ML checks for
+  lower-is-better metrics via a declared `model.metric_direction`. v2.5.0 closed the
+  post-ship audit's last escalated item — every one of the 21 `DSX-VIZ-*` codes is
+  now the declared target of a known-bad fixture (19 added; corpus 20 → 39), with a
+  LOW stratum, positive MEDIUM/LOW guards and a family-wide every-code-has-a-fixture
+  invariant — fixed the installer self-test (which had failed on every fresh install
+  since Phase 10) and its trail leak, re-synced the installed skill and agent copies,
+  and recorded the project's engagement with *The AI Data Scientist*
+  (arXiv:2508.18113) in `docs/literature/`. Catalogue unchanged at **276**. Full
+  suite 1528 OK. **Development is paused** after v2.5.0 while the project is used for
+  the operator's portfolio work; no milestone is open.
 
 ## Shipped Milestone: v2.0.0 DSX Validity Frame (shipped 2026-08-28)
 
@@ -400,6 +413,9 @@ requirements are defined via `/gsd-new-milestone`.)
 | **v2.4-03** FT Visual Vocabulary's nine-category axis is attributed, not vendored (D-3) | The "FT content is MIT-licensed" claim was false — the FT explicitly reserves its content in writing, twice, in the same repo whose code license is MIT. **Post-ship audit finding (2026-09):** the FT's own repo turns out to be internally inconsistent about this — the poster image itself prints a conflicting CC BY-SA 4.0 notice in its own footer, confirmed by direct inspection. D-3's outcome is unaffected either way, since it relies on neither license claim (own descriptions only, nothing copied) | Delivered Phase 22 — own descriptions written per category; no FT prose or poster PDF copied |
 | **v2.4-04** `dual_axis_line`'s ban cites Muth 2018 "as amended July 2026" and is scoped to general audiences (D-4) | Datawrapper publicly reversed its dual-axis position in July 2026, carving out expert (finance) audiences; the ban now stands as DSX's own general-audience position rather than an appeal to a since-softened claim | Delivered Phase 22 (citation), corrected into the shipped tree at v2.4 close-out after an independent re-check found it had not actually landed in `dsx/checks/viz.py` at the time of Phase 22's own security sign-off |
 | **v2.4-05** Independent license re-verification of the house-default style's vendored palette before ship, not just its citation | Urban Institute's own README states GPL-3.0; the Apache-2.0 claim traced to GitHub's detector misreading unmodified Jekyll-theme boilerplate. 3 of 6 vendored hex colors were ColorBrewer's PRGn/PuOr stops, mislabeled as "Urban shades." Same discipline as v2.3-03, applied to a license claim instead of a citation | Delivered at ship-prep (HQ-33) — palette unchanged (bare hex values are not independently copyrightable regardless of license), header and two planning docs corrected to state the real license position and split attribution |
+| **v2.5-01** Every `DSX-VIZ-*` code in the catalogue must be some known-bad fixture's declared target | Phase 24 scoped fixtures to the codes minted in v2.4 (GA-2/S4-1), a deliberate ruling the post-ship audit escalated rather than reopened unilaterally; the operator reversed it by direction on 2026-09-06. A phase-level ruling, not a D-table entry, so no `REVERSALS.md` record is owed. Enforcing the family-wide rule as a test makes the next minted visualization code owe its fixture in the same commit | Delivered v2.5.0 — 19 fixtures, a LOW stratum, MEDIUM/LOW positive guards, `test_every_viz_code_in_the_catalogue_is_some_fixtures_declared_target` |
+| **v2.5-02** The installer self-test gates each example spec at all four points, in order, in its own scratch copy, and never ships a decision trail | `gate ship` alone exits 2 by design wherever `gate plan` never ran (Phase 10's pre-registration lock), so the single-point self-test had failed every fresh install since then; the payload copy also carried the gitignored `examples/DECISIONS.jsonl`, whose digests trip `DSX-PRE-041` in the installed copy. README already stated the every-gate contract; the code now keeps it | Delivered v2.5.0 — `install.mjs::selfTest` mirrors `scripts/check.sh`; verified on a fresh overlay; `node install.mjs --check` passes |
+| **v2.5-03** *The AI Data Scientist*'s three positive ideas stay on the §6.5 backlog until their D-13 entry conditions are met | Items 7 (feature provenance), 8 (magnitude residual) and 9 (subgroup-harm declaration) carry explicit, falsifiable entry conditions and the corpus holds zero qualifying cases; promoting on the strength of a paper is the estimate-driven promotion D-13 forbids and D-14 would log as `SELF-001` | Recorded 2026-09-06 in `docs/literature/the-ai-data-scientist.md`, one row per item with its standing |
 
 ## Non-goals
 

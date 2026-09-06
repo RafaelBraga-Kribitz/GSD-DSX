@@ -3,10 +3,10 @@ gsd_state_version: 1.0
 milestone: v2.4
 milestone_name: Visual Excellence
 status: completed
-stopped_at: v2.4 fully shipped -- all 4 phases complete, milestone audit PASSED, archived.
-last_updated: "2026-09-03T22:26:46.347Z"
-last_activity: 2026-09-03
-last_activity_desc: Milestone v2.4 completed and archived
+stopped_at: v2.5.0 shipped interactively (ad43ec6); development paused by operator decision; loop paused.
+last_updated: "2026-09-06T20:30:00.000Z"
+last_activity: 2026-09-06
+last_activity_desc: v2.4.1 and v2.5.0 shipped interactively; development paused
 progress:
   total_phases: 4
   completed_phases: 4
@@ -19,15 +19,16 @@ current_phase_name: null
 
 # Project state
 
-**Status:** v2.4 milestone complete, archived, and shipped (tag `v2.4.0`)
+**Status:** v2.4 milestone complete, archived, and shipped (tag `v2.4.0`); follow-on releases **v2.4.1** (`07d3db0`) and **v2.5.0** (`ad43ec6`) shipped interactively on 2026-09-06 — development paused by operator decision while the project is used for portfolio work
 **Progress:** [████████████████████] v2.4 — 4/4 phases shipped (21 viz vocabulary reconciliation → 22 catalog spine/uncertainty/heuristic → 23 style/snippet layer → 24 portfolio exemplar/calibration)
 **Predecessors:** v2.3 Test Catalog SHIPPED 2026-09-02 (tag `v2.3.0`); v2.2 Analytic Surface SHIPPED 2026-08-29 (tag `v2.2.0`); v2.0.0 DSX Validity Frame SHIPPED 2026-08-28 (tag `v2.1.0`). Archives under `.planning/milestones/`.
 
 **Loop control:** the autonomous ceremony drove this milestone through S5-4 (milestone
 audit PASSED) headlessly; S5-5/S5-6 (completion + ship) ran interactively per
 `.planning/LOOP-LEDGER.md`'s own design and are now complete (merge commit `89f77eb`,
-tag `v2.4.0`). The loop is idle until `/gsd-new-milestone` opens v2.5 and repoints
-`LOOP-BRIEF.md`/`LOOP-LEDGER.md`.
+tag `v2.4.0`). The loop is **PAUSED** (`.planning/loop-logs/.paused`): v2.4.1 and v2.5.0
+were shipped interactively without it, and no milestone is open. Resuming needs the flag
+removed and `$Branch` in `scripts/run-ceremony-firing.ps1` repointed at a new branch.
 
 **Usage-limit posture (proven 2026-08-30 through 2026-09-02):** the firing
 wrapper (`scripts/run-ceremony-firing.ps1`) detects limit hits, backs off
@@ -45,15 +46,16 @@ See: .planning/PROJECT.md (updated 2026-09-03; Key Decisions table there is the 
 **Core value:** Gate analytical work on validity before the data is touched.
 **Current focus:** v2.4 Visual Excellence is complete (4/4 phases, 16/16 requirements,
 milestone audit PASSED), archived to `.planning/milestones/`, and shipped (merge
-commit `89f77eb`, tag `v2.4.0`). Next milestone not yet opened — start via
-`/gsd-new-milestone`.
+commit `89f77eb`, tag `v2.4.0`). Two follow-on releases shipped interactively on
+2026-09-06 (v2.4.1, v2.5.0 — see MILESTONES.md). No milestone is open and none is
+planned: the project now enters use as the operator's portfolio toolkit.
 
 ## Current Position
 
 Phase: Milestone v2.4 complete and shipped
 Plan: —
-Status: Shipped (S5-6 done); next milestone not yet opened
-Last activity: 2026-09-03 — Milestone v2.4 completed, archived, and shipped
+Status: v2.5.0 shipped (`ad43ec6`, tag `v2.5.0`); development paused
+Last activity: 2026-09-06 — v2.4.1 and v2.5.0 shipped interactively; loop paused
 
 ## Performance Metrics
 
@@ -100,29 +102,34 @@ actually open:
 
 ## Session Continuity
 
-Last session: 2026-09-03/04 (interactive session — drained HUMAN-QUEUE HQ-27..HQ-37, ran
-`/gsd-complete-milestone v2.4`, shipped v2.4.0, then ran a post-ship self-audit)
-Stopped at: v2.4 archived and shipped; `/gsd-complete-milestone`'s two standing defects
-hand-corrected (MILESTONES.md accomplishment bullets were truncated/garbage text, not
-prose; STATE.md's generated body contradicted its own 100%-complete frontmatter — this
-STATE.md body itself briefly carried a second instance of that exact defect afterward,
-correctly stating "ship pending" for a few edits after the ship had actually happened;
-caught and fixed by the post-ship audit). A comprehensive post-ship audit (26 confirmed
-findings across doc/code consistency, citations, and test coverage) was applied — see
-`.planning/POST-SHIP-AUDIT-2026-09.md` for the full report and 2 items escalated for
-operator decision (a metric-direction bug in DSX-ML-051/060/061, and a calibration-corpus
-coverage gap across 17 of 21 DSX-VIZ codes).
-Resume file: None — the next firing (or `/gsd-new-milestone`) starts fresh.
+Last session: 2026-09-06 (interactive — operator direction: close the audit's last
+escalated item, verify the EDA brief was fully implemented, map *The AI Data Scientist*
+onto the project, then pause development). Shipped v2.5.0 (`ad43ec6`): 19 DSX-VIZ
+fixtures + LOW stratum + every-VIZ-code invariant; installer self-test fixed (it had
+failed on every fresh install since Phase 10 and shipped the gitignored decision trail);
+installed skill/agent copies re-synced; `docs/literature/the-ai-data-scientist.md`; EDA
+brief committed at `.planning/research/EDA-enhancement-brief.md`. Earlier the same day:
+v2.4.1 (`07d3db0`), the metric-direction fix.
+Stopped at: development paused by operator decision. Post-ship audit: 2 escalated, 2
+resolved, 0 open. Full suite 1528 OK; catalogue 276.
+Resume file: None.
 
 ## Operator Next Steps
 
-- ~~Escalated item 1 (metric-direction inversion)~~ — FIXED and shipped as **v2.4.1**
-  (2026-09-06, commit `07d3db0`). Four checks, not three: DSX-ML-053 was affected too.
-- Escalated item 2 (calibration-corpus coverage — 17 of 21 `DSX-VIZ-*` codes have never
-  fired against a constructed fixture, including the family's only CRITICAL code
-  `DSX-VIZ-020`) is still open. It needs a scope decision, because closing it reopens
-  Phase 24's deliberate "fixtures per new code" ruling.
-- Start the next milestone with `/gsd-new-milestone`. Candidates: escalated item 2, and
-  the two dormant exploratory-data-analysis seeds in Deferred Items above.
-- The ceremony loop is PAUSED (`.planning/loop-logs/.paused`). Resuming needs both the
+- **Development is paused.** The project is in use for portfolio work; nothing is
+  scheduled. The loop stays PAUSED (`.planning/loop-logs/.paused`); resuming needs the
   flag removed and `$Branch` in `scripts/run-ceremony-firing.ps1` repointed.
+- **One open decision, recorded 2026-09-06, default applied:** SEED-002 (grow
+  `dsx profile` so the EDA protocol's step 1–4 numbers become hermetic artifacts) stays
+  dormant. Its D-13 entry condition — real phases producing `EDA.md` files that gates
+  ignore — is not yet met because no real phase has run; the portfolio work will produce
+  the evidence. Promote only if those files show agents skipping the insight steps.
+- **Three paper-derived backlog items** (brief §6.5 items 7, 8, 9) stay on the backlog
+  with their entry conditions; see `docs/literature/the-ai-data-scientist.md`.
+- **Two kinds of local file are deliberately untracked:** `references/The AI Data
+  Scientist.md` (a full-text clipping of an arXiv paper — do not commit; the literature
+  record cites the arXiv listing) and the `.claude/`, `.vscode/`, `graphify-out/`
+  operator files.
+- The stale agent worktree at `.claude/worktrees/agent-a9a54fddf75afc02f` (branch
+  `worktree-agent-a9a54fddf75afc02f`) is fully merged into `main`; `git worktree remove`
+  it at leisure.

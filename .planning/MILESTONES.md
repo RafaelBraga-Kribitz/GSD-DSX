@@ -1,5 +1,52 @@
 # Milestones
 
+## v2.5.0 Corpus Coverage and Install Integrity (Shipped: 2026-09-06)
+
+**Phases completed:** none — executed interactively in a single operator session on
+2026-09-06, by operator direction, rather than through the scheduled ceremony. Scope:
+the post-ship audit's last escalated item, plus the two things a first-time installer
+hits. Tag `v2.5.0` on commit `ad43ec6`.
+
+**Delivered:** nineteen known-bad fixtures, one per pre-existing `DSX-VIZ-*` code that
+had never fired against a constructed case, so every one of the family's 21 codes is
+now the declared target of a fixture — including `DSX-VIZ-020`, the family's only
+CRITICAL (truncated y-axis). Each is a clean good-corpus control plus exactly one
+visual with exactly one defect, measured at every gate point before its harness entry
+was written; none fires an incidental code, and every doctrine citation in the
+postmortems was re-read at its source that day (one planned fixture was replaced when
+verification showed its rule was DSX's own, not Wilke's). The corpus harness gained a
+LOW stratum, positive fire-and-named guards for the MEDIUM and LOW strata, a dedicated
+CRITICAL guard for the truncated-axis fixture, and an invariant that every catalogued
+`DSX-VIZ-*` code is some fixture's declared target — Phase 24's "fixtures per new
+code" ruling, now enforced family-wide. The installer's self-test, which had failed on
+every fresh install since Phase 10 (it ran `gate ship` alone where the pre-registration
+lock exits 2 by design) and shipped the gitignored decision trail into the overlay, now
+mirrors `scripts/check.sh` and the README's own every-gate claim. Installed skill and
+agent copies were re-synced (nine skills and three agents had drifted). A literature
+record (`docs/literature/the-ai-data-scientist.md`) maps arXiv:2508.18113 idea by idea
+onto what DSX adopted, what it catches, and what stays on the D-13 backlog. The EDA
+enhancement brief the seeds cite was committed at `.planning/research/`.
+
+Zero codes minted (catalogue 276); known-bad corpus 20 → 39 specs; full suite 1524 →
+1528 OK; `scripts/check.sh` green. Development is paused after this release while the
+project is used for portfolio work.
+
+---
+
+## v2.4.1 (Shipped: 2026-09-06)
+
+Patch release on commit `07d3db0`, tag `v2.4.1`. Four machine-learning checks
+(`DSX-ML-051`, `-053`, `-060`, `-061`) compared scores as if a larger number were always
+better, which inverted every verdict for error metrics (RMSE, MAE, log loss): a model
+that halved its baseline's error fired "does not beat baseline" and a worse one passed.
+Fixed by an optional, declared `model.metric_direction` (never inferred from the metric
+name — the inspect-then-decide pattern D-01/D-02 ban); absent or unrecognised resolves
+to the historical behaviour, proven byte-identical by test. Sixteen tests written
+failing first. Zero codes minted. Found by the post-ship self-audit
+(`.planning/POST-SHIP-AUDIT-2026-09.md`, escalated item 1).
+
+---
+
 ## v2.4 Visual Excellence (Shipped: 2026-09-03)
 
 **Phases completed:** 4 phases (21–24), 11 plans
