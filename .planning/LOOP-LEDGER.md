@@ -36,10 +36,14 @@ read + structural criterion + `# D-05:` test marker + exact-code allowlist entry
 
 ## S0 — Milestone bootstrap
 
-- [ ] S0-1 Verify GSD state points at v2.6 (STATE.md frontmatter `milestone: v2.6`,
+- [x] S0-1 Verify GSD state points at v2.6 (STATE.md frontmatter `milestone: v2.6`,
   `current_phase: 25`, progress 0/6) and `gsd-tools query init.milestone-op`
   resolves it (6 phases, 0 complete); `.planning/phases/` is empty (v2.4 dirs
-  archived). Gate: command output pasted.
+  archived). Gate: command output pasted. **DONE 2026-09-06** — STATE.md fm
+  `milestone: v2.6` / `current_phase: 25` / `total_phases: 6, completed_phases: 0,
+  percent: 0`; `init.milestone-op` → `milestone_version: v2.6, phase_count: 6,
+  completed_phases: 0, all_phases_complete: false`; `.planning/phases/` holds only
+  `.gitkeep`.
 - [ ] S0-2 Re-verify the scope against the live tree before planning on it:
   per-requirement verdict table (still-valid / already-satisfied / contradicted)
   written to `.planning/v2.6-SCOPE-RECHECK.md`. Premises to re-confirm from
@@ -167,3 +171,4 @@ entries here; older entries move to `LOOP-LEDGER-ARCHIVE.md` (never deleted).
 
 2026-09-06T20:45Z | milestone-open | v2.6 opened interactively by operator direction (HQ-39, reversing HQ-38): branch `gsd/v2.6.0-exploration-depth` cut from `main` at `d2f0140`; v2.4 loop artifacts archived to `.planning/milestones/v2.4-LOOP-LEDGER*.md` and `v2.4-HUMAN-QUEUE.md`; LOOP-BRIEF/LEDGER/QUEUE rewritten; REQUIREMENTS.md (18) + ROADMAP.md (Phases 25–30) + PROJECT.md + STATE.md written; wrapper `$Branch` repointed; `.paused` removed. Next = S0-1. | V2.6-SCOPE.md; REQUIREMENTS.md
 2026-09-06T22:20Z | milestone-open (follow-up) | First firing (22:04Z) died in 5 s: the headless `claude -p` inherited the interactive session's `/model` choice (a Fable-tier model) via ~/.claude/settings.json, and the npm `claude` on the task's PATH is 2.1.218, which refuses it. Fixed in the wrapper, not in settings: `scripts/run-ceremony-firing.ps1` now pins `--model $Model` ($Model = 'opus', the brief's orchestration-grade alias), proven with a PROBE-OK on the same binary. The loop's model is now a recorded decision of the script, independent of the operator's terminal. Next = S0-1. | scripts/run-ceremony-firing.ps1; .planning/loop-logs/firing-20260906-220427.log
+2026-09-06T22:35Z | S0-1 | DONE — GSD state confirmed at v2.6 against repo. Reconciled ledger vs repo first: HEAD `4905e32` on `gsd/v2.6.0-exploration-depth`, up to date with origin, only operator-local untracked files — ledger accurate, no correction. STATE.md fm + `init.milestone-op` (v2.6 / 6 phases / 0 complete) + empty `.planning/phases/` all agree. Next = S0-2. | ledger S0-1 evidence
