@@ -280,6 +280,29 @@ discipline:**
 
 **v3.0 (models) remains future scope** — nothing here touches it.
 
+## Current Milestone: v2.6 Exploration Depth and Backlog Evidence
+
+**Goal:** Make the exploration artifact hash-bound and consumed, then test the
+three paper-derived backlog items against real corpus cases instead of leaving
+their entry conditions unmet by default.
+
+**Target features:**
+- `dsx profile` produces the explore protocol's step 1–4 numbers (five-number
+  summaries, zeros/negatives, categorical shares, daily volume and edge ratios,
+  rows per unit, weekly base rate) — additive, byte-stable, cited definitions,
+  reference-value tests; still a producer, never a gate (Phase 25).
+- Per-skill read contracts so five downstream skills consume `EDA.md` front-matter
+  and the profile, with a repo-integrity test on the named keys (Phase 26).
+- Three known-bad corpus cases for brief §6.5 items 7, 8 and 9 — feature-origin-only
+  leak, magnitude no test computed, subgroup harm under a prescriptive
+  recommendation — each measured live first; a live miss is closed by a D-05-cited
+  declaration check, a caught case is recorded with no mint (Phases 27–29).
+- Calibration re-baseline with the new cases classified (Phase 30).
+
+Opened 2026-09-06 by operator direction (HUMAN-QUEUE HQ-39, reversing HQ-38 on
+SEED-002 the same day). Scope: `.planning/research/V2.6-SCOPE.md`. Branch
+`gsd/v2.6.0-exploration-depth`; ships as `v2.6.0`.
+
 ## Requirements
 
 ### Validated
@@ -315,11 +338,12 @@ discipline:**
 
 ### Active
 
-(None — all v2.0.0, v2.2, v2.3, and v2.4 requirements shipped and validated.
-Full requirement sets with final traceability are archived at
-`.planning/milestones/v2.0.0-REQUIREMENTS.md`, `v2.2-REQUIREMENTS.md`,
-`v2.3-REQUIREMENTS.md`, and `v2.4-REQUIREMENTS.md`. The next milestone's
-requirements are defined via `/gsd-new-milestone`.)
+v2.6 Exploration Depth and Backlog Evidence — 18 requirements in
+`.planning/REQUIREMENTS.md`: REQ-P25-01 … -03 (hermetic profile depth), REQ-P26-01 …
+-03 (per-skill read contracts), REQ-P27-01 … -03 (feature-origin-only leak case),
+REQ-P28-01 … -03 (magnitude-no-test case), REQ-P29-01 … -03 (subgroup-harm case),
+REQ-P30-01 … -03 (calibration re-baseline). Earlier milestones' requirement sets are
+archived at `.planning/milestones/*-REQUIREMENTS.md`.
 
 ### Out of Scope
 
@@ -448,5 +472,5 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-09-03 — v2.4 Visual Excellence milestone complete and shipped
-(tag `v2.4.0`). Next milestone not yet opened — start via `/gsd-new-milestone`.*
+*Last updated: 2026-09-06 — v2.6 Exploration Depth and Backlog Evidence opened by
+operator direction (HQ-39) after v2.4.1 and v2.5.0 shipped interactively the same day.*

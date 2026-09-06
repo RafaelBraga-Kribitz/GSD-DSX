@@ -57,6 +57,15 @@ deferred rather than dropped.
 Also still deferred, and gated separately: growing `dsx profile` so these numbers become
 hermetic artifacts gates can read — see [[grow-data-profile-hermetic-eda-artifacts]].
 
+## Status update — 2026-09-06 (E-26 promoted into v2.6 by operator direction)
+
+The deferred enhancement E-26 (per-skill read contracts) is Phase 26 of milestone
+v2.6 Exploration Depth and Backlog Evidence (REQ-P26-01 … -03), opened 2026-09-06 by
+operator direction (HUMAN-QUEUE HQ-39). Its entry condition — `templates/EDA.md`
+stable across two real phases — was not met; the operator chose to build it now so the
+portfolio phases consume the EDA artifact from day one. E-27 … E-31 stay deferred with
+their entry conditions unchanged.
+
 ## Notes
 
 Locked decisions carried from the brief: correlation funnel is optional (skip-with-reason), after steps 1–4 only, training rows only on predictive work, exploratory label with `comparisons_looked_at` incremented, never a causal claim, never a sealed figure. Distinguish correlation funnel from conversion funnel (ordered step drop-off — a separate optional routine). Missingness maps onto the existing `validity_frame.missingness` vocabulary (MCAR / MAR / MNAR / not_assessed); do not invent a parallel vocabulary. EDA.md stays ungated in this pass.

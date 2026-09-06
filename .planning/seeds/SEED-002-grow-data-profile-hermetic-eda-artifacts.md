@@ -1,6 +1,6 @@
 ---
 id: SEED-002
-status: dormant
+status: promoted
 planted: 2026-08-21
 planted_during: v2.0.0 Phase 11.1.1 (Detection-code hardening)
 trigger_when: v2.0.0 Phase 12 catch-rate published AND real phases produce EDA.md files that gates ignore
@@ -31,7 +31,16 @@ Grow `DATA-PROFILE.yaml` / `dsx profile` so daily volume, structured missingness
 - `.planning/research/EDA-enhancement-brief.md` — verdict table and the "do not add in this pass" list
 - [[deepen-dsx-explore-data-eda-protocol]] (SEED-001) — the agent-protocol half that runs first
 
-## Status update — 2026-09-06 (HQ-38: stays dormant, by operator decision)
+## Status update — 2026-09-06, later the same day (HQ-39: PROMOTED into v2.6 by operator direction)
+
+Reversed within hours of HQ-38, by the operator, when the next milestone's scope was
+fixed: this seed is Phase 25 of v2.6 Exploration Depth and Backlog Evidence
+(REQ-P25-01 … -03). The scope keeps the seed's own boundary — the profiler is a
+producer, `dsx/checks/dq.py` and the assertion vocabulary stay frozen, zero codes —
+and adds the read contracts (Phase 26) so the new numbers have a consumer. The
+entry-condition note below is kept as the record of what was decided first.
+
+## Status update — 2026-09-06 (HQ-38: stays dormant, by operator decision — superseded above)
 
 Re-examined at the close of development (v2.5.0). Half of the entry condition now
 holds — Phase 12's catch rate has been published since v2.0.0 — but the other half does
