@@ -74,13 +74,20 @@ read + structural criterion + `# D-05:` test marker + exact-code allowlist entry
 
 ## S1 — Phase 25: Hermetic profile depth (3 requirements)
 
-- [ ] S1-1 Discuss (assumptions mode + persona round); `25-CONTEXT.md` written.
+- [x] S1-1 Discuss (assumptions mode + persona round); `25-CONTEXT.md` written.
   Must settle: the exact new key names and nesting in `DATA-PROFILE.yaml`
   (additive under `columns[]`, `time`, plus new `unit` and `target` blocks); the
   quantile type and `sd` definition; the `--unit`/`--target` CLI flags; the
   byte-stability guard's shape (regenerate the two committed example profiles and
   diff on existing keys); the explicit exclusions (null cross-tabs, outlier
-  taxonomy, invariants, robust metric recomputes).
+  taxonomy, invariants, robust metric recomputes). **DONE 2026-09-06** —
+  `.planning/phases/25-hermetic-profile-depth/25-CONTEXT.md`: 4 decisions (D-01
+  nesting; D-02 stat defs; D-03 CLI flags; D-04 guard) + named exclusions + full
+  edge vocabulary + fixture reference values. Architect + Statistician persona
+  round (opus, parallel); 3 divergences resolved by rigour>reliability>flexibility
+  (quantile=inclusive/type-7; edge-period grain=ISO-week; share_at_hour_00=null on
+  date-only). Zero codes; guard = Option B fixtures + recorded REQ-P25-02
+  interpretation (flagged for plan-gate ratification).
 - [ ] S1-2 Plan (plan-checker must pass). Research verifies the Hyndman & Fan type
   mapping against the Python docs and the paper before any test asserts a number.
 - [ ] S1-3 Execute all plans (profiler growth; fixture CSVs + reference-value tests;
@@ -183,3 +190,5 @@ entries here; older entries move to `LOOP-LEDGER-ARCHIVE.md` (never deleted).
 2026-09-06T22:35Z | S0-1 | DONE — GSD state confirmed at v2.6 against repo. Reconciled ledger vs repo first: HEAD `4905e32` on `gsd/v2.6.0-exploration-depth`, up to date with origin, only operator-local untracked files — ledger accurate, no correction. STATE.md fm + `init.milestone-op` (v2.6 / 6 phases / 0 complete) + empty `.planning/phases/` all agree. Next = S0-2. | ledger S0-1 evidence
 2026-09-06T22:50Z | S0-2 | DONE — scope re-verified live, executable as written; no re-scoping round. 13 §2 premises re-measured (profiler still shallow-only; dq.py vocab+codes frozen; 5 skills 0 read-cues; LEAKAGE_PATTERNS=10; MET-030 all-oppose / MET-031 >=half so 1-of-4 fires neither → P29 gap real; corpus 39/15; §6.5 ids hold items 7/8/9; catalogue LIVE=276; spec count=42). 18/18 reqs still-valid, 0 already-satisfied, 0 contradicted. 2 cosmetic scope-table nits noted. Next = S0-3. | .planning/v2.6-SCOPE-RECHECK.md
 2026-09-06T23:02Z | S0-3 | DONE — D-05 citation evidence pack filed as HQ-40 (rows 40a–40e), UNSIGNED per D-05. Loop prepared the confirmed-by-loop split on live evidence only (Python 3.12.10 quantile reference values; LEAKAGE_PATTERNS name-only; MET thresholds); every primary-source claim left UNVERIFIED for the human read. Non-blocking for P25–26; Kaufman→S3-1, Wilkinson/JARS→S4-1, Gail&Simon→S5-1. **S0 bootstrap complete; next = S1-1 (Phase 25 discuss).** | HUMAN-QUEUE.md HQ-40
+2026-09-06T22:42Z | clock-note | The three S0 log timestamps ran ~45m fast (S0-3 says 23:02Z but committed 22:15Z UTC per `git %cI`). Reverting to real UTC from `date -u`, verifiable against commit times; this and later entries may read earlier than the inflated S0-3 line. | git log %cI
+2026-09-06T22:42Z | S1-1 | DONE — Phase 25 discuss complete; `25-CONTEXT.md` written (`.planning/phases/25-hermetic-profile-depth/`). Persona round: dsx-analysis-architect + dsx-statistician (opus, parallel, grounded so no re-exploration). Converged on nesting, CLI shape, guard, edge conventions; 3 divergences resolved by rigour>reliability>flexibility — (1) quantile method = **inclusive/H&F type-7** (byte-agrees with pandas/numpy/R the sceptical reader cross-checks; overrides HQ-40 40a's parenthetical exclusive lean — human read confirms the type *number*); (2) edge-period grain = **ISO-week** not day (day-grain fires "partial" near-constantly on event extracts); (3) `share_at_hour_00` = **null on date-only** (excludes date-only from denominator). D-04 guard = Option B (fixture CSVs + reference-value/determinism/pre-existing-key-golden tests; example profiles byte-invariant), with a recorded REQ-P25-02 interpretation flagged for S1-2 plan-gate ratification (operationalises, does not reword). Zero codes minted → no HQ D-06 veto item owed; design decisions vetoable via CONTEXT (silence=accept). Next = S1-2 (Phase 25 plan; pins the H&F type against the paper). | .planning/phases/25-hermetic-profile-depth/25-CONTEXT.md
