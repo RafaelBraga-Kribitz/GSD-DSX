@@ -119,7 +119,7 @@ Resume file: None.
 - **Development is paused.** The project is in use for portfolio work; nothing is
   scheduled. The loop stays PAUSED (`.planning/loop-logs/.paused`); resuming needs the
   flag removed and `$Branch` in `scripts/run-ceremony-firing.ps1` repointed.
-- **One open decision, recorded 2026-09-06, default applied:** SEED-002 (grow
+- **Decided by the operator 2026-09-06 (HQ-38, Option A):** SEED-002 (grow
   `dsx profile` so the EDA protocol's step 1–4 numbers become hermetic artifacts) stays
   dormant. Its D-13 entry condition — real phases producing `EDA.md` files that gates
   ignore — is not yet met because no real phase has run; the portfolio work will produce

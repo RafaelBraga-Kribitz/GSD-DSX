@@ -20,8 +20,9 @@ a persona round and records loudly):
 
 ## Open
 
-(none — HQ-37 answered 2026-09-03, v2.4.0 shipped; see Answered
-below. The v2.4 ceremony is complete. Nothing is blocking.)
+(none — HQ-37 answered 2026-09-03, v2.4.0 shipped; HQ-38 answered 2026-09-06 after
+the interactive v2.4.1/v2.5.0 releases; see Answered below. Development is paused;
+nothing is blocking.)
 
 ## Will be added by the loop when reached
 
@@ -133,6 +134,25 @@ the tree and correctly left it untouched (neither committed nor discarded),
 logging the observation instead. This is the correct behavior, not a bug to fix.
 
 ## Answered
+
+### HQ-38 — SEED-002 (grow `dsx profile` into hermetic EDA artifacts): promote now or hold? (answered 2026-09-06 — Option A, hold)
+
+**Operator verdict: Option A — SEED-002 stays dormant.** Presented 2026-09-06 after
+v2.5.0 shipped, as the one decision the "make sure the EDA brief was fully
+implemented" request left open. The brief's agent-protocol half shipped on 2026-08-21
+(quick task `260821-d6h`); the gated half — growing `dsx profile` so the protocol's
+step 1–4 numbers (rows-per-unit, five-number summaries, zeros and negatives, daily
+volume, categorical tails) become tool-produced, hash-bound artifacts — is SEED-002,
+whose D-13 entry condition is *real phases producing `EDA.md` files that gates ignore*.
+No real phase has run yet, so the condition is unmet; the operator's forthcoming
+portfolio work is exactly the evidence it asks for. Option B (grow the profiler now,
+no new codes) was offered and declined: it would ship on a forecast, which D-13
+forbids, and widens the `DATA-PROFILE.yaml` schema every future fixture carries.
+
+**Recorded in:** `.planning/seeds/SEED-002-…md` (status note), `.planning/STATE.md`
+(Operator Next Steps). **Re-open when:** the portfolio phases' `EDA.md` files show
+agents skipping the insight steps or inventing profile numbers — then this seed is the
+milestone, per its own breadcrumbs.
 
 ### HQ-37 — v2.4 close-out: `/gsd-complete-milestone` + ship (answered 2026-09-03 — DONE)
 

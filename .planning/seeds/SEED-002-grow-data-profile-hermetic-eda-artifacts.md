@@ -31,6 +31,17 @@ Grow `DATA-PROFILE.yaml` / `dsx profile` so daily volume, structured missingness
 - `.planning/research/EDA-enhancement-brief.md` — verdict table and the "do not add in this pass" list
 - [[deepen-dsx-explore-data-eda-protocol]] (SEED-001) — the agent-protocol half that runs first
 
+## Status update — 2026-09-06 (HQ-38: stays dormant, by operator decision)
+
+Re-examined at the close of development (v2.5.0). Half of the entry condition now
+holds — Phase 12's catch rate has been published since v2.0.0 — but the other half does
+not: no real phase has yet produced an `EDA.md` that a gate ignored, because no real
+phase has run. The operator was offered growing the profiler now (no new codes, stdlib
+only, hash-bound numbers) and chose to hold (`HUMAN-QUEUE.md` HQ-38, Option A): shipping
+on a forecast of the portfolio workload is the estimate-driven promotion D-13 forbids.
+Re-open when the portfolio phases' `EDA.md` files show agents skipping the insight steps
+or inventing profile numbers; that evidence, not a plan, promotes this seed.
+
 ## Notes
 
 Optional companion to SEED-001. SEED-001 deepens the agent protocol without gates; this seed is the later, gated half. If SEED-001 never ships or EDA.md never gets produced in practice, this seed should be discarded rather than promoted.
