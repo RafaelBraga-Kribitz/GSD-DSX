@@ -23,7 +23,7 @@ flowchart TD
     subgraph GLOBAL["Global — install once, every project sees it"]
         A["~/.gsd/capabilities/dsx<br/>gates, dsx CLI, IT001-IT040 catalogue"]
         B["~/.claude/agents/<br/>6 dsx agents"]
-        C["~/.claude/skills/<br/>9 dsx skills"]
+        C["~/.claude/skills/<br/>14 dsx skills"]
     end
 
     subgraph PROJECT["Per project — must be applied to each one"]

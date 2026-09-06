@@ -7,8 +7,8 @@ findings_raw: 28
 findings_confirmed_real: 26
 findings_applied: 21
 findings_escalated: 2
-findings_escalated_resolved: 1   # metric-direction inversion, fixed in v2.4.1 (07d3db0)
-findings_escalated_open: 1       # calibration-corpus coverage, needs a scope decision
+findings_escalated_resolved: 2   # metric-direction inversion, fixed in v2.4.1 (07d3db0); calibration-corpus coverage, closed 2026-09-06 (v2.5.0)
+findings_escalated_open: 0
 findings_investigated_and_dropped: 2
 ---
 
@@ -173,6 +173,27 @@ analysis relies on these two checks. A minimal fix: add an optional
 existing test suite), and branch both check functions on it.
 
 ### 2. Calibration corpus: 17 of 21 DSX-VIZ finding codes have never fired against a constructed positive case
+
+> **RESOLVED 2026-09-06 (operator direction, shipped as v2.5.0).** Nineteen fixtures
+> added under `examples/known-bad/` — one per pre-existing `DSX-VIZ-*` code that had
+> never fired against a constructed case — so every one of the family's 21 codes is
+> now the declared target of a fixture, including `DSX-VIZ-020` (the family's only
+> CRITICAL, truncated y-axis) as a verify/ship point-scoped entry. Each fixture is a
+> clean good-corpus control plus exactly one visual carrying exactly one defect, and
+> each was measured at every gate point before its harness entry was written: none
+> fires any incidental code. The harness gained a LOW stratum (no LOW-tier code had a
+> fixture before), positive fire-and-named guards for the MEDIUM and LOW strata (the
+> MEDIUM stratum was previously a readout only — a fixture whose code stopped firing
+> would have lowered the catch rate without failing the suite), a dedicated CRITICAL
+> guard for the truncated-axis fixture, and an invariant that every `DSX-VIZ-*` code
+> in the catalogue is some fixture's declared target — Phase 24's "fixtures per new
+> code" ruling, now enforced for the whole family. Every doctrine citation the new
+> postmortems carry was re-read against its source on 2026-09-06; where a criterion
+> is DSX's own (the five-slice and seven-hue cuts, the takeaway heuristic) the
+> postmortem says so. Phase 24's GA-2/S4-1 scoping was a phase-level ruling, not a
+> D-table entry, so no `REVERSALS.md` record is owed; the operator's direction is
+> recorded in every fixture's postmortem. Suite 1528 OK. The original finding is kept
+> below unedited, as the record of what was found.
 
 The known-bad corpus (`examples/known-bad/`) has exactly 4 chart-defect
 fixtures, all added in Phase 24 (commit `5de04e9`). Tracing what each

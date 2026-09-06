@@ -562,6 +562,11 @@ class TestSpecStructure(unittest.TestCase):
         # updated from 19 to 23 in the same commit that adds them. Each is a copy of a
         # clean good-corpus control (which already declares a valid estimand.type) plus
         # exactly one bad visual, so all satisfy the same assertion.
+        # 2026-09-06 (post-ship audit, escalated item 2): the nineteen DSX-VIZ coverage
+        # fixtures (chart-relationship-undeclared through chart-alphabetical-ranking)
+        # are the twenty-fourth through forty-second; count updated from 23 to 42 in
+        # the same commit that adds them. Each is a copy of a clean good-corpus control
+        # plus exactly one bad visual, so all satisfy the same assertion.
         from dsx.loader import load
         from dsx.spec import ESTIMAND_TYPES
 
@@ -571,7 +576,7 @@ class TestSpecStructure(unittest.TestCase):
             + sorted((root / "examples" / "known-bad").glob("*-ANALYSIS-SPEC.yaml"))
             + sorted((root / "templates").glob("ANALYSIS-SPEC.yaml"))
         )
-        self.assertEqual(len(paths), 23, [str(p) for p in paths])
+        self.assertEqual(len(paths), 42, [str(p) for p in paths])
         bad = []
         for p in paths:
             estimand_type = load(str(p)).get("validity_frame", {}).get("estimand", {}).get("type")

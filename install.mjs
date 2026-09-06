@@ -79,6 +79,12 @@ function copyRecursive(from, to) {
     fs.mkdirSync(to, { recursive: true });
     for (const entry of fs.readdirSync(from)) {
       if (entry === '__pycache__' || entry === '.DS_Store' || entry.endsWith('.pyc')) continue;
+      // DECISIONS.jsonl is a local, gitignored decision trail that every `dsx gate`
+      // run appends to. Shipping the working tree's copy into the overlay carries
+      // its accumulated frame digests along, and DSX-PRE-041's identity-free floor
+      // (dsx/frame/prereg.py) then blocks the known-good spec at verify/ship in the
+      // installed copy — exactly what the self-test reported on 2026-09-06.
+      if (entry === 'DECISIONS.jsonl') continue;
       copyRecursive(path.join(from, entry), path.join(to, entry));
     }
     return;
@@ -221,11 +227,23 @@ in a mixed repository. Set dsx.require_spec true in a pure analytics project.
 }
 
 function selfTest(overlayRoot, python) {
-  const good = path.join(overlayRoot, 'examples', 'good-ANALYSIS-SPEC.yaml');
-  const bad = path.join(overlayRoot, 'examples', 'bad-ANALYSIS-SPEC.yaml');
-  const run = (spec) => {
+  // Mirrors scripts/check.sh, which is the same contract README states: the
+  // known-good spec passes every gate point and the known-bad spec is blocked
+  // by every gate point. Two things make "run `gate ship` once" the wrong shape:
+  //   - verify/ship reconcile the declared inference plan against the plan-time
+  //     frame lock that `gate plan` records in the decision trail
+  //     (dsx/frame/prereg.py). Against a directory where plan has never run,
+  //     ship exits 2 by design — so a fresh install used to report
+  //     "the known-good spec was rejected (exit 2)" before it had done anything
+  //     wrong. The four points therefore run in order.
+  //   - DSX-PRE-041's identity-free floor fires on any trail root recording more
+  //     than one frame digest, so the two specs are gated in separate scratch
+  //     copies of the installed examples/ tree and never share a trail.
+  const points = ['plan', 'execute', 'verify', 'ship'];
+  const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'gsd-dsx-selftest-'));
+  const run = (spec, point) => {
     try {
-      execFileSync(python, ['-m', 'dsx', 'gate', 'ship', '--spec', spec], {
+      execFileSync(python, ['-m', 'dsx', 'gate', point, '--spec', spec], {
         cwd: overlayRoot,
         env: { ...process.env, PYTHONPATH: overlayRoot },
         encoding: 'utf8',
@@ -236,13 +254,25 @@ function selfTest(overlayRoot, python) {
       return error.status ?? 2;
     }
   };
-  const goodCode = run(good);
-  const badCode = run(bad);
-  if (goodCode !== 0) {
-    return { ok: false, output: `the known-good spec was rejected (exit ${goodCode})` };
-  }
-  if (badCode !== 1) {
-    return { ok: false, output: `the known-bad spec was not blocked (exit ${badCode}, expected 1)` };
+  try {
+    for (const [label, expected] of [['good', 0], ['bad', 1]]) {
+      const copy = path.join(scratch, label);
+      copyRecursive(path.join(overlayRoot, 'examples'), copy);
+      removeIfPresent(path.join(copy, 'DECISIONS.jsonl'));
+      const spec = path.join(copy, `${label}-ANALYSIS-SPEC.yaml`);
+      for (const point of points) {
+        const code = run(spec, point);
+        if (code !== expected) {
+          const verb = expected === 0 ? 'was rejected' : 'was not blocked';
+          return {
+            ok: false,
+            output: `the known-${label} spec ${verb} at gate ${point} (exit ${code}, expected ${expected})`,
+          };
+        }
+      }
+    }
+  } finally {
+    removeIfPresent(scratch);
   }
   return { ok: true, output: '' };
 }

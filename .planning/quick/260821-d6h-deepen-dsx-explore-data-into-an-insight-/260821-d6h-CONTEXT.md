@@ -19,7 +19,7 @@ orchestrator against the live repo before writing.
 <decisions>
 ## Implementation Decisions
 
-### Constraint envelope (locked, from brief.md D-01/D-02 and EDA_enhancement_BRIEF.md)
+### Constraint envelope (locked, from brief.md D-01/D-02 and .planning/research/EDA-enhancement-brief.md)
 - Gate path stays stdlib-only; gates adjudicate declarations and never compute statistics.
 - No changes to `dsx/`, `dsx/checks/`, `dsx/profiler.py`, fixtures, or DATA-PROFILE schema.
 - No new `DSX-*` finding codes. No gate reads `EDA.md` in this pass.
@@ -86,7 +86,7 @@ imperative style of the skill, with named outputs and a skip condition per step.
 <canonical_refs>
 ## Canonical References
 
-- `EDA_enhancement_BRIEF.md` — the evaluation and the locked decisions this task honours
+- `.planning/research/EDA-enhancement-brief.md` — the evaluation and the locked decisions this task honours
 - `brief.md` — D-01 (stdlib-only gate path), D-02 (gates adjudicate declarations)
 - `templates/ANALYSIS-SPEC.yaml` — every spec field the protocol writes into
 - `references/question-taxonomy.md` — the five question types and licensed verbs

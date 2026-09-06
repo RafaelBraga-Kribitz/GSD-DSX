@@ -19,7 +19,7 @@ The current skill is a strong data-trust checklist (steps 1–4: shape, complete
 
 **Trigger:** v2.0.0 Phase 12 (calibration) has shipped, OR a new milestone whose scope includes exploration, agent skills, or DATA-PROFILE.
 
-Do not promote into v2.0.0: Phase 12 measures the catch rate of gates, and EDA skill text is not a gate. A skill-deepening quick task may run earlier (after 11.1.1 is idle) without touching the roadmap — see EDA_enhancement_BRIEF.md for the quick-task recipe.
+Do not promote into v2.0.0: Phase 12 measures the catch rate of gates, and EDA skill text is not a gate. A skill-deepening quick task may run earlier (after 11.1.1 is idle) without touching the roadmap — see .planning/research/EDA-enhancement-brief.md for the quick-task recipe.
 
 ## Scope Estimate
 
@@ -31,7 +31,7 @@ Do not promote into v2.0.0: Phase 12 measures the catch rate of gates, and EDA s
 - `references/data-quality-assertions.md` — documents which judgements stay agent-side
 - `brief.md` — decisions D-01 (gate path stdlib-only) and D-02 (gates adjudicate declarations, not statistics)
 - `capabilities/dsx/fragments/executor.md` — already carries the join-grain rule; should point at the EDA.md contract
-- `EDA_enhancement_BRIEF.md` — full evaluation, locked decisions, and the quick-task recipe
+- `.planning/research/EDA-enhancement-brief.md` — full evaluation, locked decisions, and the quick-task recipe
 - `C:\Users\Benutzer1\Dev\funnel_correlation_py` — reference implementation only (binarize → Pearson → tornado); never vendored into `dsx/`
 
 ## Status update — 2026-08-21

@@ -1437,6 +1437,32 @@ _EXPECTED_VAL_CODES: "dict[str, set[str]]" = {
     "chart-word-cloud-text-ANALYSIS-SPEC.yaml": set(),
     "chart-radar-multimetric-ANALYSIS-SPEC.yaml": set(),
     "chart-uncertainty-mark-misuse-ANALYSIS-SPEC.yaml": set(),
+    # Measured 2026-09-06 (post-ship audit escalated item 2, the nineteen DSX-VIZ
+    # coverage fixtures) against each fixture as committed: loaded via
+    # dsx.loader.load(), ran dsx.frame.val.check(spec), recorded
+    # {f.code for f in report.findings} — the empty set for all nineteen. Each is a
+    # copy of a clean good-corpus control (freq-count-installs or
+    # freq-continuous-timeontask, both measured empty in the same run) plus exactly
+    # one bad visual; the validity_frame is untouched, so no DSX-VAL-* code fires.
+    "chart-relationship-undeclared-ANALYSIS-SPEC.yaml": set(),
+    "chart-relationship-unrecognised-ANALYSIS-SPEC.yaml": set(),
+    "chart-correlation-drawn-as-line-ANALYSIS-SPEC.yaml": set(),
+    "chart-single-value-as-bar-ANALYSIS-SPEC.yaml": set(),
+    "chart-input-type-undeclared-ANALYSIS-SPEC.yaml": set(),
+    "chart-truncated-axis-bar-ANALYSIS-SPEC.yaml": set(),
+    "chart-axis-baseline-undeclared-ANALYSIS-SPEC.yaml": set(),
+    "chart-dual-axis-lines-ANALYSIS-SPEC.yaml": set(),
+    "chart-pie-nine-slices-ANALYSIS-SPEC.yaml": set(),
+    "chart-twelve-colour-lines-ANALYSIS-SPEC.yaml": set(),
+    "chart-red-green-only-ANALYSIS-SPEC.yaml": set(),
+    "chart-rainbow-heatmap-ANALYSIS-SPEC.yaml": set(),
+    "chart-takeaway-blank-ANALYSIS-SPEC.yaml": set(),
+    "chart-units-undeclared-ANALYSIS-SPEC.yaml": set(),
+    "chart-source-note-missing-ANALYSIS-SPEC.yaml": set(),
+    "chart-takeaway-repeats-name-ANALYSIS-SPEC.yaml": set(),
+    "chart-takeaway-without-magnitude-ANALYSIS-SPEC.yaml": set(),
+    "chart-estimates-without-uncertainty-ANALYSIS-SPEC.yaml": set(),
+    "chart-alphabetical-ranking-ANALYSIS-SPEC.yaml": set(),
 }
 
 

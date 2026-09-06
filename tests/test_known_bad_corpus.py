@@ -258,6 +258,19 @@ _TARGET_DEFECT_CODES: "dict[str, dict[str, str | frozenset[str]]]" = {
         "verify": frozenset({"DSX-CLM-020"}),
         "ship": frozenset({"DSX-CLM-020"}),
     },
+    # 2026-09-06 (post-ship audit, escalated item 2 — operator direction): the
+    # truncated-axis bad-CHART-choice fixture, the first fixture for the
+    # visualization family's ONLY CRITICAL code. `viz` is registered at verify/ship
+    # only (dsx/cli.py::GATE_PROFILES), so DSX-VIZ-020 fires at exactly those two
+    # points and structurally cannot fire at plan/execute — the same verify/ship-only
+    # point-scoped shape as post-hoc-procedure-switch's DSX-PRE-030 above. Its
+    # _EXPECTED_CAUGHT_DEFECTS entry is therefore empty (below), and
+    # test_truncated_axis_fixture_blocks_verify_and_ship_naming_viz_020_critical
+    # supplies the positive verify/ship direction the generic critical-threshold
+    # test cannot reach. Measured 2026-09-06 against a fresh
+    # tempfile.TemporaryDirectory() per gate point: plan/execute exit 0; verify/ship
+    # exit 1 with DSX-VIZ-020 as the only finding above INFO.
+    "chart-truncated-axis-bar": {"verify": "DSX-VIZ-020", "ship": "DSX-VIZ-020"},
 }
 
 
@@ -493,6 +506,37 @@ _EXPECTED_CAUGHT_DEFECTS: "dict[str, frozenset[str]]" = {
     "chart-word-cloud-text": frozenset(),
     "chart-radar-multimetric": frozenset(),
     "chart-uncertainty-mark-misuse": frozenset(),
+    # 2026-09-06 (post-ship audit, escalated item 2 — operator direction): the
+    # nineteen DSX-VIZ coverage fixtures, one per pre-existing visualization code
+    # that had never fired against a constructed case. Empty by design, not by
+    # omission, for the same reason as the Phase-24 chart fixtures above: the `viz`
+    # gate is registered at verify/ship only, so nothing this both-CRITICAL-points
+    # map could correctly claim fires at plan/execute for any of them — including
+    # chart-truncated-axis-bar, whose CRITICAL DSX-VIZ-020 fires at verify/ship and
+    # lives in _TARGET_DEFECT_CODES (the point-scoped shape). Each fixture's own
+    # catch lives in the tier map where it actually fires: _HIGH_TARGET_DEFECT_CODES,
+    # _MEDIUM_TARGET_DEFECT_CODES or _LOW_TARGET_DEFECT_CODES. All nineteen keys are
+    # required here solely so test_expected_caught_defects_keys_match_the_corpus_on_disk
+    # stays green.
+    "chart-relationship-undeclared": frozenset(),
+    "chart-relationship-unrecognised": frozenset(),
+    "chart-correlation-drawn-as-line": frozenset(),
+    "chart-single-value-as-bar": frozenset(),
+    "chart-input-type-undeclared": frozenset(),
+    "chart-truncated-axis-bar": frozenset(),
+    "chart-axis-baseline-undeclared": frozenset(),
+    "chart-dual-axis-lines": frozenset(),
+    "chart-pie-nine-slices": frozenset(),
+    "chart-twelve-colour-lines": frozenset(),
+    "chart-red-green-only": frozenset(),
+    "chart-rainbow-heatmap": frozenset(),
+    "chart-takeaway-blank": frozenset(),
+    "chart-units-undeclared": frozenset(),
+    "chart-source-note-missing": frozenset(),
+    "chart-takeaway-repeats-name": frozenset(),
+    "chart-takeaway-without-magnitude": frozenset(),
+    "chart-estimates-without-uncertainty": frozenset(),
+    "chart-alphabetical-ranking": frozenset(),
 }
 
 
@@ -533,6 +577,24 @@ _HIGH_TARGET_DEFECT_CODES: "dict[str, dict[str, str]]" = {
     "chart-gauge-single-kpi": {"verify": "DSX-VIZ-001", "ship": "DSX-VIZ-001"},
     "chart-word-cloud-text": {"verify": "DSX-VIZ-001", "ship": "DSX-VIZ-001"},
     "chart-radar-multimetric": {"verify": "DSX-VIZ-001", "ship": "DSX-VIZ-001"},
+    # 2026-09-06 (post-ship audit, escalated item 2 — operator direction): the eight
+    # DSX-VIZ coverage fixtures whose target code is HIGH. Each is a copy of a clean
+    # good-corpus control plus exactly one visual carrying exactly one defect, and
+    # each fires its target as the ONLY finding above INFO at verify/ship (no
+    # incidental DSX-VIZ-010/014, unlike the three banned-type fixtures above).
+    # chart-takeaway-blank is the corpus's first two-tier fixture: a blank takeaway
+    # makes _check_labelling emit DSX-VIZ-063 (HIGH, recorded here) AND DSX-VIZ-060
+    # (MEDIUM, recorded in _MEDIUM_TARGET_DEFECT_CODES) from the one blank field.
+    # DSX-VIZ-063's other branch (takeaway identical to the chart name) is isolated
+    # by chart-takeaway-repeats-name. Measured 2026-09-06, never guessed.
+    "chart-correlation-drawn-as-line": {"verify": "DSX-VIZ-012", "ship": "DSX-VIZ-012"},
+    "chart-single-value-as-bar": {"verify": "DSX-VIZ-013", "ship": "DSX-VIZ-013"},
+    "chart-dual-axis-lines": {"verify": "DSX-VIZ-030", "ship": "DSX-VIZ-030"},
+    "chart-red-green-only": {"verify": "DSX-VIZ-051", "ship": "DSX-VIZ-051"},
+    "chart-units-undeclared": {"verify": "DSX-VIZ-061", "ship": "DSX-VIZ-061"},
+    "chart-takeaway-blank": {"verify": "DSX-VIZ-063", "ship": "DSX-VIZ-063"},
+    "chart-takeaway-repeats-name": {"verify": "DSX-VIZ-063", "ship": "DSX-VIZ-063"},
+    "chart-estimates-without-uncertainty": {"verify": "DSX-VIZ-070", "ship": "DSX-VIZ-070"},
 }
 
 
@@ -550,6 +612,35 @@ _HIGH_TARGET_DEFECT_CODES: "dict[str, dict[str, str]]" = {
 # exactly like _HIGH_TARGET_DEFECT_CODES — the LIVE catch is never lifted from it (D-09).
 _MEDIUM_TARGET_DEFECT_CODES: "dict[str, dict[str, str]]" = {
     "chart-uncertainty-mark-misuse": {"verify": "DSX-VIZ-071", "ship": "DSX-VIZ-071"},
+    # 2026-09-06 (post-ship audit, escalated item 2 — operator direction): the eight
+    # DSX-VIZ coverage fixtures whose target code is MEDIUM, measured exactly as
+    # DSX-VIZ-071 above (under --block-on MEDIUM, reported beside the headline pair).
+    # chart-takeaway-blank also carries DSX-VIZ-063 HIGH — see _HIGH_TARGET_DEFECT_CODES.
+    "chart-relationship-undeclared": {"verify": "DSX-VIZ-010", "ship": "DSX-VIZ-010"},
+    "chart-relationship-unrecognised": {"verify": "DSX-VIZ-011", "ship": "DSX-VIZ-011"},
+    "chart-input-type-undeclared": {"verify": "DSX-VIZ-014", "ship": "DSX-VIZ-014"},
+    "chart-pie-nine-slices": {"verify": "DSX-VIZ-040", "ship": "DSX-VIZ-040"},
+    "chart-twelve-colour-lines": {"verify": "DSX-VIZ-050", "ship": "DSX-VIZ-050"},
+    "chart-rainbow-heatmap": {"verify": "DSX-VIZ-052", "ship": "DSX-VIZ-052"},
+    "chart-takeaway-blank": {"verify": "DSX-VIZ-060", "ship": "DSX-VIZ-060"},
+    "chart-takeaway-without-magnitude": {"verify": "DSX-VIZ-064", "ship": "DSX-VIZ-064"},
+}
+
+
+# Per-fixture LOW-tier target-defect declaration (2026-09-06, post-ship audit
+# escalated item 2 — operator direction): the three DSX-VIZ coverage fixtures whose
+# target code is LOW. No LOW-tier code had a fixture before these, so this is a
+# FIFTH map and a fifth readout, kept disjoint from the four above for the same
+# partition-integrity reason and measured the same way as the MEDIUM stratum, under
+# `--block-on LOW`. A LOW code blocks at no default gate threshold (GATE_THRESHOLDS:
+# plan/execute CRITICAL, verify/ship HIGH), so its catch can only be credited by
+# lowering the threshold in the measuring run; the readout is reported BESIDE the
+# (miss-rate, FPR) headline and never folded into it. A DECLARATION of intent, exactly
+# like the HIGH and MEDIUM maps — the LIVE catch is never lifted from it (D-09).
+_LOW_TARGET_DEFECT_CODES: "dict[str, dict[str, str]]" = {
+    "chart-axis-baseline-undeclared": {"verify": "DSX-VIZ-021", "ship": "DSX-VIZ-021"},
+    "chart-source-note-missing": {"verify": "DSX-VIZ-062", "ship": "DSX-VIZ-062"},
+    "chart-alphabetical-ranking": {"verify": "DSX-VIZ-080", "ship": "DSX-VIZ-080"},
 }
 
 
@@ -1925,6 +2016,51 @@ class TestKnownBadCorpus(unittest.TestCase):
             "catch must be a fourth readout beside the pair, never folded into it (Risk P1)",
         )
 
+        # ── 2026-09-06 (post-ship audit, escalated item 2): the live LOW verify/ship stratum ──
+        # A FIFTH readout reported BESIDE the (miss-rate, FPR) pair, NEVER folded into
+        # it. DSX-VIZ-021/062/080 are LOW and block at no default threshold, so every
+        # partition and stratum above is provably a no-op on them; this stratum re-runs
+        # the gate under `--block-on LOW` so the fired LOW produces exit 1 and the catch
+        # classifies. Every cell is derived LIVE via self._gate_findings(..., block_on=
+        # "LOW") and _classify_target_defect(..., severity="LOW") — never lifted from a
+        # stored map (D-09); _LOW_TARGET_DEFECT_CODES supplies only WHICH cell to expect.
+        low_points = ("verify", "ship")
+        low_present_denom = 0
+        low_present_caught = 0
+        low_detail: "dict[tuple[str, str], tuple[str, bool]]" = {}
+        for slug, points in _LOW_TARGET_DEFECT_CODES.items():
+            spec_path = CORPUS_DIR / f"{slug}{SPEC_SUFFIX}"
+            for point in low_points:
+                expected_code = points.get(point)
+                if not expected_code:
+                    continue
+                low_present_denom += 1
+                code, findings = self._gate_findings(spec_path, point, block_on="LOW")
+                problems = _classify_target_defect(
+                    slug, point, code, findings, _LOW_TARGET_DEFECT_CODES,
+                    severity="LOW",
+                )
+                caught = problems == []
+                low_present_caught += int(caught)
+                low_detail[(slug, point)] = (expected_code, caught)
+        self.assertGreater(
+            low_present_denom, 0,
+            "the LOW verify/ship stratum has no cells — the three LOW-tier DSX-VIZ "
+            "fixtures must be measured under --block-on LOW where their codes fire",
+        )
+        low_catch_rate = low_present_caught / low_present_denom
+        self.assertGreaterEqual(low_catch_rate, 0.0)
+        self.assertLessEqual(low_catch_rate, 1.0)
+        # Reported BESIDE the pair and cannot move it — the same invariance the HIGH
+        # and MEDIUM strata carry.
+        self.assertEqual(_headline((2, 5), (1, 4), (3, 10)), (0.25, 0.3))
+        self.assertEqual(_ABSENT_PARTITION_FLOOR, 3)
+        self.assertEqual(
+            headline, _headline(present, absent, fpr),
+            "the LOW verify/ship stratum moved the (miss-rate, FPR) pair — the LOW "
+            "catch must be a fifth readout beside the pair, never folded into it",
+        )
+
     def test_high_stratum_target_codes_fire_and_are_named(self):
         """The HIGH-tier sibling of test_target_defect_codes_fire_and_are_named
         (Phase 20-A, D-03/D-09): every entry in _HIGH_TARGET_DEFECT_CODES must be
@@ -1971,6 +2107,137 @@ class TestKnownBadCorpus(unittest.TestCase):
                         "a HIGH own-target code must be publicly declared an intended "
                         "defect (D-09)",
                     )
+
+    def _stratum_target_codes_fire_and_are_named(
+        self, tier_map: "dict[str, dict[str, str]]", severity: str
+    ) -> None:
+        """Shared body for the MEDIUM and LOW siblings of
+        test_high_stratum_target_codes_fire_and_are_named (2026-09-06, post-ship audit
+        escalated item 2). Every entry in ``tier_map`` must be positively verified
+        two ways: (1) it FIRES live at its mapped verify/ship point as a finding of
+        exactly ``severity``, and the gate exits 1 there under ``--block-on
+        <severity>`` — read from self._gate_findings, never from a ledger; (2) it is
+        NAMED as the intended defect in that slug's POSTMORTEM.md. Before this the
+        MEDIUM stratum was a readout only: a MEDIUM fixture whose code silently
+        stopped firing would have lowered the reported catch rate without failing the
+        suite. Also asserts the tier's codes are disjoint from _INCIDENTAL_GAP_CODES,
+        mirroring the HIGH test."""
+        self.assertTrue(tier_map, f"the {severity} tier map is empty")
+        for slug, points in tier_map.items():
+            postmortem = CORPUS_DIR / f"{slug}{POSTMORTEM_SUFFIX}"
+            self.assertTrue(
+                postmortem.is_file(),
+                f"{slug} has no POSTMORTEM to name its {severity} target code",
+            )
+            postmortem_text = postmortem.read_text(encoding="utf-8")
+            spec_path = CORPUS_DIR / f"{slug}{SPEC_SUFFIX}"
+            for point, code in points.items():
+                with self.subTest(slug=slug, point=point, code=code):
+                    self.assertNotIn(
+                        code, _INCIDENTAL_GAP_CODES,
+                        f"{code} is {slug}'s own {severity} target but also appears in "
+                        "_INCIDENTAL_GAP_CODES — a tier catch must never be laundered "
+                        "into the incidental allow-list (D-09)",
+                    )
+                    exit_code, findings = self._gate_findings(
+                        spec_path, point, block_on=severity
+                    )
+                    self.assertEqual(
+                        exit_code, 1,
+                        f"{slug} did not block at {point!r} under --block-on {severity}",
+                    )
+                    fired = {
+                        f["code"] for f in findings if f.get("severity") == severity
+                    }
+                    self.assertIn(
+                        code, fired,
+                        f"{slug}'s {severity} target {code} does not fire as a {severity} "
+                        f"finding at {point!r} — read live, not from a ledger",
+                    )
+                    self.assertIn(
+                        code, postmortem_text,
+                        f"{slug}'s {severity} target {code} is not named in its "
+                        "POSTMORTEM — an own-target code must be publicly declared an "
+                        "intended defect (D-09)",
+                    )
+
+    def test_medium_stratum_target_codes_fire_and_are_named(self):
+        """Positive guard for every _MEDIUM_TARGET_DEFECT_CODES entry (see the shared
+        body). Covers the Phase-24 DSX-VIZ-071 fixture, which previously had no
+        positive guard, and the eight MEDIUM coverage fixtures added 2026-09-06."""
+        self._stratum_target_codes_fire_and_are_named(_MEDIUM_TARGET_DEFECT_CODES, "MEDIUM")
+
+    def test_low_stratum_target_codes_fire_and_are_named(self):
+        """Positive guard for every _LOW_TARGET_DEFECT_CODES entry (see the shared
+        body) — the three LOW coverage fixtures added 2026-09-06."""
+        self._stratum_target_codes_fire_and_are_named(_LOW_TARGET_DEFECT_CODES, "LOW")
+
+    def test_truncated_axis_fixture_blocks_verify_and_ship_naming_viz_020_critical(self):
+        """The verify/ship positive direction for the visualization family's ONLY
+        CRITICAL code (2026-09-06, post-ship audit escalated item 2), copying the
+        shape of test_post_hoc_procedure_switch_fixture_blocks_verify_and_ship_naming_
+        pre_030 for the identical reason: `viz` is registered at verify/ship only, so
+        the generic critical-threshold test — which walks plan/execute alone — can
+        never reach the point where DSX-VIZ-020 fires. Asserts, per point: (1) exit 1;
+        (2) DSX-VIZ-020 among the CRITICAL findings; (3) DSX-VIZ-020 is the ONLY
+        CRITICAL/HIGH finding — the fixture is a clean control plus one defect, so any
+        other blocking code here would be over-blocking, not the encoded defect; and
+        (4) plan/execute produce no DSX-VIZ finding of any number, because the family
+        is not registered there.
+        """
+        fixture = CORPUS_DIR / "chart-truncated-axis-bar-ANALYSIS-SPEC.yaml"
+        for point in ("verify", "ship"):
+            with self.subTest(point=point):
+                code, findings = self._gate_findings(fixture, point)
+                self.assertEqual(code, 1)
+                critical = {f["code"] for f in findings if f["severity"] == "CRITICAL"}
+                self.assertIn("DSX-VIZ-020", critical)
+                blocking = {
+                    f["code"] for f in findings if f["severity"] in ("CRITICAL", "HIGH")
+                }
+                self.assertEqual(
+                    blocking, {"DSX-VIZ-020"},
+                    f"chart-truncated-axis-bar over-blocks at {point!r}: {sorted(blocking)}",
+                )
+        for point in ("plan", "execute"):
+            with self.subTest(point=point):
+                _code, findings = self._gate_findings(fixture, point)
+                viz_codes = {f["code"] for f in findings if f["code"].startswith("DSX-VIZ-")}
+                self.assertEqual(
+                    viz_codes, set(),
+                    f"viz is not registered at {point!r} but fired {sorted(viz_codes)!r}",
+                )
+
+    def test_every_viz_code_in_the_catalogue_is_some_fixtures_declared_target(self):
+        """The coverage guarantee post-ship audit escalated item 2 asked for, made
+        falsifiable (2026-09-06): every DSX-VIZ-* code the generated catalogue lists
+        is the declared target of at least one known-bad fixture, in whichever tier
+        map its severity puts it. Enumerated from references/finding-codes.md — the
+        same generated artifact _catalogue_codes reads — so a visualization code
+        minted later without a fixture fails here loudly instead of silently
+        rejoining the never-constructed set this corpus closed. This is Phase 24's
+        "fixtures per new code" rule (GA-2 / S4-1), now enforced for the whole family
+        rather than only the codes minted in v2.4."""
+        catalogue_viz = {c for c in _catalogue_codes() if c.startswith("DSX-VIZ-")}
+        self.assertTrue(catalogue_viz, "no DSX-VIZ codes found in the catalogue")
+        declared: "set[str]" = set()
+        for tier_map in (
+            _HIGH_TARGET_DEFECT_CODES, _MEDIUM_TARGET_DEFECT_CODES, _LOW_TARGET_DEFECT_CODES
+        ):
+            for points in tier_map.values():
+                declared.update(points.values())
+        for points in _TARGET_DEFECT_CODES.values():
+            for value in points.values():
+                declared.update({value} if isinstance(value, str) else set(value))
+        for codes in _EXPECTED_CAUGHT_DEFECTS.values():
+            declared.update(codes)
+        uncovered = catalogue_viz - declared
+        self.assertEqual(
+            uncovered, set(),
+            f"DSX-VIZ codes with no fixture declaring them as its target: "
+            f"{sorted(uncovered)} — add a known-bad fixture per code, in the tier map "
+            "matching its severity",
+        )
 
     def test_friction_uses_the_same_live_findings_as_golden(self):
         """Friction (guard b, D-11b/D-09): the per-family over-blocking column is

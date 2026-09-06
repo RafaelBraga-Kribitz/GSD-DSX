@@ -28,7 +28,7 @@ Grow `DATA-PROFILE.yaml` / `dsx profile` so daily volume, structured missingness
 - `dsx/profiler.py` — current shallow profile writer
 - `references/data-quality-assertions.md` — the judgements that stay stochastic after the numbers exist
 - `brief.md` — D-01/D-02 boundaries that any gated growth must renegotiate
-- `EDA_enhancement_BRIEF.md` — verdict table and the "do not add in this pass" list
+- `.planning/research/EDA-enhancement-brief.md` — verdict table and the "do not add in this pass" list
 - [[deepen-dsx-explore-data-eda-protocol]] (SEED-001) — the agent-protocol half that runs first
 
 ## Notes

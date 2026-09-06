@@ -252,6 +252,53 @@ _GOLDEN_SHIP_FINDINGS: "dict[str, frozenset[str]]" = {
         "DSX-VIZ-001",
     }),
     "examples/known-bad/chart-uncertainty-mark-misuse-ANALYSIS-SPEC.yaml": frozenset(),
+    # 2026-09-06 (post-ship audit, escalated item 2 — operator direction): the nineteen
+    # DSX-VIZ coverage fixtures, one per pre-existing visualization code that had never
+    # fired against a constructed case. Each is a copy of a clean good-corpus control
+    # (measured golden frozenset() above) plus exactly one visual carrying exactly one
+    # defect — and, unlike the four Phase-24 chart fixtures, each fires its target as
+    # the ONLY finding above INFO (no incidental DSX-VIZ-010/014). So the CRITICAL/HIGH
+    # ship set is exactly the target for the one CRITICAL and eight HIGH fixtures, and
+    # empty for the eight MEDIUM and three LOW fixtures, whose codes sit below this
+    # tier. Each set measured 2026-09-06 against a fresh tempfile.TemporaryDirectory()
+    # per fixture via _ship_findings above — never guessed.
+    "examples/known-bad/chart-relationship-undeclared-ANALYSIS-SPEC.yaml": frozenset(),
+    "examples/known-bad/chart-relationship-unrecognised-ANALYSIS-SPEC.yaml": frozenset(),
+    "examples/known-bad/chart-correlation-drawn-as-line-ANALYSIS-SPEC.yaml": frozenset({
+        "DSX-VIZ-012",
+    }),
+    "examples/known-bad/chart-single-value-as-bar-ANALYSIS-SPEC.yaml": frozenset({
+        "DSX-VIZ-013",
+    }),
+    "examples/known-bad/chart-input-type-undeclared-ANALYSIS-SPEC.yaml": frozenset(),
+    "examples/known-bad/chart-truncated-axis-bar-ANALYSIS-SPEC.yaml": frozenset({
+        "DSX-VIZ-020",
+    }),
+    "examples/known-bad/chart-axis-baseline-undeclared-ANALYSIS-SPEC.yaml": frozenset(),
+    "examples/known-bad/chart-dual-axis-lines-ANALYSIS-SPEC.yaml": frozenset({
+        "DSX-VIZ-030",
+    }),
+    "examples/known-bad/chart-pie-nine-slices-ANALYSIS-SPEC.yaml": frozenset(),
+    "examples/known-bad/chart-twelve-colour-lines-ANALYSIS-SPEC.yaml": frozenset(),
+    "examples/known-bad/chart-red-green-only-ANALYSIS-SPEC.yaml": frozenset({
+        "DSX-VIZ-051",
+    }),
+    "examples/known-bad/chart-rainbow-heatmap-ANALYSIS-SPEC.yaml": frozenset(),
+    "examples/known-bad/chart-takeaway-blank-ANALYSIS-SPEC.yaml": frozenset({
+        "DSX-VIZ-063",
+    }),
+    "examples/known-bad/chart-units-undeclared-ANALYSIS-SPEC.yaml": frozenset({
+        "DSX-VIZ-061",
+    }),
+    "examples/known-bad/chart-source-note-missing-ANALYSIS-SPEC.yaml": frozenset(),
+    "examples/known-bad/chart-takeaway-repeats-name-ANALYSIS-SPEC.yaml": frozenset({
+        "DSX-VIZ-063",
+    }),
+    "examples/known-bad/chart-takeaway-without-magnitude-ANALYSIS-SPEC.yaml": frozenset(),
+    "examples/known-bad/chart-estimates-without-uncertainty-ANALYSIS-SPEC.yaml": frozenset({
+        "DSX-VIZ-070",
+    }),
+    "examples/known-bad/chart-alphabetical-ranking-ANALYSIS-SPEC.yaml": frozenset(),
 }
 
 

@@ -840,6 +840,13 @@ and safe to run anywhere — but also that a spec can lie. That is what
 declarations match. Deterministic checks catch the errors; the audit catches the
 misdeclarations.
 
+**Where the published literature was engaged, and how.** `docs/literature/` records,
+paper by paper, which ideas are present in DSX, which are present as the thing a gate
+catches, and which sit on the gated backlog with an entry condition. The first entry
+is *The AI Data Scientist* (arXiv:2508.18113), whose six-subagent pipeline was
+transcribed stage for stage into the known-bad corpus and passed the gate with zero
+findings until Phase 11.1 shipped the four codes that now block it.
+
 ---
 
 MIT. Built on [GSD Core](https://github.com/open-gsd/gsd-core) by open-gsd.
