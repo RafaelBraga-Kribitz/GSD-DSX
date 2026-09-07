@@ -146,6 +146,7 @@ def check(spec: dict) -> Report:
     _check_split(model, report, task)
     _check_preprocessing(model, report)
     _check_features(model, report)
+    _check_feature_provenance(model, report)
     _check_prediction_time_definition(model, report)
     _check_metric_choice(model, spec, report, task)
     _check_baseline(model, spec, report)
@@ -525,6 +526,103 @@ def _check_features(model: dict, report: Report) -> None:
         )
     else:
         report.ok(f"{len(names)} features screened, no leakage patterns matched")
+
+
+def _check_feature_provenance(model: dict, report: Report) -> None:
+    """`model.feature_provenance[]` per-feature availability check (DSX-ML-034).
+
+    Phase 27 (REQ-P27-02): the measured LIVE MISS (27-MEASUREMENT.md) showed a
+    leaky column whose value at training time was not the value that would exist
+    at the declared prediction moment — an innocuous name matching none of
+    `LEAKAGE_PATTERNS`, with every model.* / results.* declaration honest. No
+    declaration-reading check on the ml gate path could see it, because the
+    defect lives in the data's feature origin, not in any spec field. This check
+    reads a new, optional `model.feature_provenance[]` block — {feature, source,
+    available_at, derived_from}, with available_at on the closed vocabulary
+    before_prediction | at_prediction | after_prediction | unknown — and fires
+    when a feature is declared available only at or after the outcome is known.
+
+    A spec with no feature_provenance block returns immediately: the block is
+    additive/optional, so every existing specification still validates and stays
+    silent. This buys attribution, not detection — a spec that omits or lies in
+    the block still passes (the standing "a frame that lies passes" limit); the
+    check reads declarations only and never opens the data or a feature value.
+
+    Citation: Kaufman, S., Rosset, S., Perlich, C. and Stitelman, O. (2012),
+    "Leakage in Data Mining: Formulation, Detection, and Avoidance," ACM
+    Transactions on Knowledge Discovery from Data, 6(4), article 15, DOI
+    10.1145/2382577.2382579. The paper's formulation of attribute "legitimacy" —
+    a feature value is legitimate only if it would genuinely have been
+    observable, for the entity in question, strictly before the target instance
+    becomes known — is the general statement of the boundary a declared
+    available_at of after_prediction (or an unattested unknown) violates. This
+    citation is secondary-corroborated across independent indexes; the primary
+    ACM Digital Library PDF was paywalled and was not read first-hand in this
+    session, so no section or page locator is asserted (do not invent one).
+
+    Structural criterion: DSX-ML-034 is a membership test of each entry's
+    declared, normalised available_at value against that closed vocabulary —
+    after_prediction fires CRITICAL, unknown without a truthy waiver fires HIGH,
+    before_prediction and at_prediction clear. It is a declaration read, not a
+    detection: it computes no statistic and inspects no feature value, so it
+    attributes a leak the analyst has declared and stays silent on one they have
+    not.
+    """
+    provenance = model.get("feature_provenance")
+    if not provenance or not isinstance(provenance, list):
+        return
+
+    for entry in provenance:
+        if not isinstance(entry, dict):
+            continue
+        available_at = normalize(entry.get("available_at", ""))
+        feature = entry.get("feature") or "<unnamed feature>"
+        # Source-order note (27-RESEARCH.md RISK 3 / D-06): the catalogue
+        # generator dedupes one code to one row, keeping the LAST report.add
+        # site in AST-walk order. The `unknown`/HIGH branch is written FIRST and
+        # the `after_prediction`/CRITICAL branch SECOND (nested one level deeper),
+        # so the committed DSX-ML-034 catalogue row shows CRITICAL — the headline
+        # disposition. Do NOT reorder without regenerating
+        # references/finding-codes.md and re-checking the rendered severity.
+        if available_at == "unknown" and not entry.get("waiver"):
+            report.add(
+                "DSX-ML-034",
+                "HIGH",
+                f"Feature '{feature}' declares available_at 'unknown' with no waiver",
+                detail=(
+                    f"'{feature}' is declared with available_at 'unknown', so the specification "
+                    "does not attest that its value exists at the declared prediction moment. "
+                    "Without a waiver recording that judgement, its legitimacy is unestablished "
+                    "and it may be a feature-origin leak."
+                ),
+                remedy=(
+                    "Establish when the feature's value is observable and declare available_at "
+                    "as before_prediction, at_prediction or after_prediction; or record a "
+                    "waiver justifying the unknown."
+                ),
+                where="spec.model.feature_provenance",
+                feature=str(feature),
+            )
+        elif available_at == "after_prediction":
+            report.add(
+                "DSX-ML-034",
+                "CRITICAL",
+                f"Feature '{feature}' is declared available only after the prediction moment",
+                detail=(
+                    f"'{feature}' is declared with available_at 'after_prediction' — its value "
+                    "is recorded at or after the moment the target becomes known, so it would "
+                    "not exist at the declared prediction time. A model trained on it learns "
+                    "from the future, whatever its name and whatever the fit boundary."
+                ),
+                remedy=(
+                    "Drop the feature, or replace it with a value observable strictly before "
+                    "the prediction moment, then re-declare its provenance."
+                ),
+                where="spec.model.feature_provenance",
+                feature=str(feature),
+            )
+        elif available_at in ("before_prediction", "at_prediction"):
+            report.ok(f"feature '{feature}' declared available_at '{available_at}'")
 
 
 def _check_prediction_time_definition(model: dict, report: Report) -> None:
