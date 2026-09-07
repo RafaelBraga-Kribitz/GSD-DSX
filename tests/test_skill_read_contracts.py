@@ -154,42 +154,133 @@ D26_02 = {
 
 _INPUTS_RE = re.compile(r"<inputs>(.*?)</inputs>", re.DOTALL)
 _BULLET_KEY_RE = re.compile(r"^\s*-\s+`([^`]+)`\s*$")
+_LINE_SPLIT_RE = re.compile(r"\r?\n")
+# A YAML-ish key line: leading spaces, an identifier, a colon, then the value.
+_KEY_RE = re.compile(r"^(?P<indent> *)(?P<name>[A-Za-z_][A-Za-z0-9_]*):(?P<value>.*)$")
+# A trailing inline ``# ...`` comment (whitespace-anchored so it never eats a key
+# at column 0 — those are full-comment lines, handled separately).
+_INLINE_COMMENT_RE = re.compile(r"\s+#.*$")
+# The single per-element placeholder token the profile template uses today
+# (26-CONTEXT.md residual #5): ``columns.column_name.*`` normalizes to ``columns[].*``.
+_PROFILE_PLACEHOLDER = ".column_name"
 
 
 def _read(path: Path) -> str:
     return path.read_text(encoding="utf-8")
 
 
-# --------------------------------------------------------------------------- #
-# Parser helpers — STUBS in the RED commit; implemented in the GREEN commit.
-# Each raises NotImplementedError so the behaviour-bearing tests error until the
-# key-path parser exists (the RED lever, per the 26-03 plan).
-# --------------------------------------------------------------------------- #
 def _lines(text: str) -> list[str]:
-    """Split on ``\\r?\\n`` so both CRLF and bare-LF templates yield real lines."""
-    raise NotImplementedError
+    """Split on ``\\r?\\n`` so both CRLF (EDA.md) and bare-LF (DATA-PROFILE.yaml)
+    templates yield real lines. A ``\\r\\n``-only split would silently return one
+    giant line for the bare-LF profile — the vacuous-pass failure mode."""
+    return _LINE_SPLIT_RE.split(text)
+
+
+def _extract_paths(lines, normalize=lambda p: p) -> set[str]:
+    """Indent-stack key-path extractor. Records EVERY dotted path — intermediates
+    included, never leaf-only — with ``[]`` marking a list-of-map element. Full
+    dotted-path recording is what keeps a parent rename from being masked by a
+    same-named leaf elsewhere (leaf-only matching is rejected by D-26-04).
+
+    ``normalize`` rewrites a freshly built path (identity for EDA; the
+    ``column_name -> []`` rule for DATA-PROFILE)."""
+    stack: list[tuple[int, str]] = []  # (indent, already-normalized path)
+    keys: set[str] = set()
+    for line in lines:
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue  # blank or full-comment line
+        line = _INLINE_COMMENT_RE.sub("", line)
+        content = line.strip()
+        if not content:
+            continue
+        indent = len(line) - len(line.lstrip(" "))
+        if content == "-" or content.startswith("- "):
+            # A sequence item: the current parent is a list. Re-key it as ``P[]``.
+            if stack:
+                pind, ppath = stack[-1]
+                if not ppath.endswith("[]"):
+                    keys.discard(ppath)
+                    listed = ppath + "[]"
+                    keys.add(listed)
+                    stack[-1] = (pind, listed)
+            continue
+        m = _KEY_RE.match(line)
+        if not m:
+            continue
+        name = m.group("name")
+        value = m.group("value").strip()
+        while stack and stack[-1][0] >= indent:
+            stack.pop()
+        parent = stack[-1][1] if stack else ""
+        path = normalize(f"{parent}.{name}" if parent else name)
+        if value.startswith("[") and "{" in value:
+            keys.add(path + "[]")          # inline list-of-maps -> ``key[]``
+        else:
+            keys.add(path)                 # scalar, scalar-list, map header, or parent
+        # Only an empty-valued key can host block children; push it as a potential
+        # parent. Scalars / scalar-lists / flow-maps are self-contained, so they must
+        # NOT become parents — otherwise a fully-commented block whose header
+        # uncomments to a nonzero indent (unit:, target:) would nest under the
+        # preceding top-level scalar (e.g. sentinels_found) instead of the root.
+        if value == "":
+            stack.append((indent, path))
+    return keys
 
 
 def parse_eda_keys(text: str) -> set[str]:
-    """Every dotted path (incl. intermediates, ``[]`` for list-of-map elements) in
-    the EDA front-matter block (strictly between the first two ``---`` fences)."""
-    raise NotImplementedError
+    """Every dotted path in the EDA front-matter block — the lines strictly between
+    the first two ``---`` fences — skipping ``#`` comment lines and stripping inline
+    ``# ...``, splitting on ``\\r?\\n``."""
+    lines = _lines(text)
+    fences = [i for i, ln in enumerate(lines) if ln.strip() == "---"]
+    if len(fences) < 2:
+        return set()
+    return _extract_paths(lines[fences[0] + 1:fences[1]])
+
+
+def _normalize_profile(path: str) -> str:
+    return path.replace(_PROFILE_PLACEHOLDER, "[]")
 
 
 def parse_profile_keys(text: str) -> set[str]:
-    """Every dotted path in DATA-PROFILE.yaml AFTER uncommenting the ``#`` example
-    lines, normalizing the ``columns.column_name.*`` placeholder to ``columns[].*``."""
-    raise NotImplementedError
+    """Every dotted path in DATA-PROFILE.yaml. FIRST uncomment every ``#`` example
+    line (replace the first ``#`` with a single space — length-preserving, so the
+    indent hierarchy survives), THEN the shared extractor strips any remaining
+    trailing inline ``# ...`` and builds paths, normalizing the ``column_name``
+    placeholder to ``[]``. The uncomment step is what lets the per-column /
+    flag-gated example keys (``columns[].*``, ``unit.*``, ``target.*``) count as
+    existing — a straight YAML parse would discard them as comments."""
+    uncommented = [ln.replace("#", " ", 1) for ln in _lines(text)]
+    return _extract_paths(uncommented, normalize=_normalize_profile)
 
 
 def extract_inputs_block(skill_text: str) -> str:
-    """The single ``<inputs>...</inputs>`` body; raises if not exactly one."""
-    raise NotImplementedError
+    """The single ``<inputs>...</inputs>`` body (DOTALL, ``\\r?\\n`` tolerant);
+    raises if the skill does not carry exactly one block."""
+    matches = _INPUTS_RE.findall(skill_text)
+    if len(matches) != 1:
+        raise ValueError(f"expected exactly one <inputs> block, found {len(matches)}")
+    return matches[0]
 
 
 def extract_key_region(inputs_text: str, header: str) -> list[str]:
-    """The contiguous run of one-key-per-bullet keys following a region header."""
-    raise NotImplementedError
+    """The contiguous run of one-key-per-bullet keys following a region ``header``.
+    Each bullet must match ``^\\s*-\\s+`key`\\s*$``; the region ends at the first
+    line that does not (blank line, prose, or the next header)."""
+    keys: list[str] = []
+    in_region = False
+    for ln in _lines(inputs_text):
+        if not in_region:
+            if ln.strip().startswith(header):
+                in_region = True
+            continue
+        m = _BULLET_KEY_RE.match(ln)
+        if m:
+            keys.append(m.group(1))
+        else:
+            break
+    return keys
 
 
 class TestSkillReadContracts(unittest.TestCase):
