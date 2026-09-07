@@ -2,25 +2,25 @@
 gsd_state_version: 1.0
 milestone: v2.6
 milestone_name: Exploration Depth and Backlog Evidence
+current_phase: 27
 current_phase_name: Evidence case — feature-origin-only leak
-status: in-progress — S3-2 RESEARCH sub-stage DONE (box UNCHECKED); next = S3-2 plan proper (gsd-planner + plan-checker gate)
-stopped_at: S3-2 research sub-stage complete, S3-2 box still UNCHECKED (checks ONLY when the plan-checker passes). 27-RESEARCH.md written by gsd-phase-researcher (adaptive/sonnet, §3 not overridden) covering the full mint wiring: fixture promotion (basename `feature-origin-only-leak`; SPEC+entrypoint promoted from spike/ + new POSTMORTEM.md + ATTRIBUTION.yaml; no CSV — entrypoint read as text, never executed), the ATTRIBUTION sidecar schema (3 existing sidecars read), the DSX-ML-034 declaration-only feature_provenance[] check in dsx/checks/ml.py (CRITICAL after_prediction / HIGH unknown-no-waiver), and every harness entry. Orchestrator RE-VERIFIED the 3 load-bearing claims against committed code (repo is the fact): (1) promotes_backlog_item MUST be `6.5-item-7-feature-provenance` (frozen at tests/test_known_bad_corpus.py:839) — NOT the `-feature-origin-only-leak` string in 27-CONTEXT §S3-1-CLOSE; (2) spec count 42→43 (tests/test_dsx.py:579); (3) catalogue 276→277 across finding-codes.md + test_finding_catalogue_invariant.py:39 + test_phase20_zero_mint_close.py:99. Recorded both authoring-detail corrections in 27-CONTEXT.md §S3-2-RESEARCH-CORRECTIONS (guardrail 1 intact — D-27-01/02 untouched): the harness-valid backlog id, and that DSX-ML-034 SHIPS so it belongs in _D05_ALLOWLIST_CODES + catalogue, NOT a backlog/section-65 disjoint set. Planner+checker NOT started this firing (pacing cap; avoid auto-compaction mid-gate). Next = re-run /gsd-plan-phase 27 (has_research=true) → gsd-planner (opus) → gsd-plan-checker; S3-2 checks only when the plan-checker passes AND the orchestrator re-verifies the gate.
-last_updated: "2026-09-07T12:54:00.000Z"
+status: in-progress — S3-2 DONE (Phase 27 planned; plan-checker PASSED + orchestrator re-verified the gate); next = S3-3 (execute all plans)
+stopped_at: "S3-2 DONE — Phase 27 planned. /gsd-plan-phase 27 run end-to-end: seeded 27-VALIDATION.md (Nyquist draft; planner filled the per-task map), ran the §7.95 spec-less edge probe (11 applicable edges → planner authored them into must_haves as covered truths; 0 backstops, 0 silent drops), spawned gsd-planner (opus) → 2 plans / 2 waves → gsd-plan-checker (haiku, adaptive — NOT overridden) → ## VERIFICATION PASSED (12 dims). Orchestrator RE-VERIFIED the gate itself (brief mandate; repo is the fact): all 3 REQ IDs in frontmatter (27-01 REQ-P27-02; 27-02 REQ-P27-01/03); <threat_model> + Artifacts section in both; single-writer clean (no REQUIREMENTS/STATE/ROADMAP in files_modified; only dsx/checks/ml.py under dsx/, dq.py frozen); D-05 honesty phrase present ('secondary-corroborated, primary PDF paywalled'); promotes_backlog_item = 6.5-item-7-feature-provenance; DSX-ML-034 in _D05_ALLOWLIST_CODES + kept OUT of _SECTION_65_BACKLOG_CODES; count pins 42→43 and 276→277 (×3); fixture stays a MISS (no feature_provenance block; guarded by falsifiability + golden-set tests); waves + depends_on correct (27-02 depends_on 27-01). §13a decision-coverage FALSE-BLOCKED (could-not-parse/total:0 — documented parser mismatch, HUMAN-QUEUE standing note) → overridden via the plan-checker Dim-7 pass + independent grep. dsx plan:post gate (loop-faithful 'dsx gate plan --allow-missing --verbose') EXIT 0 — 'no ANALYSIS-SPEC found ... skipping (dsx.require_spec is disabled)' (engineering, not analysis; Phase 25/26 precedent). Next = S3-3 (execute: Wave 1 = 27-01 mint, Wave 2 = 27-02 fixture+harness)."
+last_updated: "2026-09-07T13:43:00.000Z"
 last_activity: 2026-09-07
-last_activity_desc: Phase 27 S3-2 research sub-stage DONE (box UNCHECKED). 27-RESEARCH.md written (mint wiring, all locators); orchestrator re-verified 3 load-bearing anchors against committed code and recorded 2 authoring-detail corrections in 27-CONTEXT §S3-2-RESEARCH-CORRECTIONS (harness backlog id = 6.5-item-7-feature-provenance; catalogue 276→277; spec 42→43). Guardrail 1 intact. Next = S3-2 plan proper (planner + plan-checker).
+last_activity_desc: "Phase 27 S3-2 DONE (planned). 2 plans (27-01 mint DSX-ML-034 / tdd wave 1; 27-02 fixture+harness / execute wave 2); plan-checker PASSED + orchestrator re-verified the gate (all invariants; §13a false-block overridden via Dim-7; dsx plan:post exit 0). Next = S3-3 execute."
 progress:
   total_phases: 6
   completed_phases: 2
-  total_plans: 8
+  total_plans: 10
   completed_plans: 8
   percent: 33
-current_phase: 27
 ---
 
 # Project state
 
 **Status:** v2.6 Exploration Depth and Backlog Evidence — ACTIVE (opened 2026-09-06 by operator direction, HQ-39); branch `gsd/v2.6.0-exploration-depth`; ships as tag `v2.6.0`
-**Progress:** [██████░░░░░░░░░░░░░░░] v2.6 — 2/6 phases (✅25 hermetic profile depth → ✅26 per-skill read contracts → 🔄27 feature-origin-only leak case (S3-1 done — LIVE MISS measured, mint UNBLOCKED: Kaufman confirmed; next = S3-2 plan) → 28 magnitude-no-test case → 29 subgroup-harm case → 30 calibration re-baseline)
+**Progress:** [██████░░░░░░░░░░░░░░░] v2.6 — 2/6 phases (✅25 hermetic profile depth → ✅26 per-skill read contracts → 🔄27 feature-origin-only leak case (S3-2 done — 2 plans gated PASSED + orchestrator re-verified; next = S3-3 execute) → 28 magnitude-no-test case → 29 subgroup-harm case → 30 calibration re-baseline)
 **Predecessors:** v2.5.0 and v2.4.1 SHIPPED 2026-09-06 interactively (`ad43ec6`, `07d3db0`); v2.4 Visual Excellence SHIPPED 2026-09-03 (tag `v2.4.0`); v2.3 Test Catalog SHIPPED 2026-09-02 (`v2.3.0`); v2.2 Analytic Surface SHIPPED 2026-08-29 (`v2.2.0`); v2.0.0 DSX Validity Frame SHIPPED 2026-08-28 (`v2.1.0`). Archives under `.planning/milestones/`.
 
 **Loop control:** the autonomous ceremony drives this milestone from S0-1 onward per
@@ -48,10 +48,10 @@ and a case the gate already catches closes its phase with no mint (D-13).
 
 ## Current Position
 
-Phase: 27 — Evidence case, feature-origin-only leak (S3-1 done; S3-2 research sub-stage done, box UNCHECKED)
-Plan: not yet gated — S3-2 research sub-stage DONE (27-RESEARCH.md), plan proper is next. Design FROZEN (D-27-01/02), LIVE MISS measured (27-MEASUREMENT.md), citation resolved (HQ-40 40b Kaufman CONFIRMED). Research surfaced + orchestrator-verified 2 authoring-detail corrections (27-CONTEXT.md §S3-2-RESEARCH-CORRECTIONS): promotes_backlog_item = `6.5-item-7-feature-provenance` (harness-frozen, NOT the §S3-1-CLOSE string); DSX-ML-034 SHIPS → _D05_ALLOWLIST_CODES + catalogue 276→277, not a backlog set. Spec count 42→43.
-Status: In-progress — the milestone is NOT all-blocked. Phase 27's mint pipeline is fully unblocked. Next = S3-2 plan proper (`/gsd-plan-phase 27`, has_research=true → gsd-planner opus → gsd-plan-checker; box checks only when the checker passes AND the orchestrator re-verifies the gate).
-Last activity: 2026-09-07 — Phase 27 S3-2 research sub-stage DONE (box UNCHECKED): 27-RESEARCH.md written; 3 load-bearing anchors re-verified vs committed code; 2 corrections recorded in 27-CONTEXT §S3-2-RESEARCH-CORRECTIONS; guardrail 1 intact
+Phase: 27 — Evidence case, feature-origin-only leak (S3-2 done — planned; next = S3-3 execute)
+Plan: GATED PASSED — 2 plans (27-01-PLAN.md mint DSX-ML-034 / type tdd / wave 1; 27-02-PLAN.md fixture+harness / type execute / wave 2 depends_on 27-01). gsd-planner (opus) → gsd-plan-checker (haiku, adaptive) `## VERIFICATION PASSED` → orchestrator re-verified the gate itself. Design FROZEN (D-27-01/02), LIVE MISS measured (27-MEASUREMENT.md), citation resolved (HQ-40 40b Kaufman CONFIRMED). The 2 §S3-2 authoring corrections are encoded in the plans (promotes_backlog_item = `6.5-item-7-feature-provenance`; DSX-ML-034 ships → _D05_ALLOWLIST_CODES + catalogue 276→277, kept out of _SECTION_65_BACKLOG_CODES; spec count 42→43). dsx plan:post gate exit 0 (require_spec disabled — engineering).
+Status: In-progress — the milestone is NOT all-blocked. Phase 27's mint is planned and gated. Next = S3-3 (execute all plans; Wave 1 = 27-01 mint, Wave 2 = 27-02 fixture+harness; then S3-4 review, S3-5 secure/validate).
+Last activity: 2026-09-07 — Phase 27 S3-2 DONE (planned): 2 plans, plan-checker PASSED + orchestrator re-verified the gate; §13a decision-coverage false-block overridden via Dim-7; dsx plan:post exit 0. Next = S3-3 execute.
 
 ## Performance Metrics
 

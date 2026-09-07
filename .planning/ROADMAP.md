@@ -261,7 +261,13 @@ under D-05; if the gate catches it, record which code and mint nothing.
   2. Either a live miss is closed by a minted, D-05-cited check whose fixture entries are complete, or the already-caught outcome is recorded with the codes and nothing is minted.
   3. Brief §6.5 item 7 states the measured evidence.
 
-**Plans**: TBD
+**Plans**: 2 (planned 2026-09-07; gsd-planner opus → plan-checker PASSED → orchestrator re-verified)
+
+**Wave 1:**
+- [ ] 27-01-PLAN.md — mint `DSX-ML-034` declaration-only feature-provenance check in `dsx/checks/ml.py` (CRITICAL `after_prediction` / HIGH `unknown`-no-waiver / silent when absent) + Kaufman D-05 docstring ("secondary-corroborated, primary PDF paywalled") + `_D05_ALLOWLIST_CODES` + catalogue 276→277 (REQ-P27-02, type: tdd)
+
+**Wave 2** *(blocked on Wave 1 completion — sidecar `absent_code: DSX-ML-034` resolves only once the code ships to the catalogue)*:
+- [ ] 27-02-PLAN.md — promote `spike/` fixture → committed corpus fixture `feature-origin-only-leak-*` (stays a MISS: no `feature_provenance` block) + POSTMORTEM + falsifiable ATTRIBUTION sidecar (`promotes_backlog_item: 6.5-item-7-feature-provenance`) + four harness maps + spec count 42→43 + brief §6.5 item 7 rewrite + installer re-sync (REQ-P27-01, REQ-P27-03, type: execute)
 
 ### Phase 28: Evidence case — magnitude no test computed
 
