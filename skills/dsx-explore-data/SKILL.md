@@ -84,7 +84,8 @@ deduplicating; the reason is often the finding.
 Compute rows ÷ distinct(analysis unit) — the unit in
 `validity_frame.units.analysis`; if the spec is unwritten, use the intended
 decision unit and say so. Record `rows_per_unit` p50 | p95 | max and
-`largest_unit_share`.
+`largest_unit_share` — both **copied from the profile**'s `unit:` block (produced
+by `dsx profile --unit <col>`), never recomputed here.
 
 `p50 >= 2` means the table is a panel or an event log, not one row per unit:
 `validity_frame.dependence.structure` **cannot** be `none`, and every naive
@@ -159,13 +160,15 @@ double-loads all show up here and nowhere else.
 ### 3a. Time integrity
 Three numbers per timestamp column, recorded, not eyeballed:
 
-- **Staleness** — days between `max(timestamp)` and today. Beyond the refresh
-  cadence, the extract is stale: name the periods the claims cannot cover.
-- **Edge periods** — volume of the **last** calendar period at the reporting
-  grain ÷ trailing mean of the previous four like periods. Ratio below 0.5 is a
+- **Staleness** — days between `max(timestamp)` and today. The profiler supplies
+  the hermetic input `time.max`; **staleness stays agent-computed** — `today − max`
+  needs the wall clock, which the profiler deliberately never touches. Beyond the
+  refresh cadence, the extract is stale: name the periods the claims cannot cover.
+- **Edge periods** — the `first_period_ratio` and `last_period_ratio`, **copied
+  from the profile**'s `time:` block (computed at ISO-week grain over populated
+  weeks; `null` when fewer than five populated weeks). A ratio below 0.5 is a
   partial period: exclude it from every trend statement and record the exclusion.
-  Repeat for the **first** period; partial starts are as common as partial ends.
-- **Hour fingerprint** — histogram of the hour component.
+- **Hour fingerprint** — `share_at_hour_00`, **copied from the profile**.
   `share_at_hour_00 > 0.9` → the column is a date wearing a timestamp's clothes;
   read no intraday pattern from it. A modal business window shifted from where the
   population lives is a timezone error. Record
@@ -178,14 +181,20 @@ from trend statements. This is what "confirm the timezone, explicitly" means.
 *Skip:* no timestamp column → `time integrity: skipped (no time column)`.
 
 ## 4. Distributions
-Per numeric column: five-number summary, and the count of exact zeros and
-negatives. Sentinel values (-1, 999, 1900-01-01) masquerade as data. Per
-categorical: cardinality, top values, and the share in the tail.
+Per numeric column: five-number summary (`min | q1 | median | q3 | max`), `mean`,
+`sd`, and the count of exact zeros and negatives (`n_zero` | `n_negative`) — all
+**copied from the profile**'s `columns.<col>.numeric` sub-map, never recomputed.
+Sentinel values (-1, 999, 1900-01-01) masquerade as data. Per categorical:
+cardinality, top values, and the share in the tail.
 
 ### 4a. Summaries — classical vs robust
-The numeric table gains columns: mean | median | trim10 | sd | mad_s
-(MAD × 1.4826; MAD zero → IQR/1.349; both zero → flag `degenerate_scale`) |
-`loc_gap` = (mean − median)/mad_s | `scale_ratio` = sd/mad_s | flag.
+The classical half — `min | q1 | median | q3 | max | mean | sd` and the
+`n_zero` / `n_negative` counts — is **copied from the profile**'s `numeric:`
+sub-map. The robust half stays **agent-computed** (it needs the metric
+definition and is judgement-shaped): the numeric table gains columns
+trim10 | mad_s (MAD × 1.4826; MAD zero → IQR/1.349; both zero → flag
+`degenerate_scale`) | `loc_gap` = (mean − median)/mad_s | `scale_ratio` =
+sd/mad_s | flag.
 
 Thresholds are protocol constants so two runs flag identically:
 `|loc_gap| > 0.5` → `skew`; `scale_ratio > 1.5` → `heavy_tail`; both → `both`.
@@ -200,10 +209,13 @@ findings-ledger row, and route the column into 4c.
 *Skip:* no numeric column with n ≥ 30 → recorded.
 
 ### 4b. Concentration
-For every additive measure — anything a declared metric sums — sort descending
-and record: total, share of the total in the top 1% and top 10% of rows, the
-largest single row's share, and `n_half` = rows needed to reach 50% of the total.
-Signed measures: shares on absolute values, and say so.
+A categorical column's level concentration — `share_top1` and `share_top10` — is
+**copied from the profile**'s `categorical:` sub-map. The additive-measure
+concentration below stays **agent-computed** (it needs the metric's summed
+column): for every additive measure — anything a declared metric sums — sort
+descending and record: total, share of the total in the top 1% and top 10% of
+rows, the largest single row's share, and `n_half` = rows needed to reach 50% of
+the total. Signed measures: shares on absolute values, and say so.
 
 Table: column | total | share_top1 | share_top10 | max_row_share | n_half | flag
 (y when `share_top1 > 0.20`).
@@ -296,8 +308,9 @@ enumeration happened.
 ### 4e. Wide categoricals
 For each categorical with more than 50 distinct levels **or** top-20 coverage
 below 80% of rows, record: distinct count; coverage at top-5 / top-20 / top-50;
-`rare_share` (rows in levels with fewer than 10 rows or under 0.1%); and
-`singleton_levels`.
+`rare_share` and `n_singleton` — both **copied from the profile**'s
+`categorical:` sub-map (`rare_share` = share of rows in levels with fewer than 10
+rows **or** under 0.1%; `n_singleton` = count of levels with exactly one row).
 
 *Skip:* no column met the test → `wide categoricals: none; max distinct = <n>`.
 
@@ -309,13 +322,14 @@ overrides it and records which. An unhandled 40,000-level column becomes a
 rows only.
 
 ### 4f. Base rate
-When a declared metric or target exists: table week | n | rate for the primary
-metric or target, plus one row per `design.guardrail_metrics` entry. Record
-`base_rate.overall`, `weekly_range [lo, hi]`, and
-`verdict: stable | drifting` — drifting when any week sits beyond ±20% relative
-to overall. **A base rate that drifts is a modelling constraint, not a
-footnote.** The base rate and its drift may use the full frame; every
-per-feature target relationship may not (see the split-first rule).
+When a declared metric or target exists: the weekly `week | n | base_rate` table,
+`overall`, `weekly_range [lo, hi]`, and `verdict: stable | drifting` are **copied
+from the profile**'s `target:` block (produced by `dsx profile --target <col>`,
+which drifts when any week sits beyond ±20% relative to overall). Add one row per
+`design.guardrail_metrics` entry agent-side. **A base rate that drifts is a
+modelling constraint, not a footnote.** The base rate and its drift may use the
+full frame; every per-feature target relationship may not (see the split-first
+rule).
 
 *Skip:* no declared metric and no target → `base_rate: null (<reason>)`.
 

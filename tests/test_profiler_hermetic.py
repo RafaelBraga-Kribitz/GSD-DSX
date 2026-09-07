@@ -29,6 +29,11 @@ from dsx.profiler import (  # noqa: E402
 )
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures" / "profiler"
+REPO = Path(__file__).resolve().parent.parent
+TEMPLATE = REPO / "templates" / "DATA-PROFILE.yaml"
+SKILL = REPO / "skills" / "dsx-explore-data" / "SKILL.md"
+ASSERTIONS_REF = REPO / "references" / "data-quality-assertions.md"
+EXAMPLES = REPO / "examples"
 
 
 def _strip_new_blocks(text: str) -> str:
@@ -435,6 +440,63 @@ class TestTargetBlock(unittest.TestCase):
             a = profile_csv(FIXTURES / "target_drifting.csv", time_column="ts", target="y")["target"]
             b = profile_csv(shuf, time_column="ts", target="y")["target"]
         self.assertEqual(a, b)
+
+
+class TestDocRipple(unittest.TestCase):
+    """Doc ripple (Task 1, REQ-P25-03): the three doc surfaces point at the profiler for
+    the trust core, and the named exclusions stay agent-side.
+
+    Every assertion is substring-based, so CRLF vs LF line endings never matter (this repo
+    checks out CRLF on Windows).
+    """
+
+    # Every additive Phase-25 key the profiler now produces (D-01/D-02 vocabulary).
+    NEW_KEY_TOKENS = [
+        "numeric",
+        "categorical",
+        "q1",
+        "median",
+        "q3",
+        "mean",
+        "sd",
+        "n_zero",
+        "n_negative",
+        "share_top1",
+        "share_top10",
+        "rare_share",
+        "n_singleton",
+        "rows_per_day",
+        "first_period_ratio",
+        "last_period_ratio",
+        "share_at_hour_00",
+        "rows_per_unit",
+        "largest_unit_share",
+        "overall",
+        "weekly_range",
+        "verdict",
+        "base_rate",
+    ]
+
+    def test_template_documents_every_new_key(self):
+        text = TEMPLATE.read_text(encoding="utf-8")
+        for token in self.NEW_KEY_TOKENS:
+            self.assertIn(token, text, token)
+
+    def test_skill_says_copied_from_the_profile(self):
+        text = SKILL.read_text(encoding="utf-8")
+        # The phrase must appear once per rippled step (1a/3a/4a/4b/4e/4f) — at least six.
+        self.assertGreaterEqual(text.count("copied from the profile"), 6)
+
+    def test_named_exclusions_stay_agent_side(self):
+        # The profiler must NOT be asked to produce the named exclusions; the skill still
+        # asks the agent to compute them. Staleness (3a) needs the wall clock and is the
+        # hermetic canary that the producer never touches it.
+        text = SKILL.read_text(encoding="utf-8").lower()
+        self.assertIn("staleness stays agent-computed", text)
+
+    def test_assertions_reference_marks_keys_producer_only(self):
+        text = ASSERTIONS_REF.read_text(encoding="utf-8").lower()
+        self.assertIn("producer-only", text)
 
 
 if __name__ == "__main__":
