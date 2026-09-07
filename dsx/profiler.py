@@ -157,6 +157,7 @@ def profile_csv(
     primary_key: "list[str] | None" = None,
     time_column: "str | None" = None,
     sentinels: "list[Any] | None" = None,
+    unit: "str | None" = None,
 ) -> dict[str, Any]:
     """Compute a DATA-PROFILE mapping from a CSV file."""
     csv_path = Path(path)
@@ -204,6 +205,9 @@ def profile_csv(
                 raise CheckError(f"primary key column {missing!r} not in CSV header")
         if time_column and time_column not in columns:
             raise CheckError(f"time column {time_column!r} not in CSV header")
+        if unit and unit not in columns:
+            raise CheckError(f"unit column {unit!r} not in CSV header")
+        unit_counts: Counter[str] = Counter()
 
         for row in reader:
             row_count += 1
@@ -248,6 +252,11 @@ def profile_csv(
                 hour = _extract_hour(raw_time)
                 if hour is not None:
                     hour_of_time_bearing_rows.append(hour)
+            if unit:
+                unit_raw = row.get(unit)
+                unit_text = "" if unit_raw is None else str(unit_raw)
+                if not _is_null(unit_text):
+                    unit_counts[unit_text.strip()] += 1
 
     col_stats: dict[str, Any] = {}
     for col in columns:
@@ -321,7 +330,7 @@ def profile_csv(
 
     found_sentinels = sorted({s for s, n in sentinel_hits.items() if n > 0})
 
-    return {
+    profile: dict[str, Any] = {
         "profile_version": PROFILE_VERSION,
         "computed_by": COMPUTED_BY,
         "source_path": str(csv_path).replace("\\", "/"),
@@ -334,6 +343,33 @@ def profile_csv(
         "time": time_block,
         "sentinels_found": found_sentinels,
     }
+
+    # D-01: `unit` is a NEW top-level block appended AFTER sentinels_found, and omitted
+    # entirely (never null) when no unit column is declared. rows_per_unit uses type-7
+    # (inclusive) quantiles over per-unit row counts; <2 distinct units -> p50/p95 null,
+    # max defined for >=1. largest_unit_share picks the winner via an explicit
+    # (count desc, unit-string asc) tie-break (the tie-break does not change the value).
+    if unit is not None:
+        per_unit = sorted(unit_counts.values())
+        if len(per_unit) >= 2:
+            cuts = statistics.quantiles(per_unit, n=100, method="inclusive")
+            p50: "float | None" = cuts[49]
+            p95: "float | None" = cuts[94]
+        else:
+            p50 = None
+            p95 = None
+        max_unit = max(per_unit) if per_unit else None
+        if per_unit and row_count:
+            ranked = sorted(unit_counts.items(), key=lambda kv: (-kv[1], kv[0]))
+            largest_unit_share: "float | None" = ranked[0][1] / row_count
+        else:
+            largest_unit_share = None
+        profile["unit"] = {
+            "rows_per_unit": {"p50": p50, "p95": p95, "max": max_unit},
+            "largest_unit_share": largest_unit_share,
+        }
+
+    return profile
 
 
 def dump_profile_yaml(profile: dict[str, Any]) -> str:
