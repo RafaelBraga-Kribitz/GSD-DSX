@@ -499,5 +499,117 @@ class TestDocRipple(unittest.TestCase):
         self.assertIn("producer-only", text)
 
 
+class TestDQGateIgnoresNewKeys(unittest.TestCase):
+    """Whole-vocabulary guard (Task 2, REQ-P25-03 / T-25-07): the DQ gate reads only its six
+    known keys via `.get()` on a named path, so a full set of Phase-25 additive keys sitting
+    adjacent to them is passed over, never merged into the verdict.
+
+    Proven, not assumed: run the real `dq.check` path against the good example profile with
+    every new key populated versus the same profile stripped, and assert the two reports carry
+    the identical finding-code set and the identical HIGH-block verdict.
+    """
+
+    # A full set of Phase-25 additive keys appended after the existing profile keys — a
+    # columns.<col>.numeric + .categorical sub-map, plus top-level unit and target blocks.
+    NEW_KEYS_BLOCK = """
+    numeric:
+      min: 0.0
+      q1: 1.0
+      median: 2.0
+      q3: 3.0
+      max: 4.0
+      mean: 2.0
+      sd: 1.5
+      n_zero: 3
+      n_negative: 0
+      n: 100
+    categorical:
+      share_top1: 0.5
+      share_top10: 1.0
+      rare_share: 0.05
+      n_singleton: 1
+"""
+    UNIT_TARGET_BLOCK = """unit:
+  rows_per_unit: { p50: 3, p95: 80.8, max: 100 }
+  largest_unit_share: 0.9090909090909091
+target:
+  overall: 0.5
+  weekly:
+    - { week: [2026, 23], n: 40, base_rate: 0.5 }
+  weekly_range: [0.25, 0.75]
+  verdict: drifting
+"""
+
+    def _codes_and_verdict(self, profile_dir: Path):
+        from dsx.checks import dq
+        from dsx.findings import Severity
+        from dsx.loader import load
+
+        spec = load(EXAMPLES / "good-ANALYSIS-SPEC.yaml")
+        report = dq.check(spec, str(profile_dir))
+        return {f.code for f in report.findings}, report.blocks(Severity.HIGH)
+
+    def _copy_examples(self, dest: Path):
+        for name in (
+            "good-ANALYSIS-SPEC.yaml",
+            "good-DATA-PROFILE.yaml",
+        ):
+            (dest / name).write_bytes((EXAMPLES / name).read_bytes())
+
+    def test_gate_verdict_identical_with_and_without_new_keys(self):
+        with tempfile.TemporaryDirectory() as tmp_stripped, tempfile.TemporaryDirectory() as tmp_full:
+            stripped = Path(tmp_stripped)
+            full = Path(tmp_full)
+            self._copy_examples(stripped)
+            self._copy_examples(full)
+
+            # Inject the additive keys into the FULL copy's profile: a numeric/categorical
+            # sub-map appended under an existing column (user_id), plus top-level unit/target
+            # blocks appended after the existing keys — never interleaved.
+            profile_text = (full / "good-DATA-PROFILE.yaml").read_text(encoding="utf-8")
+            lines = re.split(r"\r?\n", profile_text)
+            out = []
+            for line in lines:
+                out.append(line)
+                if line.rstrip() == "  user_id:":
+                    # append the numeric/categorical sub-map to this column (indent 4)
+                    out.extend(self.NEW_KEYS_BLOCK.strip("\n").split("\n"))
+            injected = "\n".join(out) + "\n" + self.UNIT_TARGET_BLOCK
+            (full / "good-DATA-PROFILE.yaml").write_text(injected, encoding="utf-8")
+
+            stripped_codes, stripped_block = self._codes_and_verdict(stripped)
+            full_codes, full_block = self._codes_and_verdict(full)
+
+            self.assertEqual(stripped_codes, full_codes)
+            self.assertEqual(stripped_block, full_block)
+            # The good profile passes (no HIGH block) either way — the new keys are inert.
+            self.assertFalse(full_block, full_codes)
+
+
+class TestExampleProfilesByteInvariant(unittest.TestCase):
+    """D-04 guard #4 (Task 2, REQ-P25-02): the committed example profiles are byte-invariant.
+
+    The sha256 is over RAW bytes (CRLF included, this repo checks out CRLF on Windows), pinned
+    from the current committed files — so any future edit to either file fails the suite.
+    """
+
+    EXPECTED = {
+        "good-DATA-PROFILE.yaml": (
+            "3a2d220088a217f60523391f177d66561f2b7e051413855a60e639d30d3275d1"
+        ),
+        "bad-DATA-PROFILE.yaml": (
+            "723d2ba49c31190d33674c8015963dcd02edfb19b7bd0631c963d85b74c6c39a"
+        ),
+    }
+
+    def test_example_profiles_match_pinned_digests(self):
+        import hashlib
+
+        for name, expected in self.EXPECTED.items():
+            raw = (EXAMPLES / name).read_bytes()
+            actual = hashlib.sha256(raw).hexdigest()
+            self.assertEqual(actual, expected, name)
+
+
 if __name__ == "__main__":
     unittest.main()
