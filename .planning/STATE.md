@@ -3,11 +3,11 @@ gsd_state_version: 1.0
 milestone: v2.6
 milestone_name: Exploration Depth and Backlog Evidence
 current_phase_name: Hermetic profile depth
-status: planning
-stopped_at: S1-2 done — Phase 25 planned (4 plans), plan-checker PASSED; committed + pushed on `gsd/v2.6.0-exploration-depth`
-last_updated: "2026-09-07T02:25:45.430Z"
+status: executing
+stopped_at: S1-3 in progress — plan 25-01 of 4 executed + orchestrator-verified (gates re-run on real 3.12.10, full suite 1542 OK, no stray branch); resume at plan 25-02
+last_updated: "2026-09-07T02:58:00.000Z"
 last_activity: 2026-09-07
-last_activity_desc: Phase 25 planned (S1-2); ready to execute
+last_activity_desc: Phase 25 execute — plan 25-01/4 done and verified; next = plan 25-02 (time+unit blocks)
 progress:
   total_phases: 6
   completed_phases: 0
