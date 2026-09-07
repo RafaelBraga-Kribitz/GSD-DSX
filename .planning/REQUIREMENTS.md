@@ -21,7 +21,7 @@ measure first; a case the gate already catches closes the phase with no mint).
 
 ## Phase 25 — Hermetic profile depth (SEED-002)
 
-- [ ] REQ-P25-01 `dsx profile` computes, stdlib-only, into `DATA-PROFILE.yaml` —
+- [x] REQ-P25-01 `dsx profile` computes, stdlib-only, into `DATA-PROFILE.yaml` —
   additively, with every existing key and value byte-stable — the trust-core
   numbers the explore protocol currently asks the agent to compute: per numeric
   column `min`, `q1`, `median`, `q3`, `max`, `mean`, `sd`, `n_zero`, `n_negative`;
@@ -32,14 +32,14 @@ measure first; a case the gate already catches closes the phase with no mint).
   `--target` column a weekly base-rate table with `overall`, `weekly_range` and the
   skill's ±20 % `verdict`.
 
-- [ ] REQ-P25-02 Every statistic is a declared definition with a cited source — the
+- [x] REQ-P25-02 Every statistic is a declared definition with a cited source — the
   quantile method named by the Hyndman & Fan (1996) type that
   `statistics.quantiles` actually implements, verified at plan time, never assumed
   — and a reference-value test on a hand-computed fixture CSV; two runs on the same
   extract are byte-identical; the committed example profiles regenerate identically
   on every pre-existing key.
 
-- [ ] REQ-P25-03 `templates/DATA-PROFILE.yaml`, `references/data-quality-assertions.md`
+- [x] REQ-P25-03 `templates/DATA-PROFILE.yaml`, `references/data-quality-assertions.md`
   and `skills/dsx-explore-data/SKILL.md` steps 1a, 3a, 4a, 4b, 4e and 4f say
   "copied from the profile" wherever the profiler now supplies the number, and the
   agent computes only what the profiler does not produce (null cross-tabs, outlier
@@ -166,9 +166,9 @@ measure first; a case the gate already catches closes the phase with no mint).
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| REQ-P25-01 | Phase 25 | Pending |
-| REQ-P25-02 | Phase 25 | Pending |
-| REQ-P25-03 | Phase 25 | Pending |
+| REQ-P25-01 | Phase 25 | Met — verified S1-4 (25-VERIFICATION.md, passed) |
+| REQ-P25-02 | Phase 25 | Met — verified S1-4 (25-VERIFICATION.md, passed) |
+| REQ-P25-03 | Phase 25 | Met — verified S1-4 (25-VERIFICATION.md, passed) |
 | REQ-P26-01 | Phase 26 | Pending |
 | REQ-P26-02 | Phase 26 | Pending |
 | REQ-P26-03 | Phase 26 | Pending |

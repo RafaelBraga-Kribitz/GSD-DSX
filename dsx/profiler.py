@@ -161,6 +161,12 @@ def profile_csv(
     target: "str | None" = None,
 ) -> dict[str, Any]:
     """Compute a DATA-PROFILE mapping from a CSV file."""
+    # An explicit empty flag value (`--unit ""` / `--target ""`) means "not declared":
+    # coerce to None so the truthiness guards (column-existence, --target-requires-time)
+    # and the identity guards (block emission) agree, instead of emitting a degenerate
+    # all-null block. Non-empty names still validate against the header as before.
+    unit = unit or None
+    target = target or None
     csv_path = Path(path)
     if not csv_path.exists():
         raise CheckError(f"CSV not found: {csv_path}")
@@ -424,6 +430,12 @@ def profile_csv(
         weekly_range = [min(populated), max(populated)] if populated else None
         # verdict = 'drifting' iff any week base_rate < 0.8*overall OR > 1.2*overall
         # (strict, multiplicative to dodge divide-by-zero); null when <2 populated weeks.
+        # Baseline population note (accepted residual, review LOW #2): `overall` is the
+        # base rate over ALL non-null-target rows, whereas the weekly rates cover only
+        # rows whose time cell parsed into a week. When every target row has a parseable
+        # timestamp (the shipped case) the two populations coincide; a material fraction
+        # of untimed target rows would draw the baseline from a superset of the weekly
+        # population. `verdict` is a coarse producer heuristic, never a gate input.
         if len(populated) >= 2 and overall is not None:
             lo, hi = 0.8 * overall, 1.2 * overall
             verdict: "str | None" = (

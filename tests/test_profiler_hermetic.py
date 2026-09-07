@@ -147,11 +147,15 @@ class TestCategoricalBlock(unittest.TestCase):
         cat = profile["columns"]["level"]["categorical"]
         self.assertAlmostEqual(cat["rare_share"], 15 / 20000)
 
-    def test_top10_tie_boundary_count_desc_then_string_asc(self):
-        # Levels a..i carry counts 15..7 (sum=99); "m" and "n" both have count 5, with
-        # "n" appearing FIRST in CSV row order. The frozen tie-break (count desc, then
-        # level string asc) puts "m" in the top-10 and "n" out — a Counter.most_common()
-        # insertion-order tie-break would wrongly include "n" instead. N=109 total.
+    def test_top10_truncates_at_ten_with_boundary_tie(self):
+        # Levels a..i carry counts 15..7 (sum=99); "m" and "n" both have count 5.
+        # share_top10 sums the ten largest counts: the nine a..i plus exactly ONE of the
+        # two tied count-5 levels -> (99 + 5) / 109. This pins top-10 *truncation* at a
+        # boundary tie, NOT the tie-break rule: because the two boundary levels tie at
+        # count 5, the sum is identical whichever is chosen, so no _categorical_block
+        # aggregate can observe the count-desc/string-asc order. That order is
+        # deterministic insurance over an intermediate ranking that is never emitted
+        # (review M-01: the frozen tie-break is unobservable through the outputs).
         profile = profile_csv(FIXTURES / "categorical_top10_tie.csv")
         cat = profile["columns"]["level"]["categorical"]
         self.assertAlmostEqual(cat["share_top10"], (99 + 5) / 109)
@@ -440,6 +444,20 @@ class TestTargetBlock(unittest.TestCase):
             a = profile_csv(FIXTURES / "target_drifting.csv", time_column="ts", target="y")["target"]
             b = profile_csv(shuf, time_column="ts", target="y")["target"]
         self.assertEqual(a, b)
+
+    def test_empty_flag_values_treated_as_absent(self):
+        # Review LOW #3: an explicit empty flag ("") is coerced to None, so no degenerate
+        # all-null block is emitted and `--target ""` does NOT trip the requires-time
+        # guard — it behaves exactly as if the flag were omitted. Before the coercion fix,
+        # `target=""` with no --time emitted a null target block instead (this fails then).
+        no_time_target = profile_csv(FIXTURES / "target_drifting.csv", target="")
+        self.assertNotIn("target", no_time_target)
+        with_time_target = profile_csv(
+            FIXTURES / "target_drifting.csv", time_column="ts", target=""
+        )
+        self.assertNotIn("target", with_time_target)
+        empty_unit = profile_csv(FIXTURES / "target_drifting.csv", unit="")
+        self.assertNotIn("unit", empty_unit)
 
 
 class TestDocRipple(unittest.TestCase):
