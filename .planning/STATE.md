@@ -2,25 +2,25 @@
 gsd_state_version: 1.0
 milestone: v2.6
 milestone_name: Exploration Depth and Backlog Evidence
-current_phase_name: Per-skill read contracts
-status: blocked-on-human-read
-stopped_at: S2-5 DONE → Phase 26 COMPLETE. Both verify:post gates re-run by the orchestrator on real Python 3.12.10. secure-phase 26 → SECURED, threats_open: 0, 8/8 CLOSED (register from 4/4 PLAN threat_model blocks; ASVS L1, block_on=high, auditor short-circuit → orchestrator re-gated each mitigation at its locator: T-26-01 CRLF `\r?\n`+anti-vacuity; T-26-02 full dotted-path membership + negative control; T-26-03 `install.mjs --check` self-test passed; T-26-04 `dsx/`+`templates/` diff empty + 276→276; T-26-05 intermediate-path match; T-26-06 Also-consult zero backticks; T-26-07 full suite 1590 OK; T-26-SC accept, stdlib-only); 26-SECURITY.md `status: verified`. validate-phase 26 → nyquist_compliant: true, 3/3 REQ COVERED by named tests, 0 MISSING; phase module `tests.test_skill_read_contracts` 7 OK; 26-VALIDATION.md `status: validated`. Human sign-off + UAT batched as HQ-42 (non-blocking until S7-2). Next = S3-1 (Phase 27 discuss) — BLOCKED on HQ-40 Kaufman D-05 human read (unanswered). OPEN QUESTION for next firing (§4 persona round): whether a citation-independent D-13 measurement spike on Phase 27's feature-origin-only-leak case is extractable ahead of the human read (if the existing gate already catches the case, the phase closes with no mint and Kaufman becomes moot) — do NOT treat as a permanent all-blocked no-op until that round runs.
-last_updated: "2026-09-07T09:05:00.000Z"
+current_phase_name: Evidence case — feature-origin-only leak
+status: in-progress — S3-1 partial (design settled, mint parked on Kaufman)
+stopped_at: S3-1 PARTIAL (box UNCHECKED). §4 persona round on the OPEN QUESTION resolved: dsx-ml-integrity-auditor + dsx-analysis-architect (opus, parallel, grounded) BOTH voted YES — the citation-independent D-13 measurement spike on Phase 27's feature-origin-only-leak case IS extractable ahead of the HQ-40 Kaufman read. Verified structurally at dsx/checks/ml.py: every ml check is a spec-DECLARATION check reading model.*/results.* off the parsed spec — none open the extract or inspect actual values, so the feature-origin defect is invisible to the gate; the measurement's dependency graph excludes Kaufman entirely (ml.py cites Saito–Rehmsmeier/-043, Varma–Simon/-052-053, Cawley–Talbot/-090-092, NOT Kaufman). Kaufman attaches ONLY to the docstring of a mint that happens ONLY on a live miss. 27-CONTEXT.md written with the citation-independent design SETTLED+FROZEN (D-27-01 case shape: churn fixture, innocuous `account_health_index` recomputed nightly from the outcome window, honest declarations incl. both train_score+test_score; D-27-02 pass/fail rule with the swap-still-fires incidental-code counterfactual + the DSX-ML-060/061/053/080 watch list) and the mint PARKED on HQ-40 row 40b (feature_provenance vocab DRAFT-only, active DSX-ML-034 mint parked). D-27-03: reserved absent_code = DSX-ML-034 (RESERVE-INACTIVE; next-free-IN-FAMILY in the 03x leakage sub-family, live catalogue re-measured: 030-033 occupied, gap 034-039, global max 092; 093 rejected by family placement); D-06 veto window OPEN, silence=accept. Re-scope of the BLOCK (not a requirement) recorded loudly, not escalated. Next = S3-3 measurement spike: build the D-27-01 fixture + MEASURE at all four gate points from a fresh tempdir, apply the D-27-02 rule (caught → no-mint close, Kaufman moot; live miss → stop at the mint boundary, hold for HQ-40 40b).
+last_updated: "2026-09-07T09:40:00.000Z"
 last_activity: 2026-09-07
-last_activity_desc: Phase 26 S2-5 — secure-phase (SECURED 8/8) + validate-phase (nyquist_compliant, 3/3) re-gated on real 3.12.10; 26-SECURITY.md + 26-VALIDATION.md written; HQ-42 batched; committed + pushed. Phase 26 complete → next = S3-1 (blocked on HQ-40 Kaufman).
+last_activity_desc: Phase 27 S3-1 partial — §4 persona round resolved the OPEN QUESTION (both YES: measurement spike is citation-independent); 27-CONTEXT.md written (design SETTLED/FROZEN, mint PARKED on Kaufman, DSX-ML-034 reserved RESERVE-INACTIVE with an open D-06 veto window); box left UNCHECKED. Next = S3-3 measurement spike.
 progress:
   total_phases: 6
   completed_phases: 2
   total_plans: 8
   completed_plans: 8
   percent: 33
-current_phase: 26
+current_phase: 27
 ---
 
 # Project state
 
 **Status:** v2.6 Exploration Depth and Backlog Evidence — ACTIVE (opened 2026-09-06 by operator direction, HQ-39); branch `gsd/v2.6.0-exploration-depth`; ships as tag `v2.6.0`
-**Progress:** [██████░░░░░░░░░░░░░░░] v2.6 — 2/6 phases (✅25 hermetic profile depth → ✅26 per-skill read contracts → 27 feature-origin-only leak case → 28 magnitude-no-test case → 29 subgroup-harm case → 30 calibration re-baseline)
+**Progress:** [██████░░░░░░░░░░░░░░░] v2.6 — 2/6 phases (✅25 hermetic profile depth → ✅26 per-skill read contracts → 🔄27 feature-origin-only leak case (S3-1 partial) → 28 magnitude-no-test case → 29 subgroup-harm case → 30 calibration re-baseline)
 **Predecessors:** v2.5.0 and v2.4.1 SHIPPED 2026-09-06 interactively (`ad43ec6`, `07d3db0`); v2.4 Visual Excellence SHIPPED 2026-09-03 (tag `v2.4.0`); v2.3 Test Catalog SHIPPED 2026-09-02 (`v2.3.0`); v2.2 Analytic Surface SHIPPED 2026-08-29 (`v2.2.0`); v2.0.0 DSX Validity Frame SHIPPED 2026-08-28 (`v2.1.0`). Archives under `.planning/milestones/`.
 
 **Loop control:** the autonomous ceremony drives this milestone from S0-1 onward per
@@ -48,10 +48,10 @@ and a case the gate already catches closes its phase with no mint (D-13).
 
 ## Current Position
 
-Phase: 26 — Per-skill read contracts (COMPLETE; all 5 S2 units done)
-Plan: all 4 plans executed (S2-3); code review clean (0H/0M/3L accepted) + 26-VERIFICATION.md `passed` (S2-4); secure-phase SECURED 8/8 + validate-phase nyquist_compliant 3/3 (S2-5). Phase 26 done.
-Status: Blocked-on-human-read — Phase 26 complete; next = S3-1 (Phase 27 discuss), BLOCKED on HQ-40 Kaufman D-05 human read. See stopped_at OPEN QUESTION (§4 persona round on a citation-independent D-13 measurement spike) before treating the milestone as a permanent all-blocked no-op.
-Last activity: 2026-09-07 — Phase 26 S2-5: secure (SECURED 8/8) + validate (nyquist 3/3) re-gated on real 3.12.10; 26-SECURITY.md + 26-VALIDATION.md written; HQ-42 batched
+Phase: 27 — Evidence case, feature-origin-only leak (S3-1 discuss PARTIAL; box UNCHECKED)
+Plan: none yet. S3-1 §4 persona round resolved the OPEN QUESTION — both personas YES: the D-13 measurement spike is citation-independent of the pending Kaufman read. 27-CONTEXT.md written (design SETTLED/FROZEN; mint PARKED on Kaufman; DSX-ML-034 reserved RESERVE-INACTIVE, D-06 veto window open).
+Status: In-progress — the milestone is NOT all-blocked. The citation-independent design+measurement path is open; only the mint (its Kaufman docstring + active DSX-ML-034 code) is blocked on HQ-40 row 40b. Next = S3-3 measurement spike (build fixture + measure four gate points, fresh tempdir).
+Last activity: 2026-09-07 — Phase 27 S3-1 partial: persona round (auditor + architect, both YES); 27-CONTEXT.md written; DSX-ML-034 reserved; box left UNCHECKED
 
 ## Performance Metrics
 
@@ -75,14 +75,15 @@ None beyond the ledger.
 
 ### Blockers/Concerns
 
-**Next stage-ordered unit (S3-1, Phase 27 discuss) is blocked on HQ-40's Kaufman
-D-05 human read** (unanswered). S4-1 (Wilkinson/JARS) and S5-1 (Gail & Simon)
-likewise blocked on their HQ-40 rows. This is the milestone reaching its D-05
-human-read gate — the "longest pole" the ledger ordering rationale anticipated.
-Not yet a permanent all-blocked no-op: the next firing should run a §4 persona
-round on whether a citation-independent D-13 measurement spike on Phase 27's case
-is extractable ahead of the human read (a case the existing gate already catches
-closes the phase with no mint → Kaufman moot).
+**The milestone is NOT all-blocked.** The S3-1 §4 persona round (auditor + architect,
+both YES) established that Phase 27's D-13 measurement spike is **citation-independent**
+of the pending Kaufman read: only the *mint* (its Kaufman docstring + active DSX-ML-034
+code) is blocked on HQ-40 row 40b. The next firing runs the **S3-3 measurement spike**
+(build the D-27-01 fixture, measure all four gate points from a fresh tempdir) — a case
+the existing gate catches closes Phase 27 with no mint and moots Kaufman; a live miss
+stops cleanly at the mint boundary and holds for HQ-40 40b. S4-1 (Wilkinson/JARS) and
+S5-1 (Gail & Simon) remain blocked on their HQ-40 rows; the same citation-independent
+measurement-spike pattern may apply to Phases 28–29 and should be evaluated per-phase.
 
 ## Deferred Items
 
