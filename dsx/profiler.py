@@ -158,6 +158,7 @@ def profile_csv(
     time_column: "str | None" = None,
     sentinels: "list[Any] | None" = None,
     unit: "str | None" = None,
+    target: "str | None" = None,
 ) -> dict[str, Any]:
     """Compute a DATA-PROFILE mapping from a CSV file."""
     csv_path = Path(path)
@@ -207,7 +208,18 @@ def profile_csv(
             raise CheckError(f"time column {time_column!r} not in CSV header")
         if unit and unit not in columns:
             raise CheckError(f"unit column {unit!r} not in CSV header")
+        # D-03: --target hard-requires --time (the weekly base rate buckets by ISO week
+        # of the time column); an unknown header raises CheckError, matching --pk/--time.
+        if target and not time_column:
+            raise CheckError("--target requires --time")
+        if target and target not in columns:
+            raise CheckError(f"target column {target!r} not in CSV header")
         unit_counts: Counter[str] = Counter()
+        # D-02 target accumulators: raw stripped non-null target values (for overall +
+        # the binary validation) and per-ISO-week binary values (for the weekly table).
+        target_all: list[str] = []
+        target_distinct: set[str] = set()
+        target_week_raw: dict[tuple[int, int], list[str]] = {}
 
         for row in reader:
             row_count += 1
@@ -257,6 +269,21 @@ def profile_csv(
                 unit_text = "" if unit_raw is None else str(unit_raw)
                 if not _is_null(unit_text):
                     unit_counts[unit_text.strip()] += 1
+            if target:
+                target_raw = row.get(target)
+                target_text = "" if target_raw is None else str(target_raw)
+                if not _is_null(target_text):
+                    target_stripped = target_text.strip()
+                    target_all.append(target_stripped)
+                    target_distinct.add(target_stripped)
+                    # Bucket by (iso_year, iso_week) of the time column (target requires
+                    # --time, so time_column is set here). isocalendar() is locale-free
+                    # and deterministic; rows whose time cell does not parse are counted
+                    # in `overall` (non-null target) but cannot enter a weekly bucket.
+                    parsed_target_date = _parse_date(str(row.get(time_column, "")))
+                    if parsed_target_date is not None:
+                        wk = parsed_target_date.isocalendar()[:2]
+                        target_week_raw.setdefault(wk, []).append(target_stripped)
 
     col_stats: dict[str, Any] = {}
     for col in columns:
@@ -367,6 +394,48 @@ def profile_csv(
         profile["unit"] = {
             "rows_per_unit": {"p50": p50, "p95": p95, "max": max_unit},
             "largest_unit_share": largest_unit_share,
+        }
+
+    # D-01/D-02: `target` is a NEW top-level block appended AFTER the unit block (or after
+    # sentinels_found when no unit is declared), and omitted entirely (never null) when no
+    # target column is declared — so the 25-01/25-02 no-flag golden stays byte-identical.
+    if target is not None:
+        # D-03 / 25-RESEARCH.md Pitfall 4: closed check against the literal set {"0","1"}.
+        # No reuse of any truthy/falsy coercion — yes/no/true/false must fail. The error
+        # lists EVERY distinct offending value (sorted, deterministic) so it is actionable.
+        offending = sorted(v for v in target_distinct if v not in {"0", "1"})
+        if offending:
+            raise CheckError(
+                f"target column {target!r} must be binary {{0,1}}; "
+                f"offending value(s): {', '.join(offending)}"
+            )
+        binary_all = [int(v) for v in target_all]
+        overall: "float | None" = statistics.mean(binary_all) if binary_all else None
+        # Weekly base-rate table, ordered by (iso_year, iso_week) — order-independent.
+        weekly: list[dict[str, Any]] = []
+        for wk in sorted(target_week_raw.keys()):
+            vals = [int(v) for v in target_week_raw[wk]]
+            weekly.append({
+                "week": [wk[0], wk[1]],
+                "n": len(vals),
+                "base_rate": statistics.mean(vals) if vals else None,
+            })
+        populated = [w["base_rate"] for w in weekly if w["base_rate"] is not None]
+        weekly_range = [min(populated), max(populated)] if populated else None
+        # verdict = 'drifting' iff any week base_rate < 0.8*overall OR > 1.2*overall
+        # (strict, multiplicative to dodge divide-by-zero); null when <2 populated weeks.
+        if len(populated) >= 2 and overall is not None:
+            lo, hi = 0.8 * overall, 1.2 * overall
+            verdict: "str | None" = (
+                "drifting" if any(r < lo or r > hi for r in populated) else "stable"
+            )
+        else:
+            verdict = None
+        profile["target"] = {
+            "overall": overall,
+            "weekly": weekly,
+            "weekly_range": weekly_range,
+            "verdict": verdict,
         }
 
     return profile
