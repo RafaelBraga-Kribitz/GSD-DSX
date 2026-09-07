@@ -18,6 +18,29 @@ The version the decision-maker reads, in which every sentence still survives the
 audit.
 </objective>
 
+<inputs>
+**Read `EDA.md` front-matter first when it exists** in the phase directory — the
+population sentence and the base for every relative percentage must come from measured
+numbers, not a restated claim.
+
+EDA front-matter keys read:
+- `dataset`
+- `base_rate.overall`
+- `base_rate.metric`
+- `segments_candidates[]`
+- `comparisons_looked_at`
+- `artifact_status`
+
+DATA-PROFILE keys read (the fallback source when EDA is absent):
+- `row_count`
+- `time.min`
+- `time.max`
+- `target.overall`
+
+These set: the population sentence (from the dataset, row count and time window), the base for relative percentages (from the base rate and target overall), and the "what would change it" section (from the segment candidates, comparisons looked at and artifact status).
+When absent: no `EDA.md` → record `eda_artifact: none` and source the population, base-rate and window facts from the DATA-PROFILE keys above; where the profile is also absent, declare each with `computed_by` honesty rather than narrating a base it cannot substantiate.
+</inputs>
+
 <precondition>
 Run only after `dsx gate verify` passes and `STATS-REVIEW.md` exists. Narrating
 an unverified result is how a leaked feature becomes a strategy.
