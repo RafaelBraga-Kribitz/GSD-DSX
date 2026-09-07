@@ -18,6 +18,34 @@ Design mode: a fully specified experiment whose sample size is derived, not
 guessed. Readout mode: an honest reading of one that has run.
 </objective>
 
+<inputs>
+**Read `EDA.md` front-matter first when it exists** in the phase directory — so the
+power arithmetic runs on the measured dependence, base rate and target, not on a
+guessed baseline.
+
+EDA front-matter keys read:
+- `dependence.icc`
+- `dependence.outcome_sd`
+- `dependence.weekly_cycle_amplitude`
+- `base_rate.overall`
+- `grain.implied_dependence.structure`
+- `grain.implied_dependence.cluster_var`
+
+DATA-PROFILE keys read (the fallback source when EDA is absent):
+- `target.overall`
+- `target.weekly_range`
+- `unit.rows_per_unit`
+- `unit.largest_unit_share`
+
+These set: the `dsx power` inputs, the `design.baseline_rate`, the
+`variance_adjustment` clustered from `cluster_var`, and the whole-week run
+duration the weekly cycle forces.
+When absent: no `EDA.md` → record `eda_artifact: none` and source dependence,
+base-rate and target facts from the DATA-PROFILE keys above; where the profile is
+also absent, declare each with `computed_by` honesty rather than guessing a power
+input.
+</inputs>
+
 <design_mode>
 
 1. **Get the smallest effect that would change the decision.** Not the effect you
