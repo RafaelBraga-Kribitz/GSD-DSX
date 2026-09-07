@@ -202,14 +202,26 @@ three times in v2.4: when a `gsd-*` subagent commits via `gsd-tools query commit
 it can create + switch to a stray branch (v2.4's was `gsd/v2.4-visual-excellence`,
 **no `.0`**) and land the commit there instead of the canonical branch; the
 subagent's own return then confidently **misreports** the branch/push state.
-**After ANY subagent that may commit, the orchestrator must reconcile against the
-repo, not the report:** `git rev-parse --abbrev-ref HEAD` + `git branch -vv`; if a
-stray branch holds the work, it is a linear descendant of canonical →
-`git checkout` canonical → `git merge --ff-only <stray>` (no commit lost) →
-`git branch -d`/`-D` the stray → push; verify tree-hash identity /
-`git merge-base --is-ancestor` before deleting. This is exactly why the loop uses
-plain `git commit` for orchestrator-authored files, and why the `gsd/*` count must
-be re-asserted (6 stale + 1 active) every planning firing.
+**Guarded automatically since 2026-09-07 by `scripts/gsd-reconcile-branch.ps1`**,
+which `run-ceremony-firing.ps1` now runs after every headless firing (win or
+lose): it records the canonical branch's tip before the firing starts, then
+afterward finds any local branch whose tip descends from that recorded point —
+ancestry, not name, is the filter, so it never touches the six-and-counting
+genuinely stale `gsd/*` branches from prior milestones — and folds a clean
+fast-forward case back into canonical, deleting the stray, no commit lost.
+Proven against six scripted scenarios before being wired in (stray off
+canonical, HEAD literally left on the stray, a clean tree with nothing to
+recover, a genuinely diverged stray, an old stale branch that must stay
+untouched, and a dirty tree). A real divergence (not the common case) is left
+alone and reported (exit 1) — a human reconciles that one by hand, same as
+before this guard existed: `git rev-parse --abbrev-ref HEAD` + `git branch -vv`,
+then `git checkout` canonical → `git merge --ff-only <stray>` → `git branch -d`
+the stray → push. **Also runs standalone**, for the same bug hitting an
+interactive `/gsd-execute-phase` or `/gsd-plan-phase` outside the headless loop:
+`pwsh scripts/gsd-reconcile-branch.ps1 -Branch <canonical>` (defaults
+`BaselineRef` to `origin/<canonical>` when run by hand). This is exactly why the
+loop uses plain `git commit` for orchestrator-authored files, and why the
+`gsd/*` count must be re-asserted (6 stale + 1 active) every planning firing.
 
 **Release tags: never force-move a published one.** v2.0.0 shipped as tag
 `v2.1.0` for this reason; v2.2 as `v2.2.0`; v2.3 as `v2.3.0`; v2.4 as `v2.4.0`;

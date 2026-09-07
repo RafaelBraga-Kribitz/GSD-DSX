@@ -273,6 +273,12 @@ try {
     if ($ffOutput.Trim()) { Write-Log $ffOutput.Trim() }
   }
 
+  # Recorded so the post-firing stray-branch guard below (gsd-reconcile-branch.ps1)
+  # can tell a branch created BY THIS FIRING apart from the growing pile of
+  # genuinely stale gsd/* branches left over from prior milestones -- ancestry
+  # from this exact tip is the filter, not the branch name.
+  $preFiringTip = (git rev-parse $Branch | Out-String).Trim()
+
   # --- The firing prompt -----------------------------------------------------
   # Deliberately short. LOOP-BRIEF.md is the real contract and is re-read every
   # firing; duplicating its rules here would let the two drift apart.
@@ -359,6 +365,29 @@ of any previous firing. Everything you need to know is on disk.
   Write-Log "Firing finished (exit code $claudeExit)."
   if ($claudeExit -ne 0) {
     Write-Log "WARNING: non-zero exit -- check the transcript above before trusting this firing."
+  }
+
+  # --- Stray-branch guard (gsd-core defect, HUMAN-QUEUE.md standing note) ----
+  # `gsd-tools query commit`, called by GSD subagents, can create + switch to a
+  # stray branch mid-run and commit there instead of $Branch, while its own
+  # return value confidently misreports success on the canonical branch --
+  # confirmed three times in v2.4 alone before this guard existed. Runs
+  # regardless of $claudeExit: a subagent can leave a stray commit behind even
+  # on a firing that later hits a usage limit or errors out.
+  #
+  # A separate pwsh process on purpose: gsd-reconcile-branch.ps1 calls `exit`
+  # on several of its paths, and `exit` inside a script invoked in-process
+  # (via `&`, not a new process) would terminate this wrapper's own process too
+  # -- skipping the `finally` block below and leaving the lock file behind.
+  Write-Log "Checking for a stray branch left by a subagent commit..."
+  $reconcileScript = Join-Path $Repo 'scripts\gsd-reconcile-branch.ps1'
+  $reconcileOutput = & pwsh -NoProfile -File $reconcileScript `
+      -Branch $Branch -BaselineRef $preFiringTip -Repo $Repo 2>&1 |
+    ForEach-Object { $_.ToString() }
+  $reconcileExit = $LASTEXITCODE
+  $reconcileOutput | ForEach-Object { Write-Log $_ }
+  if ($reconcileExit -ne 0) {
+    Write-Log "WARNING: stray-branch reconciliation left something unresolved -- a human must reconcile by hand (see [reconcile] lines above)."
   }
 
   # --- Usage-limit detection --> graceful backoff -----------------------------
