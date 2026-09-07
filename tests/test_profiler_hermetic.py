@@ -9,6 +9,7 @@ Run:  python.exe -m unittest tests.test_profiler_hermetic -v
 
 from __future__ import annotations
 
+import re
 import sys
 import tempfile
 import unittest
@@ -17,9 +18,36 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from dsx.profiler import _categorical_block, _numeric_block, profile_csv  # noqa: E402
+from dsx.profiler import (  # noqa: E402
+    _categorical_block,
+    _numeric_block,
+    dump_profile_yaml,
+    profile_csv,
+    write_profile,
+)
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures" / "profiler"
+
+
+def _strip_new_blocks(text: str) -> str:
+    """Drop every line belonging to a `numeric:`/`categorical:` sub-map, leaving only
+    pre-Phase-25 rendered lines (D-04 guard #3). CRLF-tolerant — splits on `\\r?\\n`,
+    never assumes `\\n`-only line endings (this repo checks out CRLF on Windows).
+    """
+    lines = re.split(r"\r?\n", text)
+    kept: list[str] = []
+    skip_indent = None
+    for line in lines:
+        indent = len(line) - len(line.lstrip(" "))
+        if skip_indent is not None:
+            if line.strip() != "" and indent > skip_indent:
+                continue
+            skip_indent = None
+        if line.strip() in ("numeric:", "categorical:"):
+            skip_indent = indent
+            continue
+        kept.append(line)
+    return "\n".join(kept)
 
 
 class TestNumericBlock(unittest.TestCase):
@@ -131,6 +159,32 @@ class TestCategoricalBlock(unittest.TestCase):
     def test_categorical_key_absent_for_numeric_dtype(self):
         profile = profile_csv(FIXTURES / "numeric_1_10.csv")
         self.assertNotIn("categorical", profile["columns"]["value"])
+
+
+class TestProfilerDeterminism(unittest.TestCase):
+    def test_two_runs_are_byte_identical(self):
+        profile_a = profile_csv(FIXTURES / "numeric_1_10.csv")
+        profile_b = profile_csv(FIXTURES / "numeric_1_10.csv")
+        with tempfile.TemporaryDirectory() as tmp:
+            out_a = write_profile(profile_a, Path(tmp) / "a.yaml")
+            out_b = write_profile(profile_b, Path(tmp) / "b.yaml")
+            self.assertEqual(out_a.read_bytes(), out_b.read_bytes())
+
+    def test_pre_existing_keys_match_golden(self):
+        profile = profile_csv(FIXTURES / "numeric_1_10.csv")
+        rendered = dump_profile_yaml(profile)
+        filtered = _strip_new_blocks(rendered)
+        # The golden is the raw text/byte diff of rendered YAML (never a parsed-as-dict
+        # compare — see 25-RESEARCH.md Pitfall 3), split CRLF-tolerantly.
+        golden_text = (FIXTURES / "golden_preexisting_numeric_1_10.yaml").read_text(
+            encoding="utf-8"
+        )
+        golden_lines = re.split(r"\r?\n", golden_text)
+        filtered_lines = re.split(r"\r?\n", filtered)
+        self.assertEqual(filtered_lines, golden_lines)
+        # The golden must contain no additive-block lines at all.
+        self.assertNotIn("numeric:", golden_text)
+        self.assertNotIn("categorical:", golden_text)
 
 
 if __name__ == "__main__":
