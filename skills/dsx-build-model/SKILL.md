@@ -17,6 +17,30 @@ A model whose offline score predicts its production score. Everything below
 exists to close the gap between those two numbers.
 </objective>
 
+<inputs>
+**Read `EDA.md` front-matter first when it exists** in the phase directory — a model
+designs leakage prevention in from the profile's measured suspects, dependence structure
+and categorical cardinality rather than auditing for it after the split is drawn.
+
+EDA front-matter keys read:
+- `leakage_suspects[]`
+- `grain.implied_dependence.structure`
+- `grain.implied_dependence.cluster_var`
+- `segments_candidates[]`
+
+DATA-PROFILE keys read (the fallback source when EDA is absent):
+- `columns[].n_unique`
+- `columns[].dtype`
+- `columns[].categorical`
+- `unit.rows_per_unit`
+- `time.column`
+- `time.max_gap_days`
+
+These set: `model.features_excluded_for_leakage` (from the leakage suspects), the split type — temporal, grouped, or `grouped_temporal` (from the dependence structure, cluster variable and time column), the `entity_column` (from the cluster variable and rows-per-unit), and the encoding policy (from categorical cardinality and dtype).
+Also consult (EDA prose, not front-matter): section 4 Wide categoricals — the policy recommendation informing the encoding choice.
+When absent: no `EDA.md` → record `eda_artifact: none` and source the leakage-suspect, dependence and cardinality facts from the DATA-PROFILE keys above; where the profile is also absent, declare each with `computed_by` honesty rather than asserting a clean split.
+</inputs>
+
 <order_of_operations>
 The sequence is not stylistic. Each step makes the next one checkable.
 
