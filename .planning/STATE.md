@@ -3,11 +3,11 @@ gsd_state_version: 1.0
 milestone: v2.6
 milestone_name: Exploration Depth and Backlog Evidence
 current_phase_name: Per-skill read contracts
-status: discussing
-stopped_at: S2-1 DONE — Phase 26 discuss complete; 26-CONTEXT.md written. Advisor round (Architect dsx-analysis-architect + Auditor dsx-ml-integrity-auditor, parallel, grounded) converged 4 decisions — D-26-01 visible `<inputs>` read-step shape (one backtick-key per bullet, full dotted-path parse; hidden HTML-comment fences rejected by rigour>reliability>flexibility); D-26-02 grounded per-skill mapping (scope's joins-matrix + policy_recommendation demoted to prose, both prose-only not front-matter keys); D-26-03 per-skill eda_artifact:none fallback mirroring the executor fragment; D-26-04 off-gate-path guard tests/test_skill_read_contracts.py (dotted-path membership, uncomments # profile examples, negative-control proves a renamed key fails). Zero codes, dsx/ untouched, D-05 burden 0. Next = S2-2 (Phase 26 plan)
-last_updated: "2026-09-07T06:38:20.000Z"
+status: planning
+stopped_at: S2-2 research sub-stage DONE (box UNCHECKED) — 26-RESEARCH.md written by gsd-phase-researcher (sonnet, adaptive) at commit 4ecfb27 (pushed, reconciled clean on canonical — no stray branch); every D-26-02 key resolves against the live templates (zero orphans), all 5 insertion points confirmed, mixed line endings grounded (EDA.md CRLF / DATA-PROFILE.yaml bare-LF ⇒ `\r?\n` mandatory), `node install.mjs && node install.mjs --check` (not --check alone) is the correct installer command, test_gate_path_hermetic won't trip. 26-VALIDATION.md seeded (draft, `## Validation Architecture` @RESEARCH L656 ⇒ Nyquist scaffold ready). Next = S2-2 completion: re-run /gsd-plan-phase 26 (has_research=true ⇒ auto-uses RESEARCH.md) → gsd-planner (opus) → gsd-plan-checker gate; S2-2 checks ONLY when plan-checker passes.
+last_updated: "2026-09-07T07:07:00.000Z"
 last_activity: 2026-09-07
-last_activity_desc: Phase 26 S2-1 — discuss + persona round done; 26-CONTEXT.md written (4 decisions, 1 divergence resolved); next = S2-2 (Phase 26 plan)
+last_activity_desc: Phase 26 S2-2 research sub-stage — 26-RESEARCH.md (HIGH conf, zero orphaned keys) + 26-VALIDATION.md draft seeded; stopped at pacing cap before planner (avoid mid-gate compaction); next = planner + plan-checker
 progress:
   total_phases: 6
   completed_phases: 1
@@ -48,10 +48,10 @@ and a case the gate already catches closes its phase with no mint (D-13).
 
 ## Current Position
 
-Phase: 26 — Per-skill read contracts (discussed)
-Plan: none yet — S2-2 will plan from 26-CONTEXT.md
-Status: Ready to plan
-Last activity: 2026-09-07 — Phase 26 S2-1 discuss complete; 26-CONTEXT.md written (persona round converged 4 decisions); Phase 25 shipped complete (5/5 S1 units)
+Phase: 26 — Per-skill read contracts (planning; research done)
+Plan: none yet — 26-RESEARCH.md + 26-VALIDATION.md (draft) in place; planner runs next firing from 26-CONTEXT.md + RESEARCH.md
+Status: Research done — planner + plan-checker are the next chunk
+Last activity: 2026-09-07 — Phase 26 S2-2 research sub-stage: 26-RESEARCH.md written (zero orphaned keys vs live templates), 26-VALIDATION.md draft seeded; stopped at pacing cap before the planner
 
 ## Performance Metrics
 
