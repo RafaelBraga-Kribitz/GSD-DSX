@@ -3,10 +3,11 @@ phase: 27
 slug: evidence-case-feature-origin-only-leak
 # status lifecycle: draft (seeded by plan-phase) → validated (set by validate-phase §6)
 # audit-milestone §5.5 distinguishes NOT-VALIDATED (draft) from PARTIAL (validated + nyquist_compliant: false) (#2117)
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: validated
+nyquist_compliant: true
+wave_0_complete: true
 created: 2026-09-07
+validated: 2026-09-07T00:00:00Z
 ---
 
 # Phase 27 — Validation Strategy
@@ -56,12 +57,12 @@ Validation Architecture):*
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 27-01-T1 | 27-01 | 1 | REQ-P27-02 | T-27-03 | D-05 marker/docstring stay honest (secondary-corroborated, paywalled) | unit (RED) | `python312 -m unittest tests.test_ml_feature_provenance` (expect non-zero) | ❌ new (Wave 0) | ⬜ pending |
-| 27-01-T2 | 27-01 | 1 | REQ-P27-02 | T-27-09 | check silent when block absent; dq.py byte-frozen | unit + suite | `python312 -m unittest tests.test_ml_feature_provenance -q && python312 -m unittest discover -s tests -q` | ✅ ml.py exists | ⬜ pending |
-| 27-01-T3 | 27-01 | 1 | REQ-P27-02 | T-27-04, T-27-02a, T-27-08 | one deterministic catalogue row; count pins move together | build + invariant | `python312 scripts/gen-finding-catalogue.py --check && python312 -m unittest tests.test_finding_catalogue_invariant tests.test_phase20_zero_mint_close -q` | ✅ | ⬜ pending |
-| 27-02-T1 | 27-02 | 2 | REQ-P27-01 | T-27-01 | fixture stays a MISS (no feature_provenance block) | validate | `python312 -m dsx.cli validate --spec examples/known-bad/feature-origin-only-leak-ANALYSIS-SPEC.yaml` | ❌ new (Wave 0) | ⬜ pending |
-| 27-02-T2 | 27-02 | 2 | REQ-P27-01, REQ-P27-03 | T-27-07 | sidecar falsifiable; harness-valid backlog id | corpus | `python312 -m unittest tests.test_known_bad_corpus -q` | ❌ new (Wave 0) | ⬜ pending |
-| 27-02-T3 | 27-02 | 2 | REQ-P27-03 | T-27-06, T-27-02b, T-27-10, T-27-11 | maps consistent; DSX-ML-034 out of backlog; overlay synced | corpus + invariant + build | `python312 -m unittest discover -s tests -q && python312 scripts/gen-finding-catalogue.py --check && node install.mjs --check` | ✅ | ⬜ pending |
+| 27-01-T1 | 27-01 | 1 | REQ-P27-02 | T-27-03 | D-05 marker/docstring stay honest (secondary-corroborated, paywalled) | unit (RED) | `python312 -m unittest tests.test_ml_feature_provenance` (expect non-zero) | ✅ shipped | ✅ green |
+| 27-01-T2 | 27-01 | 1 | REQ-P27-02 | T-27-09 | check silent when block absent; dq.py byte-frozen | unit + suite | `python312 -m unittest tests.test_ml_feature_provenance -q && python312 -m unittest discover -s tests -q` | ✅ ml.py exists | ✅ green |
+| 27-01-T3 | 27-01 | 1 | REQ-P27-02 | T-27-04, T-27-02a, T-27-08 | one deterministic catalogue row; count pins move together | build + invariant | `python312 scripts/gen-finding-catalogue.py --check && python312 -m unittest tests.test_finding_catalogue_invariant tests.test_phase20_zero_mint_close -q` | ✅ | ✅ green |
+| 27-02-T1 | 27-02 | 2 | REQ-P27-01 | T-27-01 | fixture stays a MISS (no feature_provenance block) | validate | `python312 -m dsx.cli validate --spec examples/known-bad/feature-origin-only-leak-ANALYSIS-SPEC.yaml` | ✅ shipped | ✅ green |
+| 27-02-T2 | 27-02 | 2 | REQ-P27-01, REQ-P27-03 | T-27-07 | sidecar falsifiable; harness-valid backlog id | corpus | `python312 -m unittest tests.test_known_bad_corpus -q` | ✅ shipped | ✅ green |
+| 27-02-T3 | 27-02 | 2 | REQ-P27-03 | T-27-06, T-27-02b, T-27-10, T-27-11 | maps consistent; DSX-ML-034 out of backlog; overlay synced | corpus + invariant + build | `python312 -m unittest discover -s tests -q && python312 scripts/gen-finding-catalogue.py --check && node install.mjs --check` | ✅ | ✅ green |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -69,9 +70,9 @@ Validation Architecture):*
 
 ## Wave 0 Requirements
 
-- [ ] `examples/known-bad/feature-origin-only-leak-POSTMORTEM.md` — new (REQ-P27-01)
-- [ ] `examples/known-bad/feature-origin-only-leak-ATTRIBUTION.yaml` — new (REQ-P27-01/03)
-- [ ] `tests/test_ml_feature_provenance.py` — new unit test carrying `# D-05: DSX-ML-034` (REQ-P27-02)
+- [x] `examples/known-bad/feature-origin-only-leak-POSTMORTEM.md` — shipped (REQ-P27-01)
+- [x] `examples/known-bad/feature-origin-only-leak-ATTRIBUTION.yaml` — shipped (REQ-P27-01/03)
+- [x] `tests/test_ml_feature_provenance.py` — shipped unit test carrying `# D-05: DSX-ML-034` (REQ-P27-02)
 
 ---
 
@@ -88,11 +89,33 @@ the corpus fixture; its acceptance test IS the automated invariant set.*
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 65s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references
+- [x] No watch-mode flags
+- [x] Feedback latency < 65s
+- [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+## Requirement Coverage (validate-phase S3-5)
+
+State A (all references shipped). 3/3 requirements COVERED by named `unittest`
+tests, 0 MISSING → `nyquist_compliant: true`. Re-run by the orchestrator on real
+Python 3.12.10 (`C:\Users\Benutzer1\AppData\Local\Programs\Python\Python312\python.exe`):
+
+| Requirement | Covering test(s) | Verdict |
+|-------------|------------------|---------|
+| REQ-P27-01 | `tests.test_known_bad_corpus` (fixture present + validates PASS + sidecar falsifiable) | COVERED |
+| REQ-P27-02 | `tests/test_ml_feature_provenance.py` (9 tests, `# D-05: DSX-ML-034`) + `gen-finding-catalogue.py --check` | COVERED |
+| REQ-P27-03 | `tests.test_causal_verb_golden`, `tests.test_frame_val`, `tests.test_finding_catalogue_invariant`, `tests.test_phase20_zero_mint_close`, `tests.test_dsx` | COVERED |
+
+- Phase module re-run (`tests.test_ml_feature_provenance` + `tests.test_known_bad_corpus`): **60 tests OK**.
+- Golden ship set re-measure (`tests.test_causal_verb_golden`): **6 tests OK**.
+- Full suite (`unittest discover -s tests -q`): **1599 tests OK** (64.2s).
+- Manual-only verifications: none (Phase 27 has no user-facing runtime behaviour
+  beyond the declaration-only check and the corpus fixture; its acceptance test IS
+  the automated invariant set).
+
+**Approval:** validated (technical) 2026-09-07 — `nyquist_compliant: true`, 0 gaps,
+3/3 requirements COVERED by named tests, phase module 60/60 green on real 3.12.10.
+UAT round batched to HUMAN-QUEUE as **HQ-43** (non-blocking until S7-2 per
+LOOP-LEDGER S3-5).

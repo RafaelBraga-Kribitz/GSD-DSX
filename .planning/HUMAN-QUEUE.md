@@ -133,14 +133,49 @@ runtime input handling.
 An interactive session records both verdicts in the proper artifacts (SECURITY.md
 Approval line; a UAT note) and checks this item off. **Non-blocking until S7-2.**
 
+### HQ-43 — Phase 27 end-of-phase sign-off: security + UAT (filed 2026-09-07 by S3-5; non-blocking until S7-2)
+
+**What this is.** Phase 27 (Evidence case — feature-origin-only leak) passed both
+verify:post gates technically; two items need the operator's sign-off at close-out
+(S7-2), neither blocking any earlier work. Phase 27 mints one code (`DSX-ML-034`,
+feature provenance) under a **secondary-corroborated** D-05 citation (Kaufman et al.
+2012, HQ-40 row 40b — primary ACM PDF paywalled, flagged honestly) and promotes a
+corpus **MISS** fixture; the attack surface is provenance laundering, catalogue/count
+tampering, and a fixture silently flipping MISS→CATCH — not runtime input handling.
+`dsx/checks/dq.py` stays byte-frozen.
+
+1. **Security sign-off (SECURITY.md approval line — brief §4.4).** The loop re-gated
+   all 12 threats at their code locators on real Python 3.12.10 → **SECURED,
+   `threats_open: 0`, 12/12 CLOSED** (`27-SECURITY.md`, `status: verified` technical):
+   the D-05 docstring + `# D-05:` marker honestly record "secondary-corroborated,
+   primary PDF paywalled" and claim no first-hand read (T-27-03 HIGH); the fixture
+   declares no `feature_provenance` block and validates PASS/CRITICAL=0, so it stays an
+   honest miss (T-27-01 HIGH); catalogue 276→277 with exactly one CRITICAL DSX-ML-034
+   row (T-27-04); count pins 277 and spec count 43 moved in lockstep (T-27-02a/02b);
+   DSX-ML-034 out of `_SECTION_65_BACKLOG_CODES`, sidecar id a frozen `_SECTION_65_ITEM_IDS`
+   member (T-27-06/07); `dq.py` byte-frozen (T-27-09); full suite 1599 OK (T-27-10 golden
+   re-measure); `node install.mjs --check` self-test passed (T-27-11). The Approval line is
+   written but **unsigned** — the loop verifies mitigations, it does not sign. **To answer:**
+   read `27-SECURITY.md`; confirm the register + the D-05 honesty threat T-27-03 and the
+   MISS-integrity threat T-27-01; approve.
+2. **UAT round.** `27-VALIDATION.md` is `nyquist_compliant: true`, 0 gaps, all 3
+   requirements COVERED by named tests (phase module `tests.test_ml_feature_provenance`
+   + `tests.test_known_bad_corpus` = 60/60 green on real 3.12.10; golden 6/6; full suite
+   1599 OK). Phase 27 has no user-facing runtime behaviour beyond the declaration-only
+   check and the corpus fixture, so its acceptance test IS the automated invariant set.
+   **To answer:** confirm UAT accepted (or name a manual check to run).
+
+An interactive session records both verdicts in the proper artifacts (SECURITY.md
+Approval line; a UAT note) and checks this item off. **Non-blocking until S7-2.**
+
 ## Will be added by the loop when reached
 
 - ~~S0-3: the v2.6 D-05 citation evidence pack~~ — **FILED as HQ-40 (2026-09-06)**,
   see Open above. Non-blocking for Phases 25–26; the Kaufman/Wilkinson-or-JARS/Gail
   rows block S3-1, S4-1 and S5-1 respectively.
 - Phase 25/26/27/28/29/30 end-of-phase security sign-off + UAT rounds (batched per
-  phase; non-blocking until S7-2). **Phase 25 filed as HQ-41; Phase 26 filed as HQ-42
-  (both 2026-09-07).**
+  phase; non-blocking until S7-2). **Phase 25 filed as HQ-41; Phase 26 filed as HQ-42;
+  Phase 27 filed as HQ-43 (all 2026-09-07).**
 - D-06 numbering veto windows for any code Phases 27–29 mint, and for any number
   reserved in `_SECTION_65_BACKLOG_CODES` for a miss sidecar (from a freshly
   re-measured live catalogue count; silence = accept).
