@@ -289,3 +289,104 @@ and the citation block is cleared.
   the D-28-00 shift from the scope's literal wording to the collision construction is a
   refinement of the *case*, driven by the measured behaviour of an existing check, within
   the same requirement — not a scope change.
+
+## D-28-06 — Harness encoding of the `DSX-COH-001` incidental (POST-MEASUREMENT; §4 round, S4-3)
+
+**This is a post-measurement decision, not a re-freeze of D-28-00..05.** It touches only
+the corpus test harness (`tests/test_known_bad_corpus.py`); the frozen fixture shape
+(D-28-01), the pass/fail rule (D-28-02), `dsx/` and `dsx/checks/coherence.py` are ALL
+byte-unchanged, and **no code is minted by this decision**. It is exactly the kind of
+harness detail D-28-02 anticipated ("documented incidental corpus-gap code") — the
+measurement surfaced *which* incidental, and encoding it needs a decision the two-bucket
+harness cannot make mechanically.
+
+**Trigger (measured, `28-MEASUREMENT.md`, VERDICT: LIVE MISS).** The frozen D-28-01
+fixture fires `DSX-COH-001` (CRITICAL) at **plan / verify / ship** (not execute —
+`coherence` is absent from that gate profile) because its one claim is typed
+`association` (strength 1) under a `descriptive` `question_type` (strength 0).
+`dsx/checks/coherence.py::_check_claim_ceiling` reads **only** `claims[].type` and
+`question_type` and no numeric literal, so its swap-invariance is a **structural theorem**,
+not merely the measured swap tables — it is genuinely incidental to the magnitude→test
+traceability defect (the target), which stays uncaught. The D-28-02 clear table
+(:127-137) did not anticipate this fire; the discuss round checked the causal-verb codes
+(CLM-011/020/021) but not the coherence strength-ladder.
+
+**The structural problem (why this is a decision, not a one-line map edit).** To promote
+the fixture, `test_ship_gate_findings_are_all_documented_incidental_corpus_gaps`
+(`:1292`) requires every CRITICAL/HIGH ship finding to be in `allowed =
+_INCIDENTAL_GAP_CODES ∪ _own_target_codes(slug)`. But `DSX-COH-001` is **already the
+legitimate target of `prescriptive-churn-recommendation`** (`_TARGET_DEFECT_CODES`,
+:256-260):
+- Adding it to the global `_INCIDENTAL_GAP_CODES` **fails the anti-laundering guard**
+  `test_incidental_allowlist_names_no_slugs_own_target_code` (`:1335`) — it would launder
+  another fixture's real target into "noise".
+- Adding it to *this* fixture's own-target maps **falsely declares it the encoded defect**
+  and (via `_own_target_codes`) credits the fixture with a catch, corrupting the MISS
+  ledger and the ABSENT-partition calibration.
+This is the corpus's **first incidental that collides with another fixture's target** —
+the two-bucket model (global-incidental XOR own-target, kept disjoint) cannot express
+"incidental here, target there."
+
+**Load-bearing scope correction (Architect, verified against `_classify_target_defect`
+:277-330).** `DSX-COH-001` fires CRITICAL at **plan**, a `_CRITICAL_THRESHOLD_POINT`, so
+**TWO** harness tests break, not one: `test_ship_gate_findings...` (`:1292`) at ship AND
+`test_every_spec_blocks_only_on_its_target_defect_at_critical_threshold_points`
+(`:1149`) at plan (the classifier's no-expected branch demands exit 0; plan exits 1).
+Any fix that only touches the `:1325` `allowed` line is incomplete.
+
+**DECISION — Option A (per-fixture, point-scoped incidental map).** Both personas
+converged (Architect VOTE: A ≫ C > B ≫ D2; Auditor: approve-with-guard) — **no tie-break
+needed**. Introduce `_PER_FIXTURE_INCIDENTAL_CODES: dict[str, dict[str, frozenset[str]]]`
+keyed `magnitude-without-computed-effect -> {"plan"/"verify"/"ship": frozenset({"DSX-COH-001"})}`,
+read **only** by the two completeness tests, **never** by `_own_target_codes` /
+`_effective_target_map` — so `_EXPECTED_CAUGHT_DEFECTS[slug] = frozenset()` stays true and
+the fixture is never credited with a catch. Entry is minimal `{DSX-COH-001}` (COH-010 does
+NOT fire — no causal decision language). Rejected: **B (reshape / re-type the claim)** —
+voids the phase under Guardrail 1 (post-measurement edit to the frozen D-28-01 shape),
+forces re-measurement, and is *less* honest (a two-group "27% vs 18%" contrast is
+inherently associational; retyping to silence a check is the tuning a sceptic distrusts);
+**C (declare COH-001 a second target)** — a semantic lie that breaks the MISS and
+double-counts COH-001 coverage against prescriptive-churn; **D2 (carve COH-001 out of the
+:1335 guard)** — guts the anti-laundering guard outright.
+
+**Mandatory acceptance criteria the S4-3 executor MUST meet (the guard set — Auditor 1–7,
+Architect impl):**
+1. **`_classify_target_defect` gets a defaulted `incidental: frozenset[str] = frozenset()`
+   param.** With empty incidental the no-expected branch is provably byte-identical to
+   today (`exit_code != 0 and matched and matched <= incidental` collapses to `False`), so
+   every existing call site is unchanged; only the (slug, point) pairs named in the new map
+   are loosened, and a stray non-incidental CRITICAL still fails loudly naming itself.
+2. **`:1149` call passes the point-scoped incidental**; **`:1325` `allowed` unions in a
+   flattened `_per_fixture_incidental_codes(slug)` helper** (mirrors `_own_target_codes`).
+3. **Static anti-laundering guard (self-target):** new test —
+   `∀ slug: _PER_FIXTURE_INCIDENTAL_CODES[slug] ∩ _own_target_codes(slug) = ∅`.
+4. **Static justification-binding guard (the teeth):** new test — every per-fixture
+   incidental code MUST be some **other** slug's declared target in `_effective_target_map()`.
+   This forces every entry to prove *why it cannot be global* (a code that is nobody's
+   target can and must go into `_INCIDENTAL_GAP_CODES`); it makes this mechanism strictly
+   **narrower** than the global list, not a general escape hatch. A future per-fixture
+   incidental that is not another slug's target is a design change needing a fresh §4 round.
+5. **Live non-inertness test:** `DSX-COH-001` actually fires CRITICAL at ship on this
+   fixture (a stale/wrong allowlist entry fails) — mirrors the truncated-axis positive test.
+6. **Severity trap (load-bearing):** `DSX-CLM-034` must be kept **OUT** of
+   `_PER_FIXTURE_INCIDENTAL_CODES[slug]` AND out of this slug's own-target codes — because
+   if it ships **HIGH** (D-28-05 leans HIGH), the CRITICAL-only falsifiability test
+   `test_attribution_tags_are_falsifiable_against_live_gate` (`:1725`) is *vacuous* for it,
+   so `:1292` is its real live falsifier and must stay so. The sidecar MISS obligations
+   (`kind: miss`, `absent_code: DSX-CLM-034` firing nowhere CRITICAL) are unchanged and
+   independent of this map.
+7. **Synthetic controls (filesystem-independent, `TestClassifyTargetDefectHelper`
+   discipline):** prove both directions — incidental-equal-to-own-target is caught;
+   incidental-equal-to-another-fixture's-target is permitted; and the classifier tolerates
+   a sole CRITICAL ∈ incidental (exit 1 → `[]`) while a second non-incidental CRITICAL
+   still yields problems.
+
+**Classification (brief §4).** Harness-only, `dsx/` byte-frozen, zero codes minted; a
+persona-round decision recorded loudly — NOT a HUMAN-QUEUE escalation, NOT a scope change
+(REQ-P28-01/02/03 unchanged), NOT a re-shape of the frozen fixture (the incidental is
+*encoded*, never designed away). This corrects the 28-02-PLAN plan-input at :226 /
+must_have truth #1 (which assumed a Phase-27-style pure miss, `_EXPECTED_CAUGHT_DEFECTS =
+frozenset()` with nothing else): the frozenset stays empty, but the plan MUST additionally
+carry the `_PER_FIXTURE_INCIDENTAL_CODES` entry, the classifier `incidental` param, the
+`:1149`+`:1292` wiring, and guards 3–7. Amended in 28-02-PLAN.md this firing (orchestrator,
+measurement-driven correction, re-verified against the harness code above).
