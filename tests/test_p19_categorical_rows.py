@@ -30,11 +30,12 @@ _CATALOGUE = ROOT / "references" / "finding-codes.md"
 
 # The pinned live total — REQ-P19-03 (categorical) mints nothing, but Wave 2 (19-C)
 # additively mints the ten DSX-STA-070..122 gate codes over the Phase-18 baseline of
-# 265 (→275), and Phase 22 additively mints DSX-VIZ-071 (→276). This is a live-total
-# pin kept in lockstep with tests/test_finding_catalogue_invariant.py::_EXPECTED_TOTAL;
-# the categorical-minted-nothing proof is carried by the rows-present assertions and
-# the absent DSX-STA-06x decade, not by this absolute total.
-_EXPECTED_TOTAL = 276
+# 265 (→275), Phase 22 additively mints DSX-VIZ-071 (→276), and Phase 27 additively
+# mints DSX-ML-034 (→277). This is a live-total pin kept in lockstep with
+# tests/test_finding_catalogue_invariant.py::_EXPECTED_TOTAL; the categorical-minted-
+# nothing proof is carried by the rows-present assertions and the absent DSX-STA-06x
+# decade, not by this absolute total.
+_EXPECTED_TOTAL = 277
 _TOTAL_RE = re.compile(r"\*\*Total:\s*(\d+)\s*codes\.\*\*")
 
 
@@ -83,9 +84,9 @@ class CategoricalMintedNothingTest(unittest.TestCase):
             int(match.group(1)), _EXPECTED_TOTAL,
             f"catalogue declares {match.group(1)} codes, expected {_EXPECTED_TOTAL} — "
             "REQ-P19-03 (categorical) mints zero codes; the sanctioned movement over "
-            "the Wave-1 baseline of 265 is Wave 2's ten DSX-STA-070..122 gate codes (275) "
-            "plus Phase 22's DSX-VIZ-071 (276). Any other change means a report.add site "
-            "slipped in",
+            "the Wave-1 baseline of 265 is Wave 2's ten DSX-STA-070..122 gate codes (275), "
+            "Phase 22's DSX-VIZ-071 (276) and Phase 27's DSX-ML-034 (277). Any other "
+            "change means a report.add site slipped in",
         )
 
 

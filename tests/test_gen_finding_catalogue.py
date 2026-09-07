@@ -698,6 +698,16 @@ _CANONICAL_DECLARATIONS = {
             f"Prescriptive claim recommends an intervention on a weak strategy ('{_PH}')",
         ),
     },
+    # Phase 27-01 (REQ-P27-02, D-06): DSX-ML-034 is emitted at two literal
+    # severities by design — CRITICAL for available_at after_prediction and HIGH
+    # for an unwaived unknown, per the frozen §S3-1-CLOSE severity map. The two
+    # report.add sites are ordered in `_check_feature_provenance` so collect()'s
+    # last-seen-wins dedupe lands the CRITICAL row in the catalogue (the headline
+    # disposition); this pin records both declarations deliberately.
+    "DSX-ML-034": {
+        ("CRITICAL", f"Feature '{_PH}' is declared available only after the prediction moment"),
+        ("HIGH", f"Feature '{_PH}' declares available_at 'unknown' with no waiver"),
+    },
 }
 
 

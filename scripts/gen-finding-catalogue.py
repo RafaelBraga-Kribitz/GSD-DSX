@@ -199,6 +199,14 @@ _D05_ALLOWLIST_CODES = frozenset(
         # helper this phase wrote (cites Wilke §5.6 + §16.2); same exact-code
         # precedent as the DSX-STA-* blocks above.
         "DSX-VIZ-071",
+        # Phase 27 (REQ-P27-02) adds DSX-ML-034 here by EXACT CODE, not via a
+        # "DSX-ML-" prefix: DSX-ML-* is a pre-existing family (v1.0.0) whose ~40
+        # legacy codes carry no Citation:/Structural criterion: docstring line and
+        # no `# D-05:` marker, so a prefix add would fail the build red on all of
+        # them. DSX-ML-034 lives in the brand-new `_check_feature_provenance`
+        # helper this phase wrote (cites Kaufman et al. 2012, secondary-corroborated
+        # / primary PDF paywalled); same exact-code precedent as DSX-VIZ-071 above.
+        "DSX-ML-034",
     }
 )
 

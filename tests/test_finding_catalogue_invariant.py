@@ -31,12 +31,13 @@ _SNAPSHOT_PATH = ROOT / "tests" / "fixtures" / "finding-codes-phase12.md"
 
 # The pinned count. Phase 16 mints DSX-REP-060/061, Phase 15 mints
 # DSX-EXP-070/DSX-MET-021, Phase 18 (Plan 18-A) mints DSX-STA-050/051/060/061/062,
-# Phase 19 (Plan 19-C) mints DSX-STA-070/080/081/090/100/110/111/120/121/122, and
-# Phase 22 (Plan 22-02) mints DSX-VIZ-071 (the uncertainty-vocabulary gate) (D-08
-# additive rebaselines), so the live catalogue is 276 — up from the 256 the byte-frozen
+# Phase 19 (Plan 19-C) mints DSX-STA-070/080/081/090/100/110/111/120/121/122,
+# Phase 22 (Plan 22-02) mints DSX-VIZ-071 (the uncertainty-vocabulary gate), and
+# Phase 27 (Plan 27-01) mints DSX-ML-034 (the feature-provenance gate) (D-08
+# additive rebaselines), so the live catalogue is 277 — up from the 256 the byte-frozen
 # Phase-12 snapshot enumerates. DSX-VIZ-072 is deliberately NOT minted (the ten §5.6
 # marks are paradigm-symmetric, so there is no mark→paradigm partition to gate).
-_EXPECTED_TOTAL = 276
+_EXPECTED_TOTAL = 277
 
 # The byte-frozen Phase-12 snapshot's own size, and the explicit additive delta over it.
 # Kept SEPARATE from _EXPECTED_TOTAL on purpose: tests/fixtures/finding-codes-phase12.md
@@ -49,6 +50,7 @@ _MINTED_CODES = {
     "DSX-STA-070", "DSX-STA-080", "DSX-STA-081", "DSX-STA-090", "DSX-STA-100",
     "DSX-STA-110", "DSX-STA-111", "DSX-STA-120", "DSX-STA-121", "DSX-STA-122",
     "DSX-VIZ-071",
+    "DSX-ML-034",
 }
 
 # The declared-total line — matched after whitespace-collapse, so it is agnostic to
@@ -62,19 +64,19 @@ _ROW_RE = re.compile(r"\|\s*`(DSX-[A-Z]+-\d+)`\s*\|")
 
 
 class TestCatalogueInvariant(unittest.TestCase):
-    def test_finding_catalogue_stays_at_276_codes(self):
-        """The catalogue declares, and enumerates, exactly 276 codes (D-08).
+    def test_finding_catalogue_stays_at_277_codes(self):
+        """The catalogue declares, and enumerates, exactly 277 codes (D-08).
 
-        Two independent readings of the same generated artifact must agree on 276:
+        Two independent readings of the same generated artifact must agree on 277:
         the human-facing ``**Total: N codes.**`` line and the machine count of
-        ``DSX-*`` table rows. Requiring both to equal 276 catches a stale Total line
+        ``DSX-*`` table rows. Requiring both to equal 277 catches a stale Total line
         as well as a minted or dropped code, without re-walking the ``dsx/`` AST here —
         this test stays a pure reader of the same file ``gen-finding-catalogue.py
         --check`` gates. Phase 16 added DSX-REP-060/061, Phase 15 added
         DSX-EXP-070/DSX-MET-021, Phase 18 added DSX-STA-050/051/060/061/062, Phase 19
-        added DSX-STA-070/080/081/090/100/110/111/120/121/122, and Phase 22 added
-        DSX-VIZ-071 additively (256 -> 276); any further movement is a new mint or drop
-        and belongs to its own phase.
+        added DSX-STA-070/080/081/090/100/110/111/120/121/122, Phase 22 added
+        DSX-VIZ-071, and Phase 27 added DSX-ML-034 additively (256 -> 277); any further
+        movement is a new mint or drop and belongs to its own phase.
         """
         raw = _CATALOGUE_PATH.read_text(encoding="utf-8")
 

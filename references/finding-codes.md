@@ -13,7 +13,7 @@ a suppression or a reference in a review stays valid across versions.
 **Gate thresholds.** `plan` and `execute` block at CRITICAL; `verify` and
 `ship` block at HIGH.
 
-**Total: 276 codes.**
+**Total: 277 codes.**
 
 ## Contract structure — `DSX-SPEC-*`
 
@@ -160,6 +160,7 @@ Leakage, splits, metric choice, baselines, evaluation hygiene.
 | `DSX-ML-031` | CRITICAL | Target '<…>' appears in the feature list |
 | `DSX-ML-032` | HIGH | <…> feature(s) match known leakage patterns |
 | `DSX-ML-033` | MEDIUM | model.prediction_time_definition is not declared |
+| `DSX-ML-034` | CRITICAL | Feature '<…>' is declared available only after the prediction moment |
 | `DSX-ML-040` | HIGH | model.primary_metric is not declared |
 | `DSX-ML-041` | HIGH | '<…>' is the primary metric on data with a <…> minority class |
 | `DSX-ML-042` | MEDIUM | R² is the only regression metric declared |

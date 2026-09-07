@@ -91,14 +91,16 @@ class TestPhase20ZeroMintClose(unittest.TestCase):
     def test_catalogue_declares_expected_total(self) -> None:
         """The generated catalogue declares the pinned live total. Phase 20 minted
         zero (the catalogue closed at 275); Phase 22 then additively minted
-        DSX-VIZ-071, moving the live total to 276. This leg stays in lockstep with
+        DSX-VIZ-071 and Phase 27 additively minted DSX-ML-034, moving the live total
+        to 277. This leg stays in lockstep with
         tests/test_finding_catalogue_invariant.py::_EXPECTED_TOTAL; Phase 20's
         zero-mint tell is carried by the reserve-band-absent and snapshot-subset
         checks below, not by this absolute total."""
         self.assertEqual(
-            _declared_total(_CATALOGUE), 276,
-            "references/finding-codes.md must declare 276 codes (275 at the Phase-20 "
-            "zero-mint close, +1 for Phase 22's additive DSX-VIZ-071 mint)",
+            _declared_total(_CATALOGUE), 277,
+            "references/finding-codes.md must declare 277 codes (275 at the Phase-20 "
+            "zero-mint close, +1 for Phase 22's additive DSX-VIZ-071 mint, +1 for "
+            "Phase 27's additive DSX-ML-034 feature-provenance mint)",
         )
 
     def test_phase12_snapshot_frozen_at_256_and_subset(self) -> None:
