@@ -3,11 +3,11 @@ gsd_state_version: 1.0
 milestone: v2.6
 milestone_name: Exploration Depth and Backlog Evidence
 current_phase_name: Evidence case — feature-origin-only leak
-status: in-progress — S3-3 measurement done (LIVE MISS); Phase 27 blocked on HQ-40 Kaufman for the mint
-stopped_at: S3-3 measurement spike DONE (boxes S3-1..S3-5 stay UNCHECKED). Executed the citation-independent D-13 measurement per the FROZEN 27-CONTEXT.md (no design edit — guardrail 1). Built the spike fixture (spike/feature-origin-leak-*: leaky spec cloning full-frame-cleaning's measured-passing non-model blocks + a complete honest model block — temporal split w/ disjoint periods, preprocessing_fit_on train_only, full selection_ledger, beaten baseline, honest train+test scores, declared calibration; clean entrypoint w/ recognised TimeSeriesSplit before fit(X_train); leaky column account_health_index matches 0/10 LEAKAGE_PATTERNS) and MEASURED live at all four gate points + validate from fresh tempdirs on real 3.12.10 (spike/feature-origin-leak-MEASURE.py replicates _gate_findings). Verbatim: validate 0 / plan 0 (DSX-MET-040 H) / execute 0 / verify 1 / ship 1 — the two points carrying the ml+code leakage surface (plan, execute) BOTH exit 0; ml.check ran fully with 0 findings incl. passed-check "7 features screened, no leakage patterns matched" (positive clearance of the leaky column). D-27-02 swap-still-fires counterfactual applied by literal code: honest-swap variant (account_health_index→avg_session_minutes) gave an IDENTICAL CRITICAL/HIGH set at all 5 points ⇒ no residual code is a catch; the 4 verify/ship residuals (DSX-CLM-031/COH-031/MET-040/NAR-001) are exactly full-frame-cleaning's documented _INCIDENTAL_GAP_CODES, all swap-invariant. VERDICT: LIVE MISS ⇒ §6.5 item 7 entry condition MET (verbatim in 27-MEASUREMENT.md). Per guardrails 2-3 HARD STOP at the mint boundary: no check/docstring/DSX-ML-034 activation/harness entry authored — all PARKED on HQ-40 row 40b (Kaufman D-05 read; annotated there with the confirmed live miss). Phase 27 now fully blocked on that read. Milestone NOT all-blocked: Phases 28 & 29 D-13 measurement spikes are citation-independent too (each needs its own §4 persona round first) → next = Phase 28 measurement spike (S4-1 persona round + build + measure).
-last_updated: "2026-09-07T12:09:00.000Z"
+status: in-progress — S3-1 DONE (Phase 27 discuss closed); HQ-40 answered; mint UNBLOCKED; next = S3-2 (plan the mint)
+stopped_at: S3-1 DONE (box CHECKED). HQ-40 is ANSWERED — all five D-05 rows read at their locators; row 40b (Kaufman 2012 TKDD) CONFIRMED (author list/venue/locator primary-grade via convergent Scholar+ACM-DL; the legitimacy definition secondary-corroborated across 3 indexes, ACM primary PDF paywalled after 9 failed opens — flagged honestly, NOT upgraded to a direct read; operator direction "proceed with DSX-ML-034"). That was the SOLE remaining block on S3-1 (per 27-CONTEXT.md §5: completion needed "the Kaufman read clearing the mint"; design was already FROZEN — D-27-01/02 — and LIVE MISS already MEASURED at prior firings, 27-MEASUREMENT.md). Recorded the resolution in 27-CONTEXT.md §S3-1-CLOSE (design/state only, NO code authored — guardrail 3): model.feature_provenance[] vocab ADOPTED (both adoption conditions — live miss + citation confirmed — now met); DSX-ML-034 ACTIVATED for authoring at S3-3 (D-06 veto affirmatively accepted by operator direction, stronger than silence); BINDING S3-3 instruction carried forward — the `# D-05:` marker + docstring MUST say "secondary-corroborated, primary PDF paywalled" (no first-hand ACM-PDF claim); DSX-ML-034 added to _D05_ALLOWLIST_CODES at mint time. Guardrail 1 intact (D-27-01/02 untouched). Also unblocked by HQ-40: S4-1 (Phase 28 — cite Wilkinson & TFSI 1999 alone, DROP JARS 40d) and S5-1 (Phase 29 — Gail & Simon confirmed). Next = S3-2 (plan the mint; plan-checker must pass; promote the spike/ fixture into a committed corpus fixture + the ATTRIBUTION sidecar + harness entries: _EXPECTED_VAL_CODES, tests/test_dsx.py spec count, _SECTION_65_BACKLOG_CODES).
+last_updated: "2026-09-07T12:28:00.000Z"
 last_activity: 2026-09-07
-last_activity_desc: Phase 27 S3-3 D-13 measurement spike DONE — measured LIVE MISS at all four gate points on real 3.12.10 (validate/plan/execute clean, ml leakage screen positively cleared the innocuous account_health_index; verify/ship blocked only on swap-invariant corpus-gap codes). §6.5 item 7 entry condition MET; mint parked on HQ-40 Kaufman read (hard stop at the mint boundary). Recorded verbatim in 27-MEASUREMENT.md. Next = Phase 28 measurement spike.
+last_activity_desc: Phase 27 S3-1 CLOSED — HQ-40 answered (Kaufman 40b CONFIRMED, secondary-corroborated/PDF paywalled; operator "proceed with DSX-ML-034"), clearing the sole block on the discuss. Design frozen + LIVE MISS already measured; recorded citation resolution in 27-CONTEXT.md §S3-1-CLOSE (vocab adopted, DSX-ML-034 activated for authoring, marker-honesty instruction). No code authored (guardrail 3). Next = S3-2 (plan the mint).
 progress:
   total_phases: 6
   completed_phases: 2
@@ -20,7 +20,7 @@ current_phase: 27
 # Project state
 
 **Status:** v2.6 Exploration Depth and Backlog Evidence — ACTIVE (opened 2026-09-06 by operator direction, HQ-39); branch `gsd/v2.6.0-exploration-depth`; ships as tag `v2.6.0`
-**Progress:** [██████░░░░░░░░░░░░░░░] v2.6 — 2/6 phases (✅25 hermetic profile depth → ✅26 per-skill read contracts → 🔄27 feature-origin-only leak case (S3-3 measured — LIVE MISS, mint parked on Kaufman) → 28 magnitude-no-test case → 29 subgroup-harm case → 30 calibration re-baseline)
+**Progress:** [██████░░░░░░░░░░░░░░░] v2.6 — 2/6 phases (✅25 hermetic profile depth → ✅26 per-skill read contracts → 🔄27 feature-origin-only leak case (S3-1 done — LIVE MISS measured, mint UNBLOCKED: Kaufman confirmed; next = S3-2 plan) → 28 magnitude-no-test case → 29 subgroup-harm case → 30 calibration re-baseline)
 **Predecessors:** v2.5.0 and v2.4.1 SHIPPED 2026-09-06 interactively (`ad43ec6`, `07d3db0`); v2.4 Visual Excellence SHIPPED 2026-09-03 (tag `v2.4.0`); v2.3 Test Catalog SHIPPED 2026-09-02 (`v2.3.0`); v2.2 Analytic Surface SHIPPED 2026-08-29 (`v2.2.0`); v2.0.0 DSX Validity Frame SHIPPED 2026-08-28 (`v2.1.0`). Archives under `.planning/milestones/`.
 
 **Loop control:** the autonomous ceremony drives this milestone from S0-1 onward per
@@ -48,10 +48,10 @@ and a case the gate already catches closes its phase with no mint (D-13).
 
 ## Current Position
 
-Phase: 27 — Evidence case, feature-origin-only leak (S3-1 discuss PARTIAL; box UNCHECKED)
-Plan: none yet. S3-1 §4 persona round resolved the OPEN QUESTION — both personas YES: the D-13 measurement spike is citation-independent of the pending Kaufman read. 27-CONTEXT.md written (design SETTLED/FROZEN; mint PARKED on Kaufman; DSX-ML-034 reserved RESERVE-INACTIVE, D-06 veto window open).
-Status: In-progress — the milestone is NOT all-blocked. The citation-independent design+measurement path is open; only the mint (its Kaufman docstring + active DSX-ML-034 code) is blocked on HQ-40 row 40b. Next = S3-3 measurement spike (build fixture + measure four gate points, fresh tempdir).
-Last activity: 2026-09-07 — Phase 27 S3-1 partial: persona round (auditor + architect, both YES); 27-CONTEXT.md written; DSX-ML-034 reserved; box left UNCHECKED
+Phase: 27 — Evidence case, feature-origin-only leak (S3-1 discuss DONE; box CHECKED; mint UNBLOCKED)
+Plan: none yet — S3-2 is next. Design FROZEN (D-27-01/02), LIVE MISS measured (27-MEASUREMENT.md), citation resolved (HQ-40 40b Kaufman CONFIRMED). 27-CONTEXT.md §S3-1-CLOSE records: feature_provenance vocab ADOPTED, DSX-ML-034 ACTIVATED for authoring, `# D-05:` marker must read "secondary-corroborated, primary PDF paywalled".
+Status: In-progress — the milestone is NOT all-blocked. Phase 27's mint pipeline is fully unblocked. Next = S3-2 (plan the mint; promote spike/ fixture → committed corpus fixture + ATTRIBUTION sidecar + harness entries; plan-checker must pass).
+Last activity: 2026-09-07 — Phase 27 S3-1 CLOSED: HQ-40 answered (Kaufman 40b confirmed), 27-CONTEXT.md §S3-1-CLOSE written, DSX-ML-034 activated for authoring, box checked
 
 ## Performance Metrics
 
@@ -75,15 +75,18 @@ None beyond the ledger.
 
 ### Blockers/Concerns
 
-**The milestone is NOT all-blocked.** The S3-1 §4 persona round (auditor + architect,
-both YES) established that Phase 27's D-13 measurement spike is **citation-independent**
-of the pending Kaufman read: only the *mint* (its Kaufman docstring + active DSX-ML-034
-code) is blocked on HQ-40 row 40b. The next firing runs the **S3-3 measurement spike**
-(build the D-27-01 fixture, measure all four gate points from a fresh tempdir) — a case
-the existing gate catches closes Phase 27 with no mint and moots Kaufman; a live miss
-stops cleanly at the mint boundary and holds for HQ-40 40b. S4-1 (Wilkinson/JARS) and
-S5-1 (Gail & Simon) remain blocked on their HQ-40 rows; the same citation-independent
-measurement-spike pattern may apply to Phases 28–29 and should be evaluated per-phase.
+**The milestone is NOT all-blocked; Phase 27's mint is now UNBLOCKED.** HQ-40 is
+**ANSWERED** (all five D-05 rows read at their locators, 2026-09-07). Row 40b (Kaufman
+2012 TKDD) CONFIRMED — secondary-corroborated, ACM primary PDF paywalled — with operator
+direction "proceed with `DSX-ML-034`". Combined with the already-measured LIVE MISS
+(`27-MEASUREMENT.md`), this closed S3-1 and clears the whole Phase 27 mint pipeline. Next
+= **S3-2** (plan the mint: promote the `spike/` fixture into a committed corpus fixture,
+add the ATTRIBUTION sidecar with `absent_code: DSX-ML-034` + `promotes_backlog_item:
+6.5-item-7-…`, and the harness entries). **S3-3 must keep the `# D-05:` marker honest**
+("secondary-corroborated, primary PDF paywalled" — no first-hand PDF claim). HQ-40 also
+unblocked **S4-1** (Phase 28 — cite Wilkinson & TFSI 1999 alone, drop JARS 40d) and
+**S5-1** (Phase 29 — Gail & Simon confirmed); those phases still need their own D-13
+measurement spikes (each a §4 persona round first, as Phase 27 had).
 
 ## Deferred Items
 

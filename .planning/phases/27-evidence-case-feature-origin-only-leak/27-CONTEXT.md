@@ -3,20 +3,21 @@ phase: 27
 phase_name: Evidence case — feature-origin-only leak
 milestone: v2.6
 unit: S3-1 (discuss + persona round)
-status: partial — citation-independent design SETTLED; mint PARKED on HQ-40 Kaufman read
-box_checked: false
+status: SETTLED — design frozen + LIVE MISS measured (27-MEASUREMENT.md); mint UNBLOCKED by HQ-40 row 40b (Kaufman CONFIRMED, secondary-corroborated); S3-1 CLOSED 2026-09-07
+box_checked: true
 requirements: [REQ-P27-01, REQ-P27-02, REQ-P27-03]
-d05_burden: 1 (Kaufman 2012 TKDD — HQ-40 row 40b, UNVERIFIED)
-codes_minted: 0
+d05_burden: 1 (Kaufman 2012 TKDD — HQ-40 row 40b ANSWERED 2026-09-07: CONFIRMED, secondary-corroborated, primary PDF paywalled)
+codes_minted: 0 (DSX-ML-034 authored at S3-3, not S3-1)
 ---
 
 # Phase 27 — CONTEXT (feature-origin-only leak)
 
-This document records the **citation-independent** portion of S3-1's discuss. Per the
-persona round below, S3-1 is split: the case-shape design and the pass/fail rule are
-SETTLED and FROZEN now; the mint (its D-05 Kaufman citation, docstring, and the active
-`DSX-ML-*` code) stays PARKED on HQ-40 row 40b's human read. **The S3-1 checkbox stays
-UNCHECKED** — see §5.
+This document records S3-1's discuss. Per the persona round below, S3-1 was split: the
+case-shape design and the pass/fail rule were SETTLED and FROZEN first; the mint (its
+D-05 Kaufman citation, docstring, and the active `DSX-ML-*` code) was PARKED on HQ-40 row
+40b's human read. **That read is now ANSWERED (2026-09-07, HQ-40 row 40b — Kaufman
+CONFIRMED) — the mint is UNBLOCKED and the S3-1 checkbox is now CHECKED.** See
+`§S3-1-CLOSE` at the foot of this document; §5 preserves the original honest-partial state.
 
 Three explicit states are used throughout: **SETTLED** (design + rule, frozen now),
 **MEASURED** (the four-point verdict, produced by the next firing at S3-3), **PARKED**
@@ -174,3 +175,51 @@ or sign the D-05 citation.
 at the four gate points from a fresh tempdir, recording verbatim; apply the D-27-02 rule.
 If caught → no-mint close (Phase 27 done, Kaufman moot). If a live miss → stop at the
 mint boundary and hold for HQ-40 row 40b.
+
+*(That measurement was executed the next firing: LIVE MISS confirmed — see
+`27-MEASUREMENT.md`. This §5 is preserved as the honest-partial record; `§S3-1-CLOSE`
+below supersedes its "checkbox stays UNCHECKED" and "hold for Kaufman" state.)*
+
+## §S3-1-CLOSE — Kaufman read ANSWERED (HQ-40 row 40b); mint UNBLOCKED; S3-1 CHECKED (2026-09-07)
+
+**Operator verdict (HQ-40 row 40b, read at its locator).** Kaufman, Rosset, Perlich &
+Stitelman (2012), *ACM TKDD* Vol. 6 No. 4 Article 15 — **CONFIRMED**. Author list, venue
+and locator verified independently (Google Scholar record + ACM DL listing, convergent).
+The legitimacy definition the check will cite — leakage as "the introduction of
+information about the data mining target that should not be legitimately available to mine
+from," operationalised as features observable strictly before the target instance — is
+**secondary-corroborated across three independent indexes; the ACM primary PDF itself was
+paywalled** (nine failed open attempts, logged verbatim in HQ-40). The operator judged
+this sufficient to unblock the mint **because the loop's own D-13 measurement
+(`27-MEASUREMENT.md`) already proved the gap in the code, independent of the citation.**
+
+**BINDING instruction for S3-3 (carry verbatim into the mint):** the `# D-05:` test marker
+and the check docstring MUST describe the citation as **"secondary-corroborated, primary
+PDF paywalled"** — they must NOT claim a first-hand read of the ACM PDF. This keeps the
+record honest per the brief §5 D-05 discipline. `_D05_ALLOWLIST_CODES` in
+`scripts/gen-finding-catalogue.py` gets `DSX-ML-034` at mint time.
+
+**Consequences, now unblocked (design/state only — no code authored at S3-1):**
+1. **`model.feature_provenance[]` vocabulary — ADOPTED** (was DRAFT-only in the PARKED
+   section; both adoption conditions are now met: LIVE MISS measured **and** citation
+   confirmed). Fields `{feature, source, available_at, derived_from}`, with `available_at`
+   ∈ `before_prediction | at_prediction | after_prediction | unknown`; a declaration-only
+   check firing CRITICAL when a feature is declared `after_prediction` and HIGH when
+   `unknown` without a waiver. Buys **attribution, not detection** — a spec that lies still
+   passes (the standing README "a frame that lies passes" limit).
+2. **`DSX-ML-034` — ACTIVATED for authoring at S3-3** (was RESERVE-INACTIVE, D-27-03). The
+   D-06 veto window opened at the S3-1 partial (2026-09-07T09:42Z); the operator's explicit
+   "proceed with `DSX-ML-034`" in HQ-40 row 40b is an affirmative accept, stronger than
+   silence. It becomes the sidecar's `absent_code`, reserved in `_SECTION_65_BACKLOG_CODES`
+   with `promotes_backlog_item: 6.5-item-7-feature-origin-only-leak`.
+3. **S3-1 box CHECKED.** Design frozen (D-27-01/02), measurement done (LIVE MISS,
+   `27-MEASUREMENT.md`), citation resolved. Remaining Phase 27 pipeline: **S3-2** plan the
+   mint (promote the `spike/` fixture into a committed corpus fixture + the sidecar +
+   harness entries: `_EXPECTED_CAUGHT_DEFECTS`/golden ship ledger as appropriate,
+   `_EXPECTED_VAL_CODES`, the `tests/test_dsx.py` spec count, the ATTRIBUTION sidecar) →
+   **S3-3** author the check + Kaufman docstring + `DSX-ML-034` + `_D05_ALLOWLIST_CODES`
+   entry (measure-then-mint already satisfied) → **S3-4** review → **S3-5** secure/validate.
+
+**Guardrail 1 (FREEZE-BEFORE-MEASURE) intact:** nothing in this section edits D-27-01 (case
+shape) or D-27-02 (pass/fail rule). It records the citation resolution and the downstream
+authoring instructions only.
