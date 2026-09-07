@@ -12,11 +12,12 @@ from __future__ import annotations
 import sys
 import tempfile
 import unittest
+from collections import Counter
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from dsx.profiler import _numeric_block, profile_csv  # noqa: E402
+from dsx.profiler import _categorical_block, _numeric_block, profile_csv  # noqa: E402
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures" / "profiler"
 
@@ -90,6 +91,46 @@ class TestNumericBlock(unittest.TestCase):
             csv_path.write_text("level\nA\nB\nA\n", encoding="utf-8")
             profile = profile_csv(csv_path)
             self.assertNotIn("numeric", profile["columns"]["level"])
+
+
+class TestCategoricalBlock(unittest.TestCase):
+    def test_abcde_reference_values(self):
+        profile = profile_csv(FIXTURES / "categorical_abcde.csv")
+        cat = profile["columns"]["level"]["categorical"]
+        self.assertEqual(cat["share_top1"], 0.5)
+        self.assertEqual(cat["share_top10"], 1.0)
+        self.assertEqual(cat["rare_share"], 0.05)
+        self.assertEqual(cat["n_singleton"], 1)
+        # D-01 append order: categorical is the LAST key in columns.level, after dtype.
+        keys = list(profile["columns"]["level"].keys())
+        self.assertEqual(keys, ["null_rate", "n_unique", "dtype", "categorical"])
+
+    def test_percent_arm_boundary(self):
+        # N=20000, one level ("rare") has 15 rows: 15 >= 10 but 15/20000 = 0.00075 < 0.001,
+        # so it must still be counted as rare (the OR is on count<10 OR share<0.001).
+        profile = profile_csv(FIXTURES / "categorical_percent_arm.csv")
+        cat = profile["columns"]["level"]["categorical"]
+        self.assertAlmostEqual(cat["rare_share"], 15 / 20000)
+
+    def test_top10_tie_boundary_count_desc_then_string_asc(self):
+        # Levels a..i carry counts 15..7 (sum=109); "m" and "n" both have count 5, with
+        # "n" appearing FIRST in CSV row order. The frozen tie-break (count desc, then
+        # level string asc) puts "m" in the top-10 and "n" out — a Counter.most_common()
+        # insertion-order tie-break would wrongly include "n" instead. N=119 total.
+        profile = profile_csv(FIXTURES / "categorical_top10_tie.csv")
+        cat = profile["columns"]["level"]["categorical"]
+        self.assertAlmostEqual(cat["share_top10"], (109 + 5) / 119)
+
+    def test_empty_counter(self):
+        block = _categorical_block(Counter())
+        self.assertIsNone(block["share_top1"])
+        self.assertIsNone(block["share_top10"])
+        self.assertIsNone(block["rare_share"])
+        self.assertEqual(block["n_singleton"], 0)
+
+    def test_categorical_key_absent_for_numeric_dtype(self):
+        profile = profile_csv(FIXTURES / "numeric_1_10.csv")
+        self.assertNotIn("categorical", profile["columns"]["value"])
 
 
 if __name__ == "__main__":
