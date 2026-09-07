@@ -3,11 +3,11 @@ gsd_state_version: 1.0
 milestone: v2.6
 milestone_name: Exploration Depth and Backlog Evidence
 current_phase_name: Per-skill read contracts
-status: executing
-stopped_at: S1-5 DONE — Phase 25 COMPLETE. secure-phase → SECURED, threats_open 0, 8/8 CLOSED (orchestrator re-gate at code locators; 25-SECURITY.md status verified). validate-phase → nyquist_compliant true, 0 gaps, 3/3 REQ COVERED, phase module 51/51 OK real 3.12.10 (25-VALIDATION.md status validated). Human sign-off + UAT batched HQ-41 (non-blocking until S7-2). Next = S2-1 (Phase 26 discuss)
-last_updated: "2026-09-07T05:20:00.000Z"
+status: discussing
+stopped_at: S2-1 DONE — Phase 26 discuss complete; 26-CONTEXT.md written. Advisor round (Architect dsx-analysis-architect + Auditor dsx-ml-integrity-auditor, parallel, grounded) converged 4 decisions — D-26-01 visible `<inputs>` read-step shape (one backtick-key per bullet, full dotted-path parse; hidden HTML-comment fences rejected by rigour>reliability>flexibility); D-26-02 grounded per-skill mapping (scope's joins-matrix + policy_recommendation demoted to prose, both prose-only not front-matter keys); D-26-03 per-skill eda_artifact:none fallback mirroring the executor fragment; D-26-04 off-gate-path guard tests/test_skill_read_contracts.py (dotted-path membership, uncomments # profile examples, negative-control proves a renamed key fails). Zero codes, dsx/ untouched, D-05 burden 0. Next = S2-2 (Phase 26 plan)
+last_updated: "2026-09-07T06:38:20.000Z"
 last_activity: 2026-09-07
-last_activity_desc: Phase 25 S1-5 — secure-phase SECURED + validate-phase nyquist-compliant; Phase 25 complete (5/5 S1 units); sign-off batched HQ-41; next = S2-1 (Phase 26 discuss)
+last_activity_desc: Phase 26 S2-1 — discuss + persona round done; 26-CONTEXT.md written (4 decisions, 1 divergence resolved); next = S2-2 (Phase 26 plan)
 progress:
   total_phases: 6
   completed_phases: 1
@@ -48,10 +48,10 @@ and a case the gate already catches closes its phase with no mint (D-13).
 
 ## Current Position
 
-Phase: 25 — Hermetic profile depth (planned)
-Plan: 4 plans (25-01…25-04) across 4 sequential waves
-Status: Ready to execute
-Last activity: 2026-09-07 — Phase 25 planned; S1-2 plan-checker PASSED (VERIFICATION PASSED, re-verified by orchestrator)
+Phase: 26 — Per-skill read contracts (discussed)
+Plan: none yet — S2-2 will plan from 26-CONTEXT.md
+Status: Ready to plan
+Last activity: 2026-09-07 — Phase 26 S2-1 discuss complete; 26-CONTEXT.md written (persona round converged 4 decisions); Phase 25 shipped complete (5/5 S1 units)
 
 ## Performance Metrics
 
