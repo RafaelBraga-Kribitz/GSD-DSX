@@ -18,8 +18,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from dsx.findings import CheckError  # noqa: E402
 from dsx.profiler import (  # noqa: E402
     _categorical_block,
+    _extract_hour,
     _numeric_block,
     dump_profile_yaml,
     profile_csv,
@@ -185,6 +187,153 @@ class TestProfilerDeterminism(unittest.TestCase):
         # The golden must contain no additive-block lines at all.
         self.assertNotIn("numeric:", golden_text)
         self.assertNotIn("categorical:", golden_text)
+
+
+class TestTimeBlock(unittest.TestCase):
+    """D-02 time-block extension: share_at_hour_00, rows_per_day, ISO-week edge ratios.
+
+    Every value is a pure function of the CSV bytes (hour retained via a SEPARATE
+    accumulator; day-grain volume; ISO-week grain edge ratios). The frozen
+    time.min/max/max_gap_days keys must stay present and correct alongside the
+    additive keys, in append order.
+    """
+
+    def _time(self, fixture):
+        return profile_csv(FIXTURES / fixture, time_column="ts")["time"]
+
+    def test_extract_hour_helper(self):
+        self.assertEqual(_extract_hour("2024-01-01T00:00:00"), 0)
+        self.assertEqual(_extract_hour("2024-01-01T13:00"), 13)
+        self.assertEqual(_extract_hour("2024-01-01 09:30:00"), 9)
+        self.assertIsNone(_extract_hour("2024-01-01"))  # date-only: no time token
+        self.assertIsNone(_extract_hour("not-a-date"))
+
+    def test_share_at_hour_00_all_midnight(self):
+        self.assertEqual(self._time("time_hour_all_midnight.csv")["share_at_hour_00"], 1.0)
+
+    def test_share_at_hour_00_half(self):
+        self.assertEqual(self._time("time_hour_half.csv")["share_at_hour_00"], 0.5)
+
+    def test_share_at_hour_00_date_only_is_null(self):
+        self.assertIsNone(self._time("time_hour_date_only.csv")["share_at_hour_00"])
+
+    def test_share_at_hour_00_mixed(self):
+        self.assertEqual(
+            self._time("time_hour_mixed.csv")["share_at_hour_00"],
+            0.3333333333333333,
+        )
+
+    def test_rows_per_day(self):
+        rpd = self._time("time_rows_per_day.csv")["rows_per_day"]
+        self.assertEqual(rpd["min"], 1)
+        self.assertEqual(rpd["median"], 5)
+        self.assertEqual(rpd["max"], 9)
+
+    def test_edge_period_ratios(self):
+        t = self._time("time_edge_ratio.csv")
+        self.assertEqual(t["first_period_ratio"], 0.2)
+        self.assertEqual(t["last_period_ratio"], 0.1)
+
+    def test_edge_period_ratios_short_are_null(self):
+        t = self._time("time_edge_ratio_short.csv")
+        self.assertIsNone(t["first_period_ratio"])
+        self.assertIsNone(t["last_period_ratio"])
+
+    def test_frozen_time_keys_present_and_correct(self):
+        # The pre-existing time.* keys must survive the additive change untouched.
+        t = self._time("time_edge_ratio.csv")
+        self.assertEqual(t["column"], "ts")
+        self.assertEqual(t["min"], "2024-01-01")
+        self.assertEqual(t["max"], "2024-02-05")
+        self.assertEqual(t["max_gap_days"], 7)
+
+    def test_time_block_append_order(self):
+        # New keys render AFTER max_gap_days inside the time: block (D-01 append order).
+        keys = list(profile_csv(FIXTURES / "time_edge_ratio.csv", time_column="ts")["time"].keys())
+        self.assertEqual(
+            keys,
+            [
+                "column", "min", "max", "max_gap_days",
+                "rows_per_day", "first_period_ratio", "last_period_ratio",
+                "share_at_hour_00",
+            ],
+        )
+
+    def test_new_time_keys_absent_when_no_time_column(self):
+        # No --time supplied: the time block stays the frozen 4-key shape (25-01 golden).
+        keys = list(profile_csv(FIXTURES / "numeric_1_10.csv")["time"].keys())
+        self.assertEqual(keys, ["column", "min", "max", "max_gap_days"])
+
+    def test_new_time_keys_deterministic_across_shuffle(self):
+        # isocalendar bucketing + day-grain counts are order-independent.
+        import random
+
+        rows = (FIXTURES / "time_edge_ratio.csv").read_text(encoding="utf-8").splitlines()
+        header, body = rows[0], rows[1:]
+        shuffled = body[:]
+        random.Random(1234).shuffle(shuffled)
+        with tempfile.TemporaryDirectory() as tmp:
+            shuf = Path(tmp) / "shuffled.csv"
+            shuf.write_text("\n".join([header] + shuffled) + "\n", encoding="utf-8")
+            a = profile_csv(FIXTURES / "time_edge_ratio.csv", time_column="ts")["time"]
+            b = profile_csv(shuf, time_column="ts")["time"]
+        for key in ("rows_per_day", "first_period_ratio", "last_period_ratio", "share_at_hour_00"):
+            self.assertEqual(a[key], b[key], key)
+
+
+class TestUnitBlock(unittest.TestCase):
+    """D-02 top-level `unit` block: rows_per_unit {p50,p95,max}, largest_unit_share.
+
+    Type-7 (inclusive) quantiles over per-unit row counts; largest_unit_share uses an
+    explicit (count desc, unit-string asc) tie-break. The block is omitted entirely when
+    no unit column is declared (D-01), never emitted as null.
+    """
+
+    def test_reference_values(self):
+        profile = profile_csv(FIXTURES / "unit_counts.csv", unit="unit_id")
+        block = profile["unit"]
+        rpu = block["rows_per_unit"]
+        self.assertEqual(rpu["p50"], 3)
+        self.assertEqual(rpu["p95"], 80.8)  # pinned from a real 3.12.10 run
+        self.assertEqual(rpu["max"], 100)
+        self.assertEqual(block["largest_unit_share"], 0.9090909090909091)  # 100/110
+
+    def test_unit_block_omitted_when_absent(self):
+        profile = profile_csv(FIXTURES / "unit_counts.csv")
+        self.assertNotIn("unit", profile)
+
+    def test_unit_block_appends_after_sentinels_found(self):
+        profile = profile_csv(FIXTURES / "unit_counts.csv", unit="unit_id")
+        keys = list(profile.keys())
+        self.assertEqual(keys[-1], "unit")
+        self.assertEqual(keys[keys.index("unit") - 1], "sentinels_found")
+
+    def test_single_distinct_unit(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            csv_path = Path(tmp) / "one_unit.csv"
+            csv_path.write_text("unit_id\nu1\nu1\nu1\n", encoding="utf-8")
+            block = profile_csv(csv_path, unit="unit_id")["unit"]
+            self.assertIsNone(block["rows_per_unit"]["p50"])
+            self.assertIsNone(block["rows_per_unit"]["p95"])
+            self.assertEqual(block["rows_per_unit"]["max"], 3)
+
+    def test_unknown_unit_column_raises(self):
+        with self.assertRaises(CheckError):
+            profile_csv(FIXTURES / "unit_counts.csv", unit="does_not_exist")
+
+    def test_deterministic_across_shuffle(self):
+        import random
+
+        rows = (FIXTURES / "unit_counts.csv").read_text(encoding="utf-8").splitlines()
+        header, body = rows[0], rows[1:]
+        shuffled = body[:]
+        random.Random(99).shuffle(shuffled)
+        with tempfile.TemporaryDirectory() as tmp:
+            shuf = Path(tmp) / "shuffled.csv"
+            shuf.write_text("\n".join([header] + shuffled) + "\n", encoding="utf-8")
+            a = profile_csv(FIXTURES / "unit_counts.csv", unit="unit_id")["unit"]
+            b = profile_csv(shuf, unit="unit_id")["unit"]
+        self.assertEqual(a, b)
 
 
 if __name__ == "__main__":
