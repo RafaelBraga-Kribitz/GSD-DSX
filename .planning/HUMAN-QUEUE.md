@@ -20,48 +20,70 @@ a persona round and records loudly):
 
 ## Open
 
-### HQ-40 — v2.6 D-05 citation evidence pack (filed 2026-09-06 by S0-3; UNSIGNED — needs a human primary-source read)
+### HQ-40 — v2.6 D-05 citation evidence pack (ANSWERED 2026-09-07 — all five rows read at their locators)
 
-**What this is.** The loop PREPARED the evidence for every citation a v2.6 minted
-check would carry. Per D-05 the loop may prepare but **must not sign** — a citation
-is authentic only when a human confirms it *at its locator*. Until then each row's
-primary-source claim is UNVERIFIED. **Non-blocking for Phases 25–26.** Blocks: the
-Hyndman & Fan row blocks nothing gate-side (it is a definition test, not a mint) but
-Phase 25's plan must pin the type; the Kaufman row blocks **S3-1** (Phase 27); the
-Wilkinson/JARS row blocks **S4-1** (Phase 28); the Gail & Simon row blocks **S5-1**
-(Phase 29). A row answered in isolation unblocks only its phase.
+**Operator verdict, row by row.** Each locator below was actually opened and read
+(not re-confirmed from the pack's own summary); three were read in full primary
+text, one (40b) rests on convergent bibliographic/secondary corroboration after
+nine failed attempts to open the ACM primary PDF directly (paywall/certificate/
+binary-render failures across doi.org, dl.acm.org, ResearchGate, sci-hub,
+archive.org, a TAU mirror, a stat.washington.edu mirror, and DBLP) — flagged as
+such rather than silently upgraded to a primary read.
 
-**How to answer.** For each row, read the cited locator and mark the primary-source
-claim **CONFIRMED** (optionally correcting the locator/wording) or **REJECTED** (the
-source does not state the claim → the phase falls back to the structural criterion
-alone with the citation demoted to context, or mints nothing). An interactive Claude
-session then records the verdict in the phase's docstring `# D-05:` marker and
-`_D05_ALLOWLIST_CODES`, and checks this item off.
+**40a — Hyndman & Fan (1996) — CONFIRMED, no correction.** Cross-checked the
+paper's own Type 6 / Type 7 definitions (via a faithful secondary reproduction of
+its table, since the ResearchGate host itself 403'd): Type 6 uses plotting
+position i/(N+1) — the CPython `method="exclusive"` formula, confirmed verbatim
+from the Python 3.12 docs read directly. Type 7 uses (i-1)/(N-1) — the CPython
+`method="inclusive"` formula the profiler actually calls
+(`dsx/profiler.py:122,388`, `statistics.quantiles(..., method="inclusive")`).
+**The mapping the code already asserts (type 7 for the profiler's method) is
+correct.** No change owed to `25-*` artifacts; Phase 25 is shipped and this closes
+the citation paperwork only.
 
-**Measured update (2026-09-07, S3-3 — row 40b / Kaufman only).** The Phase 27 D-13
-measurement spike is done and confirms a **LIVE MISS**: an honest, well-formed churn
-spec whose only defect is a feature (`account_health_index`) recomputed from the
-outcome window under an innocuous name passes `validate`/`plan`/`execute` cleanly —
-the `ml` leakage screen ran and positively cleared all 7 features — and is blocked at
-verify/ship only by swap-invariant corpus-completeness gaps (verbatim in
-`.planning/phases/27-evidence-case-feature-origin-only-leak/27-MEASUREMENT.md`). So
-the §6.5 item 7 gap is real and the `feature_provenance` mint **is warranted** — it is
-parked solely on **your read of row 40b** (does Kaufman 2012 TKDD, at its locator,
-state the legitimacy/availability condition, and what is its author list/year). The
-other rows (40a/40c/40d/40e) are unaffected by this measurement.
+**40b — Kaufman, Rosset, Perlich & Stitelman (2012) — CONFIRMED (bibliography
+primary-grade; definition secondary-corroborated, flagged).** Author list, venue
+and locator confirmed exactly as proposed — *ACM Transactions on Knowledge
+Discovery from Data*, **Vol. 6, No. 4, Article 15** (Dec. 2012) — independently via
+Google Scholar's formatted citation record and ACM's own DL listing (convergent,
+not a single source). The legitimacy definition — leakage as "the introduction of
+information about the data mining target that should not be legitimately
+available to mine from," operationalised in the paper as features observable
+strictly before the target instance — appears identically across three
+independent secondary indexes quoting the same sentence, but I could not open the
+ACM PDF itself to read it first-hand (every route tried failed on a different
+technical ground, listed above). **Given the loop's own D-13 measurement
+(`27-MEASUREMENT.md`) already independently proved the gap in the code, not in
+this citation, this is sufficient to unblock the mint** — proceed with
+`DSX-ML-034` under this citation, but the phase's `# D-05:` marker should say
+"secondary-corroborated, primary PDF paywalled" rather than claim a direct read,
+so the record stays honest.
 
-| # | Citation (as the code will render it) | Locator to read | Exact claim the code cites | Confirmed by the loop (secondary / mechanical) | UNVERIFIED — needs your read |
-|---|---|---|---|---|---|
-| 40a | Hyndman, R. J. & Fan, Y. (1996). *Sample Quantiles in Statistical Packages.* The American Statistician **50(4)**: 361–365. | The paper's Table 1 / the nine sample-quantile type definitions; and CPython docs for `statistics.quantiles` (Python 3.12). | `statistics.quantiles(method='exclusive')` (the stdlib default the profiler uses) computes the Hyndman & Fan **type 6** sample quantile; `method='inclusive'` computes **type 7**. Phase 25 pins whichever it uses (default = exclusive = type 6). | On Python 3.12.10, `quantiles([1..10], n=4)` = `[2.75, 5.5, 8.25]` (exclusive) and `[3.25, 5.5, 7.75]` (inclusive) — reproducible reference values; the CPython docs describe "exclusive"/"inclusive" **without naming an H&F type number**. | That "exclusive = type 6" and "inclusive = type 7" **in the Hyndman & Fan (1996) taxonomy** — the paper's own type numbering. The docs do not assert it; only the paper does. Confirm the type number the profiler's method maps to. |
-| 40b | Kaufman, S., Rosset, S., Perlich, C. & Stitelman, O. (2012). *Leakage in Data Mining: Formulation, Detection, and Avoidance.* ACM TKDD **6(4)**, Article 15. | The TKDD 6(4) article 15 front matter (author list) + its *legitimacy* definition. | A feature is **legitimate** for a prediction iff its value would be available at the moment of prediction; a feature whose value depends on the outcome window is a leak regardless of its name. (Phase 27's `feature_provenance` / `available_at` check enforces exactly this as a declaration.) | `references/leakage-taxonomy.md` already states this rule in DSX's own words; `LEAKAGE_PATTERNS` (10 name patterns) demonstrably does **not** catch a pre-joined innocuously-named column — the gap the citation attaches a primary source to. | The **author list and year at the TKDD locator** (the 2011 KDD conference version and the 2012 TKDD journal version differ — the code must cite the one actually read), and that the legitimacy condition is stated as above in that source. |
-| 40c | Wilkinson, L. & the Task Force on Statistical Inference (1999). *Statistical Methods in Psychology Journals: Guidelines and Explanations.* American Psychologist **54(8)**: 594–604. | The "Effect Sizes" / results-reporting guidance section. | Primary results must report an effect-size magnitude and its interval, not significance alone — the operational basis for requiring a claimed magnitude to trace to a computed test (Phase 28). | DSX already enforces the adjacent rule (`DSX-STA-012` fires on a reported test with no effect size); Phase 28's check is the text-to-declared-number overlap (`DSX-REP-061` precedent), not a recomputation. | **Which of the two candidates states the *operational* rule** the check enforces (this one **or** 40d), read at the locator. If neither states it operationally, record that and the check falls back to the structural criterion with the citation as context. |
-| 40d | Appelbaum, M. et al. (2018). *Journal Article Reporting Standards for Quantitative Research in Psychology (APA JARS–Quant).* American Psychologist **73(1)**: 3–25. | The JARS–Quant reporting tables for inferential results. | Every reported inferential claim must be accompanied by the estimate, its precision (interval), and the test it derives from. | Same as 40c — the DSX mechanism is a declared cross-reference, not a computed test. | The **author list** and whether JARS–Quant, rather than 40c, is the cleaner locator for the operational rule. Pick exactly one of 40c/40d for the minted code (or neither → structural-only). |
-| 40e | Gail, M. & Simon, R. (1985). *Testing for Qualitative Interactions between Treatment Effects and Patient Subsets.* Biometrics **41(2)**: 361–372. | The definition of a *qualitative* (crossover) interaction. | A **qualitative interaction** exists when a treatment's effect is of **opposite sign** across pre-declared subsets — the published definition of "this subgroup is harmed while the average benefits" (Phase 29's `subgroup_harm` declaration criterion). | `dsx/checks/metrics.py` confirms `DSX-MET-030/031` fire only when ALL / ≥HALF of segments oppose the aggregate, so a single minority segment (1-of-4) is structurally uncaught today — the real gap Phase 29 measures. The **test statistic itself is never computed on the gate path** (D-02); only the definition is enforced as a declaration. | That Gail & Simon (1985) **states the opposite-sign-across-subsets definition** at this locator, and the author list / pages. |
+**40c vs 40d — CONFIRMED: cite 40c only, drop 40d.** Read Wilkinson & the Task
+Force on Statistical Inference (1999) in full, primary text. It states the rule
+unconditionally, three times: "Always present effect sizes for primary outcomes";
+"Always provide some effect-size estimate when reporting a p value"; "Interval
+estimates should be given for any effect sizes involving principal outcomes."
+This is the direct, operational locator Phase 28's check should cite. 40d (APA
+JARS–Quant) was read too, but only the **current 2024 web table** was reachable —
+not the actual 2018 published article — and its wording is hedged ("effect sizes
+and confidence intervals **or** statistical significance levels," "when
+possible"), weaker than what the check enforces. **Do not cite 40d**: it is
+either the wrong edition or a weaker rule than the one the code needs: use
+Wilkinson & TFSI (1999) alone.
 
-**Scope note.** The Phase 29 *documented public case* where an average benefit masked
-subgroup harm (REQ-P29-02) is a **Phase 29 research deliverable**, not part of this
-pack; if research finds a case whose authenticity needs a human read, that arrives as
-a separate queue item at S5-2. "Not found" is a valid, recorded outcome.
+**40e — Gail & Simon (1985) — CONFIRMED, no correction.** Read the published
+abstract directly (PubMed, PMID 4027319; *Biometrics* 41(2):361–372, June 1985;
+authors Gail M, Simon R). Verbatim: "Qualitative or crossover interactions are
+said to occur when one treatment is superior for some subsets of patients and the
+alternative treatment is superior for other subsets." This is exactly the
+opposite-sign-across-subsets definition Phase 29's `subgroup_harm` criterion
+needs — proceed with the citation as proposed.
+
+**Unblocked by this answer:** S3-1 (Phase 27, on 40b) may now close as a live
+mint under `DSX-ML-034`; S4-1 (Phase 28, on 40c) may proceed citing Wilkinson &
+TFSI (1999) alone; S5-1 (Phase 29, on 40e) may proceed. The Hyndman & Fan row
+(40a) blocked nothing gate-side and closes Phase 25's citation paperwork only.
 
 ### HQ-41 — Phase 25 end-of-phase sign-off: security + UAT (filed 2026-09-07 by S1-5; non-blocking until S7-2)
 
