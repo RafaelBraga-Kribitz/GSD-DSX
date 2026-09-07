@@ -232,7 +232,20 @@ profile, with a repo-integrity test that every named key exists in the templates
   2. A test fails the suite when a named key is absent from `templates/EDA.md` or `templates/DATA-PROFILE.yaml`.
   3. `git diff --stat -- dsx/` is empty for the phase; `node install.mjs --check` passes.
 
-**Plans**: TBD
+**Plans**: 4 plans
+
+**Wave 1** *(parallel — disjoint skill files)*
+
+- [ ] 26-01-PLAN.md — `<inputs>` read steps for dsx-scope-analysis, dsx-define-metrics, dsx-design-experiment (REQ-P26-01)
+- [ ] 26-02-PLAN.md — `<inputs>` read steps for dsx-build-model, dsx-narrate (REQ-P26-01)
+
+**Wave 2** *(blocked on Wave 1)*
+
+- [ ] 26-03-PLAN.md — TDD repo-integrity guard `tests/test_skill_read_contracts.py`, RED→GREEN, negative control proves a renamed key fails (REQ-P26-02)
+
+**Wave 3** *(blocked on Wave 2)*
+
+- [ ] 26-04-PLAN.md — installer re-sync + byte-identity / catalogue 276→276 / full-suite close (REQ-P26-03)
 
 ### Phase 27: Evidence case — feature-origin-only leak
 
