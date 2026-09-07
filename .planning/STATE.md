@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v2.6
 milestone_name: Exploration Depth and Backlog Evidence
 current_phase_name: Per-skill read contracts
-status: planning
-stopped_at: S2-2 research sub-stage DONE (box UNCHECKED) — 26-RESEARCH.md written by gsd-phase-researcher (sonnet, adaptive) at commit 4ecfb27 (pushed, reconciled clean on canonical — no stray branch); every D-26-02 key resolves against the live templates (zero orphans), all 5 insertion points confirmed, mixed line endings grounded (EDA.md CRLF / DATA-PROFILE.yaml bare-LF ⇒ `\r?\n` mandatory), `node install.mjs && node install.mjs --check` (not --check alone) is the correct installer command, test_gate_path_hermetic won't trip. 26-VALIDATION.md seeded (draft, `## Validation Architecture` @RESEARCH L656 ⇒ Nyquist scaffold ready). Next = S2-2 completion: re-run /gsd-plan-phase 26 (has_research=true ⇒ auto-uses RESEARCH.md) → gsd-planner (opus) → gsd-plan-checker gate; S2-2 checks ONLY when plan-checker passes.
-last_updated: "2026-09-07T07:07:00.000Z"
+status: planned
+stopped_at: S2-2 DONE (Phase 26 planned) — 4 plans (26-01..04) written by gsd-planner (opus), gsd-plan-checker (haiku) PASSED, orchestrator re-verified the gate himself (3/3 REQ IDs, threat_model+artifacts all 4, single-writer clean, guard `\r?\n`, installer `install.mjs && --check` close, D-26-02 prose-only demotion enforced by inline backtick-assert, 8/8 probe edges represented). HEAD 7f93fdf on canonical, in sync with origin; planner's gsd-tools stray branch self-healed + orchestrator-reconciled. Waves: 1 (26-01/02 disjoint skills, parallel) → 2 (26-03 TDD guard) → 3 (26-04 installer close). Next = S2-3: execute all 4 plans (/gsd-execute-phase 26), Wave 1 first.
+last_updated: "2026-09-07T07:47:00.000Z"
 last_activity: 2026-09-07
-last_activity_desc: Phase 26 S2-2 research sub-stage — 26-RESEARCH.md (HIGH conf, zero orphaned keys) + 26-VALIDATION.md draft seeded; stopped at pacing cap before planner (avoid mid-gate compaction); next = planner + plan-checker
+last_activity_desc: Phase 26 S2-2 — planned (4 plans, plan-checker PASSED + orchestrator re-verified); stopped at pacing cap before execute (avoid mid-wave compaction); next = S2-3 execute
 progress:
   total_phases: 6
   completed_phases: 1
-  total_plans: 4
+  total_plans: 8
   completed_plans: 4
   percent: 17
 current_phase: 26
@@ -48,10 +48,10 @@ and a case the gate already catches closes its phase with no mint (D-13).
 
 ## Current Position
 
-Phase: 26 — Per-skill read contracts (planning; research done)
-Plan: none yet — 26-RESEARCH.md + 26-VALIDATION.md (draft) in place; planner runs next firing from 26-CONTEXT.md + RESEARCH.md
-Status: Research done — planner + plan-checker are the next chunk
-Last activity: 2026-09-07 — Phase 26 S2-2 research sub-stage: 26-RESEARCH.md written (zero orphaned keys vs live templates), 26-VALIDATION.md draft seeded; stopped at pacing cap before the planner
+Phase: 26 — Per-skill read contracts (planned; ready to execute)
+Plan: 4 plans (26-01..04) written + plan-checker PASSED + orchestrator re-verified; waves 1 (26-01/02 parallel) → 2 (26-03 TDD guard) → 3 (26-04 installer close)
+Status: Planned — S2-3 (execute all 4 plans) is the next chunk
+Last activity: 2026-09-07 — Phase 26 S2-2: planned (gsd-planner opus, plan-checker haiku PASSED, orchestrator re-ran the gate); stopped at pacing cap before execute
 
 ## Performance Metrics
 
