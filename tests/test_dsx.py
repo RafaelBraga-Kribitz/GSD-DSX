@@ -3123,6 +3123,58 @@ class TestProfiler(unittest.TestCase):
             self.assertTrue(out.exists())
             self.assertIn("row_count", stdout)
 
+    def test_profile_cli_unit_target_writes_blocks(self):
+        # D-03: --unit/--target parse, feed profile_csv, and emit the unit/target blocks.
+        with tempfile.TemporaryDirectory() as tmp:
+            csv_path = Path(tmp) / "s.csv"
+            csv_path.write_text(
+                "ts,unit_id,y\n"
+                "2024-01-01,u1,1\n"
+                "2024-01-01,u1,0\n"
+                "2024-01-08,u2,1\n"
+                "2024-01-08,u2,0\n",
+                encoding="utf-8",
+            )
+            out = Path(tmp) / "p.yaml"
+            code, _, err = self._run_cli(
+                [
+                    "profile", str(csv_path), "--out", str(out),
+                    "--unit", "unit_id", "--target", "y", "--time", "ts",
+                ]
+            )
+            self.assertEqual(code, 0, err)
+            text = out.read_text(encoding="utf-8")
+            self.assertIn("unit:", text)
+            self.assertIn("target:", text)
+
+    def test_profile_cli_target_without_time_exits_2(self):
+        # D-03: --target hard-requires --time; CheckError → CLI exit 2 (EXIT_ERROR).
+        with tempfile.TemporaryDirectory() as tmp:
+            csv_path = Path(tmp) / "s.csv"
+            csv_path.write_text("ts,y\n2024-01-01,1\n2024-01-02,0\n", encoding="utf-8")
+            code, _, _ = self._run_cli(["profile", str(csv_path), "--target", "y"])
+            self.assertEqual(code, 2)
+
+    def test_profile_cli_non_binary_target_exits_2(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            csv_path = Path(tmp) / "s.csv"
+            csv_path.write_text("ts,y\n2024-01-01,1\n2024-01-02,2\n", encoding="utf-8")
+            code, _, _ = self._run_cli(
+                ["profile", str(csv_path), "--target", "y", "--time", "ts"]
+            )
+            self.assertEqual(code, 2)
+
+    def test_profile_help_names_unit_and_target(self):
+        # argparse --help prints to stdout then raises SystemExit(0).
+        out, err = io.StringIO(), io.StringIO()
+        with redirect_stdout(out), redirect_stderr(err):
+            with self.assertRaises(SystemExit) as ctx:
+                cli.main(["profile", "--help"])
+        self.assertEqual(ctx.exception.code, 0)
+        help_text = out.getvalue()
+        self.assertIn("--unit", help_text)
+        self.assertIn("--target", help_text)
+
     def _run_cli(self, argv):
         out, err = io.StringIO(), io.StringIO()
         with redirect_stdout(out), redirect_stderr(err):

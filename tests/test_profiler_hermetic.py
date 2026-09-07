@@ -336,5 +336,106 @@ class TestUnitBlock(unittest.TestCase):
         self.assertEqual(a, b)
 
 
+class TestTargetBlock(unittest.TestCase):
+    """D-02 top-level `target` block: overall, weekly {week,n,base_rate} table,
+    weekly_range [min,max], verdict (drifting | stable | null).
+
+    Week bucket = (iso_year, iso_week) from date.isocalendar() on the --time column
+    (deterministic, locale-free). overall = mean of the binary target over
+    non-null-target rows. verdict = 'drifting' iff any week base_rate < 0.8*overall OR
+    > 1.2*overall (strict, multiplicative), else 'stable'; null when <2 populated weeks.
+    The block is omitted entirely (key absent) when no target column is declared (D-01);
+    --target hard-requires --time; the binary check is closed against {"0","1"} — yes/no/
+    true/false are NOT accepted (25-RESEARCH.md Pitfall 4).
+    """
+
+    def _target(self, fixture):
+        return profile_csv(FIXTURES / fixture, time_column="ts", target="y")["target"]
+
+    def test_drifting_reference_values(self):
+        block = self._target("target_drifting.csv")
+        self.assertEqual(block["overall"], 0.5)
+        self.assertEqual(block["weekly_range"], [0.25, 0.75])
+        self.assertEqual(block["verdict"], "drifting")
+        self.assertEqual(len(block["weekly"]), 3)
+        for wk in block["weekly"]:
+            self.assertIn("week", wk)
+            self.assertIn("n", wk)
+            self.assertIn("base_rate", wk)
+            self.assertEqual(wk["n"], 4)
+        rates = [wk["base_rate"] for wk in block["weekly"]]
+        self.assertEqual(rates, [0.5, 0.25, 0.75])
+
+    def test_stable_reference_values(self):
+        block = self._target("target_stable.csv")
+        self.assertEqual(block["overall"], 0.5)
+        self.assertEqual(block["weekly_range"], [0.5, 0.5])
+        self.assertEqual(block["verdict"], "stable")
+
+    def test_boundary_is_stable(self):
+        # overall=0.5 → thresholds 0.4 / 0.6; week rates {0.4,0.6,0.5} sit exactly on the
+        # ±20% edge, which is strict/exclusive, so the verdict must read 'stable'.
+        block = self._target("target_boundary.csv")
+        self.assertEqual(block["overall"], 0.5)
+        self.assertEqual(block["weekly_range"], [0.4, 0.6])
+        self.assertEqual(block["verdict"], "stable")
+
+    def test_single_week_verdict_null(self):
+        block = self._target("target_single_week.csv")
+        self.assertIsNone(block["verdict"])
+        self.assertEqual(len(block["weekly"]), 1)
+
+    def test_non_binary_target_raises_listing_value(self):
+        with self.assertRaises(CheckError) as ctx:
+            profile_csv(FIXTURES / "target_non_binary.csv", time_column="ts", target="y")
+        self.assertIn("2", str(ctx.exception))
+
+    def test_yes_no_target_raises_listing_values(self):
+        with self.assertRaises(CheckError) as ctx:
+            profile_csv(FIXTURES / "target_yes_no.csv", time_column="ts", target="y")
+        msg = str(ctx.exception)
+        self.assertIn("no", msg)
+        self.assertIn("yes", msg)
+
+    def test_target_requires_time(self):
+        with self.assertRaises(CheckError):
+            profile_csv(FIXTURES / "target_drifting.csv", target="y")
+
+    def test_unknown_target_column_raises(self):
+        with self.assertRaises(CheckError):
+            profile_csv(FIXTURES / "target_drifting.csv", time_column="ts", target="nope")
+
+    def test_target_block_omitted_when_absent(self):
+        profile = profile_csv(FIXTURES / "target_drifting.csv", time_column="ts")
+        self.assertNotIn("target", profile)
+
+    def test_target_block_appends_last(self):
+        profile = profile_csv(FIXTURES / "target_drifting.csv", time_column="ts", target="y")
+        keys = list(profile.keys())
+        self.assertEqual(keys[-1], "target")
+        # No unit here, so target appends immediately after sentinels_found.
+        self.assertEqual(keys[keys.index("target") - 1], "sentinels_found")
+
+    def test_target_block_keys_and_order(self):
+        block = self._target("target_drifting.csv")
+        self.assertEqual(
+            list(block.keys()), ["overall", "weekly", "weekly_range", "verdict"]
+        )
+
+    def test_deterministic_across_shuffle(self):
+        import random
+
+        rows = (FIXTURES / "target_drifting.csv").read_text(encoding="utf-8").splitlines()
+        header, body = rows[0], rows[1:]
+        shuffled = body[:]
+        random.Random(7).shuffle(shuffled)
+        with tempfile.TemporaryDirectory() as tmp:
+            shuf = Path(tmp) / "shuffled.csv"
+            shuf.write_text("\n".join([header] + shuffled) + "\n", encoding="utf-8")
+            a = profile_csv(FIXTURES / "target_drifting.csv", time_column="ts", target="y")["target"]
+            b = profile_csv(shuf, time_column="ts", target="y")["target"]
+        self.assertEqual(a, b)
+
+
 if __name__ == "__main__":
     unittest.main()
