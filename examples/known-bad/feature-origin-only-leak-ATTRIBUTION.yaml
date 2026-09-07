@@ -1,0 +1,38 @@
+# Catch-attribution sidecar (Phase 27 D-05/D-06/D-07, REQ-P27-01/03).
+#
+# Machine-countable miss-attribution for the paired feature-origin-only-leak
+# fixture. Lives OUTSIDE the ANALYSIS-SPEC (D-06) so it cannot perturb
+# frame_digest (placement precedent 11.2 D-08 / dsx/decisions.py:99-121).
+#
+# Unlike the three prior miss sidecars, whose absent_code named an UNSHIPPED
+# backlog code, this sidecar's absent_code names DSX-ML-034 — a code SHIPPED to
+# the catalogue in plan 27-01. It remains a valid miss attribution because the
+# code is declaration-only: on this honest spec, which declares no per-feature
+# origin list, DSX-ML-034 has nothing to fire on and correctly stays silent at
+# every gate point. The falsifiability test runs the live gate and requires
+# exactly that.
+#
+# Schema (D-07): absent_code (required), promotes_backlog_item (required),
+# rationale? (optional), kind? (optional, default "miss"),
+# protocol_adherence? (optional, additive — Phase 16 REQ-P16-03/D-10), reported
+# beside catch rate / FPR, never inside them.
+
+absent_code: DSX-ML-034
+promotes_backlog_item: "6.5-item-7-feature-provenance"
+kind: miss
+# Whether the dsx-reproduce protocol was followed for this hand-authored fixture.
+# Vocabulary: adhered | skipped | not_applicable. This fixture never ran the
+# reproduce skill, so 'skipped' is the honest value — accepted-but-ignored by
+# calibration (REQ-P16-03 / D-10).
+protocol_adherence: skipped
+rationale: >
+  The churn model's `account_health_index` is recomputed nightly from activity
+  that includes the outcome window, so the leak is attributable only through
+  feature origin — no name pattern matches (it clears all ten LEAKAGE_PATTERNS),
+  no fit call is visible in the clean entrypoint, and no declaration contradicts
+  (every declared field is honest). The minted DSX-ML-034 reads a declared
+  model.feature_provenance[] per-feature origin list and fires on an
+  after_prediction or unwaived-unknown availability; this honest spec declares no
+  such block, so the code correctly stays silent — attribution, not detection (a
+  spec that lies in the origin list would be caught; this one does not lie, so it
+  passes). Measured a LIVE MISS at all four gate points (27-MEASUREMENT.md).
