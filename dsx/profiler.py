@@ -80,6 +80,21 @@ def _parse_date(value: str) -> date | None:
         return None
 
 
+def _extract_hour(value: str) -> "int | None":
+    """Return the hour of a timestamp token, or None when no time token is present.
+
+    Additive companion to `_parse_date` (25-RESEARCH.md Pitfall 2): it re-matches
+    `_DATE_RE` and reads the optional hour group (group 4). A date-only value or an
+    unparseable string carries no clock evidence, so it returns None — never 0. This is
+    kept deliberately separate from `_parse_date` and the frozen `dates` accumulator so
+    time.min/time.max/time.max_gap_days stay byte-for-byte unchanged.
+    """
+    match = _DATE_RE.match(value.strip())
+    if not match or match.group(4) is None:
+        return None
+    return int(match.group(4))
+
+
 def _numeric_block(values: "list[float]") -> dict[str, Any]:
     """D-02 numeric column block: min/q1/median/q3/max/mean/sd/n_zero/n_negative/n.
 
@@ -177,6 +192,11 @@ def profile_csv(
         pk_combos: set[tuple[str, ...]] = set()
         pk_dupes = 0
         dates: list[date] = []
+        # Additive, separate accumulators (25-RESEARCH.md Pitfall 2): never appended to
+        # the frozen `dates` list, so the three time.* keys stay byte-stable.
+        hour_of_time_bearing_rows: list[int] = []
+        day_counts: Counter[str] = Counter()
+        iso_week_counts: Counter[tuple[int, int]] = Counter()
         row_count = 0
         pk = list(primary_key or [])
         for missing in pk:
@@ -218,9 +238,16 @@ def profile_csv(
                     except ValueError:
                         pass
             if time_column:
-                parsed = _parse_date(str(row.get(time_column, "")))
+                raw_time = str(row.get(time_column, ""))
+                parsed = _parse_date(raw_time)
                 if parsed is not None:
                     dates.append(parsed)
+                    day_counts[parsed.isoformat()] += 1
+                    iso_year, iso_week = parsed.isocalendar()[:2]
+                    iso_week_counts[(iso_year, iso_week)] += 1
+                hour = _extract_hour(raw_time)
+                if hour is not None:
+                    hour_of_time_bearing_rows.append(hour)
 
     col_stats: dict[str, Any] = {}
     for col in columns:
@@ -260,6 +287,37 @@ def profile_csv(
             if gap > max_gap:
                 max_gap = gap
         time_block["max_gap_days"] = max_gap
+
+    # D-01/D-02: append the additive time keys AFTER max_gap_days, only when a time
+    # column is declared — so a profile without --time keeps the frozen 4-key time block
+    # byte-identical (the 25-01 pre-existing-key golden is the trip-wire). Every
+    # undefined value is Python None (rendered as YAML `null`), never 0.
+    if time_column:
+        if day_counts:
+            day_values = sorted(day_counts.values())
+            time_block["rows_per_day"] = {
+                "min": min(day_values),
+                "median": statistics.median(day_values),
+                "max": max(day_values),
+            }
+        else:
+            time_block["rows_per_day"] = {"min": None, "median": None, "max": None}
+
+        first_period_ratio: "float | None" = None
+        last_period_ratio: "float | None" = None
+        if len(iso_week_counts) >= 5:
+            # Populated weeks sorted by (iso_year, iso_week); order-independent.
+            ordered_weeks = [c for _, c in sorted(iso_week_counts.items(), key=lambda kv: kv[0])]
+            first_period_ratio = ordered_weeks[0] / statistics.mean(ordered_weeks[1:5])
+            last_period_ratio = ordered_weeks[-1] / statistics.mean(ordered_weeks[-5:-1])
+        time_block["first_period_ratio"] = first_period_ratio
+        time_block["last_period_ratio"] = last_period_ratio
+
+        if hour_of_time_bearing_rows:
+            zeros = sum(1 for h in hour_of_time_bearing_rows if h == 0)
+            time_block["share_at_hour_00"] = zeros / len(hour_of_time_bearing_rows)
+        else:
+            time_block["share_at_hour_00"] = None
 
     found_sentinels = sorted({s for s, n in sentinel_hits.items() if n > 0})
 
