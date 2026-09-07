@@ -223,3 +223,35 @@ record honest per the brief §5 D-05 discipline. `_D05_ALLOWLIST_CODES` in
 **Guardrail 1 (FREEZE-BEFORE-MEASURE) intact:** nothing in this section edits D-27-01 (case
 shape) or D-27-02 (pass/fail rule). It records the citation resolution and the downstream
 authoring instructions only.
+
+## §S3-2-RESEARCH-CORRECTIONS — authoring-detail corrections verified against the committed harness (2026-09-07)
+
+The S3-2 research sub-stage (`27-RESEARCH.md`) read the frozen harness and found two
+**authoring-detail** conflicts with §S3-1-CLOSE. Neither touches D-27-01 (case shape) or
+D-27-02 (pass/fail rule) — **guardrail 1 remains intact.** These corrections bind the S3-2
+plan and the S3-3 mint; the orchestrator re-verified each against committed code before
+recording it (repo is the fact).
+
+1. **`promotes_backlog_item` id — use `6.5-item-7-feature-provenance` (NOT
+   `6.5-item-7-feature-origin-only-leak`).** The frozen id list `_SECTION_65_ITEM_IDS` at
+   `tests/test_known_bad_corpus.py:839` fixes item 7's id as
+   `"6.5-item-7-feature-provenance"` (`# brief.md:377 row 7 (per-feature origin list)`);
+   the sidecar test validates `promotes_backlog_item` against exactly that string, so
+   §S3-1-CLOSE consequence 2's `-feature-origin-only-leak` id would fail the gate. The
+   ATTRIBUTION sidecar MUST carry `promotes_backlog_item: 6.5-item-7-feature-provenance`.
+2. **`DSX-ML-034` SHIPS — it does NOT belong in any backlog-reserved / disjoint set.**
+   §S3-1-CLOSE consequence 2 and D-27-03 describe the code as "reserved in
+   `_SECTION_65_BACKLOG_CODES`" from its RESERVE-INACTIVE era. Now that it is minted and
+   shipped, it is a live catalogue code: it goes in `_D05_ALLOWLIST_CODES`
+   (`scripts/gen-finding-catalogue.py`) + the `references/finding-codes.md` row + the
+   catalogue count 276→277, and must be kept OUT of any backlog/section-65-reserved
+   disjointness set the harness asserts (a shipped code there would fail the disjointness
+   check). The sidecar still names it as `absent_code: DSX-ML-034` (the code that SHOULD
+   have caught the miss and now does).
+
+**Count pins the S3-3 mint MUST move together (276 → 277), not only the ones the ledger
+line named:** `references/finding-codes.md` "Total" line; `_EXPECTED_TOTAL` at
+`tests/test_finding_catalogue_invariant.py:39` (and its `test_..._stays_at_276_codes`
+method name + docstring); `tests/test_phase20_zero_mint_close.py:99`. Spec-count pin:
+`tests/test_dsx.py:579` (`len(paths) == 42` → 43) on fixture promotion. Full research and
+locators in `27-RESEARCH.md`.
