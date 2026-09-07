@@ -38,6 +38,18 @@ alone with the citation demoted to context, or mints nothing). An interactive Cl
 session then records the verdict in the phase's docstring `# D-05:` marker and
 `_D05_ALLOWLIST_CODES`, and checks this item off.
 
+**Measured update (2026-09-07, S3-3 — row 40b / Kaufman only).** The Phase 27 D-13
+measurement spike is done and confirms a **LIVE MISS**: an honest, well-formed churn
+spec whose only defect is a feature (`account_health_index`) recomputed from the
+outcome window under an innocuous name passes `validate`/`plan`/`execute` cleanly —
+the `ml` leakage screen ran and positively cleared all 7 features — and is blocked at
+verify/ship only by swap-invariant corpus-completeness gaps (verbatim in
+`.planning/phases/27-evidence-case-feature-origin-only-leak/27-MEASUREMENT.md`). So
+the §6.5 item 7 gap is real and the `feature_provenance` mint **is warranted** — it is
+parked solely on **your read of row 40b** (does Kaufman 2012 TKDD, at its locator,
+state the legitimacy/availability condition, and what is its author list/year). The
+other rows (40a/40c/40d/40e) are unaffected by this measurement.
+
 | # | Citation (as the code will render it) | Locator to read | Exact claim the code cites | Confirmed by the loop (secondary / mechanical) | UNVERIFIED — needs your read |
 |---|---|---|---|---|---|
 | 40a | Hyndman, R. J. & Fan, Y. (1996). *Sample Quantiles in Statistical Packages.* The American Statistician **50(4)**: 361–365. | The paper's Table 1 / the nine sample-quantile type definitions; and CPython docs for `statistics.quantiles` (Python 3.12). | `statistics.quantiles(method='exclusive')` (the stdlib default the profiler uses) computes the Hyndman & Fan **type 6** sample quantile; `method='inclusive'` computes **type 7**. Phase 25 pins whichever it uses (default = exclusive = type 6). | On Python 3.12.10, `quantiles([1..10], n=4)` = `[2.75, 5.5, 8.25]` (exclusive) and `[3.25, 5.5, 7.75]` (inclusive) — reproducible reference values; the CPython docs describe "exclusive"/"inclusive" **without naming an H&F type number**. | That "exclusive = type 6" and "inclusive = type 7" **in the Hyndman & Fan (1996) taxonomy** — the paper's own type numbering. The docs do not assert it; only the paper does. Confirm the type number the profiler's method maps to. |
