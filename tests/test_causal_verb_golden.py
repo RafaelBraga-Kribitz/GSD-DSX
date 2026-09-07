@@ -162,6 +162,17 @@ _GOLDEN_SHIP_FINDINGS: "dict[str, frozenset[str]]" = {
         "DSX-CLM-031", "DSX-CODE-020", "DSX-CODE-021", "DSX-CODE-030", "DSX-COH-031",
         "DSX-EXP-051", "DSX-MET-040", "DSX-ML-090", "DSX-NAR-001",
     }),
+    # Phase 27 (REQ-P27-01/03, D-27-01/02): the feature-origin-only-leak MISS.
+    # Measured 2026-09-07 against a fresh tempfile.TemporaryDirectory() via
+    # _ship_findings above — never guessed. This set is SMALLER than full-frame's
+    # because this fixture has no code defect (no DSX-CODE-020/021/030), a complete
+    # selection_ledger (no DSX-ML-090), and declares no comparisons_looked_at (no
+    # DSX-EXP-051): only the four swap-invariant incidental corpus-gap residuals
+    # remain. DSX-ML-034 (shipped, declaration-only) stays silent because the spec
+    # declares no per-feature origin list — the miss it attributes, not a catch.
+    "examples/known-bad/feature-origin-only-leak-ANALYSIS-SPEC.yaml": frozenset({
+        "DSX-CLM-031", "DSX-COH-031", "DSX-MET-040", "DSX-NAR-001",
+    }),
     # Phase 12-01 (REQ-P12-01/02, D-01/D-02): three coverage-class MISS fixtures.
     # Each set measured 2026-08-27 against a fresh tempfile.TemporaryDirectory()
     # per fixture with a plan-time header seeded, via _ship_findings above — never

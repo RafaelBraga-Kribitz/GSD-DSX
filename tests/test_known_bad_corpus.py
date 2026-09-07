@@ -537,6 +537,19 @@ _EXPECTED_CAUGHT_DEFECTS: "dict[str, frozenset[str]]" = {
     "chart-takeaway-without-magnitude": frozenset(),
     "chart-estimates-without-uncertainty": frozenset(),
     "chart-alphabetical-ranking": frozenset(),
+    # Phase 27 (REQ-P27-01/03, D-27-01/02): the feature-origin-only-leak fixture
+    # is a MISS — an honest, well-formed churn spec whose one defect (a feature
+    # whose value depends on the outcome window, under the innocuous name
+    # `account_health_index`) sails through the entire ml/code leakage-detection
+    # surface. Empty by design, not omission, exactly like the coverage-class MISS
+    # entries above: no shipped check fires its target defect at any point, so the
+    # caught-defect set is empty. The currently-silent code that attributes the
+    # miss (DSX-ML-034, shipped in plan 27-01 but declaration-only, so silent on a
+    # spec that declares no per-feature origin list) and the §6.5 item it promotes
+    # live in feature-origin-only-leak-ATTRIBUTION.yaml (D-06/D-07), never here.
+    # The key is required so test_expected_caught_defects_keys_match_the_corpus_on_disk
+    # stays green.
+    "feature-origin-only-leak": frozenset(),
 }
 
 

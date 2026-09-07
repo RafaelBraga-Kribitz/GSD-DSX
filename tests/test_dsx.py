@@ -567,6 +567,10 @@ class TestSpecStructure(unittest.TestCase):
         # are the twenty-fourth through forty-second; count updated from 23 to 42 in
         # the same commit that adds them. Each is a copy of a clean good-corpus control
         # plus exactly one bad visual, so all satisfy the same assertion.
+        # 2026-09-07 (Phase 27, plan 27-02): the feature-origin-only-leak known-bad
+        # fixture is the forty-third; count updated from 42 to 43 in the same commit
+        # that promotes it. Its validity_frame is a clone of full-frame-cleaning's
+        # (difference_in_proportions), so it satisfies the same estimand assertion.
         from dsx.loader import load
         from dsx.spec import ESTIMAND_TYPES
 
@@ -576,7 +580,7 @@ class TestSpecStructure(unittest.TestCase):
             + sorted((root / "examples" / "known-bad").glob("*-ANALYSIS-SPEC.yaml"))
             + sorted((root / "templates").glob("ANALYSIS-SPEC.yaml"))
         )
-        self.assertEqual(len(paths), 42, [str(p) for p in paths])
+        self.assertEqual(len(paths), 43, [str(p) for p in paths])
         bad = []
         for p in paths:
             estimand_type = load(str(p)).get("validity_frame", {}).get("estimand", {}).get("type")

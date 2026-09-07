@@ -1463,6 +1463,14 @@ _EXPECTED_VAL_CODES: "dict[str, set[str]]" = {
     "chart-takeaway-without-magnitude-ANALYSIS-SPEC.yaml": set(),
     "chart-estimates-without-uncertainty-ANALYSIS-SPEC.yaml": set(),
     "chart-alphabetical-ranking-ANALYSIS-SPEC.yaml": set(),
+    # Measured 2026-09-07 (plan 27-02, REQ-P27-01/03) against the fixture as
+    # committed in this plan: loaded via dsx.loader.load(), ran
+    # dsx.frame.val.check(spec), recorded {f.code for f in report.findings} — the
+    # empty set. This feature-origin-only-leak fixture's validity_frame is a
+    # wholesale clone of full-frame-cleaning's (measured set() above); its encoded
+    # defect is a feature-origin leak the ml check cannot see (DSX-ML-034 is a
+    # DSX-ML-* code, not DSX-VAL-*, and stays silent besides), so no DSX-VAL-* fires.
+    "feature-origin-only-leak-ANALYSIS-SPEC.yaml": set(),
 }
 
 
