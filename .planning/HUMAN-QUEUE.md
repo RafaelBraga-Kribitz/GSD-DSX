@@ -71,13 +71,42 @@ blocking any earlier work.
 An interactive session records both verdicts in the proper artifacts (SECURITY.md
 Approval line; a UAT note) and checks this item off. **Non-blocking until S7-2.**
 
+### HQ-42 — Phase 26 end-of-phase sign-off: security + UAT (filed 2026-09-07 by S2-5; non-blocking until S7-2)
+
+**What this is.** Phase 26 (Per-skill read contracts) passed both verify:post gates
+technically; two items need the operator's sign-off at close-out (S7-2), neither
+blocking any earlier work. Phase 26 is skill-only — `dsx/` byte-identical, zero new
+codes (276 → 276) — so the attack surface is drift and false read contracts, not
+runtime input handling.
+
+1. **Security sign-off (SECURITY.md approval line — brief §4.4).** The loop re-gated
+   all 8 threats at their code locators on real Python 3.12.10 → **SECURED,
+   `threats_open: 0`, 8/8 CLOSED** (`26-SECURITY.md`, `status: verified` technical):
+   the read-contract guard fails loudly on any orphaned key (T-26-02) and never
+   vacuous-passes on a CRLF mis-split (T-26-01); `dsx/`+`templates/` byte-identical
+   and catalogue 276 → 276 (T-26-04); `node install.mjs --check` self-test passed
+   (T-26-03); full suite 1590 OK (T-26-07). The Approval line is written but
+   **unsigned** — the loop verifies mitigations, it does not sign. **To answer:** read
+   `26-SECURITY.md`; confirm the register + the four HIGH threats (T-26-01/02/04 +
+   the guard's discrimination); approve.
+2. **UAT round.** `26-VALIDATION.md` is `nyquist_compliant: true`, 0 gaps, all 3
+   requirements COVERED by named tests (`tests.test_skill_read_contracts` 7/7 green on
+   real 3.12.10). Phase 26 has no user-facing runtime behaviour beyond the
+   agent-facing skill prose and the static repo-integrity guard, so its acceptance
+   test IS the automated invariant set. **To answer:** confirm UAT accepted (or name a
+   manual check to run).
+
+An interactive session records both verdicts in the proper artifacts (SECURITY.md
+Approval line; a UAT note) and checks this item off. **Non-blocking until S7-2.**
+
 ## Will be added by the loop when reached
 
 - ~~S0-3: the v2.6 D-05 citation evidence pack~~ — **FILED as HQ-40 (2026-09-06)**,
   see Open above. Non-blocking for Phases 25–26; the Kaufman/Wilkinson-or-JARS/Gail
   rows block S3-1, S4-1 and S5-1 respectively.
 - Phase 25/26/27/28/29/30 end-of-phase security sign-off + UAT rounds (batched per
-  phase; non-blocking until S7-2). **Phase 25 filed as HQ-41 (2026-09-07).**
+  phase; non-blocking until S7-2). **Phase 25 filed as HQ-41; Phase 26 filed as HQ-42
+  (both 2026-09-07).**
 - D-06 numbering veto windows for any code Phases 27–29 mint, and for any number
   reserved in `_SECTION_65_BACKLOG_CODES` for a miss sidecar (from a freshly
   re-measured live catalogue count; silence = accept).

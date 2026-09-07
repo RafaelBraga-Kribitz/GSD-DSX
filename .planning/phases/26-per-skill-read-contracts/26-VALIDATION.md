@@ -3,10 +3,11 @@ phase: 26
 slug: per-skill-read-contracts
 # status lifecycle: draft (seeded by plan-phase) → validated (set by validate-phase §6)
 # audit-milestone §5.5 distinguishes NOT-VALIDATED (draft) from PARTIAL (validated + nyquist_compliant: false) (#2117)
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: validated
+nyquist_compliant: true
+wave_0_complete: true
 created: 2026-09-07
+validated: 2026-09-07T09:00:00Z
 ---
 
 # Phase 26 — Validation Strategy
@@ -41,13 +42,15 @@ created: 2026-09-07
 
 ## Per-Task Verification Map
 
-> Placeholder — task IDs (`26-NN-NN`) do not exist until the planner writes PLAN.md.
-> validate-phase (S2-5) fills this from the executed plan. The requirement→behavior
-> coverage below is the draft contract the map must satisfy.
+> Finalized at validate-phase (S2-5) from the executed plans (26-01…26-04).
+> Every requirement is COVERED by a named `unittest` test that exists and passes on
+> real Python 3.12.10; 0 MISSING → `nyquist_compliant: true`.
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 26-NN-NN | NN | N | REQ-P26-01 | — | N/A (agent-facing prose + static test) | unit | `python -m unittest tests.test_skill_read_contracts -v` | ❌ W0 | ⬜ pending |
+| 26-01 (3 skills) + 26-02 (2 skills) | 26-01/02 | 1 | REQ-P26-01 | T-26-02/06 | Each of 5 skills carries one head `<inputs>` block naming its keys + `eda_artifact: none` fallback | unit | `test_every_skill_carries_at_least_one_key_region` (checked==5) + `test_when_absent_names_eda_artifact_none` | ✅ | ✅ pass |
+| 26-03 (guard) | 26-03 | 2 | REQ-P26-02 | T-26-01/02/05/06 | Every named key resolves live; renamed key fails; CRLF-tolerant; non-vacuous; Also-consult zero backticks | unit | `test_skill_keys_are_members_of_live_templates` + `test_negative_control_orphan_key_is_rejected` + `test_anchor_non_vacuity` + `test_parse_is_deterministic_and_order_independent` + `test_also_consult_line_has_zero_backticks` | ✅ | ✅ pass |
+| 26-04 (close) | 26-04 | 3 | REQ-P26-03 | T-26-03/04/07 | `dsx/` byte-identical; 276→276; installed copies re-synced | unit + smoke | `tests.test_finding_catalogue_invariant` + `gen-finding-catalogue.py --check` + `git diff --stat 818fb7c..HEAD -- dsx/` empty + `node install.mjs && --check` | ✅ | ✅ pass |
 
 **Draft requirement → behavior → test coverage (from 26-RESEARCH.md):**
 
@@ -68,9 +71,9 @@ created: 2026-09-07
 
 ## Wave 0 Requirements
 
-- [ ] `tests/test_skill_read_contracts.py` — entire test file is new; covers REQ-P26-01 and REQ-P26-02 in full (the guard: line-oriented stdlib parser, dotted-path set-membership, negative control, anti-vacuity, CRLF tolerance)
-- [ ] No shared fixtures needed — reads `templates/EDA.md`, `templates/DATA-PROFILE.yaml`, and the five `skills/*/SKILL.md` directly via `Path(__file__).resolve().parents[1]`, matching every existing repo-integrity test
-- [ ] No framework install needed — `unittest` is stdlib
+- [x] `tests/test_skill_read_contracts.py` — entire test file is new; covers REQ-P26-01 and REQ-P26-02 in full (the guard: line-oriented stdlib parser, dotted-path set-membership, negative control, anti-vacuity, CRLF tolerance). **Landed 26-03 (`3d60f63` GREEN); 7 tests OK on real 3.12.10.**
+- [x] No shared fixtures needed — reads `templates/EDA.md`, `templates/DATA-PROFILE.yaml`, and the five `skills/*/SKILL.md` directly via `Path(__file__).resolve().parents[1]`, matching every existing repo-integrity test
+- [x] No framework install needed — `unittest` is stdlib
 
 ---
 
@@ -86,11 +89,18 @@ created: 2026-09-07
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 60s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references
+- [x] No watch-mode flags
+- [x] Feedback latency < 60s
+- [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** validated 2026-09-07 (loop S2-5, orchestrator) — 3/3 requirements
+(REQ-P26-01/02/03) COVERED by named `unittest` tests that exist and pass on real
+Python 3.12.10; 0 MISSING, `nyquist_compliant: true`. Phase module
+`tests.test_skill_read_contracts` re-run this firing = **7 tests OK**; the full suite
+is **1590 OK**. Phase 26 has no user-facing runtime behaviour beyond agent-facing
+skill prose and the static repo-integrity guard, so its acceptance test IS the
+automated invariant set (no manual UAT step owed). Operator UAT confirmation batched
+to HUMAN-QUEUE as HQ-42, non-blocking until S7-2.

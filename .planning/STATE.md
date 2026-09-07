@@ -3,24 +3,24 @@ gsd_state_version: 1.0
 milestone: v2.6
 milestone_name: Exploration Depth and Backlog Evidence
 current_phase_name: Per-skill read contracts
-status: executing
-stopped_at: S2-4 DONE — Phase 26 code review + verification `passed`. gsd-code-reviewer (opus, direct spawn §3) → 26-REVIEW.md = 0 HIGH / 0 MEDIUM / 3 LOW; all three LOW are latent-robustness notes (positional `#` strip, hyphen-key regex gap, intermediate-parent membership), none triggered by the current templates/skills, all ACCEPTED as documented residuals (reviewer's exhaustive leaf+parent+placeholder rename probe proved every referenced-key rename is caught → REQ-P26-02 robust). Gates re-run by orchestrator on real 3.12.10: full suite 1590 OK; `git diff --stat 818fb7c..HEAD -- dsx/` EMPTY; catalogue 276→276 (`--check` current + 276 rows); `node install.mjs --check` passed (6/6 agents, 14/14 skills). 26-VERIFICATION.md `passed`, 3/3 REQ MET; REQUIREMENTS P26-01/02/03 → Met + boxes checked. Next = S2-5 (/gsd-secure-phase 26 + /gsd-validate-phase 26; sign-off batched to HUMAN-QUEUE, non-blocking until S7-2). NOTE: this frontmatter was STALE at firing start (read "S2-3 Wave 1 in progress" @HEAD 954adf9 although S2-3 was DONE @e35fbe1) — corrected here per brief "the repo is the fact".
-last_updated: "2026-09-07T08:51:00.000Z"
+status: blocked-on-human-read
+stopped_at: S2-5 DONE → Phase 26 COMPLETE. Both verify:post gates re-run by the orchestrator on real Python 3.12.10. secure-phase 26 → SECURED, threats_open: 0, 8/8 CLOSED (register from 4/4 PLAN threat_model blocks; ASVS L1, block_on=high, auditor short-circuit → orchestrator re-gated each mitigation at its locator: T-26-01 CRLF `\r?\n`+anti-vacuity; T-26-02 full dotted-path membership + negative control; T-26-03 `install.mjs --check` self-test passed; T-26-04 `dsx/`+`templates/` diff empty + 276→276; T-26-05 intermediate-path match; T-26-06 Also-consult zero backticks; T-26-07 full suite 1590 OK; T-26-SC accept, stdlib-only); 26-SECURITY.md `status: verified`. validate-phase 26 → nyquist_compliant: true, 3/3 REQ COVERED by named tests, 0 MISSING; phase module `tests.test_skill_read_contracts` 7 OK; 26-VALIDATION.md `status: validated`. Human sign-off + UAT batched as HQ-42 (non-blocking until S7-2). Next = S3-1 (Phase 27 discuss) — BLOCKED on HQ-40 Kaufman D-05 human read (unanswered). OPEN QUESTION for next firing (§4 persona round): whether a citation-independent D-13 measurement spike on Phase 27's feature-origin-only-leak case is extractable ahead of the human read (if the existing gate already catches the case, the phase closes with no mint and Kaufman becomes moot) — do NOT treat as a permanent all-blocked no-op until that round runs.
+last_updated: "2026-09-07T09:05:00.000Z"
 last_activity: 2026-09-07
-last_activity_desc: Phase 26 S2-4 — code review (opus, clean: 0H/0M/3L accepted) + verification `passed`; REQUIREMENTS traceability updated (P26 → Met); stale STATE corrected; committed + pushed. Next = S2-5 (secure + validate, sign-off batched).
+last_activity_desc: Phase 26 S2-5 — secure-phase (SECURED 8/8) + validate-phase (nyquist_compliant, 3/3) re-gated on real 3.12.10; 26-SECURITY.md + 26-VALIDATION.md written; HQ-42 batched; committed + pushed. Phase 26 complete → next = S3-1 (blocked on HQ-40 Kaufman).
 progress:
   total_phases: 6
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 8
   completed_plans: 8
-  percent: 17
+  percent: 33
 current_phase: 26
 ---
 
 # Project state
 
 **Status:** v2.6 Exploration Depth and Backlog Evidence — ACTIVE (opened 2026-09-06 by operator direction, HQ-39); branch `gsd/v2.6.0-exploration-depth`; ships as tag `v2.6.0`
-**Progress:** [███░░░░░░░░░░░░░░░░░] v2.6 — 1/6 phases (✅25 hermetic profile depth → 26 per-skill read contracts → 27 feature-origin-only leak case → 28 magnitude-no-test case → 29 subgroup-harm case → 30 calibration re-baseline)
+**Progress:** [██████░░░░░░░░░░░░░░░] v2.6 — 2/6 phases (✅25 hermetic profile depth → ✅26 per-skill read contracts → 27 feature-origin-only leak case → 28 magnitude-no-test case → 29 subgroup-harm case → 30 calibration re-baseline)
 **Predecessors:** v2.5.0 and v2.4.1 SHIPPED 2026-09-06 interactively (`ad43ec6`, `07d3db0`); v2.4 Visual Excellence SHIPPED 2026-09-03 (tag `v2.4.0`); v2.3 Test Catalog SHIPPED 2026-09-02 (`v2.3.0`); v2.2 Analytic Surface SHIPPED 2026-08-29 (`v2.2.0`); v2.0.0 DSX Validity Frame SHIPPED 2026-08-28 (`v2.1.0`). Archives under `.planning/milestones/`.
 
 **Loop control:** the autonomous ceremony drives this milestone from S0-1 onward per
@@ -48,10 +48,10 @@ and a case the gate already catches closes its phase with no mint (D-13).
 
 ## Current Position
 
-Phase: 26 — Per-skill read contracts (executing; S2-4 code review + verification DONE)
-Plan: all 4 plans executed (S2-3); code review clean (0H/0M/3L accepted) + 26-VERIFICATION.md `passed`, 3/3 REQ MET (S2-4). Only S2-5 (secure + validate, sign-off batched) remains before Phase 26 completes.
-Status: Executing — S2-4 done; next = S2-5 (/gsd-secure-phase 26 + /gsd-validate-phase 26)
-Last activity: 2026-09-07 — Phase 26 S2-4: opus code review clean + verification passed; REQUIREMENTS P26 → Met; stale STATE corrected
+Phase: 26 — Per-skill read contracts (COMPLETE; all 5 S2 units done)
+Plan: all 4 plans executed (S2-3); code review clean (0H/0M/3L accepted) + 26-VERIFICATION.md `passed` (S2-4); secure-phase SECURED 8/8 + validate-phase nyquist_compliant 3/3 (S2-5). Phase 26 done.
+Status: Blocked-on-human-read — Phase 26 complete; next = S3-1 (Phase 27 discuss), BLOCKED on HQ-40 Kaufman D-05 human read. See stopped_at OPEN QUESTION (§4 persona round on a citation-independent D-13 measurement spike) before treating the milestone as a permanent all-blocked no-op.
+Last activity: 2026-09-07 — Phase 26 S2-5: secure (SECURED 8/8) + validate (nyquist 3/3) re-gated on real 3.12.10; 26-SECURITY.md + 26-VALIDATION.md written; HQ-42 batched
 
 ## Performance Metrics
 
@@ -75,7 +75,14 @@ None beyond the ledger.
 
 ### Blockers/Concerns
 
-None open.
+**Next stage-ordered unit (S3-1, Phase 27 discuss) is blocked on HQ-40's Kaufman
+D-05 human read** (unanswered). S4-1 (Wilkinson/JARS) and S5-1 (Gail & Simon)
+likewise blocked on their HQ-40 rows. This is the milestone reaching its D-05
+human-read gate — the "longest pole" the ledger ordering rationale anticipated.
+Not yet a permanent all-blocked no-op: the next firing should run a §4 persona
+round on whether a citation-independent D-13 measurement spike on Phase 27's case
+is extractable ahead of the human read (a case the existing gate already catches
+closes the phase with no mint → Kaufman moot).
 
 ## Deferred Items
 
