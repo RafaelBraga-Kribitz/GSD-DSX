@@ -10,6 +10,7 @@ import csv
 import hashlib
 import math
 import re
+import statistics
 from collections import Counter
 from datetime import date
 from pathlib import Path
@@ -79,6 +80,38 @@ def _parse_date(value: str) -> date | None:
         return None
 
 
+def _numeric_block(values: "list[float]") -> dict[str, Any]:
+    """D-02 numeric column block: min/q1/median/q3/max/mean/sd/n_zero/n_negative/n.
+
+    Quantiles use statistics.quantiles(..., n=4, method="inclusive") (Hyndman & Fan
+    type 7, pinned per 25-RESEARCH.md). mean/sd use statistics.mean/statistics.stdev
+    (exact-Fraction accumulation, order-independent) — never fmean, never a hand-rolled
+    float loop. Undefined statistics are Python None so `_scalar` renders them as
+    YAML `null`, never 0 or NaN.
+    """
+    n = len(values)
+    n_zero = sum(1 for v in values if v == 0)
+    n_negative = sum(1 for v in values if v < 0)
+    if n == 0:
+        return {
+            "min": None, "q1": None, "median": None, "q3": None, "max": None,
+            "mean": None, "sd": None, "n_zero": 0, "n_negative": 0, "n": 0,
+        }
+    ordered = sorted(values)
+    if n == 1:
+        v = ordered[0]
+        return {
+            "min": v, "q1": v, "median": v, "q3": v, "max": v,
+            "mean": v, "sd": None, "n_zero": n_zero, "n_negative": n_negative, "n": 1,
+        }
+    q1, median, q3 = statistics.quantiles(ordered, n=4, method="inclusive")
+    return {
+        "min": ordered[0], "q1": q1, "median": median, "q3": q3, "max": ordered[-1],
+        "mean": statistics.mean(ordered), "sd": statistics.stdev(ordered),
+        "n_zero": n_zero, "n_negative": n_negative, "n": n,
+    }
+
+
 def profile_csv(
     path: "str | Path",
     *,
@@ -114,6 +147,7 @@ def profile_csv(
         null_counts: dict[str, int] = {c: 0 for c in columns}
         uniques: dict[str, set[str]] = {c: set() for c in columns}
         samples: dict[str, list[str]] = {c: [] for c in columns}
+        numeric_values: dict[str, list[float]] = {c: [] for c in columns}
         sentinel_hits: Counter[str] = Counter()
         pk_combos: set[tuple[str, ...]] = set()
         pk_dupes = 0
@@ -144,6 +178,8 @@ def profile_csv(
                 uniques[col].add(stripped)
                 if len(samples[col]) < 50:
                     samples[col].append(stripped)
+                if _INT_RE.match(stripped) or _FLOAT_RE.match(stripped):
+                    numeric_values[col].append(float(stripped))
                 if stripped in sentinel_set or (
                     _FLOAT_RE.match(stripped) and stripped in sentinel_set
                 ):
@@ -163,11 +199,16 @@ def profile_csv(
     col_stats: dict[str, Any] = {}
     for col in columns:
         n_non_null = row_count - null_counts[col]
+        dtype = _infer_dtype(samples[col])
         col_stats[col] = {
             "null_rate": round(null_counts[col] / row_count, 6) if row_count else 0.0,
             "n_unique": len(uniques[col]),
-            "dtype": _infer_dtype(samples[col]),
+            "dtype": dtype,
         }
+        # D-01: appended LAST, after null_rate/n_unique/dtype, so pre-existing
+        # rendered bytes are identical (insertion-order YAML emitter).
+        if dtype in ("integer", "float"):
+            col_stats[col]["numeric"] = _numeric_block(numeric_values[col])
 
     duplicate_rate = 0.0
     primary_key_unique = True
