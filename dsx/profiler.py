@@ -112,6 +112,30 @@ def _numeric_block(values: "list[float]") -> dict[str, Any]:
     }
 
 
+def _categorical_block(counts: "Counter[str]") -> dict[str, Any]:
+    """D-02 categorical column block: share_top1/share_top10/rare_share/n_singleton.
+
+    Tie-break is frozen: count desc, then level string asc — computed via an explicit
+    `sorted(..., key=lambda kv: (-count, level))`, never `Counter.most_common()` (whose
+    tie order is CSV row order / first-insertion order, not the frozen rule). Levels are
+    exact raw stripped strings — no trim beyond the existing strip, no case-fold, no
+    collation.
+    """
+    n = sum(counts.values())
+    if n == 0:
+        return {"share_top1": None, "share_top10": None, "rare_share": None, "n_singleton": 0}
+    ranked = sorted(counts.items(), key=lambda kv: (-kv[1], kv[0]))
+    share_top1 = ranked[0][1] / n
+    top10 = ranked[:10]
+    share_top10 = 1.0 if len(ranked) < 10 else sum(c for _, c in top10) / n
+    rare = sum(c for _, c in ranked if c < 10 or c / n < 0.001)
+    n_singleton = sum(1 for _, c in ranked if c == 1)
+    return {
+        "share_top1": share_top1, "share_top10": share_top10,
+        "rare_share": rare / n, "n_singleton": n_singleton,
+    }
+
+
 def profile_csv(
     path: "str | Path",
     *,
@@ -148,6 +172,7 @@ def profile_csv(
         uniques: dict[str, set[str]] = {c: set() for c in columns}
         samples: dict[str, list[str]] = {c: [] for c in columns}
         numeric_values: dict[str, list[float]] = {c: [] for c in columns}
+        categorical_counts: dict[str, Counter[str]] = {c: Counter() for c in columns}
         sentinel_hits: Counter[str] = Counter()
         pk_combos: set[tuple[str, ...]] = set()
         pk_dupes = 0
@@ -180,6 +205,7 @@ def profile_csv(
                     samples[col].append(stripped)
                 if _INT_RE.match(stripped) or _FLOAT_RE.match(stripped):
                     numeric_values[col].append(float(stripped))
+                categorical_counts[col][stripped] += 1
                 if stripped in sentinel_set or (
                     _FLOAT_RE.match(stripped) and stripped in sentinel_set
                 ):
@@ -209,6 +235,8 @@ def profile_csv(
         # rendered bytes are identical (insertion-order YAML emitter).
         if dtype in ("integer", "float"):
             col_stats[col]["numeric"] = _numeric_block(numeric_values[col])
+        elif dtype in ("string", "mixed"):
+            col_stats[col]["categorical"] = _categorical_block(categorical_counts[col])
 
     duplicate_rate = 0.0
     primary_key_unique = True

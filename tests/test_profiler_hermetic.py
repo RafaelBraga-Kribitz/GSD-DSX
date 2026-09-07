@@ -113,13 +113,13 @@ class TestCategoricalBlock(unittest.TestCase):
         self.assertAlmostEqual(cat["rare_share"], 15 / 20000)
 
     def test_top10_tie_boundary_count_desc_then_string_asc(self):
-        # Levels a..i carry counts 15..7 (sum=109); "m" and "n" both have count 5, with
+        # Levels a..i carry counts 15..7 (sum=99); "m" and "n" both have count 5, with
         # "n" appearing FIRST in CSV row order. The frozen tie-break (count desc, then
         # level string asc) puts "m" in the top-10 and "n" out — a Counter.most_common()
-        # insertion-order tie-break would wrongly include "n" instead. N=119 total.
+        # insertion-order tie-break would wrongly include "n" instead. N=109 total.
         profile = profile_csv(FIXTURES / "categorical_top10_tie.csv")
         cat = profile["columns"]["level"]["categorical"]
-        self.assertAlmostEqual(cat["share_top10"], (109 + 5) / 119)
+        self.assertAlmostEqual(cat["share_top10"], (99 + 5) / 109)
 
     def test_empty_counter(self):
         block = _categorical_block(Counter())
