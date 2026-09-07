@@ -50,20 +50,20 @@ measure first; a case the gate already catches closes the phase with no mint).
 
 ## Phase 26 — Per-skill read contracts (SEED-001 E-26)
 
-- [ ] REQ-P26-01 Each of `dsx-scope-analysis`, `dsx-define-metrics`,
+- [x] REQ-P26-01 Each of `dsx-scope-analysis`, `dsx-define-metrics`,
   `dsx-design-experiment`, `dsx-build-model` and `dsx-narrate` gains one
   named-input read step at its head stating the `EDA.md` front-matter keys and the
   `DATA-PROFILE.yaml` keys it reads, what each changes in its output, and the
   recorded fallback when the artifact is absent (`eda_artifact: none`), mirroring
   the executor fragment's existing rule.
 
-- [ ] REQ-P26-02 An off-gate-path repo-integrity test asserts that every front-matter
+- [x] REQ-P26-02 An off-gate-path repo-integrity test asserts that every front-matter
   key a skill's read step names exists in `templates/EDA.md`'s front-matter block,
   and every profile key it names exists in `templates/DATA-PROFILE.yaml`
   (CRLF-tolerant), so a renamed key fails the suite instead of silently orphaning a
   read step.
 
-- [ ] REQ-P26-03 Skill-only: `dsx/` byte-identical for the phase, zero new codes;
+- [x] REQ-P26-03 Skill-only: `dsx/` byte-identical for the phase, zero new codes;
   installed copies re-synced and `node install.mjs --check` passes.
 
 ## Phase 27 — Evidence case: a leak attributable only through feature origin (§6.5 item 7)
@@ -169,9 +169,9 @@ measure first; a case the gate already catches closes the phase with no mint).
 | REQ-P25-01 | Phase 25 | Met — verified S1-4 (25-VERIFICATION.md, passed) |
 | REQ-P25-02 | Phase 25 | Met — verified S1-4 (25-VERIFICATION.md, passed) |
 | REQ-P25-03 | Phase 25 | Met — verified S1-4 (25-VERIFICATION.md, passed) |
-| REQ-P26-01 | Phase 26 | Pending |
-| REQ-P26-02 | Phase 26 | Pending |
-| REQ-P26-03 | Phase 26 | Pending |
+| REQ-P26-01 | Phase 26 | Met — verified S2-4 (26-VERIFICATION.md, passed) |
+| REQ-P26-02 | Phase 26 | Met — verified S2-4 (26-VERIFICATION.md, passed) |
+| REQ-P26-03 | Phase 26 | Met — verified S2-4 (26-VERIFICATION.md, passed) |
 | REQ-P27-01 | Phase 27 | Pending |
 | REQ-P27-02 | Phase 27 | Pending |
 | REQ-P27-03 | Phase 27 | Pending |

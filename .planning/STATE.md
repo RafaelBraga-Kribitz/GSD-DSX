@@ -4,15 +4,15 @@ milestone: v2.6
 milestone_name: Exploration Depth and Backlog Evidence
 current_phase_name: Per-skill read contracts
 status: executing
-stopped_at: S2-3 IN PROGRESS (Wave 1 of 3 done — box UNCHECKED). Plans 26-01 (3 skill <inputs> read steps: scope-analysis, define-metrics, design-experiment) + 26-02 (build-model, narrate) executed by gsd-executor (adaptive), each gate re-run by orchestrator on real 3.12: all 5 skills' verify one-liners PASS; `git diff --stat -- dsx/ templates/` EMPTY; no stray branch; HEAD 954adf9 in sync with origin. REQ-P26-01 satisfied across all 5 skills (authoritative membership proof deferred to the Wave-2 guard 26-03). Next = Wave 2: execute 26-03 (TDD guard tests/test_skill_read_contracts.py, RED→GREEN), then Wave 3: 26-04 (node install.mjs re-sync + --check, dsx/ byte-identity, catalogue 276→276, full suite green). S2-3 checks ONLY when all 4 plans land + orchestrator re-runs the full suite.
-last_updated: "2026-09-07T08:04:00.000Z"
+stopped_at: S2-4 DONE — Phase 26 code review + verification `passed`. gsd-code-reviewer (opus, direct spawn §3) → 26-REVIEW.md = 0 HIGH / 0 MEDIUM / 3 LOW; all three LOW are latent-robustness notes (positional `#` strip, hyphen-key regex gap, intermediate-parent membership), none triggered by the current templates/skills, all ACCEPTED as documented residuals (reviewer's exhaustive leaf+parent+placeholder rename probe proved every referenced-key rename is caught → REQ-P26-02 robust). Gates re-run by orchestrator on real 3.12.10: full suite 1590 OK; `git diff --stat 818fb7c..HEAD -- dsx/` EMPTY; catalogue 276→276 (`--check` current + 276 rows); `node install.mjs --check` passed (6/6 agents, 14/14 skills). 26-VERIFICATION.md `passed`, 3/3 REQ MET; REQUIREMENTS P26-01/02/03 → Met + boxes checked. Next = S2-5 (/gsd-secure-phase 26 + /gsd-validate-phase 26; sign-off batched to HUMAN-QUEUE, non-blocking until S7-2). NOTE: this frontmatter was STALE at firing start (read "S2-3 Wave 1 in progress" @HEAD 954adf9 although S2-3 was DONE @e35fbe1) — corrected here per brief "the repo is the fact".
+last_updated: "2026-09-07T08:51:00.000Z"
 last_activity: 2026-09-07
-last_activity_desc: Phase 26 S2-3 Wave 1 — 5 skill <inputs> read steps landed + orchestrator-verified (dsx/templates diff empty, all verify one-liners pass, pushed); stopped at pacing cap before Wave 2 (avoid mid-gate compaction on the 26-03 TDD guard + full-suite re-run)
+last_activity_desc: Phase 26 S2-4 — code review (opus, clean: 0H/0M/3L accepted) + verification `passed`; REQUIREMENTS traceability updated (P26 → Met); stale STATE corrected; committed + pushed. Next = S2-5 (secure + validate, sign-off batched).
 progress:
   total_phases: 6
   completed_phases: 1
   total_plans: 8
-  completed_plans: 6
+  completed_plans: 8
   percent: 17
 current_phase: 26
 ---
@@ -48,10 +48,10 @@ and a case the gate already catches closes its phase with no mint (D-13).
 
 ## Current Position
 
-Phase: 26 — Per-skill read contracts (executing; Wave 1 of 3 done)
-Plan: 26-01 + 26-02 executed (all 5 skill `<inputs>` read steps landed + orchestrator-verified, pushed); Wave 2 (26-03 TDD guard) + Wave 3 (26-04 installer close) remain
-Status: Executing — S2-3 in progress (box UNCHECKED); resume at Wave 2 (26-03)
-Last activity: 2026-09-07 — Phase 26 S2-3 Wave 1: 5 skill read steps landed + verified; stopped at pacing cap before the 26-03 TDD guard + full-suite re-run
+Phase: 26 — Per-skill read contracts (executing; S2-4 code review + verification DONE)
+Plan: all 4 plans executed (S2-3); code review clean (0H/0M/3L accepted) + 26-VERIFICATION.md `passed`, 3/3 REQ MET (S2-4). Only S2-5 (secure + validate, sign-off batched) remains before Phase 26 completes.
+Status: Executing — S2-4 done; next = S2-5 (/gsd-secure-phase 26 + /gsd-validate-phase 26)
+Last activity: 2026-09-07 — Phase 26 S2-4: opus code review clean + verification passed; REQUIREMENTS P26 → Met; stale STATE corrected
 
 ## Performance Metrics
 
