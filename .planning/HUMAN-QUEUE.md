@@ -51,13 +51,33 @@ subgroup harm (REQ-P29-02) is a **Phase 29 research deliverable**, not part of t
 pack; if research finds a case whose authenticity needs a human read, that arrives as
 a separate queue item at S5-2. "Not found" is a valid, recorded outcome.
 
+### HQ-41 — Phase 25 end-of-phase sign-off: security + UAT (filed 2026-09-07 by S1-5; non-blocking until S7-2)
+
+**What this is.** Phase 25 (Hermetic profile depth) passed both verify:post gates
+technically; two items need the operator's sign-off at close-out (S7-2), neither
+blocking any earlier work.
+
+1. **Security sign-off (SECURITY.md approval line — brief §4.4).** The loop re-gated
+   all 8 threats at their code locators → **SECURED, `threats_open: 0`, 8/8 CLOSED**
+   (`25-SECURITY.md`, `status: verified` technical). The Approval line is written but
+   **unsigned** — the loop verifies mitigations, it does not sign. **To answer:** read
+   `25-SECURITY.md`; confirm the register + the HIGH threat T-25-07 closure; approve.
+2. **UAT round.** `25-VALIDATION.md` is `nyquist_compliant: true`, 0 gaps, all 3
+   requirements COVERED by named tests (phase module 51/51 green on real 3.12.10).
+   Phase 25 has no user-facing runtime behaviour beyond the CLI flags already tested,
+   so its acceptance test IS the automated invariant set. **To answer:** confirm UAT
+   accepted (or name a manual check to run).
+
+An interactive session records both verdicts in the proper artifacts (SECURITY.md
+Approval line; a UAT note) and checks this item off. **Non-blocking until S7-2.**
+
 ## Will be added by the loop when reached
 
 - ~~S0-3: the v2.6 D-05 citation evidence pack~~ — **FILED as HQ-40 (2026-09-06)**,
   see Open above. Non-blocking for Phases 25–26; the Kaufman/Wilkinson-or-JARS/Gail
   rows block S3-1, S4-1 and S5-1 respectively.
 - Phase 25/26/27/28/29/30 end-of-phase security sign-off + UAT rounds (batched per
-  phase; non-blocking until S7-2).
+  phase; non-blocking until S7-2). **Phase 25 filed as HQ-41 (2026-09-07).**
 - D-06 numbering veto windows for any code Phases 27–29 mint, and for any number
   reserved in `_SECTION_65_BACKLOG_CODES` for a miss sidecar (from a freshly
   re-measured live catalogue count; silence = accept).

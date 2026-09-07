@@ -2,25 +2,25 @@
 gsd_state_version: 1.0
 milestone: v2.6
 milestone_name: Exploration Depth and Backlog Evidence
-current_phase_name: Hermetic profile depth
+current_phase_name: Per-skill read contracts
 status: executing
-stopped_at: S1-4 DONE — Phase 25 code review (opus; 0H/1M/2L) + fixes (M-01 test over-claim + L-02 empty-flag coercion fixed, L-01 accepted residual) + verification PASSED; gates re-run on real 3.12.10 (full suite 1583 OK, 276→276, dq.py frozen, examples byte-stable). Next = S1-5 (/gsd-secure-phase 25 + /gsd-validate-phase 25)
-last_updated: "2026-09-07T04:55:00.000Z"
+stopped_at: S1-5 DONE — Phase 25 COMPLETE. secure-phase → SECURED, threats_open 0, 8/8 CLOSED (orchestrator re-gate at code locators; 25-SECURITY.md status verified). validate-phase → nyquist_compliant true, 0 gaps, 3/3 REQ COVERED, phase module 51/51 OK real 3.12.10 (25-VALIDATION.md status validated). Human sign-off + UAT batched HQ-41 (non-blocking until S7-2). Next = S2-1 (Phase 26 discuss)
+last_updated: "2026-09-07T05:20:00.000Z"
 last_activity: 2026-09-07
-last_activity_desc: Phase 25 S1-4 — code review + fixes + verification passed (25-VERIFICATION.md); next = S1-5 (secure + validate, sign-off batched to HUMAN-QUEUE)
+last_activity_desc: Phase 25 S1-5 — secure-phase SECURED + validate-phase nyquist-compliant; Phase 25 complete (5/5 S1 units); sign-off batched HQ-41; next = S2-1 (Phase 26 discuss)
 progress:
   total_phases: 6
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
-current_phase: 25
+  completed_phases: 1
+  total_plans: 4
+  completed_plans: 4
+  percent: 17
+current_phase: 26
 ---
 
 # Project state
 
 **Status:** v2.6 Exploration Depth and Backlog Evidence — ACTIVE (opened 2026-09-06 by operator direction, HQ-39); branch `gsd/v2.6.0-exploration-depth`; ships as tag `v2.6.0`
-**Progress:** [░░░░░░░░░░░░░░░░░░░░] v2.6 — 0/6 phases (25 hermetic profile depth → 26 per-skill read contracts → 27 feature-origin-only leak case → 28 magnitude-no-test case → 29 subgroup-harm case → 30 calibration re-baseline)
+**Progress:** [███░░░░░░░░░░░░░░░░░] v2.6 — 1/6 phases (✅25 hermetic profile depth → 26 per-skill read contracts → 27 feature-origin-only leak case → 28 magnitude-no-test case → 29 subgroup-harm case → 30 calibration re-baseline)
 **Predecessors:** v2.5.0 and v2.4.1 SHIPPED 2026-09-06 interactively (`ad43ec6`, `07d3db0`); v2.4 Visual Excellence SHIPPED 2026-09-03 (tag `v2.4.0`); v2.3 Test Catalog SHIPPED 2026-09-02 (`v2.3.0`); v2.2 Analytic Surface SHIPPED 2026-08-29 (`v2.2.0`); v2.0.0 DSX Validity Frame SHIPPED 2026-08-28 (`v2.1.0`). Archives under `.planning/milestones/`.
 
 **Loop control:** the autonomous ceremony drives this milestone from S0-1 onward per
