@@ -283,7 +283,7 @@ D-05; if caught, record and mint nothing.
   2. Either the miss is closed by a minted, cited check (overlap, never recomputation) or the caught outcome is recorded.
   3. Brief §6.5 item 8 states the measured evidence.
 
-**Plans**: TBD
+**Plans**: 2 (authored 2026-09-07 by gsd-planner opus — 28-01 measure-live + conditional DSX-CLM-034 mint; 28-02 promote fixture + wire harness, live-miss branch. plan-checker gate PENDING — S4-2 stays unchecked until it passes)
 
 ### Phase 29: Evidence case — subgroup harm under a prescriptive recommendation
 
