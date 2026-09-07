@@ -3,16 +3,16 @@ gsd_state_version: 1.0
 milestone: v2.6
 milestone_name: Exploration Depth and Backlog Evidence
 current_phase_name: Per-skill read contracts
-status: planned
-stopped_at: S2-2 DONE (Phase 26 planned) — 4 plans (26-01..04) written by gsd-planner (opus), gsd-plan-checker (haiku) PASSED, orchestrator re-verified the gate himself (3/3 REQ IDs, threat_model+artifacts all 4, single-writer clean, guard `\r?\n`, installer `install.mjs && --check` close, D-26-02 prose-only demotion enforced by inline backtick-assert, 8/8 probe edges represented). HEAD 7f93fdf on canonical, in sync with origin; planner's gsd-tools stray branch self-healed + orchestrator-reconciled. Waves: 1 (26-01/02 disjoint skills, parallel) → 2 (26-03 TDD guard) → 3 (26-04 installer close). Next = S2-3: execute all 4 plans (/gsd-execute-phase 26), Wave 1 first.
-last_updated: "2026-09-07T07:47:00.000Z"
+status: executing
+stopped_at: S2-3 IN PROGRESS (Wave 1 of 3 done — box UNCHECKED). Plans 26-01 (3 skill <inputs> read steps: scope-analysis, define-metrics, design-experiment) + 26-02 (build-model, narrate) executed by gsd-executor (adaptive), each gate re-run by orchestrator on real 3.12: all 5 skills' verify one-liners PASS; `git diff --stat -- dsx/ templates/` EMPTY; no stray branch; HEAD 954adf9 in sync with origin. REQ-P26-01 satisfied across all 5 skills (authoritative membership proof deferred to the Wave-2 guard 26-03). Next = Wave 2: execute 26-03 (TDD guard tests/test_skill_read_contracts.py, RED→GREEN), then Wave 3: 26-04 (node install.mjs re-sync + --check, dsx/ byte-identity, catalogue 276→276, full suite green). S2-3 checks ONLY when all 4 plans land + orchestrator re-runs the full suite.
+last_updated: "2026-09-07T08:04:00.000Z"
 last_activity: 2026-09-07
-last_activity_desc: Phase 26 S2-2 — planned (4 plans, plan-checker PASSED + orchestrator re-verified); stopped at pacing cap before execute (avoid mid-wave compaction); next = S2-3 execute
+last_activity_desc: Phase 26 S2-3 Wave 1 — 5 skill <inputs> read steps landed + orchestrator-verified (dsx/templates diff empty, all verify one-liners pass, pushed); stopped at pacing cap before Wave 2 (avoid mid-gate compaction on the 26-03 TDD guard + full-suite re-run)
 progress:
   total_phases: 6
   completed_phases: 1
   total_plans: 8
-  completed_plans: 4
+  completed_plans: 6
   percent: 17
 current_phase: 26
 ---
@@ -48,10 +48,10 @@ and a case the gate already catches closes its phase with no mint (D-13).
 
 ## Current Position
 
-Phase: 26 — Per-skill read contracts (planned; ready to execute)
-Plan: 4 plans (26-01..04) written + plan-checker PASSED + orchestrator re-verified; waves 1 (26-01/02 parallel) → 2 (26-03 TDD guard) → 3 (26-04 installer close)
-Status: Planned — S2-3 (execute all 4 plans) is the next chunk
-Last activity: 2026-09-07 — Phase 26 S2-2: planned (gsd-planner opus, plan-checker haiku PASSED, orchestrator re-ran the gate); stopped at pacing cap before execute
+Phase: 26 — Per-skill read contracts (executing; Wave 1 of 3 done)
+Plan: 26-01 + 26-02 executed (all 5 skill `<inputs>` read steps landed + orchestrator-verified, pushed); Wave 2 (26-03 TDD guard) + Wave 3 (26-04 installer close) remain
+Status: Executing — S2-3 in progress (box UNCHECKED); resume at Wave 2 (26-03)
+Last activity: 2026-09-07 — Phase 26 S2-3 Wave 1: 5 skill read steps landed + verified; stopped at pacing cap before the 26-03 TDD guard + full-suite re-run
 
 ## Performance Metrics
 
