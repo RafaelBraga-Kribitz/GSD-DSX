@@ -70,6 +70,56 @@ STATE/PLAN tracking resumable).
 
 ---
 
+## S1-3 — Phase 25 execute (plan 25-02 slice; 2026-09-07)
+
+Plan 25-02 (wave 2 of 4; time-block + unit-block depth) executed by a `gsd-executor`
+subagent (sonnet, per brief §3 routing) and **verified by the orchestrator re-running
+every gate** on the real interpreter (`Python 3.12.10`), per the brief's gate-re-run
+mandate.
+
+**Reconciliation (repo is the fact):** HEAD `bb82a66` on `gsd/v2.6.0-exploration-depth`,
+ahead 4 of origin, 4 atomic commits (`e2068a5` RED → `d867f23` time impl → `578e0b5`
+unit impl → `bb82a66` SUMMARY). **No stray `gsd/*` branch created** (branch reads
+`gsd/v2.6.0-exploration-depth` after the run; the `worktree-agent-a9a54fddf75afc02f`
+leftover is pre-existing operator-local, untouched). `git diff --stat 825d7fe..HEAD`
+touches only `dsx/profiler.py` (+98/-2), the 8 new fixtures, `tests/test_profiler_hermetic.py`
+and the SUMMARY — **no `dsx/checks/*` gate module touched**, so 276→276 set-identity holds
+by construction (no code minted, no gate changed).
+
+**Gates re-run by orchestrator (not the subagent's numbers):**
+- Task 1 — `tests.test_profiler_hermetic.TestTimeBlock TestProfilerDeterminism` → **14 OK**,
+  including `test_pre_existing_keys_match_golden` (frozen time.min/max/max_gap_days proven
+  byte-unchanged), `test_two_runs_are_byte_identical` and `test_new_time_keys_deterministic_across_shuffle`.
+- Task 2 — `tests.test_profiler_hermetic.TestUnitBlock` → **6 OK** (reference values,
+  single-distinct-unit null rule, omitted-when-absent, unknown-column CheckError,
+  append-after-sentinels order, shuffle determinism).
+- Full suite — `unittest discover -s tests -q` → **1560 OK** (was 1542 after 25-01; +18
+  new). Only pre-existing catalogue "declared twice" warnings (DSX-SPEC-070/VAL-021/VAL-060);
+  the two explain tests did NOT false-fail (root `DECISIONS.jsonl` absent; the gitignored
+  `examples/`+`templates/` copies do not trip the explain path — remedy not triggered).
+
+**Design points confirmed:** hour retention via a separate `hour_of_time_bearing_rows`
+accumulator (never the frozen `dates` list); ISO-week grain via `date.isocalendar()[:2]`
+(no hand-rolled `//7`); `rows_per_unit` p50/p95 via `statistics.quantiles(..., n=100,
+method="inclusive")` (type-7), p95 literal pinned `80.8` from a real-interpreter run on
+`[1,2,3,4,100]`; `largest_unit_share` via explicit `sorted((-count, unit))`. Executor
+clarification (accepted): the four new `time.*` keys are gated on a declared `--time`
+column so the 25-01 pre-existing-key golden (run without a time column) keeps its
+byte-identical 4-key `time:` shape — golden + determinism verified green.
+
+**Carry-forward:** the S1-4 test-efficacy finding on `test_top10_tie_boundary` (25-01
+slice above) still stands for S1-4 code review.
+
+**Stop rationale:** one plan per firing is the established S1-3 cadence (executor ~9 min
++ orchestrator verification incl. 61s full suite ≈ the ~12-min pacing cap). Stopped at the
+committed+verified 25-02 boundary. S1-3 box stays UNCHECKED — 2 of 4 plans done. Resume:
+execute plan 25-03 (CLI `--unit`/`--target` flags) via a fresh `gsd-executor`, then 25-04
+(template/reference/skill ripple + `node install.mjs` re-sync), then S1-3 checks and S1-4
+begins. No `gsd-pause-work` handoff needed (fresh subagent per plan; SUMMARY on disk; GSD
+STATE/PLAN resumable).
+
+---
+
 ## milestone-open — 2026-09-06 (interactive session, operator direction)
 
 Opened outside the loop, in the operator's interactive session, after the operator

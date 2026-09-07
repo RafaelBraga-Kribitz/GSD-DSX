@@ -4,10 +4,10 @@ milestone: v2.6
 milestone_name: Exploration Depth and Backlog Evidence
 current_phase_name: Hermetic profile depth
 status: executing
-stopped_at: S1-3 in progress — plan 25-01 of 4 executed + orchestrator-verified (gates re-run on real 3.12.10, full suite 1542 OK, no stray branch); resume at plan 25-02
-last_updated: "2026-09-07T02:58:00.000Z"
+stopped_at: S1-3 in progress — plans 25-01 and 25-02 of 4 executed + orchestrator-verified (gates re-run on real 3.12.10, full suite 1560 OK, no stray branch, no gate module touched); resume at plan 25-03
+last_updated: "2026-09-07T03:22:00.000Z"
 last_activity: 2026-09-07
-last_activity_desc: Phase 25 execute — plan 25-01/4 done and verified; next = plan 25-02 (time+unit blocks)
+last_activity_desc: Phase 25 execute — plans 25-01+25-02/4 done and verified; next = plan 25-03 (CLI --unit/--target flags)
 progress:
   total_phases: 6
   completed_phases: 0
