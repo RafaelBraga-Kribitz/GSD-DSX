@@ -195,11 +195,28 @@ identical numbers by construction.
 **Depends on**: Nothing (first phase)
 **Requirements**: REQ-P25-01, REQ-P25-02, REQ-P25-03
 **Success Criteria** (what must be TRUE):
+
   1. Running `dsx profile` on the committed example extracts regenerates every pre-existing key and value byte-identically and adds the new keys.
   2. Every new statistic has a declared, cited definition (the quantile type named by its Hyndman & Fan 1996 number, verified at plan) and a reference-value test on a hand-computed fixture.
   3. `dsx/checks/dq.py`, the assertion vocabulary and the gate profiles are byte-unchanged; catalogue 276 → 276.
   4. The explore skill, template and reference say "copied from the profile" where the profiler now supplies the number; `node install.mjs --check` passes.
-**Plans**: TBD
+
+**Plans**: 4 plans
+**Wave 1**
+
+- [ ] 25-01-PLAN.md — numeric & categorical column blocks (D-01/D-02), determinism + pre-existing-key golden (wave 1)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 25-02-PLAN.md — time block (hour retention, rows_per_day, ISO-week edge ratios) + unit block (wave 2)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 25-03-PLAN.md — target weekly base-rate block + `--unit`/`--target` CLI flags & validation D-03 (wave 3)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
+- [ ] 25-04-PLAN.md — doc ripple, DQ-gate-ignores-new-keys + example byte-invariance guards, installer re-sync, frozen/catalogue proofs (wave 4)
 
 ### Phase 26: Per-skill read contracts
 
@@ -210,9 +227,11 @@ profile, with a repo-integrity test that every named key exists in the templates
 **Depends on**: Phase 25
 **Requirements**: REQ-P26-01, REQ-P26-02, REQ-P26-03
 **Success Criteria** (what must be TRUE):
+
   1. Each of the five skills opens with a read step naming its keys, their effect, and the absent-artifact fallback.
   2. A test fails the suite when a named key is absent from `templates/EDA.md` or `templates/DATA-PROFILE.yaml`.
   3. `git diff --stat -- dsx/` is empty for the phase; `node install.mjs --check` passes.
+
 **Plans**: TBD
 
 ### Phase 27: Evidence case — feature-origin-only leak
@@ -224,9 +243,11 @@ under D-05; if the gate catches it, record which code and mint nothing.
 **Depends on**: Phase 26
 **Requirements**: REQ-P27-01, REQ-P27-02, REQ-P27-03
 **Success Criteria** (what must be TRUE):
+
   1. The case is measured at all four gate points from a fresh temp directory before any check is designed, and the postmortem records the result.
   2. Either a live miss is closed by a minted, D-05-cited check whose fixture entries are complete, or the already-caught outcome is recorded with the codes and nothing is minted.
   3. Brief §6.5 item 7 states the measured evidence.
+
 **Plans**: TBD
 
 ### Phase 28: Evidence case — magnitude no test computed
@@ -238,9 +259,11 @@ D-05; if caught, record and mint nothing.
 **Depends on**: Phase 27
 **Requirements**: REQ-P28-01, REQ-P28-02, REQ-P28-03
 **Success Criteria** (what must be TRUE):
+
   1. The case is measured live first and `DSX-CLM-070`/`DSX-STA-012` are shown to clear on it.
   2. Either the miss is closed by a minted, cited check (overlap, never recomputation) or the caught outcome is recorded.
   3. Brief §6.5 item 8 states the measured evidence.
+
 **Plans**: TBD
 
 ### Phase 29: Evidence case — subgroup harm under a prescriptive recommendation
@@ -253,9 +276,11 @@ half-met condition and mint nothing.
 **Depends on**: Phase 28
 **Requirements**: REQ-P29-01, REQ-P29-02, REQ-P29-03
 **Success Criteria** (what must be TRUE):
+
   1. The case is measured live and `DSX-MET-030`/`031` are shown not to fire on it.
   2. The primary source is confirmed at its locator by a human read, or the failure to confirm is recorded; the documented case is found with a source, or recorded as not found.
   3. Either the miss is closed by a minted, cited check or the outcome is recorded; brief §6.5 item 9 states the evidence.
+
 **Plans**: TBD
 
 ### Phase 30: Calibration re-baseline
@@ -266,9 +291,11 @@ with the outcomes, and confirm every milestone-audit prerequisite.
 **Depends on**: Phase 29
 **Requirements**: REQ-P30-01, REQ-P30-02, REQ-P30-03
 **Success Criteria** (what must be TRUE):
+
   1. The stratified report runs green with the new cases classified and the miss-partition floor met.
   2. Catalogue current, snapshots unmutated, doc/code agreement green, installer check green, `scripts/check.sh` green, full suite green on the real interpreter.
   3. Zero codes minted in this phase.
+
 **Plans**: TBD
 
 ## Next

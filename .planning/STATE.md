@@ -2,9 +2,12 @@
 gsd_state_version: 1.0
 milestone: v2.6
 milestone_name: Exploration Depth and Backlog Evidence
+current_phase_name: Hermetic profile depth
 status: planning
-last_updated: "2026-09-06T22:02:46.145Z"
-last_activity: 2026-09-06
+stopped_at: S1-2 done — Phase 25 planned (4 plans), plan-checker PASSED; committed + pushed on `gsd/v2.6.0-exploration-depth`
+last_updated: "2026-09-07T02:25:45.430Z"
+last_activity: 2026-09-07
+last_activity_desc: Phase 25 planned (S1-2); ready to execute
 progress:
   total_phases: 6
   completed_phases: 0
@@ -12,7 +15,6 @@ progress:
   completed_plans: 0
   percent: 0
 current_phase: 25
-current_phase_name: Hermetic profile depth
 ---
 
 # Project state
@@ -46,10 +48,10 @@ and a case the gate already catches closes its phase with no mint (D-13).
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-09-06 — Milestone v2.6 started
+Phase: 25 — Hermetic profile depth (planned)
+Plan: 4 plans (25-01…25-04) across 4 sequential waves
+Status: Ready to execute
+Last activity: 2026-09-07 — Phase 25 planned; S1-2 plan-checker PASSED (VERIFICATION PASSED, re-verified by orchestrator)
 
 ## Performance Metrics
 
@@ -111,10 +113,13 @@ Resume file: None — the loop reads `LOOP-LEDGER.md`'s Log.
   pack as HQ-40 (Hyndman & Fan 1996; Kaufman et al. 2012; Wilkinson & TFSI 1999 /
   APA JARS 2018; Gail & Simon 1985). Phases 25–26 do not wait on it; Phases 27–29
   do, row by row. Answer it in an interactive session when convenient.
+
 - **S7-5 / S7-6 are interactive** (`/gsd-complete-milestone`, merge by explicit
   branch name, tag `v2.6.0`), as at every prior close.
+
 - **Two kinds of local file stay untracked:** `references/The AI Data Scientist.md`
   (a full-text clipping of an arXiv paper — do not commit) and the `.claude/`,
   `.vscode/`, `graphify-out/` operator files.
+
 - The stale agent worktree at `.claude/worktrees/agent-a9a54fddf75afc02f` is fully
   merged into `main`; `git worktree remove` it at leisure.

@@ -19,13 +19,13 @@ created: 2026-09-06
 
 | Property | Value |
 |----------|-------|
-| **Framework** | pytest 7.x |
-| **Config file** | pyproject.toml / pytest.ini (existing) |
-| **Quick run command** | `C:\Users\Benutzer1\AppData\Local\Programs\Python\Python312\python.exe -m pytest tests/ -q` |
-| **Full suite command** | `C:\Users\Benutzer1\AppData\Local\Programs\Python\Python312\python.exe -m pytest -q` |
+| **Framework** | `unittest` (Python stdlib — tests are `unittest.TestCase` classes; no pytest config exists) |
+| **Config file** | none — `scripts/check.sh` is the gate (`python3 -m unittest discover -s tests -q`) |
+| **Quick run command** | `C:\Users\Benutzer1\AppData\Local\Programs\Python\Python312\python.exe -m unittest discover -s tests -q` |
+| **Full suite command** | `C:\Users\Benutzer1\AppData\Local\Programs\Python\Python312\python.exe -m unittest discover -s tests -q` (== `scripts/check.sh`) |
 | **Estimated runtime** | ~{N} seconds |
 
-> Real interpreter only — a bare `python3` on this machine can resolve to a package-less stub (Python 3.14.6) that reports the matplotlib determinism test as *skipped* (HUMAN-QUEUE standing note).
+> Real interpreter only — a bare `python3` on this machine can resolve to a package-less stub (Python 3.14.6) that reports the matplotlib determinism test as *skipped* (HUMAN-QUEUE standing note). The gate is stdlib `unittest`, NOT pytest (verified 2026-09-06: no `pyproject.toml`/`pytest.ini`/`setup.cfg`; `scripts/check.sh` runs `unittest discover`).
 
 ---
 
