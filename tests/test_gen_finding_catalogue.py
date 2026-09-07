@@ -700,13 +700,17 @@ _CANONICAL_DECLARATIONS = {
     },
     # Phase 27-01 (REQ-P27-02, D-06): DSX-ML-034 is emitted at two literal
     # severities by design — CRITICAL for available_at after_prediction and HIGH
-    # for an unwaived unknown, per the frozen §S3-1-CLOSE severity map. The two
+    # for any unwaived unattested availability, per the frozen §S3-1-CLOSE
+    # severity map. The HIGH message became a `{phrase}` template in S3-4 (WR-01:
+    # a missing/off-vocabulary available_at is now HIGH like an honest `unknown`,
+    # not silently cleared), so the generator renders both interpolated names as
+    # the placeholder — hence `Feature '<…>' <…> with no waiver`. The two
     # report.add sites are ordered in `_check_feature_provenance` so collect()'s
     # last-seen-wins dedupe lands the CRITICAL row in the catalogue (the headline
     # disposition); this pin records both declarations deliberately.
     "DSX-ML-034": {
         ("CRITICAL", f"Feature '{_PH}' is declared available only after the prediction moment"),
-        ("HIGH", f"Feature '{_PH}' declares available_at 'unknown' with no waiver"),
+        ("HIGH", f"Feature '{_PH}' {_PH} with no waiver"),
     },
 }
 

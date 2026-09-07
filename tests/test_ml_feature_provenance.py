@@ -95,6 +95,34 @@ class TestFeatureProvenance(unittest.TestCase):
         self.assertEqual(len(found), 1)
         self.assertEqual(found[0].severity, Severity.CRITICAL)
 
+    def test_missing_available_at_fires_high(self):
+        # WR-01 (27-REVIEW.md): an entry that OMITS available_at must not be more
+        # permissive than an honest 'unknown'. It is unattested → HIGH.
+        spec = self._spec([{"feature": "risk_flag", "source": "billing"}])
+        report = check(spec)
+        found = _find(report, "DSX-ML-034")
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0].severity, Severity.HIGH)
+
+    def test_offvocabulary_available_at_fires_high(self):
+        # WR-01: an off-vocabulary / typo'd available_at is unattested → HIGH,
+        # never silently cleared.
+        spec = self._spec(
+            [{"feature": "risk_flag", "available_at": "afterprediction"}]
+        )
+        report = check(spec)
+        found = _find(report, "DSX-ML-034")
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0].severity, Severity.HIGH)
+
+    def test_missing_available_at_with_waiver_is_silent(self):
+        # WR-01: a waiver suppresses an unattested (missing) availability the same
+        # way it suppresses an honest 'unknown' — the escape hatch is symmetric.
+        spec = self._spec(
+            [{"feature": "risk_flag", "source": "billing", "waiver": "reviewed 2026-09-07"}]
+        )
+        self.assertNotIn("DSX-ML-034", _codes(check(spec)))
+
 
 if __name__ == "__main__":
     unittest.main()

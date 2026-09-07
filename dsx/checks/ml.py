@@ -577,28 +577,43 @@ def _check_feature_provenance(model: dict, report: Report) -> None:
             continue
         available_at = normalize(entry.get("available_at", ""))
         feature = entry.get("feature") or "<unnamed feature>"
+        waived = bool(entry.get("waiver"))
+        legitimate = available_at in ("before_prediction", "at_prediction")
         # Source-order note (27-RESEARCH.md RISK 3 / D-06): the catalogue
         # generator dedupes one code to one row, keeping the LAST report.add
-        # site in AST-walk order. The `unknown`/HIGH branch is written FIRST and
-        # the `after_prediction`/CRITICAL branch SECOND (nested one level deeper),
-        # so the committed DSX-ML-034 catalogue row shows CRITICAL — the headline
-        # disposition. Do NOT reorder without regenerating
-        # references/finding-codes.md and re-checking the rendered severity.
-        if available_at == "unknown" and not entry.get("waiver"):
+        # site in AST-walk order. The unattested/HIGH branch is written FIRST and
+        # the `after_prediction`/CRITICAL branch SECOND (a sibling `elif` at the
+        # same nesting level, not nested inside it), so the committed DSX-ML-034
+        # catalogue row shows CRITICAL — the headline disposition. Do NOT reorder
+        # without regenerating references/finding-codes.md and re-checking the
+        # rendered severity.
+        if available_at != "after_prediction" and not legitimate and not waived:
+            # Anything the closed vocabulary does not attest as observable before
+            # the prediction moment — `unknown`, a missing/blank value, or an
+            # off-vocabulary typo — is unattested, and without a waiver fires HIGH.
+            # An omitted or garbled available_at must never be MORE permissive than
+            # an honest `unknown` (that one-token bypass was WR-01, 27-REVIEW.md).
+            declared = entry.get("available_at")
+            if available_at == "unknown":
+                phrase = "declares available_at 'unknown'"
+            elif declared in (None, ""):
+                phrase = "declares no available_at value"
+            else:
+                phrase = f"declares an unrecognised available_at {declared!r}"
             report.add(
                 "DSX-ML-034",
                 "HIGH",
-                f"Feature '{feature}' declares available_at 'unknown' with no waiver",
+                f"Feature '{feature}' {phrase} with no waiver",
                 detail=(
-                    f"'{feature}' is declared with available_at 'unknown', so the specification "
-                    "does not attest that its value exists at the declared prediction moment. "
-                    "Without a waiver recording that judgement, its legitimacy is unestablished "
-                    "and it may be a feature-origin leak."
+                    f"'{feature}' {phrase}, so the specification does not attest that its "
+                    "value exists at the declared prediction moment. Without a waiver "
+                    "recording that judgement, its legitimacy is unestablished and it may be "
+                    "a feature-origin leak."
                 ),
                 remedy=(
                     "Establish when the feature's value is observable and declare available_at "
                     "as before_prediction, at_prediction or after_prediction; or record a "
-                    "waiver justifying the unknown."
+                    "waiver justifying why its provenance cannot be attested."
                 ),
                 where="spec.model.feature_provenance",
                 feature=str(feature),
@@ -621,7 +636,7 @@ def _check_feature_provenance(model: dict, report: Report) -> None:
                 where="spec.model.feature_provenance",
                 feature=str(feature),
             )
-        elif available_at in ("before_prediction", "at_prediction"):
+        elif legitimate:
             report.ok(f"feature '{feature}' declared available_at '{available_at}'")
 
 

@@ -68,7 +68,7 @@ measure first; a case the gate already catches closes the phase with no mint).
 
 ## Phase 27 — Evidence case: a leak attributable only through feature origin (§6.5 item 7)
 
-- [ ] REQ-P27-01 A known-bad corpus case — spec, entrypoint, postmortem, ATTRIBUTION
+- [x] REQ-P27-01 A known-bad corpus case — spec, entrypoint, postmortem, ATTRIBUTION
   sidecar — whose leak is attributable only through feature origin: no feature
   name matches `LEAKAGE_PATTERNS`, the leaking column arrives pre-joined so no fit
   or cleaning idiom is visible to the entrypoint scan, and no declaration
@@ -76,7 +76,7 @@ measure first; a case the gate already catches closes the phase with no mint).
   designed; the measurement is recorded in the postmortem as the entry-condition
   test.
 
-- [ ] REQ-P27-02 If the case is a live miss: an optional `model.feature_provenance[]`
+- [x] REQ-P27-02 If the case is a live miss: an optional `model.feature_provenance[]`
   declaration (`{feature, source, available_at, derived_from}`) and a
   declaration-only check that a feature declared available after the prediction
   moment fires CRITICAL and an `unknown` availability without a waiver fires HIGH;
@@ -86,7 +86,7 @@ measure first; a case the gate already catches closes the phase with no mint).
   the postmortem and §6.5 record which, and nothing is minted — that outcome
   satisfies this requirement.
 
-- [ ] REQ-P27-03 Corpus harness entries complete (target maps, golden ship ledger,
+- [x] REQ-P27-03 Corpus harness entries complete (target maps, golden ship ledger,
   validity-frame map, spec count, sidecar with a reserved `absent_code` when
   needed); brief §6.5 item 7 row rewritten with the measured evidence.
 
@@ -172,9 +172,9 @@ measure first; a case the gate already catches closes the phase with no mint).
 | REQ-P26-01 | Phase 26 | Met — verified S2-4 (26-VERIFICATION.md, passed) |
 | REQ-P26-02 | Phase 26 | Met — verified S2-4 (26-VERIFICATION.md, passed) |
 | REQ-P26-03 | Phase 26 | Met — verified S2-4 (26-VERIFICATION.md, passed) |
-| REQ-P27-01 | Phase 27 | Pending |
-| REQ-P27-02 | Phase 27 | Pending |
-| REQ-P27-03 | Phase 27 | Pending |
+| REQ-P27-01 | Phase 27 | Met |
+| REQ-P27-02 | Phase 27 | Met |
+| REQ-P27-03 | Phase 27 | Met |
 | REQ-P28-01 | Phase 28 | Pending |
 | REQ-P28-02 | Phase 28 | Pending |
 | REQ-P28-03 | Phase 28 | Pending |
