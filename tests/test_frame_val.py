@@ -1471,6 +1471,15 @@ _EXPECTED_VAL_CODES: "dict[str, set[str]]" = {
     # defect is a feature-origin leak the ml check cannot see (DSX-ML-034 is a
     # DSX-ML-* code, not DSX-VAL-*, and stays silent besides), so no DSX-VAL-* fires.
     "feature-origin-only-leak-ANALYSIS-SPEC.yaml": set(),
+    # Measured 2026-09-07 (plan 28-02, REQ-P28-01/03) against the fixture as
+    # committed in this plan: loaded via dsx.loader.load(), ran
+    # dsx.frame.val.check(spec), recorded {f.code for f in report.findings} — the
+    # empty set. This magnitude-without-computed-effect fixture declares a complete,
+    # honest validity_frame (descriptive/observational churn readout); its encoded
+    # defect is a claim->test metric-binding miss (attributed by DSX-CLM-034, a
+    # DSX-CLM-* code, not DSX-VAL-*, and silent besides since no pointer is declared),
+    # so no DSX-VAL-* code fires.
+    "magnitude-without-computed-effect-ANALYSIS-SPEC.yaml": set(),
 }
 
 

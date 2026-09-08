@@ -1,0 +1,189 @@
+# A known-bad ANALYSIS-SPEC (REQ-P28-01, REQ-P28-02, REQ-P28-03; ROADMAP
+# Phase 28). The encoded defect (FROZEN as D-28-01 in 28-CONTEXT.md before any
+# measurement) is a mislabelled-magnitude error: a descriptive / observational
+# churn readout quotes a headline magnitude — churn "at 27% against 18%" — for
+# metric C (churn), which NO results.tests[] entry computes. The two tests that
+# WERE computed are on OTHER metrics (A revenue_per_user, B activation_rate);
+# their reported effects are declared as proportions whose x100 values are
+# exactly 27 and 18, the literals the churn claim quotes. Each headline literal
+# therefore coincides — within DSX-CLM-033's rel-5%/abs-5e-4 window via the x100
+# proportion bridge (dsx/checks/claims.py:360-368) — with a real reported number
+# of the WRONG metric, so DSX-CLM-033 clears on its FULL union-membership logic
+# (not by a skip) while nothing verifies that any test measured churn. This is
+# the frozen D-28-00 collision, the realistic form of brief §6.5 item 8.
+#
+# Every declaration is honest. The defect is attributable ONLY through the
+# missing claim->test metric binding — the check omits the optional claim-to-
+# cited-test traceability pointer, so the declaration-gated DSX-CLM-034 (minted
+# in plan 28-01, HIGH) finds nothing to read and correctly stays silent. That is
+# what keeps this fixture an honest MISS: DSX-CLM-034 buys attribution, not
+# detection (the Phase-27 precedent — a spec that omits the pointer still passes).
+#
+# It is a MEASURED LIVE MISS at all four gate points (28-MEASUREMENT.md, D-13):
+# dsx validate and dsx gate execute are clean; dsx gate plan/verify/ship block
+# only on the swap-invariant, defect-orthogonal DSX-COH-001 (an association-typed
+# claim under a descriptive question_type — a different property than the
+# claim->test metric binding, documented incidental, not a catch). After
+# subtracting that incidental, nothing flags the uncomputed-magnitude defect; its
+# only attribution is DSX-CLM-034. See the paired POSTMORTEM.md for the recorded
+# four-point table and the ATTRIBUTION.yaml sidecar for the machine-countable
+# absent-code tag.
+#
+#   dsx validate --spec examples/known-bad/magnitude-without-computed-effect-ANALYSIS-SPEC.yaml
+#   dsx gate ship --spec examples/known-bad/magnitude-without-computed-effect-ANALYSIS-SPEC.yaml --phase-dir examples/known-bad
+
+spec_version: 1
+title: "How does churn differ between customers holding fewer than two products and the rest of the book over 2026-Q2?"
+spec_id: "magnitude-without-computed-effect"
+owner: "retention-analytics"
+created: "2026-09-07"
+
+question_type: descriptive
+
+decision:
+  owner: "VP Retention"
+  decision_rule: >
+    Descriptive readout only. Prioritise a cross-sell retention play for the
+    fewer-than-two-products segment if its churn share materially exceeds the rest
+    of the book over the quarter. No experiment is run here.
+  action_if_null: "Keep the current retention process; revisit at the next quarterly review."
+  reversible: true
+  deadline: "2026-09-30"
+  revisit_when: "the 2026-Q3 churn readout"
+
+metrics:
+  - name: churn_rate
+    type: ratio
+    definition: "Share of customers who closed or cancelled all products within the quarter"
+    grain: customer
+    numerator: "count(distinct customer_id) where churned_in_quarter is true"
+    denominator: "count(distinct customer_id) active at quarter start"
+    source: warehouse.fct_customer_churn
+    sql: "select count(distinct case when churned_in_quarter then customer_id end)::float / nullif(count(distinct customer_id),0) from warehouse.fct_customer_churn where quarter = '2026-Q2'"
+    owner: retention-analytics
+  - name: revenue_per_user
+    type: average
+    definition: "Mean quarterly recognised revenue per active customer"
+    grain: customer
+    source: warehouse.fct_customer_revenue
+    sql: "select avg(recognised_revenue) from warehouse.fct_customer_revenue where quarter = '2026-Q2'"
+    owner: retention-analytics
+  - name: activation_rate
+    type: ratio
+    definition: "Share of customers who reached the activation milestone in the quarter"
+    grain: customer
+    numerator: "count(distinct customer_id) where activated_in_quarter is true"
+    denominator: "count(distinct customer_id) active at quarter start"
+    source: warehouse.fct_customer_activation
+    sql: "select count(distinct case when activated_in_quarter then customer_id end)::float / nullif(count(distinct customer_id),0) from warehouse.fct_customer_activation where quarter = '2026-Q2'"
+    owner: retention-analytics
+
+data:
+  - name: book_2026q2
+    source: warehouse.fct_customer_book
+    period: "2026-04-01..2026-06-30"
+    rows: 5000
+    snapshot_at: "2026-07-02T03:00:00Z"
+    known_gaps: "Customers active for fewer than 30 days at quarter start excluded upstream. No outages in window."
+
+design:
+  kind: observational
+  identification: none
+  analysis_unit: customer
+  alpha: 0.05
+  multiplicity:
+    correction: holm
+
+analysis:
+  # Descriptive/observational summary. No causal identification is claimed. Two
+  # supporting comparisons on OTHER metrics are reported in results.tests below; the
+  # headline churn magnitude is a descriptive share, not a tested effect. outcome_type
+  # is intentionally OMITTED so the frequentist test-routing guard (DSX-STA-041) stays
+  # silent — this is a descriptive readout, not a declared two-proportion comparison.
+  n_groups: 2
+  paired: false
+  test: descriptive_summary
+
+results:
+  observed_n: [2500, 2500]
+  # Two tests were COMPUTED — both on metrics OTHER than churn. Their effects are
+  # declared as proportions; x100 gives 27 (revenue_per_user) and 18 (activation_rate),
+  # the exact literals the churn claim quotes. This is the frozen D-28-00 collision.
+  tests:
+    - metric: revenue_per_user
+      p_value: 0.002
+      effect: 0.27
+      effect_size_kind: d
+      standardized_effect: 0.45
+      ci: [0.15, 0.39]
+      interpretation: "Customers holding fewer than two products show a higher standardized revenue-per-user gap; small-to-moderate."
+    - metric: activation_rate
+      p_value: 0.004
+      effect: 0.18
+      effect_size_kind: d
+      standardized_effect: 0.38
+      ci: [0.09, 0.27]
+      interpretation: "The activation-rate gap between segments is positive and non-negligible; small-to-moderate."
+
+claims:
+  - text: >-
+      Customers holding fewer than two products churn at 27% against 18% for the rest of the book, over the 2026-Q2 window.
+    type: association
+    evidence: ".planning/phases/28-evidence-case-magnitude-no-test-computed/spike/magnitude-no-test-computed-NARRATIVE.md"
+    population: "Customers active at 2026-Q2 start, warehouse.fct_customer_book"
+    base_n: 5000
+
+limitations:
+  - "A descriptive quarter-over-segment readout; it identifies no cause of the churn gap and runs no test on churn itself."
+
+reproducibility:
+  entrypoint: magnitude-without-computed-effect-entrypoint.py
+  language_version: "python 3.12.10"
+  package_versions: "pandas 2.2.2"
+  runs_clean_top_to_bottom: true
+  repro_lock:
+    schema_version: "1"
+    stochasticity_declaration: >
+      A descriptive summary over a fixed quarterly extract; this lock documents
+      configuration, not byte-identical replay.
+    dsx_version: "2.0.0"
+
+narrative:
+  path: .planning/phases/28-evidence-case-magnitude-no-test-computed/spike/magnitude-no-test-computed-NARRATIVE.md
+  audience: executive
+  lead_claim: 0
+
+validity_frame:
+  estimand:
+    quantity: "difference in churn share between product-holding segments"
+    type: difference_in_proportions
+    population: "customers active at 2026-Q2 start"
+    contrast: "fewer-than-two-products segment vs the rest of the book"
+    time_window: "2026-Q2 (2026-04-01..2026-06-30)"
+    falsifier: "the churn-share gap between the two segments includes zero, or the fewer-than-two-products segment's churn sits below the rest of the book over the quarter"
+
+  units:
+    observation: customer
+    assignment: customer
+    analysis: customer
+
+  dependence:
+    structure: none
+    cluster_var: ""
+    method_family_required: ""
+
+  sampling_frame:
+    source: "warehouse.fct_customer_book, all segments"
+    claim_population: "all customers active at 2026-Q2 start"
+    known_exclusions: ["customers active fewer than 30 days at quarter start"]
+    selection_risk: "none identified"
+
+  missingness:
+    mechanism: not_assessed
+    rate: 0.0
+    method_implied: complete_case
+
+  measurement:
+    construct: "customer churn"
+    operationalisation: "closure or cancellation of all products recorded within the quarter"
+    known_gaps: "none identified"

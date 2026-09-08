@@ -310,6 +310,19 @@ _GOLDEN_SHIP_FINDINGS: "dict[str, frozenset[str]]" = {
         "DSX-VIZ-070",
     }),
     "examples/known-bad/chart-alphabetical-ranking-ANALYSIS-SPEC.yaml": frozenset(),
+    # Phase 28 (REQ-P28-01/03, D-28-01/02/06): the magnitude-without-computed-effect
+    # MISS. Measured 2026-09-07 against a fresh tempfile.TemporaryDirectory() via
+    # _ship_findings above — never guessed, and re-measured live to match the four-point
+    # table in 28-MEASUREMENT.md. The ONLY CRITICAL/HIGH ship residual is DSX-COH-001
+    # (an association-typed claim under a descriptive question_type — a swap-invariant,
+    # defect-orthogonal incidental, encoded per D-28-06 in _PER_FIXTURE_INCIDENTAL_CODES,
+    # never this fixture's catch). DSX-CLM-033 clears on its full union-membership logic
+    # via the x100 collision, and DSX-CLM-034 (HIGH, the code that attributes the miss)
+    # stays silent because the spec declares no claim-to-cited-test pointer — so it is
+    # ABSENT from this set, the frozen-design invariant that keeps the fixture a MISS.
+    "examples/known-bad/magnitude-without-computed-effect-ANALYSIS-SPEC.yaml": frozenset({
+        "DSX-COH-001",
+    }),
 }
 
 

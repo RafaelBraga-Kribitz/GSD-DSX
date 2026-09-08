@@ -571,6 +571,11 @@ class TestSpecStructure(unittest.TestCase):
         # fixture is the forty-third; count updated from 42 to 43 in the same commit
         # that promotes it. Its validity_frame is a clone of full-frame-cleaning's
         # (difference_in_proportions), so it satisfies the same estimand assertion.
+        # 2026-09-07 (Phase 28, plan 28-02): the magnitude-without-computed-effect
+        # known-bad fixture is the forty-fourth; count updated from 43 to 44 in the same
+        # commit that promotes it. It declares validity_frame.estimand.type
+        # difference_in_proportions (a descriptive churn readout), so it satisfies the
+        # same estimand assertion.
         from dsx.loader import load
         from dsx.spec import ESTIMAND_TYPES
 
@@ -580,7 +585,7 @@ class TestSpecStructure(unittest.TestCase):
             + sorted((root / "examples" / "known-bad").glob("*-ANALYSIS-SPEC.yaml"))
             + sorted((root / "templates").glob("ANALYSIS-SPEC.yaml"))
         )
-        self.assertEqual(len(paths), 43, [str(p) for p in paths])
+        self.assertEqual(len(paths), 44, [str(p) for p in paths])
         bad = []
         for p in paths:
             estimand_type = load(str(p)).get("validity_frame", {}).get("estimand", {}).get("type")
