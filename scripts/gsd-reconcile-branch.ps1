@@ -80,9 +80,17 @@ if ($LASTEXITCODE -ne 0 -or -not $baselineTip) {
   exit 2
 }
 
-$status = (git status --porcelain)
+# --untracked-files=no on purpose: an untracked file (editor config, a stray
+# note left in the repo root) survives `git checkout` between branches
+# unchanged either way, so it cannot be lost or clobbered by anything this
+# script does -- only uncommitted changes to TRACKED files are the real risk.
+# This project carries several long-lived untracked files (see README/CLAUDE.md
+# notes); treating those as "dirty" would abort this guard on every firing
+# forever, not just when something is actually wrong (found 2026-09-08, before
+# it ever mattered in practice).
+$status = (git status --porcelain --untracked-files=no)
 if ($status) {
-  Say "ABORT: working tree is not clean -- not touching any branch until this is resolved by hand:"
+  Say "ABORT: working tree has uncommitted changes to tracked files -- not touching any branch until this is resolved by hand:"
   $status -split "`n" | ForEach-Object { Say "  $_" }
   exit 2
 }
