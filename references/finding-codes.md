@@ -13,7 +13,7 @@ a suppression or a reference in a review stays valid across versions.
 **Gate thresholds.** `plan` and `execute` block at CRITICAL; `verify` and
 `ship` block at HIGH.
 
-**Total: 278 codes.**
+**Total: 279 codes.**
 
 ## Contract structure — `DSX-SPEC-*`
 
@@ -354,6 +354,7 @@ Question ↔ claim ↔ decision agreement.
 | `DSX-COH-030` | HIGH | Causal/prescriptive question has an empty assumptions list |
 | `DSX-COH-031` | HIGH | Assumption[<…>] is neither checked nor waived |
 | `DSX-COH-040` | CRITICAL | decision.revisit_when is missing or not a usable re-visit trigger |
+| `DSX-COH-041` | HIGH | decision.subgroup_harm[] accepts harm to <…> without a rationale |
 
 ## Figure seals — `DSX-FIG-*`
 

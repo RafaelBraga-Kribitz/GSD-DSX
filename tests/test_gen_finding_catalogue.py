@@ -712,6 +712,22 @@ _CANONICAL_DECLARATIONS = {
         ("CRITICAL", f"Feature '{_PH}' is declared available only after the prediction moment"),
         ("HIGH", f"Feature '{_PH}' {_PH} with no waiver"),
     },
+    # Phase 29-01 (REQ-P29-03, D-06): DSX-COH-041 is emitted at two literal
+    # severities by design from `_check_subgroup_harm_disposition` — CRITICAL when a
+    # declared opposing segment above the disposition floor carries no
+    # `decision.subgroup_harm[]` row, HIGH when a matching `accept` row has a blank
+    # rationale. The two report.add sites are per-segment mutually exclusive, ordered
+    # so collect()'s last-seen-wins dedupe lands the HIGH row in the catalogue; this
+    # pin records both declarations deliberately (the `{name!r}` interpolation renders
+    # as the placeholder). Same divergent-text precedent as DSX-COH-030 above.
+    "DSX-COH-041": {
+        (
+            "CRITICAL",
+            f"Opposing segment {_PH} above the disposition floor carries no "
+            "decision.subgroup_harm[] row",
+        ),
+        ("HIGH", f"decision.subgroup_harm[] accepts harm to {_PH} without a rationale"),
+    },
 }
 
 

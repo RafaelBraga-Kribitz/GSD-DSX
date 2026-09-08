@@ -196,3 +196,39 @@ decision-schema keys (`decision.subgroup_harm[]`, `decision.subgroup_harm_floor`
 unit test carrying `# D-05: DSX-COH-041`, and the catalogue move 278 → 279 with all four
 count pins in lockstep — then Task 4 Branch B verifies and hands off to Plan 29-02 for
 fixture promotion. `dsx/checks/dq.py` stays byte-frozen.
+
+## Task 4 — Branch B closure (post-mint verification, S5-3)
+
+Tasks 2 (RED) and 3 (GREEN) landed cleanly on the LIVE MISS branch. Verified on the
+real interpreter (CPython 3.12.10):
+
+- **RED → GREEN.** `tests/test_subgroup_harm_disposition.py` (7 methods, one per
+  behaviour bullet, carrying the `# D-05: DSX-COH-041` marker + the Gail & Simon
+  motivating-definition honesty phrasing) failed before the check existed and passes
+  after: `python312 -m unittest tests.test_subgroup_harm_disposition` → **OK (7 tests)**.
+- **`DSX-COH-041` minted** as a brand-new `_check_subgroup_harm_disposition` in
+  `dsx/checks/coherence.py`, dispatched from `coherence.check()` (NOT folded into
+  `_check_simpsons_paradox` or any existing sub-check). Fires CRITICAL on a missing
+  `decision.subgroup_harm[]` row for an opposing-above-floor segment, HIGH on an
+  `accept` row with a blank rationale, silent on empty / underpopulated / non-prescriptive
+  results. Sign convention reused verbatim from `metrics.py:352-353`; CI OR-arm written
+  in but latent (segments carry no `ci`). Honest Gail & Simon D-05 docstring
+  (`Citation:` + `Structural criterion:` + bounded-catch honesty; no mechanic claim).
+- **Catalogue deterministically at 279.** `python312 scripts/gen-finding-catalogue.py
+  --check` → exit 0; exactly one `DSX-COH-041` row after `DSX-COH-040`; a second
+  `--write` is byte-identical (sha256 stable). `DSX-COH-041` added to
+  `_D05_ALLOWLIST_CODES` as an EXACT CODE (never a `DSX-COH-` prefix).
+- **Four count pins moved in lockstep to 279:** `references/finding-codes.md` Total;
+  `_EXPECTED_TOTAL` in `tests/test_finding_catalogue_invariant.py`; `_declared_total`
+  pin in `tests/test_phase20_zero_mint_close.py`; `_EXPECTED_TOTAL` in
+  `tests/test_p19_categorical_rows.py`. Frozen 256 (Phase-12) and 275 baselines
+  untouched.
+- **Full suite green:** `python312 -m unittest discover -s tests -q` → **OK (1622
+  tests)**. `dsx/checks/dq.py` byte-frozen (`git diff --stat` empty);
+  `REQUIREMENTS.md` / `STATE.md` / `ROADMAP.md` untouched (orchestrator-owned).
+
+**The phase proceeds to Plan 29-02** for fixture promotion: promote the spike into
+`examples/known-bad/` as a **TARGET** (D-29-00 — `_TARGET_DEFECT_CODES[slug]` =
+`DSX-COH-041` at plan/verify/ship, NOT a `kind: miss` sidecar), wire the corpus harness
+maps with `DSX-COH-041` PRESENT, move the spec count 44 → 45, and rewrite brief §6.5
+item 9 as PROMOTED — DETECTED. `brief.md` is left unchanged by this plan.

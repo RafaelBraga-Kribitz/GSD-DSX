@@ -55,6 +55,26 @@ decision:
   #   on_pass: rollout
   #   on_fail: hold
 
+  # subgroup_harm is GATE-READ (DSX-COH-041): for a prescriptive recommendation,
+  # any results.segments[] entry whose effect OPPOSES results.overall_effect by sign
+  # AND whose n >= subgroup_harm_floor must carry a disposition row here, matched by
+  # `segment` name. Missing row → CRITICAL; an `accept` row with a blank rationale →
+  # HIGH. This forces an undispositioned minority harm under a positive aggregate to
+  # disclosure — it does NOT detect hidden harm (attribution over declared segments).
+  # subgroup_harm_floor is the absolute minimum n at which a declared opposing
+  # segment demands a disposition; absent it defaults to 0 (every opposing segment
+  # demands one). A declared floor may only tighten the bar, never loosen it.
+  # subgroup_harm_floor: 500
+  # subgroup_harm:
+  #   - segment: minority          # matches results.segments[].name
+  #     effect: -0.06              # the declared opposing effect
+  #     ci: [-0.09, -0.03]         # justifies an accept; not a trigger
+  #     n: 1000
+  #     disposition: exclude       # accept | exclude | mitigate
+  #     rationale: >
+  #       Why this segment is accepted / excluded / mitigated. Required (non-blank)
+  #       for an `accept` disposition.
+
   # ── Documentation-only — NOT gate-read ─────────────────────────────────────
   # The two fields below are recorded for human readers only. NO dsx check reads
   # them (grep-confirmed): setting `reversible` or `deadline` buys NO enforcement.

@@ -216,6 +216,16 @@ _D05_ALLOWLIST_CODES = frozenset(
         # (cites Wilkinson & TFSI 1999 as the motivating principle only); same
         # exact-code precedent as DSX-ML-034 above.
         "DSX-CLM-034",
+        # Phase 29 (REQ-P29-03) adds DSX-COH-041 here by EXACT CODE, not via a
+        # "DSX-COH-" prefix: DSX-COH-* is a pre-existing family whose legacy codes
+        # 001/010/020/030/031 carry no Citation:/Structural criterion: docstring line
+        # and no `# D-05:` marker, so a prefix add would fail the build red on all of
+        # them (DSX-COH-040 is already carried here by exact code for the same reason).
+        # DSX-COH-041 lives in the brand-new `_check_subgroup_harm_disposition` helper
+        # this phase wrote (cites Gail & Simon 1985 as the motivating definition of a
+        # qualitative/crossover interaction only, never the enforcement mechanic); same
+        # exact-code precedent as DSX-CLM-034 above.
+        "DSX-COH-041",
     }
 )
 
