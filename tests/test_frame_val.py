@@ -1480,6 +1480,14 @@ _EXPECTED_VAL_CODES: "dict[str, set[str]]" = {
     # DSX-CLM-* code, not DSX-VAL-*, and silent besides since no pointer is declared),
     # so no DSX-VAL-* code fires.
     "magnitude-without-computed-effect-ANALYSIS-SPEC.yaml": set(),
+    # Measured 2026-09-08 (plan 29-02, REQ-P29-01/03) against the fixture as committed
+    # in this plan: loaded via dsx.loader.load(), ran dsx.frame.val.check(spec),
+    # recorded {f.code for f in report.findings} — the empty set. This
+    # subgroup-harm-without-disposition fixture is a clean causal→prescriptive clone
+    # with a complete, honest validity_frame; its encoded defect is an undispositioned
+    # opposing segment caught by DSX-COH-041, a DSX-COH-* coherence code (not DSX-VAL-*,
+    # and silent besides in the frame check), so no DSX-VAL-* code fires.
+    "subgroup-harm-without-disposition-ANALYSIS-SPEC.yaml": set(),
 }
 
 

@@ -323,6 +323,18 @@ _GOLDEN_SHIP_FINDINGS: "dict[str, frozenset[str]]" = {
     "examples/known-bad/magnitude-without-computed-effect-ANALYSIS-SPEC.yaml": frozenset({
         "DSX-COH-001",
     }),
+    # Phase 29 (REQ-P29-01/02/03, D-29-00): the subgroup-harm-without-disposition
+    # TARGET. Measured 2026-09-08 against a fresh tempfile.TemporaryDirectory() via
+    # _ship_findings above — never guessed, and re-measured live to match the four/five-
+    # point table in 29-MEASUREMENT.md and the paired POSTMORTEM. This INVERTS the
+    # magnitude MISS above: DSX-COH-041 is PRESENT because it fires CRITICAL at ship (the
+    # honestly-declared, undispositioned opposing minority segment D is DETECTED — the
+    # D-29-00 target polarity), not absent. It is the ONLY CRITICAL/HIGH ship residual;
+    # DSX-STA-011 (MEDIUM, aggregate effect-size advisory, swap-invariant) sits below the
+    # CRITICAL/HIGH stratum this set records and DSX-PAR-001 is INFO.
+    "examples/known-bad/subgroup-harm-without-disposition-ANALYSIS-SPEC.yaml": frozenset({
+        "DSX-COH-041",
+    }),
 }
 
 

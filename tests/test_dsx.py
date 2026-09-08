@@ -576,6 +576,11 @@ class TestSpecStructure(unittest.TestCase):
         # commit that promotes it. It declares validity_frame.estimand.type
         # difference_in_proportions (a descriptive churn readout), so it satisfies the
         # same estimand assertion.
+        # 2026-09-08 (Phase 29, plan 29-02): the subgroup-harm-without-disposition
+        # known-bad fixture is the forty-fifth; count updated from 44 to 45 in the same
+        # commit that promotes it. It declares validity_frame.estimand.type
+        # difference_in_proportions (a prescriptive retention-rollout recommendation), so
+        # it satisfies the same estimand assertion.
         from dsx.loader import load
         from dsx.spec import ESTIMAND_TYPES
 
@@ -585,7 +590,7 @@ class TestSpecStructure(unittest.TestCase):
             + sorted((root / "examples" / "known-bad").glob("*-ANALYSIS-SPEC.yaml"))
             + sorted((root / "templates").glob("ANALYSIS-SPEC.yaml"))
         )
-        self.assertEqual(len(paths), 44, [str(p) for p in paths])
+        self.assertEqual(len(paths), 45, [str(p) for p in paths])
         bad = []
         for p in paths:
             estimand_type = load(str(p)).get("validity_frame", {}).get("estimand", {}).get("type")

@@ -309,6 +309,34 @@ _TARGET_DEFECT_CODES: "dict[str, dict[str, str | frozenset[str]]]" = {
     # tempfile.TemporaryDirectory() per gate point: plan/execute exit 0; verify/ship
     # exit 1 with DSX-VIZ-020 as the only finding above INFO.
     "chart-truncated-axis-bar": {"verify": "DSX-VIZ-020", "ship": "DSX-VIZ-020"},
+    # Phase 29 (REQ-P29-01/02/03, D-29-00/02): the subgroup-harm-without-disposition
+    # TARGET — the first fixture for DSX-COH-041 (minted in plan 29-01 on the LIVE MISS
+    # branch, catalogue Total 279). A genuinely prescriptive rollout recommendation on a
+    # positive +3.2pp aggregate that declares an opposing minority segment D (−6.0pp,
+    # n=1000) above the declared subgroup_harm_floor (500) with no
+    # decision.subgroup_harm[] disposition row. `coherence` is registered at
+    # plan/verify/ship and ABSENT from execute (dsx/cli.py::GATE_PROFILES), so
+    # DSX-COH-041 fires CRITICAL at exactly those three points — the same point-scoped,
+    # bare-string shape chart-truncated-axis-bar above uses, and the prescriptive-churn-
+    # recommendation precedent's plan-not-execute split (:294-298). Measured 2026-09-08
+    # against a fresh tempfile.TemporaryDirectory() per gate point on CPython 3.12.10:
+    # validate 0; plan 1 (DSX-COH-041 CRITICAL); execute 0; verify 1 (DSX-COH-041
+    # CRITICAL); ship 1 (DSX-COH-041 CRITICAL). The swap-still-fires counterfactual (flip
+    # D to +0.06) toggles DSX-COH-041 off at every point, confirming it as this fixture's
+    # real catch; the residual DSX-STA-011 (MEDIUM, aggregate effect-size advisory) is
+    # swap-invariant and below the HIGH threshold, so it never blocks and is not this
+    # fixture's target. Deliberately NOT added to _EXPECTED_CAUGHT_DEFECTS with a code:
+    # that map contributes its whole set at BOTH _CRITICAL_THRESHOLD_POINTS (plan AND
+    # execute), and DSX-COH-041 fires at plan but not execute (coherence is absent from
+    # the execute profile), so an entry there would wrongly demand it at execute and fail
+    # test_every_spec_blocks_only_on_its_target_defect_at_critical_threshold_points. Its
+    # _EXPECTED_CAUGHT_DEFECTS entry is an empty frozenset() (below), key-parity only —
+    # exactly the prescriptive-churn-recommendation resolution (:294-298 / :519).
+    "subgroup-harm-without-disposition": {
+        "plan": "DSX-COH-041",
+        "verify": "DSX-COH-041",
+        "ship": "DSX-COH-041",
+    },
 }
 
 
@@ -621,6 +649,17 @@ _EXPECTED_CAUGHT_DEFECTS: "dict[str, frozenset[str]]" = {
     # (D-28-06), point-scoped so it is never credited as this fixture's catch. The key is
     # required so test_expected_caught_defects_keys_match_the_corpus_on_disk stays green.
     "magnitude-without-computed-effect": frozenset(),
+    # Phase 29 (REQ-P29-01/02/03, D-29-00): the subgroup-harm-without-disposition
+    # TARGET. Empty by design, not by omission — this map's frozenset applies at every
+    # point in _CRITICAL_THRESHOLD_POINTS ("plan", "execute"), but DSX-COH-041 fires at
+    # plan and NOT execute (`coherence` is registered at plan/verify/ship and absent from
+    # the execute gate profile, dsx/cli.py::GATE_PROFILES), so there is nothing this
+    # both-points map could correctly claim. The fixture's real, point-scoped catch
+    # (DSX-COH-041 at plan/verify/ship) lives entirely in _TARGET_DEFECT_CODES above —
+    # exactly the prescriptive-churn-recommendation resolution (:519). The key is
+    # required here solely so test_expected_caught_defects_keys_match_the_corpus_on_disk
+    # stays green.
+    "subgroup-harm-without-disposition": frozenset(),
 }
 
 
@@ -1768,9 +1807,12 @@ class TestKnownBadCorpus(unittest.TestCase):
                 )
                 kind = data.get("kind", "miss")
                 self.assertIn(
-                    kind, ("miss", "caught"),
+                    kind, ("miss", "caught", "target"),
                     f"{path.name} has kind {kind!r}; the D-07 schema allows only "
-                    "'miss' (default) or 'caught'",
+                    "'miss' (default, the absent code fires nowhere), 'caught' (the "
+                    "code fires — a pure catch), or 'target' (Phase 29 D-29-00: a "
+                    "caught §6.5-promotion — the code fires CRITICAL live AND the "
+                    "sidecar records the backlog item it promotes)",
                 )
 
     def test_protocol_adherence_is_additive_and_ignored(self):
@@ -1838,8 +1880,12 @@ class TestKnownBadCorpus(unittest.TestCase):
         - `kind == "miss"`: the named absent_code must fire NOWHERE CRITICAL across
           the union — a miss whose code actually fires is a laundered catch and a
           hard failure (T-12-05).
-        - `kind == "caught"`: the named code MUST fire CRITICAL somewhere in the
-          union.
+        - any non-miss kind (`"caught"` or Phase 29's `"target"`): the named code
+          MUST fire CRITICAL somewhere in the union. `target` (D-29-00) is a caught
+          §6.5-promotion — the code is PRESENT/DETECTED and the sidecar additionally
+          records the backlog item it promotes; the enforcement here is identical to
+          `caught` (the `else` branch's `assertIn`), so a `target` sidecar naming a
+          code that does not fire fails exactly as a `caught` one would.
 
         A named §6.5 backlog code that is not in the shipped catalogue is inherently
         absent live — it can never appear in `all_critical` — so it satisfies the
@@ -1875,7 +1921,7 @@ class TestKnownBadCorpus(unittest.TestCase):
                         f"({sorted(all_critical)}) — a code that fires is a laundered catch, "
                         "not a miss",
                     )
-                else:  # kind == "caught"
+                else:  # kind == "caught" or "target" (Phase 29 D-29-00): must fire
                     self.assertIn(
                         absent_code, all_critical,
                         f"{path.name} tags {absent_code!r} as caught, but it never fires "
