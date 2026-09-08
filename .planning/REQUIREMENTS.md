@@ -92,14 +92,14 @@ measure first; a case the gate already catches closes the phase with no mint).
 
 ## Phase 28 — Evidence case: a magnitude no reported test computed (§6.5 item 8)
 
-- [ ] REQ-P28-01 A known-bad corpus case whose `claims[].text` asserts a magnitude
+- [x] REQ-P28-01 A known-bad corpus case whose `claims[].text` asserts a magnitude
   that no `results.tests[]` entry computed (the reported tests, with effect sizes
   and intervals, cover other metrics), while every existing claims, narrative and
   stats check passes at the default threshold — `DSX-CLM-070` cleared by a declared
   base, `DSX-STA-012` cleared by effect sizes on the reported tests. Measured live
   before any check is designed.
 
-- [ ] REQ-P28-02 If the case is a live miss: a declaration-level cross-reference
+- [x] REQ-P28-02 If the case is a live miss: a declaration-level cross-reference
   `claims[].supported_by` naming the `results.tests[]` entry a claim rests on, and a
   check that every numeric literal in the claim text appears among that test's
   reported numbers (`effect`, `ci`, `from_value`/`to_value`, `base_n`) within a
@@ -108,7 +108,7 @@ measure first; a case the gate already catches closes the phase with no mint).
   Wilkinson & TFSI 1999; APA JARS–Quant 2018); D-06 next free `DSX-CLM-*` number. If
   caught by an existing code, recorded, nothing minted.
 
-- [ ] REQ-P28-03 Corpus harness entries complete; brief §6.5 item 8 row rewritten
+- [x] REQ-P28-03 Corpus harness entries complete; brief §6.5 item 8 row rewritten
   with the measured evidence.
 
 ## Phase 29 — Evidence case: subgroup harm under a prescriptive recommendation (§6.5 item 9)
@@ -175,9 +175,9 @@ measure first; a case the gate already catches closes the phase with no mint).
 | REQ-P27-01 | Phase 27 | Met |
 | REQ-P27-02 | Phase 27 | Met |
 | REQ-P27-03 | Phase 27 | Met |
-| REQ-P28-01 | Phase 28 | Pending |
-| REQ-P28-02 | Phase 28 | Pending |
-| REQ-P28-03 | Phase 28 | Pending |
+| REQ-P28-01 | Phase 28 | Met |
+| REQ-P28-02 | Phase 28 | Met |
+| REQ-P28-03 | Phase 28 | Met |
 | REQ-P29-01 | Phase 29 | Pending |
 | REQ-P29-02 | Phase 29 | Pending |
 | REQ-P29-03 | Phase 29 | Pending |

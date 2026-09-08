@@ -67,18 +67,18 @@ _ROW_RE = re.compile(r"\|\s*`(DSX-[A-Z]+-\d+)`\s*\|")
 
 
 class TestCatalogueInvariant(unittest.TestCase):
-    def test_finding_catalogue_stays_at_277_codes(self):
-        """The catalogue declares, and enumerates, exactly 277 codes (D-08).
+    def test_finding_catalogue_stays_at_278_codes(self):
+        """The catalogue declares, and enumerates, exactly 278 codes (D-08).
 
-        Two independent readings of the same generated artifact must agree on 277:
+        Two independent readings of the same generated artifact must agree on 278:
         the human-facing ``**Total: N codes.**`` line and the machine count of
-        ``DSX-*`` table rows. Requiring both to equal 277 catches a stale Total line
+        ``DSX-*`` table rows. Requiring both to equal 278 catches a stale Total line
         as well as a minted or dropped code, without re-walking the ``dsx/`` AST here —
         this test stays a pure reader of the same file ``gen-finding-catalogue.py
         --check`` gates. Phase 16 added DSX-REP-060/061, Phase 15 added
         DSX-EXP-070/DSX-MET-021, Phase 18 added DSX-STA-050/051/060/061/062, Phase 19
         added DSX-STA-070/080/081/090/100/110/111/120/121/122, Phase 22 added
-        DSX-VIZ-071, and Phase 27 added DSX-ML-034 additively (256 -> 277); any further
+        DSX-VIZ-071, Phase 27 added DSX-ML-034, and Phase 28 added DSX-CLM-034 additively (256 -> 278); any further
         movement is a new mint or drop and belongs to its own phase.
         """
         raw = _CATALOGUE_PATH.read_text(encoding="utf-8")
@@ -98,7 +98,8 @@ class TestCatalogueInvariant(unittest.TestCase):
             f"catalogue declares {declared_total} codes, expected {_EXPECTED_TOTAL} — "
             "Phase 16 mints DSX-REP-060/061, Phase 15 mints DSX-EXP-070/DSX-MET-021, "
             "Phase 18 mints DSX-STA-050/051/060/061/062, Phase 19 mints "
-            "DSX-STA-070/080/081/090/100/110/111/120/121/122 and Phase 22 mints DSX-VIZ-071 "
+            "DSX-STA-070/080/081/090/100/110/111/120/121/122, Phase 22 mints DSX-VIZ-071, "
+            "Phase 27 mints DSX-ML-034, Phase 28 mints DSX-CLM-034 "
             "over the frozen 256 (D-08); if a code was legitimately added or removed beyond "
             "that, that change belongs to its own check-shipping phase, not a silent edit here",
         )
@@ -124,7 +125,7 @@ class TestCatalogueInvariant(unittest.TestCase):
         DSX-EXP-070, DSX-MET-021, DSX-STA-050, DSX-STA-051, DSX-STA-060,
         DSX-STA-061, DSX-STA-062, DSX-STA-070, DSX-STA-080, DSX-STA-081,
         DSX-STA-090, DSX-STA-100, DSX-STA-110, DSX-STA-111, DSX-STA-120,
-        DSX-STA-121, DSX-STA-122, DSX-VIZ-071} (D-08).
+        DSX-STA-121, DSX-STA-122, DSX-VIZ-071, DSX-ML-034, DSX-CLM-034} (D-08).
 
         The count invariant above pins cardinality, but a mint-one/drop-one swap
         preserves the count and slips through it. A set-identity diff is strictly
@@ -133,7 +134,7 @@ class TestCatalogueInvariant(unittest.TestCase):
         ``references/finding-codes.md`` (256 codes) and is never mutated (D-08); the
         expected live set is therefore ``snapshot ∪ _MINTED_CODES`` (the four prior
         mints + the five Phase-18 + the ten Phase-19 DSX-STA codes + Phase 22's
-        DSX-VIZ-071). Both sides are parsed with the same CRLF-safe, non-line-anchored
+        DSX-VIZ-071 + Phase 27's DSX-ML-034 + Phase 28's DSX-CLM-034). Both sides are parsed with the same CRLF-safe, non-line-anchored
         ``_ROW_RE`` the count invariant uses, so there is no parser drift and a CRLF
         checkout cannot silently empty either side.
         """
