@@ -168,6 +168,45 @@ tampering, and a fixture silently flipping MISS→CATCH — not runtime input ha
 An interactive session records both verdicts in the proper artifacts (SECURITY.md
 Approval line; a UAT note) and checks this item off. **Non-blocking until S7-2.**
 
+### HQ-44 — Phase 28 end-of-phase sign-off: security + UAT (filed 2026-09-08 by S4-5; non-blocking until S7-2)
+
+**What this is.** Phase 28 (Evidence case — magnitude no test computed) passed both
+verify:post gates technically; two items need the operator's sign-off at close-out
+(S7-2), neither blocking any earlier work. Phase 28 mints one code (`DSX-CLM-034`,
+claim→cited-test traceability) under a **human-confirmed** D-05 citation (Wilkinson &
+TFSI 1999, read in full primary text — HQ-40 row 40c) and promotes a corpus **MISS**
+fixture built on the collision/mislabel construction (the claim's 27%/18% are the REAL
+reported numbers of OTHER metrics, so `DSX-CLM-033` clears while no test computed the
+CLAIMED metric). The attack surface is D-05 over-claiming, catalogue/count tampering, a
+fixture silently flipping MISS→CATCH, and the new `_PER_FIXTURE_INCIDENTAL_CODES` map
+being abused — not runtime input handling. `dsx/checks/dq.py` stays byte-frozen.
+
+1. **Security sign-off (SECURITY.md approval line — brief §4.4).** The loop re-gated
+   all 14 threats at their code locators on real Python 3.12.10 → **SECURED,
+   `threats_open: 0`, 14/14 CLOSED** (`28-SECURITY.md`, `status: verified` technical):
+   the D-05 docstring + `# D-05:` marker cite Wilkinson & TFSI (1999) as the MOTIVATING
+   PRINCIPLE only and disclaim any numeric-overlap mandate (T-28-01 HIGH); the fixture
+   declares no `supported_by` and validates PASS/CRITICAL=0, so the magnitude miss stays
+   honest (T-28-08 HIGH); catalogue 277→278 with exactly one `DSX-CLM-034 | HIGH` row
+   (T-28-02/04); the mint lives in a brand-new function, not the uncited shared one
+   (T-28-03 HIGH); DSX-CLM-034 out of `_SECTION_65_BACKLOG_CODES`, sidecar id a frozen
+   `_SECTION_65_ITEM_IDS` member (T-28-09/10); the golden ship set is re-measured live
+   (T-28-12); `dq.py` byte-frozen (T-28-06); spec count 44 (T-28-11); full suite 1615 OK;
+   `node install.mjs --check` self-test passed (T-28-13). The Approval line is written but
+   **unsigned** — the loop verifies mitigations, it does not sign. **To answer:** read
+   `28-SECURITY.md`; confirm the register + the D-05 honesty threat T-28-01 and the
+   MISS-integrity threat T-28-08; approve.
+2. **UAT round.** `28-VALIDATION.md` is `nyquist_compliant: true`, 0 gaps, all 3
+   requirements COVERED by named tests (phase modules `tests.test_claims_supported_by` +
+   `tests.test_known_bad_corpus` = 67/67 green on real 3.12.10; fixture `dsx validate`
+   PASS CRITICAL=0; full suite 1615 OK). Phase 28 has no user-facing runtime behaviour
+   beyond the declaration-only check and the corpus fixture, so its acceptance test IS
+   the automated invariant set. **To answer:** confirm UAT accepted (or name a manual
+   check to run).
+
+An interactive session records both verdicts in the proper artifacts (SECURITY.md
+Approval line; a UAT note) and checks this item off. **Non-blocking until S7-2.**
+
 ## Will be added by the loop when reached
 
 - ~~S0-3: the v2.6 D-05 citation evidence pack~~ — **FILED as HQ-40 (2026-09-06)**,
@@ -175,7 +214,7 @@ Approval line; a UAT note) and checks this item off. **Non-blocking until S7-2.*
   rows block S3-1, S4-1 and S5-1 respectively.
 - Phase 25/26/27/28/29/30 end-of-phase security sign-off + UAT rounds (batched per
   phase; non-blocking until S7-2). **Phase 25 filed as HQ-41; Phase 26 filed as HQ-42;
-  Phase 27 filed as HQ-43 (all 2026-09-07).**
+  Phase 27 filed as HQ-43 (all 2026-09-07); Phase 28 filed as HQ-44 (2026-09-08).**
 - D-06 numbering veto windows for any code Phases 27–29 mint, and for any number
   reserved in `_SECTION_65_BACKLOG_CODES` for a miss sidecar (from a freshly
   re-measured live catalogue count; silence = accept).

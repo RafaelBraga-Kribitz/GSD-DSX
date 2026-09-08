@@ -79,7 +79,7 @@ and the `# D-05: DSX-CLM-034` marker cite Wilkinson & TFSI (1999) as the MOTIVAT
 PRINCIPLE only and explicitly disclaim any numeric-overlap mandate — the citation was
 read in full primary text and CONFIRMED at its locator by the operator (HQ-40 row 40c;
 JARS–Quant 2018 dropped as weaker/wrong-edition). D-06 assigned the next-free `DSX-CLM-034`.
-Pinned by `tests/test_claims_supported_by.py` (13 tests, `# D-05:` marker at line 11);
+Pinned by `tests/test_claims_supported_by.py` (7 tests, `# D-05:` marker at line 11);
 DSX-CLM-034 is in `_D05_ALLOWLIST_CODES` by exact code.
 
 ### REQ-P28-03 — MET
