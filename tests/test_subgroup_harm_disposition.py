@@ -203,6 +203,94 @@ class TestSubgroupHarmDisposition(unittest.TestCase):
         )
         self.assertEqual(_coh041(not_prescriptive), [])
 
+    # --- S5-4 code-review regressions (HG-01, MD-01, MD-02) ---
+
+    def test_matching_row_missing_disposition_critical(self):
+        """HG-01: a row that names the harmed segment but omits ``disposition``
+        discloses nothing and must be treated as absent — CRITICAL, not silence."""
+        report = coherence.check(
+            _spec(
+                segments=_FOUR_SEGMENTS,
+                floor=500,
+                subgroup_harm=[{"segment": "D"}],
+            )
+        )
+        hits = _coh041(report)
+        self.assertEqual(len(hits), 1)
+        self.assertEqual(hits[0].severity, Severity.CRITICAL)
+
+    def test_matching_row_invalid_disposition_critical(self):
+        """HG-01: a row with a disposition outside {accept, exclude, mitigate}
+        (e.g. 'proceed') cannot clear the obligation — CRITICAL."""
+        report = coherence.check(
+            _spec(
+                segments=_FOUR_SEGMENTS,
+                floor=500,
+                subgroup_harm=[{"segment": "D", "disposition": "proceed"}],
+            )
+        )
+        hits = _coh041(report)
+        self.assertEqual(len(hits), 1)
+        self.assertEqual(hits[0].severity, Severity.CRITICAL)
+
+    def test_valid_exclude_disposition_silent(self):
+        """A recognised disposition (exclude/mitigate) with no rationale is
+        self-justifying and silent — the HG-01 fix must not over-fire on valid rows."""
+        for disp in ("exclude", "mitigate"):
+            report = coherence.check(
+                _spec(
+                    segments=_FOUR_SEGMENTS,
+                    floor=500,
+                    subgroup_harm=[{"segment": "D", "disposition": disp}],
+                )
+            )
+            self.assertEqual(_coh041(report), [], f"disposition={disp!r}")
+
+    def test_lone_opposing_segment_critical(self):
+        """MD-01: a single declared opposing segment above the floor still demands a
+        disposition — the check judges each segment against the aggregate, so it does
+        not require ≥2 segments (unlike Simpson's paradox)."""
+        report = coherence.check(
+            _spec(
+                segments=[{"name": "D", "effect": -0.06, "n": 1000}],
+                floor=500,
+                subgroup_harm=None,
+            )
+        )
+        hits = _coh041(report)
+        self.assertEqual(len(hits), 1)
+        self.assertEqual(hits[0].severity, Severity.CRITICAL)
+
+    def test_opposing_segment_missing_n_fires_at_default_floor(self):
+        """MD-02: an opposing segment that omits ``n`` cannot escape the strict
+        default floor 0 (D-29-01 "no escape by omission") — a missing ``n`` reads as
+        0, so it fires CRITICAL; declaring a floor above 0 still rules it out."""
+        default_floor = coherence.check(
+            _spec(
+                segments=[
+                    {"name": "A", "effect": 0.05, "n": 4000},
+                    {"name": "D", "effect": -0.06},  # n omitted
+                ],
+                floor=None,  # absent → default 0
+                subgroup_harm=None,
+            )
+        )
+        hits = _coh041(default_floor)
+        self.assertEqual(len(hits), 1)
+        self.assertEqual(hits[0].severity, Severity.CRITICAL)
+
+        declared_floor = coherence.check(
+            _spec(
+                segments=[
+                    {"name": "A", "effect": 0.05, "n": 4000},
+                    {"name": "D", "effect": -0.06},  # n omitted → read as 0
+                ],
+                floor=500,  # affirmatively declared above 0 → the no-n segment is ruled out
+                subgroup_harm=None,
+            )
+        )
+        self.assertEqual(_coh041(declared_floor), [])
+
 
 if __name__ == "__main__":
     unittest.main()

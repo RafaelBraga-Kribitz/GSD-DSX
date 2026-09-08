@@ -223,8 +223,8 @@ def _ci_excludes_zero(ci: object) -> bool:
 def _check_subgroup_harm_disposition(spec: dict, qtype: str, report: Report) -> None:
     """Emit DSX-COH-041 when a prescriptive recommendation leaves a declared,
     opposite-sign minority segment above the disposition floor without a matching
-    ``decision.subgroup_harm[]`` row (CRITICAL), or with an ``accept`` row whose
-    rationale is blank (HIGH).
+    ``decision.subgroup_harm[]`` row carrying a recognised disposition (CRITICAL),
+    or with an ``accept`` row whose rationale is blank (HIGH).
 
     Citation: Gail, M. & Simon, R. (1985), "Testing for qualitative interactions
     between treatment effects and patient subsets", Biometrics 41(2):361-372, PMID
@@ -239,10 +239,14 @@ def _check_subgroup_harm_disposition(spec: dict, qtype: str, report: Report) -> 
     Structural criterion: a pure structural read of declared fields — a
     ``results.segments[]`` entry whose declared ``effect`` opposes
     ``results.overall_effect`` by ``_sign`` (metrics.py:352-353, reused verbatim)
-    AND whose declared ``n >= decision.subgroup_harm_floor`` (default 0) must carry
-    a ``decision.subgroup_harm[]`` row matched by ``segment`` name. No threshold,
-    interval, or statistic is computed here; the obligation is enforced as a
-    declaration, the DSX-COH-040 mould applied to subgroup harm.
+    AND whose declared ``n >= decision.subgroup_harm_floor`` (default 0, a missing
+    ``n`` read as 0 so an omitted count cannot escape the strict default) must carry
+    a ``decision.subgroup_harm[]`` row matched by ``segment`` name whose
+    ``disposition`` is one of ``accept | exclude | mitigate`` — a row that names the
+    segment with a missing or unrecognised disposition discloses nothing and is
+    treated as absent (CRITICAL). No threshold, interval, or statistic is computed
+    here; the obligation is enforced as a declaration, the DSX-COH-040 mould applied
+    to subgroup harm.
 
     Bounded catch: this buys attribution over HONESTLY-DECLARED segments, not
     detection of hidden harm. A spec that omits the harmed segment, lies about its
@@ -255,7 +259,10 @@ def _check_subgroup_harm_disposition(spec: dict, qtype: str, report: Report) -> 
     results = section(spec, "results")
     overall = as_number(results.get("overall_effect"))
     segments = items(results, "segments")
-    if overall is None or len(segments) < 2:
+    # Per-segment obligation (D-29-01): each declared opposing segment is judged
+    # against ``overall_effect`` on its own, so a single segment suffices — this is
+    # NOT the ≥2-to-compare-segments rationale of _check_simpsons_paradox.
+    if overall is None or not segments:
         return
     overall_sign = _sign(overall)
     if overall_sign == 0:
@@ -275,7 +282,12 @@ def _check_subgroup_harm_disposition(spec: dict, qtype: str, report: Report) -> 
         if effect is None or _sign(effect) != -overall_sign:
             continue  # only opposite-sign segments are candidates
         n = as_number(segment.get("n"))
-        above_floor = n is not None and n >= floor
+        # D-29-01 "no escape by omission": a declared opposing segment that omits
+        # ``n`` must not slip under the maximally-strict default floor 0, so read a
+        # missing ``n`` as 0. To NOT disposition it, the analyst must affirmatively
+        # declare a floor above 0.
+        n_for_floor = 0.0 if n is None else n
+        above_floor = n_for_floor >= floor
         if not (above_floor or _ci_excludes_zero(segment.get("ci"))):
             continue
         name = str(segment.get("name", "?"))
@@ -301,25 +313,46 @@ def _check_subgroup_harm_disposition(spec: dict, qtype: str, report: Report) -> 
                 ),
                 where="spec.decision.subgroup_harm",
             )
-        elif normalize(str(row.get("disposition", ""))) == "accept" and is_blank(
-            row.get("rationale")
-        ):
-            report.add(
-                "DSX-COH-041",
-                "HIGH",
-                f"decision.subgroup_harm[] accepts harm to {name!r} without a rationale",
-                detail=(
-                    f"Segment {name!r} opposes the aggregate at {effect:+.6g} and its "
-                    "row disposition is 'accept', but the rationale is blank. An accept "
-                    "is the one disposition that proceeds despite the harm; it needs a "
-                    "stated justification a reviewer can challenge."
-                ),
-                remedy=(
-                    "Write decision.subgroup_harm[].rationale for this accept row, or "
-                    "change the disposition to exclude/mitigate."
-                ),
-                where="spec.decision.subgroup_harm",
-            )
+        else:
+            disposition = normalize(str(row.get("disposition", "")))
+            if disposition not in ("accept", "exclude", "mitigate"):
+                report.add(
+                    "DSX-COH-041",
+                    "CRITICAL",
+                    f"decision.subgroup_harm[] row for {name!r} carries no valid "
+                    "disposition",
+                    detail=(
+                        f"Segment {name!r} moves {effect:+.6g} against the "
+                        f"{overall:+.6g} aggregate and a decision.subgroup_harm[] row "
+                        f"names it, but its disposition is {row.get('disposition')!r}, "
+                        "not one of accept | exclude | mitigate. A row that names the "
+                        "segment without a recognised disposition discloses nothing and "
+                        "is treated identically to an absent row."
+                    ),
+                    remedy=(
+                        "Set decision.subgroup_harm[].disposition to accept | exclude | "
+                        "mitigate (and, for accept, add a rationale)."
+                    ),
+                    where="spec.decision.subgroup_harm",
+                )
+            elif disposition == "accept" and is_blank(row.get("rationale")):
+                report.add(
+                    "DSX-COH-041",
+                    "HIGH",
+                    f"decision.subgroup_harm[] accepts harm to {name!r} without a "
+                    "rationale",
+                    detail=(
+                        f"Segment {name!r} opposes the aggregate at {effect:+.6g} and "
+                        "its row disposition is 'accept', but the rationale is blank. An "
+                        "accept is the one disposition that proceeds despite the harm; it "
+                        "needs a stated justification a reviewer can challenge."
+                    ),
+                    remedy=(
+                        "Write decision.subgroup_harm[].rationale for this accept row, "
+                        "or change the disposition to exclude/mitigate."
+                    ),
+                    where="spec.decision.subgroup_harm",
+                )
 
 
 def _check_assumptions(

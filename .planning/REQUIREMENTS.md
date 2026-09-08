@@ -113,21 +113,21 @@ measure first; a case the gate already catches closes the phase with no mint).
 
 ## Phase 29 — Evidence case: subgroup harm under a prescriptive recommendation (§6.5 item 9)
 
-- [ ] REQ-P29-01 A known-bad corpus case: a prescriptive recommendation with a
+- [x] REQ-P29-01 A known-bad corpus case: a prescriptive recommendation with a
   positive overall effect and declared `results.segments[]` in which one minority
   segment's effect opposes the recommendation's direction, with n above a declared
   floor and no disposition declared — fewer than half the segments oppose, so
   `DSX-MET-030`/`031` structurally do not fire. Measured live before any check is
   designed.
 
-- [ ] REQ-P29-02 A primary source with operationalisable criteria confirmed at its
+- [x] REQ-P29-02 A primary source with operationalisable criteria confirmed at its
   locator by the human read (candidate: Gail & Simon 1985, Biometrics 41(2), the
   qualitative-interaction definition — enforced as a declaration, never computed),
   and one documented public case where an average benefit masked subgroup harm,
   found by phase research with a primary source; if either cannot be found, that is
   recorded and the item stays on the backlog with the half-met condition stated.
 
-- [ ] REQ-P29-03 If REQ-P29-01 is a live miss and REQ-P29-02's source is confirmed:
+- [x] REQ-P29-03 If REQ-P29-01 is a live miss and REQ-P29-02's source is confirmed:
   an optional `decision.subgroup_harm[]` declaration (`{segment, effect, ci, n,
   disposition: accept | exclude | mitigate, rationale}`) required for a prescriptive
   question whenever a declared segment opposes the recommendation direction at the
@@ -178,9 +178,9 @@ measure first; a case the gate already catches closes the phase with no mint).
 | REQ-P28-01 | Phase 28 | Met |
 | REQ-P28-02 | Phase 28 | Met |
 | REQ-P28-03 | Phase 28 | Met |
-| REQ-P29-01 | Phase 29 | Pending |
-| REQ-P29-02 | Phase 29 | Pending |
-| REQ-P29-03 | Phase 29 | Pending |
+| REQ-P29-01 | Phase 29 | Met |
+| REQ-P29-02 | Phase 29 | Met |
+| REQ-P29-03 | Phase 29 | Met |
 | REQ-P30-01 | Phase 30 | Pending |
 | REQ-P30-02 | Phase 30 | Pending |
 | REQ-P30-03 | Phase 30 | Pending |
