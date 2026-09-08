@@ -306,6 +306,10 @@ claims:
     # base_n: null                 # absolute base when text has a relative %
     # from_value: null             # optional pair for "up X% from A to B"
     # to_value: null
+    # supported_by: null           # metric of the results.tests[] entry this claim rests on
+    #                              # (string; list tolerated). If set, every claim magnitude
+    #                              # must trace to that cited test's numbers (DSX-CLM-034).
+    # rounding: 2                  # significant figures for the supported_by trace (default 2)
 
 # ── Assumptions and limitations ──────────────────────────────────────────────
 assumptions:

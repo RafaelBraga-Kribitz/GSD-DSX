@@ -207,6 +207,15 @@ _D05_ALLOWLIST_CODES = frozenset(
         # helper this phase wrote (cites Kaufman et al. 2012, secondary-corroborated
         # / primary PDF paywalled); same exact-code precedent as DSX-VIZ-071 above.
         "DSX-ML-034",
+        # Phase 28 (REQ-P28-02) adds DSX-CLM-034 here by EXACT CODE, not via a
+        # "DSX-CLM-" prefix: DSX-CLM-* is a pre-existing family whose ~15 legacy
+        # codes carry no Citation:/Structural criterion: docstring line and no
+        # `# D-05:` marker, so a prefix add would fail the build red on all of them.
+        # DSX-CLM-034 is the FIRST DSX-CLM code to carry a D-05 citation; it lives in
+        # the brand-new `_check_supported_by_traceability` helper this phase wrote
+        # (cites Wilkinson & TFSI 1999 as the motivating principle only); same
+        # exact-code precedent as DSX-ML-034 above.
+        "DSX-CLM-034",
     }
 )
 

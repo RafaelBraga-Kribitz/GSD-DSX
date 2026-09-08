@@ -187,3 +187,40 @@ promotion. `dsx/checks/dq.py` is untouched.
 
 The measurement was run only from fresh `tempfile.TemporaryDirectory()` roots; the repo
 root has no new `DECISIONS.jsonl` (`git status --porcelain DECISIONS.jsonl` prints nothing).
+
+## Task 4 Branch B — LIVE MISS mint landed; verification-only close (S4-3)
+
+The LIVE MISS branch of Plan 28-01 (Tasks 2 RED / 3 GREEN) is complete and verified.
+`brief.md` is intentionally **unchanged** by this plan — the §6.5 item 8 rewrite belongs
+to Plan 28-02 (fixture promotion), not here.
+
+Landed and confirmed on the real interpreter
+(`C:/Users/Benutzer1/AppData/Local/Programs/Python/Python312/python.exe`):
+
+- `_check_supported_by_traceability` + `DSX-CLM-034` (severity **HIGH**) authored in
+  `dsx/checks/claims.py` as a **separate** function (NOT inside `_check_numeric_overlap`),
+  with an honest Wilkinson & TFSI (1999) D-05 docstring (motivating principle only;
+  stray-number bounded catch; sig-figs tie-break contract never looser than DSX-CLM-033's
+  window). `report.add("DSX-CLM-034", "HIGH", …)` at `dsx/checks/claims.py:557`.
+- Two additive commented-optional keys (`supported_by`, `rounding`) in
+  `templates/ANALYSIS-SPEC.yaml`; no `dsx/spec.py` change (unknown claim keys are tolerated).
+- `DSX-CLM-034` added to `_D05_ALLOWLIST_CODES` by **exact code** (never a `DSX-CLM-` prefix).
+- Catalogue regenerated via `--write` (byte-deterministic): `references/finding-codes.md`
+  **Total: 278 codes.** with exactly one `DSX-CLM-034` HIGH row.
+- Unit test `tests/test_claims_supported_by.py` (7 methods, `# D-05: DSX-CLM-034` marker,
+  Wilkinson-as-principle honesty comment): **GREEN**.
+- `python scripts/gen-finding-catalogue.py --check`: exit 0 (catalogue current + D-05 gate
+  green at 278).
+- Count pins moved 277 → 278 in lockstep: `tests/test_finding_catalogue_invariant.py`
+  (`_EXPECTED_TOTAL` + `_MINTED_CODES` set), `tests/test_phase20_zero_mint_close.py`, and a
+  third lockstep pin surfaced by the full suite, `tests/test_p19_categorical_rows.py`
+  (`_EXPECTED_TOTAL`) — see the plan SUMMARY deviation note.
+- Full suite `python -m unittest discover -s tests -q`: **OK** (1606 tests).
+- `dsx/checks/dq.py`: byte-frozen (`git diff --stat -- dsx/checks/dq.py` empty). No
+  single-writer tracking file (`REQUIREMENTS.md`/`STATE.md`/`ROADMAP.md`) was edited.
+
+**The phase now proceeds to Plan 28-02** for fixture promotion into `examples/known-bad/`
+(corpus slug `magnitude-without-computed-effect`), the harness wiring incl. the
+`_PER_FIXTURE_INCIDENTAL_CODES` entry for the swap-invariant `DSX-COH-001` incidental
+(D-28-06), the spec-count move 43 → 44, and the brief §6.5 item 8 rewrite with the
+measured LIVE MISS evidence and `DSX-CLM-034`.

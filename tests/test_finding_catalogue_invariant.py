@@ -32,16 +32,18 @@ _SNAPSHOT_PATH = ROOT / "tests" / "fixtures" / "finding-codes-phase12.md"
 # The pinned count. Phase 16 mints DSX-REP-060/061, Phase 15 mints
 # DSX-EXP-070/DSX-MET-021, Phase 18 (Plan 18-A) mints DSX-STA-050/051/060/061/062,
 # Phase 19 (Plan 19-C) mints DSX-STA-070/080/081/090/100/110/111/120/121/122,
-# Phase 22 (Plan 22-02) mints DSX-VIZ-071 (the uncertainty-vocabulary gate), and
-# Phase 27 (Plan 27-01) mints DSX-ML-034 (the feature-provenance gate) (D-08
-# additive rebaselines), so the live catalogue is 277 — up from the 256 the byte-frozen
-# Phase-12 snapshot enumerates. DSX-VIZ-072 is deliberately NOT minted (the ten §5.6
-# marks are paradigm-symmetric, so there is no mark→paradigm partition to gate).
-_EXPECTED_TOTAL = 277
+# Phase 22 (Plan 22-02) mints DSX-VIZ-071 (the uncertainty-vocabulary gate),
+# Phase 27 (Plan 27-01) mints DSX-ML-034 (the feature-provenance gate), and
+# Phase 28 (Plan 28-01) mints DSX-CLM-034 (the supported_by claim→cited-test
+# traceability gate) (D-08 additive rebaselines), so the live catalogue is 278 — up
+# from the 256 the byte-frozen Phase-12 snapshot enumerates. DSX-VIZ-072 is
+# deliberately NOT minted (the ten §5.6 marks are paradigm-symmetric, so there is no
+# mark→paradigm partition to gate).
+_EXPECTED_TOTAL = 278
 
 # The byte-frozen Phase-12 snapshot's own size, and the explicit additive delta over it.
 # Kept SEPARATE from _EXPECTED_TOTAL on purpose: tests/fixtures/finding-codes-phase12.md
-# is never mutated (D-08) and stays at 256, while the live catalogue is 275 — conflating
+# is never mutated (D-08) and stays at 256, while the live catalogue is 278 — conflating
 # the two would break the snapshot-length leg after the bump (D-08 trap #3).
 _SNAPSHOT_TOTAL = 256
 _MINTED_CODES = {
@@ -51,6 +53,7 @@ _MINTED_CODES = {
     "DSX-STA-110", "DSX-STA-111", "DSX-STA-120", "DSX-STA-121", "DSX-STA-122",
     "DSX-VIZ-071",
     "DSX-ML-034",
+    "DSX-CLM-034",
 }
 
 # The declared-total line — matched after whitespace-collapse, so it is agnostic to

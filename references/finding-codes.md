@@ -13,7 +13,7 @@ a suppression or a reference in a review stays valid across versions.
 **Gate thresholds.** `plan` and `execute` block at CRITICAL; `verify` and
 `ship` block at HIGH.
 
-**Total: 277 codes.**
+**Total: 278 codes.**
 
 ## Contract structure — `DSX-SPEC-*`
 
@@ -233,6 +233,7 @@ Causal language, evidence, generalisation, precision.
 | `DSX-CLM-031` | HIGH | Evidence pointer does not resolve to an existing file |
 | `DSX-CLM-032` | HIGH | Evidence anchor #<…> not found in <…> |
 | `DSX-CLM-033` | CRITICAL | Claim numbers do not overlap results.tests |
+| `DSX-CLM-034` | HIGH | Claim magnitude does not trace to its cited test |
 | `DSX-CLM-040` | HIGH | Predictive claim with no model block |
 | `DSX-CLM-041` | HIGH | Predictive claim with no out-of-sample score reported |
 | `DSX-CLM-050` | MEDIUM | Claim generalises broadly (<…>) without naming its population |
