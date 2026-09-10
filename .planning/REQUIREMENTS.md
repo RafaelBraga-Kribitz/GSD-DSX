@@ -137,18 +137,18 @@ measure first; a case the gate already catches closes the phase with no mint).
 
 ## Phase 30 — Calibration re-baseline (terminal)
 
-- [ ] REQ-P30-01 Catch rate, FPR and every stratum re-measured live with the three
+- [x] REQ-P30-01 Catch rate, FPR and every stratum re-measured live with the three
   evidence cases classified — PRESENT with their new code, or ABSENT with an
   attribution sidecar promoting the item — the miss-partition floor still met;
   brief §6.5 rows 7–9 and the deferred table in
   `docs/literature/the-ai-data-scientist.md` updated with each item's outcome.
 
-- [ ] REQ-P30-02 Milestone audit prerequisites: catalogue current
+- [x] REQ-P30-02 Milestone audit prerequisites: catalogue current
   (`gen-finding-catalogue.py --check` exit 0), all frozen snapshots unmutated,
   doc/code agreement tests green, `node install.mjs --check` passes,
   `scripts/check.sh` green, full suite green on the real interpreter.
 
-- [ ] REQ-P30-03 Zero new codes in this phase (set-identity diff against the
+- [x] REQ-P30-03 Zero new codes in this phase (set-identity diff against the
   post-Phase-29 catalogue).
 
 ## Out of Scope
@@ -181,9 +181,9 @@ measure first; a case the gate already catches closes the phase with no mint).
 | REQ-P29-01 | Phase 29 | Met |
 | REQ-P29-02 | Phase 29 | Met |
 | REQ-P29-03 | Phase 29 | Met |
-| REQ-P30-01 | Phase 30 | Pending |
-| REQ-P30-02 | Phase 30 | Pending |
-| REQ-P30-03 | Phase 30 | Pending |
+| REQ-P30-01 | Phase 30 | Met — verified S6-4 (30-VERIFICATION.md, passed) |
+| REQ-P30-02 | Phase 30 | Met — verified S6-4 (30-VERIFICATION.md, passed) |
+| REQ-P30-03 | Phase 30 | Met — verified S6-4 (30-VERIFICATION.md, passed) |
 
 **Coverage:**
 - v2.6 requirements: 18 total
@@ -192,4 +192,4 @@ measure first; a case the gate already catches closes the phase with no mint).
 
 ---
 *Requirements defined: 2026-09-06*
-*Last updated: 2026-09-06 at milestone open*
+*Last updated: 2026-09-10 — REQ-P30-01/02/03 Met (S6-4 verification passed)*
