@@ -444,6 +444,31 @@ declaration-only gate structurally cannot catch. Those misses are what items 1/3
 would eventually address; none is promotable on today's measured evidence (item 9,
 subgroup-harm, was promoted in Phase 29 as a PRESENT/DETECTED target, not an ABSENT miss).
 
+### Phase 30 re-evaluation of the gated backlog (terminal re-baseline, 2026-09-10)
+
+Phase 30 re-measured the calibration over the grown corpus after Phases 27–29 wired the
+three v2.6 evidence cases, and re-read the §6.5 item-7/8/9 rows against their measured
+disposition. **Zero codes minted** (set-identity 279 → 279): the measurement routes
+entirely to existing codes. The durable record is
+`.planning/phases/30-calibration-rebaseline/30-READOUT.md`, reproduced by the unittest
+`test_stratified_catch_rate_and_fpr_report`.
+
+The calibration backdrop the terminal state reads: the measured headline is the **pair
+(miss-rate 1.0, FPR 0.0)** (D-10 — never catch-rate alone) — **0/15** false positives
+over the fifteen-spec good-control corpus (a bounded observation, one-sided 95% upper
+confidence bound ≈ 0.181, **not** a point estimate — D-04), a per-family friction column
+reported raw and net, and a **five-case** ABSENT/miss partition (floored at 3, now met
+comfortably at 5 ≥ 3, up from exactly 3 in Phase 12). Per F3 the 5/5 miss-rate is a
+**construction invariant** of a curated partition, not a sampled propensity, so no
+confidence interval is quoted on it; its evidential content is the five independent
+per-case `fires_at_any_severity: false` confirmations. The partition now names two new
+v2.6 misses — `DSX-ML-034` on `feature-origin-only-leak` (item 7) and `DSX-CLM-034` on
+`magnitude-without-computed-effect` (item 8), each measured silent at every severity —
+and one new v2.6 target, `DSX-COH-041` on `subgroup-harm-without-disposition` (item 9),
+which fires CRITICAL at plan/verify/ship (the corpus's first PRESENT/DETECTED
+`kind: target`). Items 7 and 8 stay attribution-only misses; item 9 is a real closed
+catch — the load-bearing inverse of the two misses.
+
 ### Removed / permanently out of scope (D-14)
 
 Phase 12's systematic re-evaluation (REQ-P12-05) recognised one item's entry condition
