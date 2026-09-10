@@ -207,6 +207,52 @@ being abused — not runtime input handling. `dsx/checks/dq.py` stays byte-froze
 An interactive session records both verdicts in the proper artifacts (SECURITY.md
 Approval line; a UAT note) and checks this item off. **Non-blocking until S7-2.**
 
+### HQ-45 — Phase 29 end-of-phase sign-off: security + UAT (filed 2026-09-08 by S5-5; non-blocking until S7-2)
+
+**What this is.** Phase 29 (Evidence case — subgroup harm under a prescriptive
+recommendation) passed both verify:post gates technically; two items need the
+operator's sign-off at close-out (S7-2), neither blocking any earlier work. Phase 29
+mints one code (`DSX-COH-041`, subgroup-harm disposition obligation) under a
+**human-confirmed** D-05 citation (Gail & Simon 1985, read at its locator in full —
+HQ-40 row 40e) and promotes the corpus's **FIRST `kind: target`** fixture — the
+load-bearing inverse of the Phase-27/28 permanent misses (D-29-00): the newly-minted
+code is PRESENT and fires CRITICAL at plan/verify/ship. The attack surface is D-05
+over-claiming (laundering Gail & Simon's motivating definition into an asserted
+likelihood-ratio mechanic), catalogue/count tampering, a frozen case widened to
+manufacture a miss, a fixture silently gaining a `decision.subgroup_harm[]` row
+(flipping the honest TARGET into a silenced case), and the new `kind: target`
+vocabulary mis-routing a code — not runtime input handling. `dsx/checks/dq.py` and
+`dsx/cli.py` stay byte-frozen.
+
+1. **Security sign-off (SECURITY.md approval line — brief §4.4).** The loop re-gated
+   all 15 threats at their code locators on real Python 3.12.10 → **SECURED,
+   `threats_open: 0`, 15/15 CLOSED** (`29-SECURITY.md`, `status: verified` technical):
+   the D-05 docstring + `# D-05:` marker cite Gail & Simon (1985) as the MOTIVATING
+   DEFINITION only and disclaim the likelihood-ratio mechanic (T-29-02 HIGH); the
+   fixture declares `subgroup_harm_floor: 500` and deliberately omits the
+   `subgroup_harm[]` disposition row, so the missing-row CRITICAL fires — an honest
+   TARGET (T-29-08 HIGH); catalogue 278→279 with the DSX-COH-041 row (T-29-03); the
+   mint lives in a brand-new function `_check_subgroup_harm_disposition` (T-29-04 HIGH);
+   DSX-COH-041 out of `_SECTION_65_BACKLOG_CODES`, sidecar id a frozen `_SECTION_65_ITEM_IDS`
+   member (T-29-09); the `kind` vocabulary is `("miss","caught","target")` and
+   DSX-COH-041 is wired in `_TARGET_DEFECT_CODES` at plan/verify/ship (T-29-10 HIGH); the
+   golden ship set is re-measured live (T-29-12); `_ABSENT_PARTITION_FLOOR` stays 3
+   (T-29-14); `dq.py`+`cli.py` byte-frozen (T-29-06/07); spec count 45 (T-29-11); full
+   suite 1627 OK; `node install.mjs --check` self-test passed (T-29-13). The Approval
+   line is written but **unsigned** — the loop verifies mitigations, it does not sign.
+   **To answer:** read `29-SECURITY.md`; confirm the register + the D-05 honesty threat
+   T-29-02 and the TARGET-integrity threat T-29-08; approve.
+2. **UAT round.** `29-VALIDATION.md` is `nyquist_compliant: true`, 0 gaps, all 3
+   requirements COVERED by named tests (phase modules `tests.test_subgroup_harm_disposition`
+   + `tests.test_known_bad_corpus` = 72/72 green on real 3.12.10; fixture `dsx validate`
+   PASS CRITICAL=0; full suite 1627 OK). Phase 29 has no user-facing runtime behaviour
+   beyond the declaration-only check and the corpus TARGET fixture, so its acceptance
+   test IS the automated invariant set. **To answer:** confirm UAT accepted (or name a
+   manual check to run).
+
+An interactive session records both verdicts in the proper artifacts (SECURITY.md
+Approval line; a UAT note) and checks this item off. **Non-blocking until S7-2.**
+
 ## Will be added by the loop when reached
 
 - ~~S0-3: the v2.6 D-05 citation evidence pack~~ — **FILED as HQ-40 (2026-09-06)**,
@@ -214,7 +260,8 @@ Approval line; a UAT note) and checks this item off. **Non-blocking until S7-2.*
   rows block S3-1, S4-1 and S5-1 respectively.
 - Phase 25/26/27/28/29/30 end-of-phase security sign-off + UAT rounds (batched per
   phase; non-blocking until S7-2). **Phase 25 filed as HQ-41; Phase 26 filed as HQ-42;
-  Phase 27 filed as HQ-43 (all 2026-09-07); Phase 28 filed as HQ-44 (2026-09-08).**
+  Phase 27 filed as HQ-43 (all 2026-09-07); Phase 28 filed as HQ-44; Phase 29 filed as
+  HQ-45 (both 2026-09-08).**
 - D-06 numbering veto windows for any code Phases 27–29 mint, and for any number
   reserved in `_SECTION_65_BACKLOG_CODES` for a miss sidecar (from a freshly
   re-measured live catalogue count; silence = accept).
