@@ -197,7 +197,7 @@ class ParMonitoringSimulationTests(unittest.TestCase):
         established for the narrower D-03a boundary, applied here to a
         second, wider boundary: not just dsx/frame/, but the whole of
         dsx/. Nothing enforced this before this test existed."""
-        violations: "list[str]" = []
+        violations: list[str] = []
         dsx_dir = ROOT / "dsx"
         files = sorted(dsx_dir.rglob("*.py"))
         self.assertTrue(files, "dsx/ has no *.py files to scan")

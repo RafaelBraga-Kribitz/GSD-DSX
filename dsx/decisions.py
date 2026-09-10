@@ -74,15 +74,15 @@ class DecisionRecord:
     invocation_id: str
     layer: str
     choice: str
-    inputs: "list[str]" = field(default_factory=list)
+    inputs: list[str] = field(default_factory=list)
     rule: str = ""
     citation: str = ""
     counterfactual: str = ""
-    alternatives_rejected: "list[str]" = field(default_factory=list)
-    confidence: "str | None" = None
+    alternatives_rejected: list[str] = field(default_factory=list)
+    confidence: str | None = None
     escalate: bool = False
 
-    def to_dict(self) -> "dict[str, Any]":
+    def to_dict(self) -> dict[str, Any]:
         out = asdict(self)
         out["record_type"] = "decision"
         return out
@@ -118,9 +118,9 @@ class InvocationHeader:
     gate_point: str
     dsx_version: str
     frame_digest: str
-    spec_id: "str | None" = None
+    spec_id: str | None = None
 
-    def to_dict(self) -> "dict[str, Any]":
+    def to_dict(self) -> dict[str, Any]:
         out = asdict(self)
         out["record_type"] = "invocation"
         return out
@@ -156,13 +156,13 @@ class AmendmentRecord:
     new_frame_digest: str
     reason: str
 
-    def to_dict(self) -> "dict[str, Any]":
+    def to_dict(self) -> dict[str, Any]:
         out = asdict(self)
         out["record_type"] = "amendment"
         return out
 
 
-def append(path: "str | Path", record: "DecisionRecord | InvocationHeader") -> None:
+def append(path: str | Path, record: DecisionRecord | InvocationHeader) -> None:
     """Append one record. flush()+fsync() so a completed line survives a crash;
     the reader (read_all) skips an unparseable tail line rather than failing
     the file."""
@@ -179,7 +179,7 @@ def append(path: "str | Path", record: "DecisionRecord | InvocationHeader") -> N
         os.fsync(fh.fileno())
 
 
-def read_all(path: "str | Path") -> "list[dict]":
+def read_all(path: str | Path) -> list[dict]:
     """Return every parseable record. Never raises for any on-disk state of
     ``path`` — it degrades rather than fails, and its callers (``cmd_explain``,
     the gate-path ``next_invocation_id``) depend on that unconditionally:
@@ -203,9 +203,9 @@ def read_all(path: "str | Path") -> "list[dict]":
         text = p.read_text(encoding="utf-8", errors="replace")
     except OSError:
         return []
-    records: "list[dict]" = []
-    for line in text.splitlines():
-        line = line.strip()
+    records: list[dict] = []
+    for raw_line in text.splitlines():
+        line = raw_line.strip()
         if not line:
             continue
         try:
@@ -215,7 +215,7 @@ def read_all(path: "str | Path") -> "list[dict]":
     return records
 
 
-def next_invocation_id(path: "str | Path") -> str:
+def next_invocation_id(path: str | Path) -> str:
     """Deterministic, file-derived invocation identifier — never uuid, never a
     clock read, so identical input produces identical output. Named
     ``invocation_id``, not ``run_id`` (D-15): ``run_id`` is
@@ -238,7 +238,7 @@ def next_invocation_id(path: "str | Path") -> str:
     return f"INV-{n:04d}"
 
 
-def frame_digest(spec: "dict[str, Any]") -> str:
+def frame_digest(spec: dict[str, Any]) -> str:
     """Stable digest over the ``validity_frame:``/``inference:`` blocks only.
     Key-order invariant (``sort_keys=True``); unchanged by edits elsewhere in
     the spec. Change-detection, not a security control."""
@@ -250,14 +250,14 @@ def frame_digest(spec: "dict[str, Any]") -> str:
     return hashlib.sha256(payload).hexdigest()
 
 
-def decisions_path(root: "str | Path") -> Path:
+def decisions_path(root: str | Path) -> Path:
     """``DECISIONS.jsonl`` beside the resolved spec (D-14). Does not
     re-implement ``find_spec()``'s search: the caller already has the resolved
     root (``args.phase_dir or str(path.parent)``)."""
     return Path(root) / "DECISIONS.jsonl"
 
 
-def record_decision(report: Any, decision_record: "DecisionRecord") -> None:
+def record_decision(report: Any, decision_record: DecisionRecord) -> None:
     """Append one decision record onto ``report.context["decisions"]``.
 
     Phase 11.1 (REQ-P11.1-01): the shared write path for ``dsx/checks/*.py``
@@ -281,13 +281,13 @@ def record_decision(report: Any, decision_record: "DecisionRecord") -> None:
     report.context.setdefault("decisions", []).append(decision_record.to_dict())
 
 
-def collect_from_report(report: Any) -> "list[dict]":
+def collect_from_report(report: Any) -> list[dict]:
     """Flatten every sub-report's ``decisions`` list out of a merged
     ``Report.context`` (``merge()`` nests each sub-report's context under its
     own check name), in iteration order. Producers append plain dicts onto
     ``report.context.setdefault("decisions", [])`` before merge; this keeps
     checks pure and puts the only file write at the CLI layer."""
-    out: "list[dict]" = []
+    out: list[dict] = []
     for value in report.context.values():
         if isinstance(value, dict):
             decisions = value.get("decisions")

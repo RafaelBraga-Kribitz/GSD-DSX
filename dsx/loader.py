@@ -19,7 +19,7 @@ from typing import Any
 
 try:  # pragma: no cover - environment dependent
     import yaml as _pyyaml
-except Exception:  # pragma: no cover
+except ImportError:  # pragma: no cover
     _pyyaml = None
 
 
@@ -33,7 +33,7 @@ _NULL = {"", "null", "~"}  # matches PyYAML/YAML 1.1 null semantics; "none" is a
 _NUM_RE = re.compile(r"^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$")
 
 
-def load(path: "str | Path") -> dict[str, Any]:
+def load(path: str | Path) -> dict[str, Any]:
     """Load a spec file. Returns a mapping; raises SpecParseError otherwise."""
     p = Path(path)
     if not p.exists():
@@ -72,7 +72,7 @@ def loads(text: str, suffix: str = ".yaml", origin: str = "<string>") -> Any:
 
 
 class _Line:
-    __slots__ = ("indent", "content", "number")
+    __slots__ = ("content", "indent", "number")
 
     def __init__(self, indent: int, content: str, number: int) -> None:
         self.indent = indent
@@ -244,7 +244,7 @@ def _split_key(content: str) -> tuple[str, bool, str]:
         if ch in ("'", '"'):
             quote = ch
             continue
-        if ch == ":" and (idx + 1 == len(content) or content[idx + 1] in " "):
+        if ch == ":" and (idx + 1 == len(content) or content[idx + 1] == " "):
             return _unquote(content[:idx].strip()), True, content[idx + 1 :]
     return content, False, ""
 

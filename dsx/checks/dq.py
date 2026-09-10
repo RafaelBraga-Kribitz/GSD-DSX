@@ -12,10 +12,10 @@ from pathlib import Path
 
 from ..findings import Report
 from ..loader import SpecParseError, load
-from ..spec import as_number, is_blank, items, normalize, section
+from ..spec import as_number, is_blank, items, normalize
 
 
-def check(spec: dict, phase_dir: "str | None" = None) -> Report:
+def check(spec: dict, phase_dir: str | None = None) -> Report:
     report = Report(check="dq")
     datasets = items(spec, "data")
     if not datasets:
@@ -87,7 +87,7 @@ def check(spec: dict, phase_dir: "str | None" = None) -> Report:
     return report
 
 
-def _resolve_roots(phase_dir: "str | None") -> list[Path]:
+def _resolve_roots(phase_dir: str | None) -> list[Path]:
     roots: list[Path] = []
     if phase_dir:
         roots.append(Path(phase_dir))
@@ -151,7 +151,10 @@ def _check_row_count(
                 "DSX-DQ-010",
                 "CRITICAL",
                 "Row count fails the declared assertion",
-                detail=f"Row count {observed:g} outside asserted band {band}. Profile row_count={observed:g}; assertion equals={equals:g}, tol={tol}.",
+                detail=(
+                    f"Row count {observed:g} outside asserted band {band}. "
+                    f"Profile row_count={observed:g}; assertion equals={equals:g}, tol={tol}."
+                ),
                 remedy="Refresh the extract, update the assertion, or fix the upstream filter.",
                 where=f"{where}.assertions.row_count",
                 observed=observed,
@@ -240,7 +243,10 @@ def _check_null_rates(
                 "DSX-DQ-030",
                 "HIGH",
                 "Column null rate exceeds the declared maximum",
-                detail=f"Null rate for {col!r} is {observed:.4f} > allowed {limit:.4f}. Profile columns.{col}.null_rate={observed}.",
+                detail=(
+                    f"Null rate for {col!r} is {observed:.4f} > allowed {limit:.4f}. "
+                    f"Profile columns.{col}.null_rate={observed}."
+                ),
                 remedy="Impute with an explicit rule, drop the column, or raise the cap with a gap note.",
                 where=f"{where}.assertions.max_null_rate.{col}",
             )

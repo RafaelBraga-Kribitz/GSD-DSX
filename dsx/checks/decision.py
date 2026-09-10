@@ -12,7 +12,7 @@ from ..findings import Report
 from ..spec import as_number, get, is_blank, items, normalize, section
 
 
-def check(spec: dict, *, gate_point: "str | None" = None) -> Report:
+def check(spec: dict, *, gate_point: str | None = None) -> Report:
     report = Report(check="decision")
     decision = section(spec, "decision")
     replay = decision.get("replay") if decision else None
@@ -138,19 +138,16 @@ def _evaluate_replay(
 
     reasons: list[str] = []
     ci_lower_min = as_number(replay.get("ci_lower_min"))
-    if ci_lower_min is not None:
-        if lo is None or lo <= ci_lower_min:
-            reasons.append(f"ci[0]={lo} not > ci_lower_min={ci_lower_min}")
+    if ci_lower_min is not None and (lo is None or lo <= ci_lower_min):
+        reasons.append(f"ci[0]={lo} not > ci_lower_min={ci_lower_min}")
 
     ci_upper_max = as_number(replay.get("ci_upper_max"))
-    if ci_upper_max is not None:
-        if hi is None or hi >= ci_upper_max:
-            reasons.append(f"ci[1]={hi} not < ci_upper_max={ci_upper_max}")
+    if ci_upper_max is not None and (hi is None or hi >= ci_upper_max):
+        reasons.append(f"ci[1]={hi} not < ci_upper_max={ci_upper_max}")
 
     effect_min = as_number(replay.get("effect_min"))
-    if effect_min is not None:
-        if effect is None or abs(effect) < effect_min:
-            reasons.append(f"|effect|={effect} < effect_min={effect_min}")
+    if effect_min is not None and (effect is None or abs(effect) < effect_min):
+        reasons.append(f"|effect|={effect} < effect_min={effect_min}")
 
     # If no numeric thresholds declared, treat as incomplete fail.
     if (

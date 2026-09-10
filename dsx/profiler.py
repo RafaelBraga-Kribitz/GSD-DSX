@@ -12,9 +12,10 @@ import math
 import re
 import statistics
 from collections import Counter
+from collections.abc import Iterable
 from datetime import date
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
 from .findings import CheckError
 
@@ -80,7 +81,7 @@ def _parse_date(value: str) -> date | None:
         return None
 
 
-def _extract_hour(value: str) -> "int | None":
+def _extract_hour(value: str) -> int | None:
     """Return the hour of a timestamp token, or None when no time token is present.
 
     Additive companion to `_parse_date` (25-RESEARCH.md Pitfall 2): it re-matches
@@ -95,7 +96,7 @@ def _extract_hour(value: str) -> "int | None":
     return int(match.group(4))
 
 
-def _numeric_block(values: "list[float]") -> dict[str, Any]:
+def _numeric_block(values: list[float]) -> dict[str, Any]:
     """D-02 numeric column block: min/q1/median/q3/max/mean/sd/n_zero/n_negative/n.
 
     Quantiles use statistics.quantiles(..., n=4, method="inclusive") (Hyndman & Fan
@@ -127,7 +128,7 @@ def _numeric_block(values: "list[float]") -> dict[str, Any]:
     }
 
 
-def _categorical_block(counts: "Counter[str]") -> dict[str, Any]:
+def _categorical_block(counts: Counter[str]) -> dict[str, Any]:
     """D-02 categorical column block: share_top1/share_top10/rare_share/n_singleton.
 
     Tie-break is frozen: count desc, then level string asc — computed via an explicit
@@ -152,13 +153,13 @@ def _categorical_block(counts: "Counter[str]") -> dict[str, Any]:
 
 
 def profile_csv(
-    path: "str | Path",
+    path: str | Path,
     *,
-    primary_key: "list[str] | None" = None,
-    time_column: "str | None" = None,
-    sentinels: "list[Any] | None" = None,
-    unit: "str | None" = None,
-    target: "str | None" = None,
+    primary_key: list[str] | None = None,
+    time_column: str | None = None,
+    sentinels: list[Any] | None = None,
+    unit: str | None = None,
+    target: str | None = None,
 ) -> dict[str, Any]:
     """Compute a DATA-PROFILE mapping from a CSV file."""
     # An explicit empty flag value (`--unit ""` / `--target ""`) means "not declared":
@@ -191,7 +192,7 @@ def profile_csv(
             raise CheckError(f"{csv_path}: CSV has no header row")
 
         columns = list(reader.fieldnames)
-        null_counts: dict[str, int] = {c: 0 for c in columns}
+        null_counts: dict[str, int] = dict.fromkeys(columns, 0)
         uniques: dict[str, set[str]] = {c: set() for c in columns}
         samples: dict[str, list[str]] = {c: [] for c in columns}
         numeric_values: dict[str, list[float]] = {c: [] for c in columns}
@@ -293,7 +294,6 @@ def profile_csv(
 
     col_stats: dict[str, Any] = {}
     for col in columns:
-        n_non_null = row_count - null_counts[col]
         dtype = _infer_dtype(samples[col])
         col_stats[col] = {
             "null_rate": round(null_counts[col] / row_count, 6) if row_count else 0.0,
@@ -345,8 +345,8 @@ def profile_csv(
         else:
             time_block["rows_per_day"] = {"min": None, "median": None, "max": None}
 
-        first_period_ratio: "float | None" = None
-        last_period_ratio: "float | None" = None
+        first_period_ratio: float | None = None
+        last_period_ratio: float | None = None
         if len(iso_week_counts) >= 5:
             # Populated weeks sorted by (iso_year, iso_week); order-independent.
             ordered_weeks = [c for _, c in sorted(iso_week_counts.items(), key=lambda kv: kv[0])]
@@ -386,15 +386,15 @@ def profile_csv(
         per_unit = sorted(unit_counts.values())
         if len(per_unit) >= 2:
             cuts = statistics.quantiles(per_unit, n=100, method="inclusive")
-            p50: "float | None" = cuts[49]
-            p95: "float | None" = cuts[94]
+            p50: float | None = cuts[49]
+            p95: float | None = cuts[94]
         else:
             p50 = None
             p95 = None
         max_unit = max(per_unit) if per_unit else None
         if per_unit and row_count:
             ranked = sorted(unit_counts.items(), key=lambda kv: (-kv[1], kv[0]))
-            largest_unit_share: "float | None" = ranked[0][1] / row_count
+            largest_unit_share: float | None = ranked[0][1] / row_count
         else:
             largest_unit_share = None
         profile["unit"] = {
@@ -416,7 +416,7 @@ def profile_csv(
                 f"offending value(s): {', '.join(offending)}"
             )
         binary_all = [int(v) for v in target_all]
-        overall: "float | None" = statistics.mean(binary_all) if binary_all else None
+        overall: float | None = statistics.mean(binary_all) if binary_all else None
         # Weekly base-rate table, ordered by (iso_year, iso_week) — order-independent.
         weekly: list[dict[str, Any]] = []
         for wk in sorted(target_week_raw.keys()):
@@ -438,7 +438,7 @@ def profile_csv(
         # population. `verdict` is a coarse producer heuristic, never a gate input.
         if len(populated) >= 2 and overall is not None:
             lo, hi = 0.8 * overall, 1.2 * overall
-            verdict: "str | None" = (
+            verdict: str | None = (
                 "drifting" if any(r < lo or r > hi for r in populated) else "stable"
             )
         else:
@@ -509,7 +509,7 @@ def _scalar(value: Any) -> str:
         if math.isnan(value) or math.isinf(value):
             return "null"
         text = f"{value:.6f}".rstrip("0").rstrip(".")
-        return text if text else "0"
+        return text or "0"
     text = str(value)
     if text == "" or any(c in text for c in ":#{}[]&*!|>%@`'\",\n") or text.strip() != text:
         escaped = text.replace("\\", "\\\\").replace('"', '\\"')
@@ -517,7 +517,7 @@ def _scalar(value: Any) -> str:
     return text
 
 
-def write_profile(profile: dict[str, Any], out_path: "str | Path") -> Path:
+def write_profile(profile: dict[str, Any], out_path: str | Path) -> Path:
     target = Path(out_path)
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(dump_profile_yaml(profile), encoding="utf-8")

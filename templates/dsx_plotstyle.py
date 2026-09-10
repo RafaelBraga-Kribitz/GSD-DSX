@@ -142,7 +142,7 @@ def direct_label(
 
 def save_deterministic(
     fig: Figure,
-    path: "str | Path",
+    path: str | Path,
     *,
     metadata: dict | None = None,
     **savefig_kwargs,

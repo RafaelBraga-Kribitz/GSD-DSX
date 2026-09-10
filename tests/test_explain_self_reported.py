@@ -36,7 +36,7 @@ from dsx import cli
 class TestExplainSelfReportedSection(unittest.TestCase):
     ROOT = Path(__file__).resolve().parent.parent
 
-    def _run(self, argv: "list[str]") -> "tuple[int, str, str]":
+    def _run(self, argv: list[str]) -> tuple[int, str, str]:
         out, err = io.StringIO(), io.StringIO()
         with redirect_stdout(out), redirect_stderr(err):
             code = cli.main(argv)
@@ -47,7 +47,7 @@ class TestExplainSelfReportedSection(unittest.TestCase):
         shutil.copy(self.ROOT / "examples" / "good-ANALYSIS-SPEC.yaml", spec_path)
         return spec_path
 
-    def _explain_after_gate(self, tmp: str) -> "tuple[int, str, str]":
+    def _explain_after_gate(self, tmp: str) -> tuple[int, str, str]:
         spec_path = self._gated_spec(tmp)
         self._run(["gate", "plan", "--spec", str(spec_path), "--phase-dir", tmp])
         return self._run(["explain", "--spec", str(spec_path), "--phase-dir", tmp])

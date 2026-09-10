@@ -21,13 +21,14 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from _trail_seed import seed_plan_header  # noqa: E402
-from dsx import cli  # noqa: E402
-from dsx.checks import design  # noqa: E402
-from dsx.findings import Report, Severity  # noqa: E402
-from dsx.frame import val  # noqa: E402
-from dsx.loader import load  # noqa: E402
-from dsx.spec import validate_structure  # noqa: E402
+from _trail_seed import seed_plan_header
+
+from dsx import cli
+from dsx.checks import design
+from dsx.findings import Report, Severity
+from dsx.frame import val
+from dsx.loader import load
+from dsx.spec import validate_structure
 
 
 def codes(report: Report) -> set[str]:
@@ -148,7 +149,7 @@ def _units_spec(
     assignment: object = "user",
     method_family_required: object = "cluster_robust",
     analysis: object = None,
-    design: "dict | None" = None,
+    design: dict | None = None,
 ) -> dict:
     """A minimal spec carrying only a units/dependence pair, isolating the
     unit judgments from the estimand judgment (no `estimand` key at all, so
@@ -294,7 +295,7 @@ class TestValUnits(unittest.TestCase):
 
         root = Path(__file__).resolve().parent.parent
         sys.path.insert(0, str(root))
-        from dsx.loader import load  # noqa: E402
+        from dsx.loader import load
 
         fixtures = [root / "examples" / "good-ANALYSIS-SPEC.yaml",
                     root / "examples" / "bad-ANALYSIS-SPEC.yaml"]
@@ -388,7 +389,7 @@ class TestValDependenceIdentification(unittest.TestCase):
                 )
                 self.assertIn("DSX-VAL-030", codes(blocked))
 
-                passing_method = sorted(admissible)[0]
+                passing_method = min(admissible)
                 passed = val.check(
                     {
                         "validity_frame": {
@@ -600,7 +601,7 @@ class TestValDependenceIdentification(unittest.TestCase):
 # ── disjointness (REQ-P7-03): DSX-VAL-020 and DSX-EXP-021 never both fire ──
 
 
-def _all_fixture_paths() -> "list[Path]":
+def _all_fixture_paths() -> list[Path]:
     root = Path(__file__).resolve().parent.parent
     paths = [
         root / "examples" / "good-ANALYSIS-SPEC.yaml",
@@ -659,7 +660,11 @@ def _all_fixture_paths() -> "list[Path]":
 # missing," matching the real, intended (D-02) firing condition. No change to
 # any severity, threshold, or firing condition -- message text only. Sanctioned
 # deliberate edit this guard exists to force into the open, not a regression.
-_DESIGN_PY_SHA256 = "8605f6a38f00fe5729e91943e8d5ed36ab3519ce6c81429e763fc49c504b4f3b"
+#
+# Re-pinned 2026-09-11 (v2.6.1 lint pass): ruff's safe autofix rewrote one
+# f-string in design.py (UP rule, formatting only -- same rendered text). No
+# change to any code, severity, threshold, or firing condition. Deliberate.
+_DESIGN_PY_SHA256 = "7b5332a57858184e5aed71a166b4e2f2bc6b2fa0a55d6e9418548a2927543b53"
 
 
 def _design_py_hash() -> str:
@@ -1212,7 +1217,7 @@ class TestValExpUnitsDisjointness(unittest.TestCase):
 class TestValGateSeverity(unittest.TestCase):
     ROOT = Path(__file__).resolve().parent.parent
 
-    def _run(self, argv: "list[str]") -> "tuple[int, str, str]":
+    def _run(self, argv: list[str]) -> tuple[int, str, str]:
         out, err = io.StringIO(), io.StringIO()
         with redirect_stdout(out), redirect_stderr(err):
             code = cli.main(argv)
@@ -1307,13 +1312,12 @@ class TestValGateSeverity(unittest.TestCase):
             },
         )
         for identification in variants:
-            with self.subTest(strength=identification["strength"]):
-                with tempfile.TemporaryDirectory() as tmp:
-                    path = self._write_identification_variant(tmp, identification)
-                    _, out, err = self._run(["gate", "execute", "--spec", path])
-                    combined = out + err
-                    self.assertNotIn("DSX-VAL-040", combined)
-                    self.assertNotIn("DSX-VAL-041", combined)
+            with self.subTest(strength=identification["strength"]), tempfile.TemporaryDirectory() as tmp:
+                path = self._write_identification_variant(tmp, identification)
+                _, out, err = self._run(["gate", "execute", "--spec", path])
+                combined = out + err
+                self.assertNotIn("DSX-VAL-040", combined)
+                self.assertNotIn("DSX-VAL-041", combined)
 
     def test_val_check_is_reachable_from_at_least_one_gate_profile(self):
         """The standing per-phase deliverable (STATE.md): every validity
@@ -1360,7 +1364,7 @@ class TestValGateSeverity(unittest.TestCase):
 # A constant that looks derived but was actually guessed is worse than no
 # constant — the same discipline tests/test_known_bad_corpus.py's own
 # measured allow-list documents.
-_EXPECTED_VAL_CODES: "dict[str, set[str]]" = {
+_EXPECTED_VAL_CODES: dict[str, set[str]] = {
     "good-ANALYSIS-SPEC.yaml": set(),
     "bad-ANALYSIS-SPEC.yaml": {"DSX-VAL-011"},
     "ANALYSIS-SPEC.yaml": {"DSX-VAL-011"},
@@ -1577,7 +1581,7 @@ class TestValGateIntegration(unittest.TestCase):
     ROOT = Path(__file__).resolve().parent.parent
     FIXTURE = ROOT / "examples" / "known-bad" / "weak-identification-mmm-ANALYSIS-SPEC.yaml"
 
-    def _run(self, argv: "list[str]") -> "tuple[int, str, str]":
+    def _run(self, argv: list[str]) -> tuple[int, str, str]:
         out, err = io.StringIO(), io.StringIO()
         with redirect_stdout(out), redirect_stderr(err):
             code = cli.main(argv)
@@ -1631,19 +1635,19 @@ def _val_module_tree() -> ast.Module:
     )
 
 
-def _functions_emitting_findings() -> "dict[str, str]":
+def _functions_emitting_findings() -> dict[str, str]:
     """Every function in dsx/frame/val.py that calls ``report.add(...)``,
     mapped to its own docstring (``""`` if it has none). Derived by walking
     the module's AST and, for each qualifying call, climbing to its nearest
     enclosing ``FunctionDef`` — not by naming functions by hand, so a helper
     added later is covered automatically."""
     tree = _val_module_tree()
-    parents: "dict[ast.AST, ast.AST]" = {}
+    parents: dict[ast.AST, ast.AST] = {}
     for parent in ast.walk(tree):
         for child in ast.iter_child_nodes(parent):
             parents[child] = parent
 
-    functions: "dict[str, str]" = {}
+    functions: dict[str, str] = {}
     for node in ast.walk(tree):
         if not isinstance(node, ast.Call):
             continue
@@ -1659,12 +1663,12 @@ def _functions_emitting_findings() -> "dict[str, str]":
     return functions
 
 
-def _codes_emitted_by_val_module() -> "set[str]":
+def _codes_emitted_by_val_module() -> set[str]:
     """Every ``DSX-VAL-*`` code named as the first argument of a
     ``report.add(...)`` call in dsx/frame/val.py, derived by parsing rather
     than by naming codes by hand."""
     tree = _val_module_tree()
-    emitted: "set[str]" = set()
+    emitted: set[str] = set()
     for node in ast.walk(tree):
         if not isinstance(node, ast.Call):
             continue
@@ -1674,14 +1678,16 @@ def _codes_emitted_by_val_module() -> "set[str]":
         if not node.args:
             continue
         first = node.args[0]
-        if isinstance(first, ast.Constant) and isinstance(first.value, str):
-            if first.value.startswith("DSX-VAL-"):
-                emitted.add(first.value)
+        if (
+            isinstance(first, ast.Constant) and isinstance(first.value, str)
+            and first.value.startswith("DSX-VAL-")
+        ):
+            emitted.add(first.value)
     return emitted
 
 
-def _test_markers_under_tests_root() -> "set[str]":
-    markers: "set[str]" = set()
+def _test_markers_under_tests_root() -> set[str]:
+    markers: set[str] = set()
     for path in sorted(_TESTS_ROOT.rglob("*.py")):
         text = path.read_text(encoding="utf-8")
         for match in _TEST_MARKER_LINE_RE.finditer(text):
@@ -1767,7 +1773,7 @@ _PAGES_ONLY_KISH_DETECTOR_PATTERNS = (
 )
 
 
-def _collect_kish_strings() -> "list[tuple[str, Path, int]]":
+def _collect_kish_strings() -> list[tuple[str, Path, int]]:
     """Every string constant mentioning Kish in every ``*.py`` file beneath
     the ``dsx`` package, collected by walking each file's AST rather than
     its raw text — this catches module constants and docstrings alike, and
@@ -1780,7 +1786,7 @@ def _collect_kish_strings() -> "list[tuple[str, Path, int]]":
     repository root, not the tests directory, because the detector patterns
     live in this file and a collector reaching the tests directory would
     match its own patterns and fail permanently for the wrong reason."""
-    collected: "list[tuple[str, Path, int]]" = []
+    collected: list[tuple[str, Path, int]] = []
     for path in sorted(_DSX_PACKAGE_DIR.rglob("*.py")):
         tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
         for node in ast.walk(tree):
@@ -1852,7 +1858,7 @@ class TestKishCitationCoherence(unittest.TestCase):
         collected = _collect_kish_strings()
         self.assertTrue(collected, f"no string mentioning Kish found under {_DSX_PACKAGE_DIR}")
         unparseable_sites = []
-        groups: "dict[frozenset, list[str]]" = {}
+        groups: dict[frozenset, list[str]] = {}
         for text, path, lineno in collected:
             locators = _kish_locators(text)
             site = f"{path}:{lineno}"

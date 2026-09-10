@@ -44,12 +44,14 @@ import tempfile
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
+from typing import ClassVar
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "tests"))
 
 from _trail_seed import seed_plan_header  # noqa: E402
+
 from dsx import cli  # noqa: E402
 from dsx.checks import claims as claims_check  # noqa: E402
 from dsx.checks import coherence as coherence_check  # noqa: E402
@@ -79,7 +81,7 @@ _CAUSAL_VERB_CODES = frozenset({"DSX-CLM-010", "DSX-CLM-011", "DSX-COH-010"})
 # _check_causal_language because it double-coded the DSX-CLM-020 fact and gave a
 # strength-downgrade remedy. The flagship still blocks (CLM-020/COH-001/COH-010
 # all CRITICAL); every other fixture's set is exactly what it was before.
-_GOLDEN_SHIP_FINDINGS: "dict[str, frozenset[str]]" = {
+_GOLDEN_SHIP_FINDINGS: dict[str, frozenset[str]] = {
     "examples/bad-ANALYSIS-SPEC.yaml": frozenset({
         "DSX-ADM-020", "DSX-CAU-010", "DSX-CLM-020", "DSX-CLM-030", "DSX-CLM-033",
         "DSX-CLM-070", "DSX-CLM-080", "DSX-CODE-001", "DSX-CODE-002", "DSX-COH-020",
@@ -338,7 +340,7 @@ _GOLDEN_SHIP_FINDINGS: "dict[str, frozenset[str]]" = {
 }
 
 
-def _seed_entrypoint(tmp: "str | Path", spec_path: "str | Path") -> None:
+def _seed_entrypoint(tmp: str | Path, spec_path: str | Path) -> None:
     """Copy a fixture's own declared ``reproducibility.entrypoint`` into ``tmp``.
 
     Mirrors ``tests/test_known_bad_corpus.py::_seed_entrypoint`` (plan 11.1-08):
@@ -360,7 +362,7 @@ def _seed_entrypoint(tmp: "str | Path", spec_path: "str | Path") -> None:
     shutil.copy(source, dest)
 
 
-def _ship_findings(spec_path: Path) -> "frozenset[str]":
+def _ship_findings(spec_path: Path) -> frozenset[str]:
     """Run one real ``dsx gate ship --json`` against ``spec_path`` in a fresh
     temporary phase directory and return its sorted CRITICAL/HIGH finding-code set.
 
@@ -387,7 +389,7 @@ def _ship_findings(spec_path: Path) -> "frozenset[str]":
 
 
 class TestCausalVerbGolden(unittest.TestCase):
-    def _spec_paths(self) -> "list[Path]":
+    def _spec_paths(self) -> list[Path]:
         return sorted(EXAMPLES_DIR.glob(SPEC_GLOB))
 
     def test_golden_keys_match_the_examples_tree_on_disk(self):
@@ -467,7 +469,7 @@ class TestNounNegativeCase(unittest.TestCase):
     this input must not. No text is matched against file bytes here, so there is
     no CRLF surface; the assertions read finding codes off the returned Reports."""
 
-    NOUN_SPEC = {
+    NOUN_SPEC: ClassVar[dict] = {
         "question_type": "descriptive",
         "decision": {
             "owner": "analytics",
@@ -483,7 +485,7 @@ class TestNounNegativeCase(unittest.TestCase):
         ],
     }
 
-    def _codes(self, report) -> "set[str]":
+    def _codes(self, report) -> set[str]:
         return {f.code for f in report.findings}
 
     def test_claims_check_emits_no_causal_verb_code_on_a_noun(self):

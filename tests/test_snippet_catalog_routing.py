@@ -44,7 +44,7 @@ if str(_ROOT) not in sys.path:
 # Live threshold constants -- imported, never transcribed (D-P23-04). The
 # forbidden-restatement regexes below are built from these integer VALUES, so
 # the guard tracks viz.py rather than a copy of it.
-from dsx.checks.viz import MAX_CATEGORICAL_COLORS, MAX_PIE_SLICES
+from dsx.checks.viz import MAX_CATEGORICAL_COLORS, MAX_PIE_SLICES  # noqa: E402 -- after the sys.path setup above
 
 _REFS = _ROOT / "references"
 _SNIPPETS = _REFS / "chart-snippets.md"
@@ -117,12 +117,12 @@ class TestSnippetCatalogRouting(unittest.TestCase):
         # window of its threshold noun, in either order.
         forbidden = {
             f"slice-count restatement ({p} near a slice word)":
-                re.compile(rf"\b{p}\b[^\n]{{0,25}}slic|slic\w*[^\n]{{0,25}}\b{p}\b", re.I),
+                re.compile(rf"\b{p}\b[^\n]{{0,25}}slic|slic\w*[^\n]{{0,25}}\b{p}\b", re.IGNORECASE),
             f"colour-count restatement ({c} near a colour/hue word)":
                 re.compile(
                     rf"\b{c}\b[^\n]{{0,25}}(?:colou?rs?|hues?)"
                     rf"|(?:colou?rs?|hues?)[^\n]{{0,25}}\b{c}\b",
-                    re.I,
+                    re.IGNORECASE,
                 ),
         }
         for label, pat in forbidden.items():

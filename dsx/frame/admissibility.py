@@ -36,7 +36,7 @@ _ONTOLOGY_PATH = Path(__file__).resolve().parents[2] / "references" / "families.
 # Module-global cache keyed by the resolved path string -- tests clear it
 # directly via ``admissibility._ONTOLOGY_CACHE.clear()``, mirroring the
 # module-global cache pattern in dsx/suppressions.py's known_codes().
-_ONTOLOGY_CACHE: "dict[str, Ontology]" = {}
+_ONTOLOGY_CACHE: dict[str, Ontology] = {}
 
 
 @dataclass(frozen=True)
@@ -48,9 +48,9 @@ class Family:
     estimand: str
     inference_method: str
     dependence: str
-    aliases: "tuple[str, ...]"
-    buys: "tuple[str, ...]"
-    charges: "tuple[str, ...]"
+    aliases: tuple[str, ...]
+    buys: tuple[str, ...]
+    charges: tuple[str, ...]
     traceability: str
     citation: str
     locator_status: str
@@ -76,10 +76,10 @@ class Ontology:
     """The whole loaded, cited ontology -- immutable so no caller holding the
     cached object can mutate what every other caller in the process sees."""
 
-    families: "tuple[Family, ...]"
-    rules: "tuple[RankingRule, ...]"
-    tokens: "dict[str, str]"
-    dropped_uncited: "tuple[str, ...]"
+    families: tuple[Family, ...]
+    rules: tuple[RankingRule, ...]
+    tokens: dict[str, str]
+    dropped_uncited: tuple[str, ...]
 
 
 # The closed set of outcomes resolve_declared_procedure() can return, declared
@@ -101,7 +101,7 @@ class Resolution:
 
     status: str
     family_id: str
-    outside_axes: "tuple[str, str]"
+    outside_axes: tuple[str, str]
     detail: str
 
 
@@ -135,7 +135,7 @@ def _coerce_rule(entry: dict) -> RankingRule:
     )
 
 
-def load_ontology(path: "str | Path | None" = None) -> Ontology:
+def load_ontology(path: str | Path | None = None) -> Ontology:
     """Load and cache the estimator ontology. Refuses rather than degrades.
 
     A missing, unreadable or structurally wrong ``families.yaml`` raises
@@ -197,8 +197,8 @@ def load_ontology(path: "str | Path | None" = None) -> Ontology:
             "defect, not an analyst error."
         )
 
-    dropped: "list[str]" = []
-    families: "list[Family]" = []
+    dropped: list[str] = []
+    families: list[Family] = []
     for entry in families_raw:
         if not isinstance(entry, dict):
             continue
@@ -218,7 +218,7 @@ def load_ontology(path: "str | Path | None" = None) -> Ontology:
     # blocks, so the committed tree is clean either way -- this closes the
     # gap for a hand-edited file that skips `--check` and reaches a live
     # gate run directly, exactly the scenario the run-time half exists for.
-    rules: "list[RankingRule]" = []
+    rules: list[RankingRule] = []
     for entry in rules_raw:
         if not isinstance(entry, dict):
             continue
@@ -245,7 +245,7 @@ def load_ontology(path: "str | Path | None" = None) -> Ontology:
     return ontology
 
 
-def alias_index(ontology: Ontology) -> "dict[tuple[str, str], dict[str, str]]":
+def alias_index(ontology: Ontology) -> dict[tuple[str, str], dict[str, str]]:
     """Build ``(normalized estimand, normalized dependence) -> {normalized
     alias: family id}`` for every family in ``ontology``.
 
@@ -263,7 +263,7 @@ def alias_index(ontology: Ontology) -> "dict[tuple[str, str], dict[str, str]]":
     can name one family under independence and a different family under
     clustering with no conflict.
     """
-    index: "dict[tuple[str, str], dict[str, str]]" = {}
+    index: dict[tuple[str, str], dict[str, str]] = {}
     for family in ontology.families:
         pair = (normalize(family.estimand), normalize(family.dependence))
         alias_map = index.setdefault(pair, {})
@@ -284,7 +284,7 @@ def alias_index(ontology: Ontology) -> "dict[tuple[str, str], dict[str, str]]":
 
 def candidate_families(
     ontology: Ontology, estimand: str, dependence: str
-) -> "tuple[Family, ...]":
+) -> tuple[Family, ...]:
     """Families whose own (estimand, dependence) pair matches the given axes
     after normalizing both sides, ordered lexicographically by family id.
 
@@ -307,7 +307,7 @@ def candidate_families(
     return tuple(sorted(matches, key=lambda family: family.id))
 
 
-def declared_procedure(spec: "dict | None") -> str:
+def declared_procedure(spec: dict | None) -> str:
     """Read the declared primary procedure label off ``spec``, returning the
     empty string on any shape that is not exactly "a mapping with a mapping
     named after the paradigm-neutral procedure block, holding a non-blank
@@ -330,7 +330,7 @@ def declared_procedure(spec: "dict | None") -> str:
 
 
 def resolve_declared_procedure(
-    ontology: Ontology, estimand: str, dependence: str, declared: "str | None"
+    ontology: Ontology, estimand: str, dependence: str, declared: str | None
 ) -> Resolution:
     """Resolve one declared procedure label against the ontology, scoped
     first to the frame's own (estimand, dependence) candidate set.
@@ -377,7 +377,7 @@ def resolve_declared_procedure(
             ),
         )
 
-    other_matches: "list[tuple[tuple[str, str], str]]" = []
+    other_matches: list[tuple[tuple[str, str], str]] = []
     for pair, alias_map in index.items():
         if pair == own_pair:
             continue
@@ -434,8 +434,8 @@ class RankedEntry:
     rank: int
     id: str
     family: str
-    buys: "tuple[str, ...]"
-    charges: "tuple[str, ...]"
+    buys: tuple[str, ...]
+    charges: tuple[str, ...]
     citation: str
     locator_status: str
     notes: str
@@ -443,8 +443,8 @@ class RankedEntry:
 
 
 def _preference_reason(
-    preferred_id: str, dominated_id: str, applicable_rules: "tuple[RankingRule, ...]"
-) -> "str | None":
+    preferred_id: str, dominated_id: str, applicable_rules: tuple[RankingRule, ...]
+) -> str | None:
     """The id of the applicable rule whose `prefers` is `preferred_id` and whose
     `over` is `dominated_id`, or `None` when no such rule is applicable."""
     for rule in applicable_rules:
@@ -454,8 +454,8 @@ def _preference_reason(
 
 
 def rank_admissible(
-    candidates: "tuple[Family, ...]", rules: "tuple[RankingRule, ...]"
-) -> "tuple[RankedEntry, ...]":
+    candidates: tuple[Family, ...], rules: tuple[RankingRule, ...]
+) -> tuple[RankedEntry, ...]:
     """Order `candidates` by a cited pairwise rule table, a fewer-assumptions
     credibility fallback, and a lexicographic identifier tiebreak -- never by
     a numeric score.
@@ -505,7 +505,7 @@ def rank_admissible(
 
     ordered = sorted(base_ordering, key=cmp_to_key(_compare))
 
-    entries: "list[RankedEntry]" = []
+    entries: list[RankedEntry] = []
     for index, family in enumerate(ordered):
         if index == 0:
             placed_by = ""
@@ -536,9 +536,9 @@ def rank_admissible(
 
 def dominating_rules(
     family_id: str,
-    candidates: "tuple[Family, ...]",
-    rules: "tuple[RankingRule, ...]",
-) -> "tuple[RankingRule, ...]":
+    candidates: tuple[Family, ...],
+    rules: tuple[RankingRule, ...],
+) -> tuple[RankingRule, ...]:
     """Rules whose `over` is `family_id` and whose `prefers` is also a member
     of `candidates`, sorted lexicographically by rule `id` -- never by
     `rules`' own ontology-file order (WR-01, 11-REVIEW.md).
@@ -590,7 +590,7 @@ _CAUSE_UNRESOLVED = "declared_procedure_unresolved"
 _REFUSAL_CAUSES = (_CAUSE_BLANK_AXIS, _CAUSE_NO_MATCHING_FAMILY, _CAUSE_UNRESOLVED)
 
 
-def _ranked_entry_to_dict(entry: RankedEntry) -> "dict[str, object]":
+def _ranked_entry_to_dict(entry: RankedEntry) -> dict[str, object]:
     """Convert one ``RankedEntry`` into a plain, JSON-serialisable dict --
     every tuple field becomes a list, matching the pure-return-shape contract
     ``admissible_families()`` promises its own caller."""
@@ -607,7 +607,7 @@ def _ranked_entry_to_dict(entry: RankedEntry) -> "dict[str, object]":
     }
 
 
-def admissible_families(spec: "dict | None") -> "dict[str, object]":
+def admissible_families(spec: dict | None) -> dict[str, object]:
     """Rank the admissible procedure set for one declared frame -- a pure,
     total function mirroring the split already shipped in
     ``dsx/checks/stats.py`` between the pure ``recommend_test()`` and the
@@ -645,7 +645,7 @@ def admissible_families(spec: "dict | None") -> "dict[str, object]":
 
     resolution = resolve_declared_procedure(ontology, estimand, dependence, declared)
 
-    base: "dict[str, object]" = {
+    base: dict[str, object] = {
         "estimand": estimand if isinstance(estimand, str) else (estimand or ""),
         "dependence": dependence if isinstance(dependence, str) else (dependence or ""),
         "declared_procedure": declared,
@@ -695,8 +695,8 @@ def admissible_families(spec: "dict | None") -> "dict[str, object]":
 
 
 def _check_declared_procedure_ranking(
-    result: "dict[str, object]", report: Report
-) -> "tuple[str, RankingRule] | tuple[None, None]":
+    result: dict[str, object], report: Report
+) -> tuple[str, RankingRule] | tuple[None, None]:
     """Emit DSX-ADM-010 when the declared procedure resolved into its own
     candidate set and a cited pairwise ordering rule names another candidate
     as preferred over it.
@@ -765,8 +765,8 @@ def _check_declared_procedure_ranking(
 
 
 def _check_no_admissible_procedure(
-    result: "dict[str, object]", report: Report
-) -> "str | None":
+    result: dict[str, object], report: Report
+) -> str | None:
     """Emit DSX-ADM-020 for whichever of the three collapsed causes fired --
     a required axis blank or absent, the complete axis pair matching zero
     families, or a declared procedure label that resolves to no family in
@@ -892,8 +892,8 @@ def check(spec: dict, *, applies_to_frame: bool = True) -> Report:
 
     result = admissible_families(spec)
 
-    fired_code: "str | None" = None
-    fired_rule: "RankingRule | None" = None
+    fired_code: str | None = None
+    fired_rule: RankingRule | None = None
     if result["refusal"] == _REFUSAL:
         fired_code = _check_no_admissible_procedure(result, report)
     elif result["resolution"] == "in_candidate_set":

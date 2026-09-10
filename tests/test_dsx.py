@@ -13,17 +13,19 @@ import tempfile
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
+from typing import ClassVar
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from _trail_seed import seed_plan_header  # noqa: E402
-from dsx import cli, mathx  # noqa: E402
-from dsx.checks import claims, design, metrics, ml, repro, stats, viz  # noqa: E402
-from dsx.findings import Report, Severity  # noqa: E402
-from dsx.frame import interference  # noqa: E402
-from dsx.loader import SpecParseError, _parse_yaml_subset, loads  # noqa: E402
-from dsx.spec import PEEKING_POLICIES, describe_vocabulary, validate_structure  # noqa: E402
+from _trail_seed import seed_plan_header
+
+from dsx import cli, mathx
+from dsx.checks import claims, design, metrics, ml, repro, stats, viz
+from dsx.findings import Report, Severity
+from dsx.frame import interference
+from dsx.loader import SpecParseError, _parse_yaml_subset, loads
+from dsx.spec import PEEKING_POLICIES, describe_vocabulary, validate_structure
 
 
 def codes(report: Report) -> set[str]:
@@ -93,7 +95,7 @@ class TestMath(unittest.TestCase):
         p = [0.01, 0.04, 0.03]
         adj_b, _ = mathx.bonferroni(p, 0.05)
         self.assertAlmostEqual(adj_b[0], 0.03)
-        adj_h, rej_h = mathx.holm(p, 0.05)
+        adj_h, _rej_h = mathx.holm(p, 0.05)
         self.assertTrue(adj_h[0] <= adj_h[2] <= adj_h[1])  # monotone in rank order
         self.assertTrue(all(h <= b + 1e-12 for h, b in zip(adj_h, adj_b)))
 
@@ -327,7 +329,7 @@ class TestSpecStructure(unittest.TestCase):
         from dsx import spec as spec_mod
 
         out = describe_vocabulary()
-        for name, obj in spec_mod._VOCABULARIES:
+        for name, _obj in spec_mod._VOCABULARIES:
             self.assertIn(name, out, f"{name} missing from describe_vocabulary() output")
             self.assertTrue(out[name], f"{name} maps to an empty container")
         # identity, not equality — the registry holds the actual module constant
@@ -390,7 +392,7 @@ class TestSpecStructure(unittest.TestCase):
         self.assertIs(registry["estimand_types"], spec_mod.ESTIMAND_TYPES)
 
     def test_estimand_type_row_registered_in_validity_frame_membership(self):
-        from dsx.spec import ESTIMAND_TYPES, _VALIDITY_FRAME_MEMBERSHIP
+        from dsx.spec import _VALIDITY_FRAME_MEMBERSHIP, ESTIMAND_TYPES
 
         self.assertIn(("estimand", "type", ESTIMAND_TYPES), _VALIDITY_FRAME_MEMBERSHIP)
 
@@ -953,7 +955,7 @@ class TestFalsifierLexicon(unittest.TestCase):
 
 
 class TestDesign(unittest.TestCase):
-    BASE = {
+    BASE: ClassVar[dict] = {
         "question_type": "causal",
         "design": {
             "kind": "experiment",
@@ -1025,7 +1027,7 @@ class TestDesign(unittest.TestCase):
     def test_dsx_exp_060_fires_only_for_empty_and_fixed_horizon(self):
         # D-08: pins the property, not just the current members — fails if _check_peeking
         # is later widened to fire on a member it should not.
-        for policy in list(PEEKING_POLICIES) + [""]:
+        for policy in [*list(PEEKING_POLICIES), ""]:
             with self.subTest(policy=policy):
                 spec = {**self.BASE,
                         "design": {**self.BASE["design"], "peeking_policy": policy},
@@ -1075,7 +1077,7 @@ class TestDesign(unittest.TestCase):
 
 
 class TestML(unittest.TestCase):
-    BASE = {
+    BASE: ClassVar[dict] = {
         "question_type": "predictive",
         "model": {
             "task": "binary_classification",
@@ -1186,7 +1188,7 @@ class TestPhase11_1ML(unittest.TestCase):
     BASE = TestML.BASE
 
     def _model(self, **overrides):
-        model = {k: v for k, v in self.BASE["model"].items()}
+        model = dict(self.BASE["model"].items())
         model.update(overrides)
         for key, value in list(model.items()):
             if value is None:
@@ -1746,7 +1748,7 @@ class TestPhase11_1ML(unittest.TestCase):
         # Every basis in the locked vocabulary, plus blank, whitespace, a
         # differently-cased member, an out-of-vocabulary misspelling, and the
         # field being absent altogether.
-        bases = sorted(ml.SELECTION_BASES) + ["", "   ", "Test", "tset", None]
+        bases = [*sorted(ml.SELECTION_BASES), "", "   ", "Test", "tset", None]
         for algorithm in ("gradient_boosting", None):
             for candidates in (["a", "b"], [], None):
                 for configurations in (18, 0, None):
@@ -1808,7 +1810,7 @@ class TestPhase11_1MLCleaning(unittest.TestCase):
     BASE = TestML.BASE
 
     def _model(self, **overrides):
-        model = {k: v for k, v in self.BASE["model"].items()}
+        model = dict(self.BASE["model"].items())
         model.update(overrides)
         for key, value in list(model.items()):
             if value is None:
@@ -2221,7 +2223,7 @@ class TestClaims(unittest.TestCase):
 
 
 class TestViz(unittest.TestCase):
-    GOOD = {"visuals": [{"name": "activation by cohort", "relationship": "comparison",
+    GOOD: ClassVar[dict] = {"visuals": [{"name": "activation by cohort", "relationship": "comparison",
                          "type": "bar", "y_axis_starts_at_zero": True, "units": "%",
                          "takeaway": "March cohort activates 9pp below every other cohort",
                          "category_order": "by_value", "source": "warehouse, 2026-01..06"}]}
@@ -2759,9 +2761,8 @@ class TestCLI(unittest.TestCase):
 
     def test_explain_help_offers_no_block_on_flag(self):
         buf = io.StringIO()
-        with redirect_stdout(buf):
-            with self.assertRaises(SystemExit):
-                cli.main(["explain", "--help"])
+        with redirect_stdout(buf), self.assertRaises(SystemExit):
+            cli.main(["explain", "--help"])
         help_text = buf.getvalue()
         self.assertIn("--spec", help_text)
         self.assertIn("--phase-dir", help_text)
@@ -2772,9 +2773,8 @@ class TestCLI(unittest.TestCase):
     def test_other_subcommands_still_accept_block_on(self):
         for sub in ("validate", "check", "audit", "gate"):
             buf = io.StringIO()
-            with redirect_stdout(buf):
-                with self.assertRaises(SystemExit):
-                    cli.main([sub, "--help"])
+            with redirect_stdout(buf), self.assertRaises(SystemExit):
+                cli.main([sub, "--help"])
             self.assertIn("--block-on", buf.getvalue(), sub)
 
     # ── 06-09 Task 2: gate-path trail write (REQ-P6-07, D-14, D-16) ────────────
@@ -2853,7 +2853,7 @@ class TestCLI(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             spec_path = Path(tmp) / "ANALYSIS-SPEC.yaml"
             shutil.copy(self.ROOT / "examples" / "good-ANALYSIS-SPEC.yaml", spec_path)
-            control_code, _, control_err = self._run(["gate", "plan", "--spec", str(spec_path)])
+            control_code, _, _control_err = self._run(["gate", "plan", "--spec", str(spec_path)])
 
             # A regular file can never be a directory: DECISIONS.jsonl's parent
             # cannot be created there, forcing an OSError on write, without
@@ -2877,7 +2877,7 @@ class TestDecisionTrailCLI(unittest.TestCase):
 
     ROOT = Path(__file__).resolve().parent.parent
 
-    def _run(self, argv: "list[str]") -> "tuple[int, str, str]":
+    def _run(self, argv: list[str]) -> tuple[int, str, str]:
         out, err = io.StringIO(), io.StringIO()
         with redirect_stdout(out), redirect_stderr(err):
             code = cli.main(argv)
@@ -2890,7 +2890,7 @@ class TestDecisionTrailCLI(unittest.TestCase):
         shutil.copy(self.ROOT / "examples" / "good-ANALYSIS-SPEC.yaml", spec_path)
         return spec_path
 
-    def _append_undecodable_bytes(self, trail_path: "Path") -> None:
+    def _append_undecodable_bytes(self, trail_path: Path) -> None:
         """06-11 Task 1: write the exact corrupting byte sequence the reviewer
         and verifier used — the lead byte of a two-byte UTF-8 sequence whose
         continuation byte never arrives."""
@@ -3181,9 +3181,8 @@ class TestProfiler(unittest.TestCase):
     def test_profile_help_names_unit_and_target(self):
         # argparse --help prints to stdout then raises SystemExit(0).
         out, err = io.StringIO(), io.StringIO()
-        with redirect_stdout(out), redirect_stderr(err):
-            with self.assertRaises(SystemExit) as ctx:
-                cli.main(["profile", "--help"])
+        with redirect_stdout(out), redirect_stderr(err), self.assertRaises(SystemExit) as ctx:
+            cli.main(["profile", "--help"])
         self.assertEqual(ctx.exception.code, 0)
         help_text = out.getvalue()
         self.assertIn("--unit", help_text)
@@ -3780,7 +3779,7 @@ class TestPhase6ParadigmManifest(unittest.TestCase):
         for spec in ({}, {"inference": {}}):
             with self.subTest(spec=spec):
                 report = paradigm.check(spec)
-                finding = [f for f in report.findings if f.code == "DSX-PAR-001"][0]
+                finding = next(f for f in report.findings if f.code == "DSX-PAR-001")
                 combined = (finding.title + " " + finding.detail).lower()
                 self.assertIn("no", combined)
                 self.assertIn("paradigm", combined)
@@ -3790,7 +3789,7 @@ class TestPhase6ParadigmManifest(unittest.TestCase):
         from dsx.frame import paradigm
 
         report = paradigm.check({"inference": {"paradigm": "bayesian"}})
-        finding = [f for f in report.findings if f.code == "DSX-PAR-001"][0]
+        finding = next(f for f in report.findings if f.code == "DSX-PAR-001")
         self.assertIn("applied", finding.detail.lower())
         self.assertTrue(finding.data.get("applied"))
         not_applied = finding.data.get("not_applied") or {}
@@ -3871,11 +3870,11 @@ class TestPhase6ParadigmManifest(unittest.TestCase):
         from dsx.suppressions import known_codes
 
         known = known_codes()
-        for declared in list(PARADIGMS) + [""]:
+        for declared in [*list(PARADIGMS), ""]:
             spec = {"inference": {"paradigm": declared}} if declared else {}
             with self.subTest(declared=declared or "undeclared"):
                 report = paradigm.check(spec)
-                finding = [f for f in report.findings if f.code == "DSX-PAR-001"][0]
+                finding = next(f for f in report.findings if f.code == "DSX-PAR-001")
                 for prefix in finding.data.get("applied", []):
                     self.assertTrue(
                         [c for c in known if c.startswith(prefix)],
@@ -3916,7 +3915,7 @@ class TestPhase9MonitoringDiscipline(unittest.TestCase):
 
     ROOT = Path(__file__).resolve().parent.parent
 
-    UNCONTROLLED_DESIGN = {"peeking_policy": "uncontrolled_continuous", "alpha": 0.05}
+    UNCONTROLLED_DESIGN: ClassVar[dict] = {"peeking_policy": "uncontrolled_continuous", "alpha": 0.05}
 
     def _spec(self, paradigm=None, **inference_fields):
         inference = dict(inference_fields)
@@ -4021,7 +4020,7 @@ class TestPhase9MonitoringDiscipline(unittest.TestCase):
     def test_neither_code_fires_for_a_non_uncontrolled_peeking_policy(self):
         from dsx.frame import paradigm
 
-        for policy in list(PEEKING_POLICIES) + ["", None]:
+        for policy in [*list(PEEKING_POLICIES), "", None]:
             if policy == "uncontrolled_continuous":
                 continue
             with self.subTest(policy=policy):
@@ -4043,7 +4042,7 @@ class TestPhase9MonitoringDiscipline(unittest.TestCase):
         from dsx.checks import design as design_check
         from dsx.frame import paradigm
 
-        for policy in list(PEEKING_POLICIES) + [""]:
+        for policy in [*list(PEEKING_POLICIES), ""]:
             with self.subTest(policy=policy):
                 spec = {
                     "question_type": "causal",
@@ -4327,7 +4326,7 @@ class TestPhase9ParadigmJustification(unittest.TestCase):
     def test_no_inference_block_and_controlled_or_absent_policy_fires_nothing(self):
         from dsx.frame import paradigm
 
-        for policy in list(PEEKING_POLICIES) + ["", None]:
+        for policy in [*list(PEEKING_POLICIES), "", None]:
             if policy == "uncontrolled_continuous":
                 continue
             with self.subTest(policy=policy):
@@ -4370,7 +4369,7 @@ class TestPhase9ParadigmJustification(unittest.TestCase):
         from dsx.frame import paradigm
         from dsx.spec import PARADIGM_JUSTIFICATIONS, PARADIGMS
 
-        by_justification: "dict[str, dict[str, set[str]]]" = {}
+        by_justification: dict[str, dict[str, set[str]]] = {}
         for justification in PARADIGM_JUSTIFICATIONS:
             by_justification[justification] = {}
             for member in PARADIGMS:
@@ -4501,7 +4500,7 @@ class TestParadigmOutOfVocabularyFallback(unittest.TestCase):
                 with self.subTest(paradigm=declared, policy=policy):
                     report = paradigm.check(spec)
                     fired = {f.code for f in report.findings}
-                    manifest = [f for f in report.findings if f.code == "DSX-PAR-001"][0]
+                    manifest = next(f for f in report.findings if f.code == "DSX-PAR-001")
                     for prefix in manifest.data.get("not_applied") or {}:
                         contradicted = sorted(c for c in fired if c.startswith(prefix))
                         self.assertEqual(
@@ -4519,12 +4518,12 @@ class TestParadigmOutOfVocabularyFallback(unittest.TestCase):
 
         undeclared = paradigm.check({"inference": {}})
         baseline = set(
-            [f for f in undeclared.findings if f.code == "DSX-PAR-001"][0].data["applied"]
+            next(f for f in undeclared.findings if f.code == "DSX-PAR-001").data["applied"]
         )
         for declared in self.OUT_OF_VOCAB:
             with self.subTest(paradigm=declared):
                 report = paradigm.check({"inference": {"paradigm": declared}})
-                manifest = [f for f in report.findings if f.code == "DSX-PAR-001"][0]
+                manifest = next(f for f in report.findings if f.code == "DSX-PAR-001")
                 self.assertEqual(set(manifest.data["applied"]), baseline)
 
     def test_out_of_vocabulary_paradigm_under_uncontrolled_design_fires_par_002(self):
@@ -4583,9 +4582,9 @@ class TestParadigmOutOfVocabularyFallback(unittest.TestCase):
             for variant in (member.upper(), f"  {member} ", member.capitalize()):
                 with self.subTest(variant=variant):
                     report = paradigm.check({"inference": {"paradigm": variant}})
-                    manifest = [f for f in report.findings if f.code == "DSX-PAR-001"][0]
+                    manifest = next(f for f in report.findings if f.code == "DSX-PAR-001")
                     canonical = paradigm.check({"inference": {"paradigm": member}})
-                    expected = [f for f in canonical.findings if f.code == "DSX-PAR-001"][0]
+                    expected = next(f for f in canonical.findings if f.code == "DSX-PAR-001")
                     self.assertEqual(manifest.data["applied"], expected.data["applied"])
 
 
@@ -4619,30 +4618,85 @@ _END_TO_END_VARIANT_TABLE = (
     # RESEARCH.md Pitfall 3) already listed as caught by FIT_CALL_RE
     # before this phase -- still caught, now via the AST path.
     ("caught_bare_positional", _SPLIT_THEN + "model.fit(data)\n", frozenset({"DSX-CODE-021"}), "entry.py"),
-    ("caught_bracket_subscript_positional", _SPLIT_THEN + "model.fit(data[['Age']])\n", frozenset({"DSX-CODE-021"}), "entry.py"),
-    ("caught_fit_transform_bare", _SPLIT_THEN + "scaler.fit_transform(data)\n", frozenset({"DSX-CODE-021"}), "entry.py"),
-    ("caught_chained_constructor_plain_arg", _SPLIT_THEN + "build_pipeline().fit(data)\n", frozenset({"DSX-CODE-021"}), "entry.py"),
+    (
+        "caught_bracket_subscript_positional",
+        _SPLIT_THEN + "model.fit(data[['Age']])\n",
+        frozenset({"DSX-CODE-021"}),
+        "entry.py",
+    ),
+    (
+        "caught_fit_transform_bare",
+        _SPLIT_THEN + "scaler.fit_transform(data)\n",
+        frozenset({"DSX-CODE-021"}),
+        "entry.py",
+    ),
+    (
+        "caught_chained_constructor_plain_arg",
+        _SPLIT_THEN + "build_pipeline().fit(data)\n",
+        frozenset({"DSX-CODE-021"}),
+        "entry.py",
+    ),
     ("caught_whitespace_before_paren", _SPLIT_THEN + "model.fit (data)\n", frozenset({"DSX-CODE-021"}), "entry.py"),
-    ("caught_tab_before_paren", _SPLIT_THEN + "model.fit" + chr(9) + "(data)\n", frozenset({"DSX-CODE-021"}), "entry.py"),
+    (
+        "caught_tab_before_paren",
+        _SPLIT_THEN + "model.fit" + chr(9) + "(data)\n",
+        frozenset({"DSX-CODE-021"}),
+        "entry.py",
+    ),
     # The seven variants the same table listed as missed -- ALL now caught,
     # which is the phase's headline claim, made executable here rather
     # than asserted in prose.
     ("nowcaught_keyword_X", _SPLIT_THEN + "model.fit(X=data, y=target)\n", frozenset({"DSX-CODE-021"}), "entry.py"),
     ("nowcaught_keyword_data", _SPLIT_THEN + "model.fit(data=data)\n", frozenset({"DSX-CODE-021"}), "entry.py"),
-    ("nowcaught_fit_transform_keyword", _SPLIT_THEN + "scaler.fit_transform(X=data)\n", frozenset({"DSX-CODE-021"}), "entry.py"),
+    (
+        "nowcaught_fit_transform_keyword",
+        _SPLIT_THEN + "scaler.fit_transform(X=data)\n",
+        frozenset({"DSX-CODE-021"}),
+        "entry.py",
+    ),
     ("nowcaught_partial_fit_bare", _SPLIT_THEN + "model.partial_fit(data)\n", frozenset({"DSX-CODE-021"}), "entry.py"),
-    ("nowcaught_partial_fit_keyword", _SPLIT_THEN + "model.partial_fit(X=data)\n", frozenset({"DSX-CODE-021"}), "entry.py"),
-    ("nowcaught_chained_call_argument", _SPLIT_THEN + "model.fit(loader.get_full_frame())\n", frozenset({"DSX-CODE-021"}), "entry.py"),
+    (
+        "nowcaught_partial_fit_keyword",
+        _SPLIT_THEN + "model.partial_fit(X=data)\n",
+        frozenset({"DSX-CODE-021"}),
+        "entry.py",
+    ),
+    (
+        "nowcaught_chained_call_argument",
+        _SPLIT_THEN + "model.fit(loader.get_full_frame())\n",
+        frozenset({"DSX-CODE-021"}),
+        "entry.py",
+    ),
     ("nowcaught_multiline_call", _SPLIT_THEN + "model.fit(\n    data\n)\n", frozenset({"DSX-CODE-021"}), "entry.py"),
     # ROADMAP SC1 and SC3, made executable rather than "satisfied a
     # fortiori" (this plan's <mechanism_change_ledger>, "Restated, not
     # dropped").
-    ("sc1_backslash_continuation_before_split", "model.fit " + chr(92) + "\n(df)\n" + _SPLIT_THEN, frozenset({"DSX-CODE-001"}), "entry.py"),
-    ("sc3_semicolon_joined_two_fit_calls", _SPLIT_THEN + "imputer.fit(X_train); scaler.fit_transform(data)\n", frozenset({"DSX-CODE-021"}), "entry.py"),
+    (
+        "sc1_backslash_continuation_before_split",
+        "model.fit " + chr(92) + "\n(df)\n" + _SPLIT_THEN,
+        frozenset({"DSX-CODE-001"}),
+        "entry.py",
+    ),
+    (
+        "sc3_semicolon_joined_two_fit_calls",
+        _SPLIT_THEN + "imputer.fit(X_train); scaler.fit_transform(data)\n",
+        frozenset({"DSX-CODE-021"}),
+        "entry.py",
+    ),
     # The false positives this phase closes: a docstring, a comment and a
     # notebook markdown cell, each merely mentioning a fit call.
-    ("fp_closed_docstring_mentioning_fit", '"""We never call scaler.fit(X) on the full frame."""\n' + _SPLIT_THEN, frozenset(), "entry.py"),
-    ("fp_closed_comment_mentioning_fit", "x = 1  # scaler.fit(X) on the full frame\n" + _SPLIT_THEN, frozenset(), "entry.py"),
+    (
+        "fp_closed_docstring_mentioning_fit",
+        '"""We never call scaler.fit(X) on the full frame."""\n' + _SPLIT_THEN,
+        frozenset(),
+        "entry.py",
+    ),
+    (
+        "fp_closed_comment_mentioning_fit",
+        "x = 1  # scaler.fit(X) on the full frame\n" + _SPLIT_THEN,
+        frozenset(),
+        "entry.py",
+    ),
     (
         "fp_closed_notebook_markdown_mentioning_fit",
         json.dumps({
@@ -4650,8 +4704,8 @@ _END_TO_END_VARIANT_TABLE = (
                 {
                     "cell_type": "markdown",
                     "source": [
-                        "We must never call `scaler.fit(X)` on the full "
-                        "frame before the split.\n"
+                        ("We must never call `scaler.fit(X)` on the full "
+                        "frame before the split.\n")
                     ],
                 },
                 {
@@ -4840,11 +4894,10 @@ class TestPhase11_1Code(unittest.TestCase):
             "train_test_split(df)\n"
         )
         for label, text in (("multiline", multiline), ("single_line", single_line)):
-            with self.subTest(form=label):
-                with tempfile.TemporaryDirectory() as tmp:
-                    entry = self._entrypoint(tmp, text)
-                    report = self._check(tmp, entry)
-                    self.assertNotIn("DSX-CODE-020", codes(report))
+            with self.subTest(form=label), tempfile.TemporaryDirectory() as tmp:
+                entry = self._entrypoint(tmp, text)
+                report = self._check(tmp, entry)
+                self.assertNotIn("DSX-CODE-020", codes(report))
 
     def test_real_cleaning_idiom_still_fires_code_020_with_the_mask_wired(self):
         # Control: masking prose must not delete a true positive.
@@ -4995,16 +5048,15 @@ class TestPhase11_1Code(unittest.TestCase):
     def test_lexicon_prefix_variants_after_split_no_finding(self):
         variants = ("X_train_scaled", "train_df[cols]", "X_train.values")
         for variant in variants:
-            with self.subTest(variant=variant):
-                with tempfile.TemporaryDirectory() as tmp:
-                    entry = self._entrypoint(
-                        tmp,
-                        "from sklearn.model_selection import train_test_split\n"
-                        "train_test_split(df)\n"
-                        f"model.fit({variant})\n",
-                    )
-                    report = self._check(tmp, entry)
-                    self.assertNotIn("DSX-CODE-021", codes(report))
+            with self.subTest(variant=variant), tempfile.TemporaryDirectory() as tmp:
+                entry = self._entrypoint(
+                    tmp,
+                    "from sklearn.model_selection import train_test_split\n"
+                    "train_test_split(df)\n"
+                    f"model.fit({variant})\n",
+                )
+                report = self._check(tmp, entry)
+                self.assertNotIn("DSX-CODE-021", codes(report))
 
     def test_fit_call_before_split_no_dsx_code_021(self):
         # That case is DSX-CODE-001's.
@@ -5483,18 +5535,17 @@ class TestPhase11_1Code(unittest.TestCase):
         test should be promoted to a firing test rather than deleted.
         """
         for source in (
-            "getattr(model, 'fit')(data)\n"
+            ("getattr(model, 'fit')(data)\n"
             "from sklearn.model_selection import train_test_split\n"
-            "train_test_split(df)\n",
-            "handlers['fit'](data)\n"
+            "train_test_split(df)\n"),
+            ("handlers['fit'](data)\n"
             "from sklearn.model_selection import train_test_split\n"
-            "train_test_split(df)\n",
+            "train_test_split(df)\n"),
         ):
-            with self.subTest(source=source):
-                with tempfile.TemporaryDirectory() as tmp:
-                    entry = self._entrypoint(tmp, source)
-                    report = self._check(tmp, entry)
-                    self.assertNotIn("DSX-CODE-001", codes(report))
+            with self.subTest(source=source), tempfile.TemporaryDirectory() as tmp:
+                entry = self._entrypoint(tmp, source)
+                report = self._check(tmp, entry)
+                self.assertNotIn("DSX-CODE-001", codes(report))
 
     def test_out_of_allowlist_keyword_stays_uncaught_by_design(self):
         """Deliberate, not a bug: `model.fit(training_frame=data)` after the
@@ -5934,8 +5985,8 @@ class TestPhase11_1Code(unittest.TestCase):
                 {
                     "cell_type": "markdown",
                     "source": [
-                        "We must never call `scaler.fit(X)` on the full "
-                        "frame before the split.\n"
+                        ("We must never call `scaler.fit(X)` on the full "
+                        "frame before the split.\n")
                     ],
                 },
                 {
@@ -6060,12 +6111,11 @@ class TestPhase11_1Code(unittest.TestCase):
             },
         }
         for name, nb in shapes.items():
-            with self.subTest(shape=name):
-                with tempfile.TemporaryDirectory() as tmp:
-                    entry = self._entrypoint(tmp, json.dumps(nb), name="entry.ipynb")
-                    report = self._check(tmp, entry)
-                    self.assertNotIn("DSX-CODE-001", codes(report))
-                    self.assertNotIn("DSX-CODE-021", codes(report))
+            with self.subTest(shape=name), tempfile.TemporaryDirectory() as tmp:
+                entry = self._entrypoint(tmp, json.dumps(nb), name="entry.ipynb")
+                report = self._check(tmp, entry)
+                self.assertNotIn("DSX-CODE-001", codes(report))
+                self.assertNotIn("DSX-CODE-021", codes(report))
 
         # Malformed JSON: the whole document, not a per-cell shape.
         with tempfile.TemporaryDirectory() as tmp:
@@ -6082,18 +6132,17 @@ class TestPhase11_1Code(unittest.TestCase):
         from dsx.checks import code as code_mod
 
         for content in ("[]", "null"):
-            with self.subTest(content=content):
-                with tempfile.TemporaryDirectory() as tmp:
-                    path = Path(tmp, "entry.ipynb")
-                    path.write_text(content, encoding="utf-8")
-                    self.assertIsNone(code_mod._read_source(path))
+            with self.subTest(content=content), tempfile.TemporaryDirectory() as tmp:
+                path = Path(tmp, "entry.ipynb")
+                path.write_text(content, encoding="utf-8")
+                self.assertIsNone(code_mod._read_source(path))
 
-                    entry = self._entrypoint(tmp, content, name="entry.ipynb")
-                    report = self._check(tmp, entry)
-                    self.assertEqual(report.findings, [])
-                    self.assertTrue(
-                        any("NOT scanned" in line for line in report.passed_checks)
-                    )
+                entry = self._entrypoint(tmp, content, name="entry.ipynb")
+                report = self._check(tmp, entry)
+                self.assertEqual(report.findings, [])
+                self.assertTrue(
+                    any("NOT scanned" in line for line in report.passed_checks)
+                )
 
     def test_non_dict_notebook_cell_is_named_not_scanned_without_raising(self):
         # GAP-3 (SC5): the document is an object, but a cell inside `cells`
@@ -6108,18 +6157,17 @@ class TestPhase11_1Code(unittest.TestCase):
             '{"cells": ["not-a-dict-cell"]}',
             '{"cells": {"a": 1}}',
         ):
-            with self.subTest(content=content):
-                with tempfile.TemporaryDirectory() as tmp:
-                    path = Path(tmp, "entry.ipynb")
-                    path.write_text(content, encoding="utf-8")
-                    self.assertIsNone(code_mod._read_source(path))
+            with self.subTest(content=content), tempfile.TemporaryDirectory() as tmp:
+                path = Path(tmp, "entry.ipynb")
+                path.write_text(content, encoding="utf-8")
+                self.assertIsNone(code_mod._read_source(path))
 
-                    entry = self._entrypoint(tmp, content, name="entry.ipynb")
-                    report = self._check(tmp, entry)
-                    self.assertEqual(report.findings, [])
-                    self.assertTrue(
-                        any("NOT scanned" in line for line in report.passed_checks)
-                    )
+                entry = self._entrypoint(tmp, content, name="entry.ipynb")
+                report = self._check(tmp, entry)
+                self.assertEqual(report.findings, [])
+                self.assertTrue(
+                    any("NOT scanned" in line for line in report.passed_checks)
+                )
 
     def test_non_list_cells_value_is_named_not_scanned_without_raising(self):
         # SC5: a `cells` value that is valid JSON but not a list -- an
@@ -6141,18 +6189,17 @@ class TestPhase11_1Code(unittest.TestCase):
             '{"cells": "cells"}',
             "{}",
         ):
-            with self.subTest(content=content):
-                with tempfile.TemporaryDirectory() as tmp:
-                    path = Path(tmp, "entry.ipynb")
-                    path.write_text(content, encoding="utf-8")
-                    self.assertIsNone(code_mod._read_source(path))
+            with self.subTest(content=content), tempfile.TemporaryDirectory() as tmp:
+                path = Path(tmp, "entry.ipynb")
+                path.write_text(content, encoding="utf-8")
+                self.assertIsNone(code_mod._read_source(path))
 
-                    entry = self._entrypoint(tmp, content, name="entry.ipynb")
-                    report = self._check(tmp, entry)
-                    self.assertEqual(report.findings, [])
-                    self.assertTrue(
-                        any("NOT scanned" in line for line in report.passed_checks)
-                    )
+                entry = self._entrypoint(tmp, content, name="entry.ipynb")
+                report = self._check(tmp, entry)
+                self.assertEqual(report.findings, [])
+                self.assertTrue(
+                    any("NOT scanned" in line for line in report.passed_checks)
+                )
 
     def test_empty_cells_list_still_scans_as_an_empty_notebook(self):
         # Control (SC5 boundary): {"cells": []} is a legitimately empty
@@ -6214,18 +6261,17 @@ class TestPhase11_1Code(unittest.TestCase):
             ),
         )
         for content in docs:
-            with self.subTest(content=content):
-                with tempfile.TemporaryDirectory() as tmp:
-                    path = Path(tmp, "entry.ipynb")
-                    path.write_text(content, encoding="utf-8")
-                    self.assertIsNone(code_mod._read_source(path))
+            with self.subTest(content=content), tempfile.TemporaryDirectory() as tmp:
+                path = Path(tmp, "entry.ipynb")
+                path.write_text(content, encoding="utf-8")
+                self.assertIsNone(code_mod._read_source(path))
 
-                    entry = self._entrypoint(tmp, content, name="entry.ipynb")
-                    report = self._check(tmp, entry)
-                    self.assertEqual(report.findings, [])
-                    self.assertTrue(
-                        any("NOT scanned" in line for line in report.passed_checks)
-                    )
+                entry = self._entrypoint(tmp, content, name="entry.ipynb")
+                report = self._check(tmp, entry)
+                self.assertEqual(report.findings, [])
+                self.assertTrue(
+                    any("NOT scanned" in line for line in report.passed_checks)
+                )
 
     def test_non_string_non_list_source_is_named_not_scanned_without_raising(self):
         # SC5: a cell's `source` is neither absent, a string, nor a list
@@ -6248,18 +6294,17 @@ class TestPhase11_1Code(unittest.TestCase):
             json.dumps({"cells": [{"cell_type": "code", "source": 5}]}),
         )
         for content in docs:
-            with self.subTest(content=content):
-                with tempfile.TemporaryDirectory() as tmp:
-                    path = Path(tmp, "entry.ipynb")
-                    path.write_text(content, encoding="utf-8")
-                    self.assertIsNone(code_mod._read_source(path))
+            with self.subTest(content=content), tempfile.TemporaryDirectory() as tmp:
+                path = Path(tmp, "entry.ipynb")
+                path.write_text(content, encoding="utf-8")
+                self.assertIsNone(code_mod._read_source(path))
 
-                    entry = self._entrypoint(tmp, content, name="entry.ipynb")
-                    report = self._check(tmp, entry)
-                    self.assertEqual(report.findings, [])
-                    self.assertTrue(
-                        any("NOT scanned" in line for line in report.passed_checks)
-                    )
+                entry = self._entrypoint(tmp, content, name="entry.ipynb")
+                report = self._check(tmp, entry)
+                self.assertEqual(report.findings, [])
+                self.assertTrue(
+                    any("NOT scanned" in line for line in report.passed_checks)
+                )
 
     def test_deeply_nested_notebook_json_is_named_not_scanned_without_raising(self):
         # SC5, found while planning and named by neither the
@@ -6744,7 +6789,7 @@ class TestPhase11_1Code(unittest.TestCase):
 
     # ── DSX-CODE-030/031: statistical test sees the declared target ─────────
 
-    def _check_with_target(self, tmp: str, entry: str, target: "str | None"):
+    def _check_with_target(self, tmp: str, entry: str, target: str | None):
         from dsx.checks import code as code_mod
 
         model: dict = {"task": "binary_classification"}
@@ -6907,11 +6952,10 @@ class TestPhase11_1Code(unittest.TestCase):
             "kruskal(g1, g2, dataset['Exited'])",
         )
         for call in calls:
-            with self.subTest(call=call):
-                with tempfile.TemporaryDirectory() as tmp:
-                    entry = self._entrypoint(tmp, f"result = {call}\n")
-                    report = self._check_with_target(tmp, entry, "Exited")
-                    self.assertIn("DSX-CODE-030", codes(report))
+            with self.subTest(call=call), tempfile.TemporaryDirectory() as tmp:
+                entry = self._entrypoint(tmp, f"result = {call}\n")
+                report = self._check_with_target(tmp, entry, "Exited")
+                self.assertIn("DSX-CODE-030", codes(report))
 
     def test_blank_target_produces_neither_code(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -6990,15 +7034,14 @@ class TestPhase11_1Code(unittest.TestCase):
             "dataset.Exited",
         )
         for form in forms:
-            with self.subTest(form=form):
-                with tempfile.TemporaryDirectory() as tmp:
-                    entry = self._entrypoint(
-                        tmp,
-                        f"contingency_table = pd.crosstab(x, {form})\n"
-                        "chi2, p, _, _ = chi2_contingency(contingency_table)\n",
-                    )
-                    report = self._check_with_target(tmp, entry, "Exited")
-                    self.assertIn("DSX-CODE-030", codes(report))
+            with self.subTest(form=form), tempfile.TemporaryDirectory() as tmp:
+                entry = self._entrypoint(
+                    tmp,
+                    f"contingency_table = pd.crosstab(x, {form})\n"
+                    "chi2, p, _, _ = chi2_contingency(contingency_table)\n",
+                )
+                report = self._check_with_target(tmp, entry, "Exited")
+                self.assertIn("DSX-CODE-030", codes(report))
 
     def test_stat_test_scan_leaves_a_second_decision_record(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -7309,9 +7352,8 @@ class TestPhase11_1Code(unittest.TestCase):
                 and isinstance(node.args[0], ast.Constant)
                 and isinstance(node.args[0].value, str)
                 and node.args[0].value.startswith("DSX-CODE-")
-            ):
-                if id(node) not in check_call_ids:
-                    violations.append(node.args[0].value)
+            ) and id(node) not in check_call_ids:
+                violations.append(node.args[0].value)
 
         self.assertEqual(violations, [])
 
@@ -7346,22 +7388,21 @@ class TestPhase11_1Code(unittest.TestCase):
         line of the split call, not a splitlines()-shifted one, for the
         same two desynchronising shapes."""
         for prefix in (chr(12) + "\n", "s = 'before" + chr(8232) + "after'\n"):
-            with self.subTest(prefix=repr(prefix)):
-                with tempfile.TemporaryDirectory() as tmp:
-                    entry = self._entrypoint(
-                        tmp,
-                        prefix
-                        + "df['Age'] = df['Age'].fillna(df['Age'].mean())\n"
-                        "model.fit(df)\n"
-                        "from sklearn.model_selection import train_test_split\n"
-                        "train_test_split(df)\n",
-                    )
-                    report = self._check(tmp, entry)
-                    code_001 = [
-                        f for f in report.findings if f.code == "DSX-CODE-001"
-                    ]
-                    self.assertEqual(len(code_001), 1)
-                    self.assertIn("line 5", code_001[0].detail)
+            with self.subTest(prefix=repr(prefix)), tempfile.TemporaryDirectory() as tmp:
+                entry = self._entrypoint(
+                    tmp,
+                    prefix
+                    + "df['Age'] = df['Age'].fillna(df['Age'].mean())\n"
+                    "model.fit(df)\n"
+                    "from sklearn.model_selection import train_test_split\n"
+                    "train_test_split(df)\n",
+                )
+                report = self._check(tmp, entry)
+                code_001 = [
+                    f for f in report.findings if f.code == "DSX-CODE-001"
+                ]
+                self.assertEqual(len(code_001), 1)
+                self.assertIn("line 5", code_001[0].detail)
 
     def test_no_module_level_cache_grows_across_repeated_check_calls(self):
         """No committed module-level mutable container may grow across
@@ -7511,8 +7552,8 @@ class TestPhase11_1Code(unittest.TestCase):
         context under the check name, then collect_from_report flattens
         the decisions out of it. Proven here rather than a shape that
         stops at report.context."""
-        from dsx.findings import merge
         from dsx.decisions import collect_from_report
+        from dsx.findings import merge
 
         with tempfile.TemporaryDirectory() as tmp:
             entry = self._entrypoint(tmp, "model.fit(df)\n", name="entry.txt")
@@ -7556,18 +7597,17 @@ class TestPhase11_1Code(unittest.TestCase):
         comment mentioning a fit call produces a Call node, on the parsed
         path -- both shapes pinned here."""
         for source in (
-            '"""We never call scaler.fit(X) on the full frame."""\n'
+            ('"""We never call scaler.fit(X) on the full frame."""\n'
             "from sklearn.model_selection import train_test_split\n"
-            "train_test_split(df)\n",
-            "x = 1  # scaler.fit(X) on the full frame\n"
+            "train_test_split(df)\n"),
+            ("x = 1  # scaler.fit(X) on the full frame\n"
             "from sklearn.model_selection import train_test_split\n"
-            "train_test_split(df)\n",
+            "train_test_split(df)\n"),
         ):
-            with self.subTest(source=source):
-                with tempfile.TemporaryDirectory() as tmp:
-                    entry = self._entrypoint(tmp, source)
-                    report = self._check(tmp, entry)
-                    self.assertNotIn("DSX-CODE-001", codes(report))
+            with self.subTest(source=source), tempfile.TemporaryDirectory() as tmp:
+                entry = self._entrypoint(tmp, source)
+                report = self._check(tmp, entry)
+                self.assertNotIn("DSX-CODE-001", codes(report))
 
     def test_comment_mentioning_smote_still_fires_code_003_measured_not_assumed(
         self,
@@ -7640,11 +7680,10 @@ class TestPhase11_1Code(unittest.TestCase):
                 "closing",
             ),
         ):
-            with self.subTest(line=label):
-                with tempfile.TemporaryDirectory() as tmp:
-                    entry = self._entrypoint(tmp, source)
-                    report = self._check(tmp, entry)
-                    self.assertIn("DSX-CODE-021", codes(report))
+            with self.subTest(line=label), tempfile.TemporaryDirectory() as tmp:
+                entry = self._entrypoint(tmp, source)
+                report = self._check(tmp, entry)
+                self.assertIn("DSX-CODE-021", codes(report))
 
     # ── Phase 11.1.1 plan 03 task 5: the phase's headline number, made ────────
     # ── executable. _END_TO_END_VARIANT_TABLE is defined at module level, ─────
@@ -7658,11 +7697,10 @@ class TestPhase11_1Code(unittest.TestCase):
         the whole gate mechanism) and are never printed as one series --
         see README.md and this plan's SUMMARY."""
         for name, source, expected_codes, filename in _END_TO_END_VARIANT_TABLE:
-            with self.subTest(variant=name):
-                with tempfile.TemporaryDirectory() as tmp:
-                    entry = self._entrypoint(tmp, source, name=filename)
-                    report = self._check(tmp, entry)
-                    self.assertEqual(codes(report), expected_codes)
+            with self.subTest(variant=name), tempfile.TemporaryDirectory() as tmp:
+                entry = self._entrypoint(tmp, source, name=filename)
+                report = self._check(tmp, entry)
+                self.assertEqual(codes(report), expected_codes)
 
 
 # ── 11-07 Task 1: admissibility registered in CHECKS, GATE_PROFILES, run_checks ──
@@ -7758,7 +7796,7 @@ class TestAdmissibilityGateRegistration(unittest.TestCase):
                 .setdefault("estimand", {})
                 .update({"type": ""}),
             )
-            code, out, err = self._run(["gate", "plan", "--spec", str(spec_path), "--json"])
+            code, _out, err = self._run(["gate", "plan", "--spec", str(spec_path), "--json"])
             self.assertEqual(code, 1, err)
             # Blocking output goes to stderr (dsx.findings.emit); passing
             # output goes to stdout. code == 1 here means stderr carries it.
@@ -7774,7 +7812,7 @@ class TestAdmissibilityGateRegistration(unittest.TestCase):
             )
             for point in ("plan", "verify", "ship"):
                 with self.subTest(point=point):
-                    code, out, err = self._run(
+                    _code, out, _err = self._run(
                         ["gate", point, "--spec", str(spec_path), "--json"]
                     )
                     payload = json.loads(out)
@@ -7783,7 +7821,7 @@ class TestAdmissibilityGateRegistration(unittest.TestCase):
 
     def test_dsx_audit_runs_without_error_on_good_fixture(self):
         fixture = self.ROOT / "examples" / "good-ANALYSIS-SPEC.yaml"
-        code, out, err = self._run(["audit", "--spec", str(fixture), "--json"])
+        code, _out, err = self._run(["audit", "--spec", str(fixture), "--json"])
         self.assertEqual(code, 0, err)
 
     def test_gate_execute_excludes_admissibility(self):
@@ -7801,13 +7839,13 @@ class TestAdmissibilityGateRegistration(unittest.TestCase):
 class TestAdmissibilityRecommendComposition(unittest.TestCase):
     ROOT = Path(__file__).resolve().parent.parent
 
-    def _recommend(self, args: "list[str]", cwd: "str | None" = None):
+    def _recommend(self, args: list[str], cwd: str | None = None):
         import subprocess
 
         env = dict(__import__("os").environ, PYTHONPATH=str(self.ROOT))
         cmd = [sys.executable, "-m", "dsx.cli", "recommend-test", *args]
         return subprocess.run(
-            cmd, capture_output=True, text=True, cwd=cwd or str(self.ROOT), env=env
+            cmd, capture_output=True, text=True, cwd=cwd or str(self.ROOT), env=env, check=False
         )
 
     def test_no_spec_output_is_byte_identical_regardless_of_working_directory(self):
@@ -7897,7 +7935,7 @@ class TestAdmissibilityRecommendComposition(unittest.TestCase):
     # while holding size; Lydersen, Fagerland & Laake 2009 §9). stats.py is therefore NO
     # LONGER byte-identical to v1.4.0; this snapshot records the reconciled routing, and
     # every other field (test, rationale, effect_size) and the key order are unchanged.
-    _BASELINE_TWO_PROPORTION_NO_SPEC = {
+    _BASELINE_TWO_PROPORTION_NO_SPEC: ClassVar[dict] = {
         "test": "two_proportion_z",
         "rationale": "Two independent proportions with adequate expected cell counts.",
         "alternatives": ["boschloo_exact (any expected cell < 5)", "chi_square", "bootstrap"],
@@ -7948,14 +7986,13 @@ class TestAdmissibilityCorpusRegression(unittest.TestCase):
 
     ROOT = Path(__file__).resolve().parent.parent
 
-    def _run(self, argv: "list[str]") -> "tuple[int, str, str]":
+    def _run(self, argv: list[str]) -> tuple[int, str, str]:
         out, err = io.StringIO(), io.StringIO()
         with redirect_stdout(out), redirect_stderr(err):
             code = cli.main(argv)
         return code, out.getvalue(), err.getvalue()
 
-    def _committed_specs(self) -> "list[Path]":
-        import glob
+    def _committed_specs(self) -> list[Path]:
 
         paths = (
             sorted(self.ROOT.glob("examples/*-ANALYSIS-SPEC.yaml"))
@@ -8070,7 +8107,7 @@ class TestAdmissibilityCorpusRegression(unittest.TestCase):
                 "DSX-ADM-020", {f["code"] for f in payload["findings"]}
             )
 
-            code2, _, err2 = self._run(
+            code2, _, _err2 = self._run(
                 ["gate", "plan", "--spec", str(spec_path), "--block-on", "HIGH", "--json"]
             )
             self.assertEqual(code2, 1)

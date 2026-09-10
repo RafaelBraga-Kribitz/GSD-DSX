@@ -212,12 +212,12 @@ report.add("DSX-PAR-001", "HIGH", "t")
             _write(
                 Path(code_dir),
                 "check.py",
-                '''
+                f'''
 def f(report):
     """No citation or reference value here."""
-    report.add("{enforced}", "HIGH", "t")
-    report.add("{neighbour}", "HIGH", "t")
-'''.format(enforced=enforced_code, neighbour=neighbour_code),
+    report.add("{enforced_code}", "HIGH", "t")
+    report.add("{neighbour_code}", "HIGH", "t")
+''',
             )
             _write(Path(tests_dir), "test_marker.py", f"# D-05: {enforced_code}\n")
 
@@ -301,6 +301,7 @@ class TestD05EnforcementFixture(unittest.TestCase):
             cwd=str(_ROOT),
             capture_output=True,
             text=True,
+            check=False,
         )
         # unittest exits 5 (not 0) when discovery finds zero tests — that IS the
         # assertion: bad_check.py's two functions must never be collected.
@@ -497,6 +498,7 @@ class TestFamiliesCitationGate(unittest.TestCase):
             cwd=str(_ROOT),
             capture_output=True,
             text=True,
+            check=False,
         )
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertNotIn("D-24:", result.stderr)
@@ -528,6 +530,7 @@ class TestFamiliesCitationGate(unittest.TestCase):
                 cwd=str(tree),
                 capture_output=True,
                 text=True,
+                check=False,
             )
             self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
             d24_lines = [
@@ -637,6 +640,7 @@ def f(report):
             cwd=str(_ROOT),
             capture_output=True,
             text=True,
+            check=False,
         )
         self.assertEqual(result.returncode, 0, result.stderr)
 
@@ -687,8 +691,8 @@ _CANONICAL_DECLARATIONS = {
         ("CRITICAL", "Causal claim with no identification strategy behind it"),
         (
             "CRITICAL",
-            "Prescriptive claim recommends an intervention with no identification "
-            "strategy behind it",
+            ("Prescriptive claim recommends an intervention with no identification "
+            "strategy behind it"),
         ),
     },
     "DSX-CLM-021": {
@@ -726,8 +730,8 @@ _CANONICAL_DECLARATIONS = {
     "DSX-COH-041": {
         (
             "CRITICAL",
-            f"Opposing segment {_PH} above the disposition floor carries no "
-            "decision.subgroup_harm[] row",
+            (f"Opposing segment {_PH} above the disposition floor carries no "
+            "decision.subgroup_harm[] row"),
         ),
         (
             "CRITICAL",
@@ -742,8 +746,8 @@ class TestCanonicalDeclarations(unittest.TestCase):
     """Pin the divergent-text finding codes (milestone audit GAP-PROC-05)."""
 
     @staticmethod
-    def _declarations_by_code() -> "dict[str, set]":
-        by_code: "dict[str, set]" = {}
+    def _declarations_by_code() -> dict[str, set]:
+        by_code: dict[str, set] = {}
         for source in sorted((_ROOT / "dsx").rglob("*.py")):
             for code, severity, title in g.extract(source):
                 by_code.setdefault(code, set()).add((severity, title))

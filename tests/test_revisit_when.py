@@ -22,11 +22,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from pathlib import Path as _Path
 
-from dsx.checks import coherence  # noqa: E402
-from dsx.findings import Report, Severity  # noqa: E402
-from dsx.frame import val  # noqa: E402
-from dsx.loader import load  # noqa: E402
-from dsx.spec import (  # noqa: E402
+from dsx.checks import coherence
+from dsx.findings import Report, Severity
+from dsx.frame import val
+from dsx.loader import load
+from dsx.spec import (
     falsifier_is_discriminating,
     revisit_when_is_discriminating,
 )

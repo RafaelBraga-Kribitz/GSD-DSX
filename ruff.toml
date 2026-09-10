@@ -1,0 +1,27 @@
+# Lint configuration for the repository's own development checks (scripts/check.sh
+# runs it when ruff is installed). The gate path stays stdlib-only at runtime -- ruff
+# is a developer tool, never a dependency of `dsx`. Every selected rule is enforced
+# repo-wide; the few justified exceptions carry an inline `# noqa` with a reason.
+target-version = "py39"     # README promises Python 3.9+ on the gate path
+line-length = 120
+
+# Corpus fixtures under examples/ are deliberately defective analysis code read as
+# text by the entrypoint scan -- style rules would fight their purpose. .planning/
+# holds archived measurement spikes, not shipped code.
+extend-exclude = ["examples", ".planning", "graphify-out", ".claude"]
+
+[lint]
+select = ["E", "W", "F", "I", "B", "UP", "SIM", "C4", "RUF", "PLW", "ISC", "PIE", "PERF", "FURB", "BLE"]
+ignore = [
+    # Micro-performance rules. This is a stdlib gate over small YAML specs: explicit
+    # loops with early `continue`s are the readable form (PERF401), and EAFP parsing
+    # inside the profiler's per-row loop IS the fast path in CPython (PERF203) -- a
+    # pre-check would double the parse cost. Ignored here, once, with the reason.
+    "PERF203", "PERF401",
+]
+# Typographic and mathematical characters used deliberately in findings, docstrings
+# and test messages (a true minus sign, set union, alpha).
+allowed-confusables = ["–", "—", "→", "≈", "×", "’", "‘", "“", "”", "…", "±", "≥", "≤", "−", "∪", "α", "ρ"]
+
+[lint.isort]
+known-first-party = ["dsx"]

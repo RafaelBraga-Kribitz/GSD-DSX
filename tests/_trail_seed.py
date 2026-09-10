@@ -26,7 +26,7 @@ from dsx.decisions import InvocationHeader, append, decisions_path, frame_digest
 from dsx.loader import load  # noqa: E402
 
 
-def seed_plan_header(root: "str | Path", spec_path: "str | Path") -> None:
+def seed_plan_header(root: str | Path, spec_path: str | Path) -> None:
     """Append a plan-gate-point ``InvocationHeader`` for the spec at
     ``spec_path`` into ``root``'s decision trail.
 

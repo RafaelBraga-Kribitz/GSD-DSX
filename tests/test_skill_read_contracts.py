@@ -186,11 +186,11 @@ def _extract_paths(lines, normalize=lambda p: p) -> set[str]:
     ``column_name -> []`` rule for DATA-PROFILE)."""
     stack: list[tuple[int, str]] = []  # (indent, already-normalized path)
     keys: set[str] = set()
-    for line in lines:
-        stripped = line.strip()
+    for raw in lines:
+        stripped = raw.strip()
         if not stripped or stripped.startswith("#"):
             continue  # blank or full-comment line
-        line = _INLINE_COMMENT_RE.sub("", line)
+        line = _INLINE_COMMENT_RE.sub("", raw)
         content = line.strip()
         if not content:
             continue

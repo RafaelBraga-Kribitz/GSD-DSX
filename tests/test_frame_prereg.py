@@ -12,7 +12,6 @@ import copy
 import io
 import json
 import re
-import shutil
 import sys
 import tempfile
 import unittest
@@ -24,11 +23,13 @@ sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "tests"))
 
 from _trail_seed import seed_plan_header  # noqa: E402
-from dsx import __version__  # noqa: E402
-from dsx import cli  # noqa: E402
-from dsx.decisions import AmendmentRecord, InvocationHeader  # noqa: E402
+
+from dsx import (  # noqa: E402
+    __version__,
+    cli,
+)
+from dsx.decisions import AmendmentRecord, InvocationHeader, decisions_path, frame_digest  # noqa: E402
 from dsx.decisions import append as append_decision  # noqa: E402
-from dsx.decisions import decisions_path, frame_digest  # noqa: E402
 from dsx.findings import CheckError, Report, Severity  # noqa: E402
 from dsx.frame import prereg  # noqa: E402
 from dsx.loader import load  # noqa: E402
@@ -744,9 +745,8 @@ class TestMissingPlanHeader(unittest.TestCase):
             self.assertEqual(report.findings, [])
 
     def test_2_reconcile_true_with_no_trail_file_raises_check_error(self):
-        with tempfile.TemporaryDirectory() as root:
-            with self.assertRaises(CheckError):
-                prereg.check(self._spec(), root, reconcile_trail=True)
+        with tempfile.TemporaryDirectory() as root, self.assertRaises(CheckError):
+            prereg.check(self._spec(), root, reconcile_trail=True)
 
     def test_3_trail_with_no_plan_header_raises_check_error(self):
         with tempfile.TemporaryDirectory() as root:
@@ -868,16 +868,15 @@ class TestMissingPlanHeader(unittest.TestCase):
         spec["suppressions"].append(
             {"code": "DSX-FAKE-999", "reason": "typo", "authority": "ADR-1"}
         )
-        with tempfile.TemporaryDirectory() as root:
-            with self.assertRaises(CheckError):
-                run_checks(
-                    spec,
-                    ("prereg",),
-                    root,
-                    gate_point="verify",
-                    resolve_root=root,
-                    gate_invocation=True,
-                )
+        with tempfile.TemporaryDirectory() as root, self.assertRaises(CheckError):
+            run_checks(
+                spec,
+                ("prereg",),
+                root,
+                gate_point="verify",
+                resolve_root=root,
+                gate_invocation=True,
+            )
 
 
 class TestContentLockReconciliation(unittest.TestCase):
@@ -1029,7 +1028,7 @@ class TestGateRegistration(unittest.TestCase):
             pre_codes,
             "expected at least DSX-PRE-010, DSX-PRE-020 and DSX-PRE-030 to be known",
         )
-        reachable_checks: "set[str]" = set().union(*GATE_PROFILES.values())
+        reachable_checks: set[str] = set().union(*GATE_PROFILES.values())
         self.assertIn("prereg", reachable_checks)
 
     def test_known_dsx_pre_codes_are_exactly_010_020_030_040_041(self):
@@ -1336,7 +1335,7 @@ class TestAdHocCommandScope(unittest.TestCase):
     same trail-free directory that tests 1 and 2 pass in.
     """
 
-    def _run(self, argv: "list[str]") -> "tuple[int, str, str]":
+    def _run(self, argv: list[str]) -> tuple[int, str, str]:
         out, err = io.StringIO(), io.StringIO()
         with redirect_stdout(out), redirect_stderr(err):
             code = cli.main(argv)

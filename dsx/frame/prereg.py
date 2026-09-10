@@ -66,7 +66,7 @@ class _ParsedRule:
     branch: str
 
 
-def _parse_fallback_rule(text: object) -> "_ParsedRule | None":
+def _parse_fallback_rule(text: object) -> _ParsedRule | None:
     """Parse a declared ``inference.fallback_rule`` string into a ``_ParsedRule``.
 
     Opt-in, discriminated by the literal arrow ``->`` (D-01): a string that is not a
@@ -138,15 +138,15 @@ _UNDECLARED_FACT = (
 # sorted(PREREG_FACTS) above. PREREG_FACTS's own keys are already all-lowercase, so
 # this map's keys are identical to PREREG_FACTS's; the point is normalizing the
 # *lookup key* (parsed.fact), not the registry.
-_PREREG_FACTS_NORMALIZED: "dict[str, str]" = {
+_PREREG_FACTS_NORMALIZED: dict[str, str] = {
     normalize(k): v for k, v in PREREG_FACTS.items()
 }
 
 
 @dataclass(frozen=True)
 class _Resolution:
-    branch: "str | None"
-    reason: "str | None"
+    branch: str | None
+    reason: str | None
     source: str
 
 
@@ -212,7 +212,7 @@ def _resolve_branch(spec: dict) -> _Resolution:
     )
 
 
-def _check_rule_resolves(spec: dict, resolution: "_Resolution", report: Report) -> None:
+def _check_rule_resolves(spec: dict, resolution: _Resolution, report: Report) -> None:
     """Emit DSX-PRE-010 when the declared fallback rule does not resolve to a branch.
 
     Fires when ``resolution.reason`` is set — the rule named a fact outside the closed
@@ -293,7 +293,7 @@ def _check_rule_resolves(spec: dict, resolution: "_Resolution", report: Report) 
     )
 
 
-def _check_procedure_reconciliation(spec: dict, resolution: "_Resolution", report: Report) -> None:
+def _check_procedure_reconciliation(spec: dict, resolution: _Resolution, report: Report) -> None:
     """Emit DSX-PRE-030 when the executed procedure differs from the declared branch.
 
     Returns early, emitting nothing, when ``resolution.branch`` is ``None`` — an
@@ -395,7 +395,7 @@ def _check_procedure_reconciliation(spec: dict, resolution: "_Resolution", repor
     )
 
 
-def _recorded_plan_digests(root: "str | None") -> "set[str]":
+def _recorded_plan_digests(root: str | None) -> set[str]:
     """Return every ``frame_digest`` recorded at a ``plan``-gate-point invocation
     header in ``root``'s decision trail.
 
@@ -418,7 +418,7 @@ def _recorded_plan_digests(root: "str | None") -> "set[str]":
         return set()
 
     records = read_all(decisions_path(root))
-    digests: "set[str]" = set()
+    digests: set[str] = set()
     for record in records:
         if not isinstance(record, dict):
             continue
@@ -460,7 +460,7 @@ def _has_grandfather_suppression(spec: dict) -> bool:
     return False
 
 
-def _check_content_lock(spec: dict, root: "str | None", report: Report) -> None:
+def _check_content_lock(spec: dict, root: str | None, report: Report) -> None:
     """Reconcile the plan-time content lock recorded in the decision trail against
     the verify-time bytes of the ``validity_frame:``/``inference:`` blocks
     (``DSX-PRE-020``), refusing to run at all when no plan-time header is recorded
@@ -740,7 +740,7 @@ def _check_spec_identity(spec: dict, report: Report) -> None:
     )
 
 
-def _clearing_amendment_exists(records: "list[dict]", header_digests: "set[str]") -> bool:
+def _clearing_amendment_exists(records: list[dict], header_digests: set[str]) -> bool:
     """True when ``records`` holds a usable clearing ``amendment`` record.
 
     "Usable" mirrors ``_has_grandfather_suppression``'s bar for its own
@@ -774,7 +774,7 @@ def _clearing_amendment_exists(records: "list[dict]", header_digests: "set[str]"
     return False
 
 
-def _check_amendment_ledger(spec: dict, root: "str | None", report: Report) -> None:
+def _check_amendment_ledger(spec: dict, root: str | None, report: Report) -> None:
     """Emit ``DSX-PRE-041`` when more than one distinct ``frame_digest`` is
     recorded in the decision trail with no clearing amendment record
     (REQ-P11.2-05, D-09, D-10, D-12).
@@ -852,8 +852,8 @@ def _check_amendment_ledger(spec: dict, root: "str | None", report: Report) -> N
 
     records = read_all(decisions_path(root))
 
-    header_digests: "set[str]" = set()
-    by_spec_id: "dict[str, set[str]]" = {}
+    header_digests: set[str] = set()
+    by_spec_id: dict[str, set[str]] = {}
     for record in records:
         if not isinstance(record, dict):
             continue
@@ -947,7 +947,7 @@ def _check_amendment_ledger(spec: dict, root: "str | None", report: Report) -> N
     )
 
 
-def check(spec: dict, root: "str | None" = None, *, reconcile_trail: bool = False) -> Report:
+def check(spec: dict, root: str | None = None, *, reconcile_trail: bool = False) -> Report:
     """Emit the pre-registered inference plan findings (``DSX-PRE-*``).
 
     Degrades to an empty report, never a traceback, when ``spec`` is not a dict,

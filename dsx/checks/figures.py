@@ -34,7 +34,7 @@ def file_sha256(path: Path) -> str:
 
 def check(
     spec: dict,
-    phase_dir: "str | None" = None,
+    phase_dir: str | None = None,
     *,
     strict: bool = False,
 ) -> Report:
@@ -134,7 +134,7 @@ def check(
     return report
 
 
-def _resolve_roots(phase_dir: "str | None") -> list[Path]:
+def _resolve_roots(phase_dir: str | None) -> list[Path]:
     roots: list[Path] = []
     if phase_dir:
         roots.append(Path(phase_dir))

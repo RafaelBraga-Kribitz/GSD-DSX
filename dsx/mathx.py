@@ -13,7 +13,7 @@ against reference values.
 from __future__ import annotations
 
 import math
-from typing import Sequence
+from collections.abc import Sequence
 
 # ── Normal distribution ──────────────────────────────────────────────────────
 
@@ -477,7 +477,7 @@ def benjamini_hochberg(
     running = 1.0
     for rank in range(m - 1, -1, -1):
         idx = order[rank]
-        running = min(running, min(1.0, pvalues[idx] * m / (rank + 1)))
+        running = min(running, 1.0, pvalues[idx] * m / (rank + 1))
         adjusted[idx] = running
     return adjusted, [p <= alpha for p in adjusted]
 

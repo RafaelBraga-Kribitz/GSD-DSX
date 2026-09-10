@@ -45,7 +45,7 @@ CHECKS_DIR = Path(dsx.checks.__file__).resolve().parent
 _FORBIDDEN_PACKAGE = "dsx.checks"
 
 
-def _package_for(path: "str | Path") -> str:
+def _package_for(path: str | Path) -> str:
     """Derive the dotted package a module at ``path`` lives in, relative to the
     repository root — the exact value Python assigns to that module's
     ``__package__`` at runtime, which is what relative-import resolution uses.
@@ -224,7 +224,7 @@ def _scan_source_for_paradigm_reads_text(text: str) -> list[str]:
     return violations
 
 
-def _subscript_key(slice_node: ast.AST) -> "str | None":
+def _subscript_key(slice_node: ast.AST) -> str | None:
     """Return a subscript's string key, tolerating both the modern (3.9+, the slice is
     the index expression directly) and legacy (pre-3.9, wrapped in ``ast.Index``) AST
     shapes. Ducktypes on the class name rather than referencing ``ast.Index`` directly —

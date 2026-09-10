@@ -47,7 +47,7 @@ def _load_gate_profiles() -> dict:
     """Import ``dsx.cli`` (with ROOT on sys.path) and return its GATE_PROFILES."""
     if str(ROOT) not in sys.path:
         sys.path.insert(0, str(ROOT))
-    from dsx import cli  # noqa: PLC0415 — lazy, so ROOT is on the path first
+    from dsx import cli
 
     return cli.GATE_PROFILES
 

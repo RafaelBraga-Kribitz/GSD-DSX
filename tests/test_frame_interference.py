@@ -15,12 +15,14 @@ import tempfile
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
+from typing import ClassVar
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "tests"))
 
 from _trail_seed import seed_plan_header  # noqa: E402
+
 from dsx import cli  # noqa: E402
 from dsx.findings import Report, Severity  # noqa: E402
 from dsx.frame import interference  # noqa: E402
@@ -38,7 +40,7 @@ def codes(report: Report) -> set[str]:
     return {f.code for f in report.findings}
 
 
-def _gate_findings(spec_path: Path, point: str) -> "tuple[int, list[dict]]":
+def _gate_findings(spec_path: Path, point: str) -> tuple[int, list[dict]]:
     """Run one real ``dsx gate <point>`` against one fixture and return
     ``(exit_code, findings)``.
 
@@ -225,8 +227,8 @@ class TestInterferenceUnaddressed(unittest.TestCase):
         single-case tests' job, and pinning the whole matrix would make every
         future vocabulary addition a test edit.
         """
-        risks = list(INTERFERENCE_RISKS) + ["shared_buget", "marketplce", "", None]
-        mitigations = list(INTERFERENCE_MITIGATIONS) + ["buget_isolation", "", None]
+        risks = [*list(INTERFERENCE_RISKS), "shared_buget", "marketplce", "", None]
+        mitigations = [*list(INTERFERENCE_MITIGATIONS), "buget_isolation", "", None]
         residual_notes = ["", "<what remains unaddressed, if anything>", _REAL_RESIDUAL_NOTE]
         for risk in risks:
             for mitigation in mitigations:
@@ -280,7 +282,7 @@ class TestNeedsCausalBlock(unittest.TestCase):
     # magnitude→test miss clean). needs_causal_block is legitimately False for it, so it
     # is excluded here by slug rather than silently, exactly like the two fixtures
     # above.
-    _NON_CAUSAL_KNOWN_BAD = {
+    _NON_CAUSAL_KNOWN_BAD: ClassVar[set[str]] = {
         "prescriptive-churn-recommendation-ANALYSIS-SPEC.yaml",
         "operator-known-answer-selective-exclusion-ANALYSIS-SPEC.yaml",
         "magnitude-without-computed-effect-ANALYSIS-SPEC.yaml",
@@ -328,7 +330,7 @@ class TestGateRegistration(unittest.TestCase):
 
         int_codes = [c for c in known_codes() if c.startswith("DSX-INT-")]
         self.assertTrue(int_codes, "expected at least DSX-INT-010 and DSX-INT-011 to be known")
-        reachable_checks: "set[str]" = set().union(*GATE_PROFILES.values())
+        reachable_checks: set[str] = set().union(*GATE_PROFILES.values())
         self.assertIn("interference", reachable_checks)
 
 
@@ -691,7 +693,7 @@ class TestInterferenceGateLevel(unittest.TestCase):
     ROOT = ROOT
     FIXTURE = ROOT / "examples" / "known-bad" / "interference-shared-budget-ANALYSIS-SPEC.yaml"
 
-    def _run(self, args: "list[str]") -> "tuple[int, str, str]":
+    def _run(self, args: list[str]) -> tuple[int, str, str]:
         out, err = io.StringIO(), io.StringIO()
         with redirect_stdout(out), redirect_stderr(err):
             code = cli.main(args)
@@ -721,24 +723,22 @@ class TestInterferenceGateLevel(unittest.TestCase):
             spec_path = self._copied_fixture(tmp)
             self._mutate_interference(spec_path, mitigation="budget_isolation")
             for point in ("plan", "execute"):
-                with self.subTest(point=point):
-                    with tempfile.TemporaryDirectory() as phase_dir:
-                        code, out, err = self._run(
-                            ["gate", point, "--spec", str(spec_path), "--phase-dir", phase_dir]
-                        )
-                        self.assertEqual(code, 0, f"gate {point} unexpectedly blocked:\n{err}")
+                with self.subTest(point=point), tempfile.TemporaryDirectory() as phase_dir:
+                    code, _out, err = self._run(
+                        ["gate", point, "--spec", str(spec_path), "--phase-dir", phase_dir]
+                    )
+                    self.assertEqual(code, 0, f"gate {point} unexpectedly blocked:\n{err}")
 
     def test_real_residual_note_variant_clears_plan_and_execute(self):
         with tempfile.TemporaryDirectory() as tmp:
             spec_path = self._copied_fixture(tmp)
             self._mutate_interference(spec_path, residual_note=_REAL_RESIDUAL_NOTE)
             for point in ("plan", "execute"):
-                with self.subTest(point=point):
-                    with tempfile.TemporaryDirectory() as phase_dir:
-                        code, out, err = self._run(
-                            ["gate", point, "--spec", str(spec_path), "--phase-dir", phase_dir]
-                        )
-                        self.assertEqual(code, 0, f"gate {point} unexpectedly blocked:\n{err}")
+                with self.subTest(point=point), tempfile.TemporaryDirectory() as phase_dir:
+                    code, _out, err = self._run(
+                        ["gate", point, "--spec", str(spec_path), "--phase-dir", phase_dir]
+                    )
+                    self.assertEqual(code, 0, f"gate {point} unexpectedly blocked:\n{err}")
 
     # 08-REVIEW.md CR-01: an unrecognised mitigation string made the risk look
     # addressed, so a typo cleared a CRITICAL-threshold gate that an honest
@@ -838,21 +838,20 @@ class TestInterferenceGateLevel(unittest.TestCase):
         mitigations = ["none", "geo_split", "budget_isolation", "buget_isolation"]
         for risk in risks:
             for mitigation in mitigations:
-                with self.subTest(risk=risk, mitigation=mitigation):
-                    with tempfile.TemporaryDirectory() as tmp:
-                        spec_path = self._copied_fixture(tmp)
-                        self._mutate_interference(spec_path, risk=risk, mitigation=mitigation)
-                        code, findings = _gate_findings(spec_path, "plan")
-                        found_codes = {f["code"] for f in findings}
-                        self.assertFalse(
-                            {"DSX-INT-010", "DSX-INT-011"} <= found_codes,
-                            f"both codes fired for risk={risk!r} mitigation={mitigation!r}",
-                        )
-                        has_either = bool(found_codes & {"DSX-INT-010", "DSX-INT-011"})
-                        if has_either:
-                            self.assertEqual(code, 1)
-                        else:
-                            self.assertEqual(code, 0)
+                with self.subTest(risk=risk, mitigation=mitigation), tempfile.TemporaryDirectory() as tmp:
+                    spec_path = self._copied_fixture(tmp)
+                    self._mutate_interference(spec_path, risk=risk, mitigation=mitigation)
+                    code, findings = _gate_findings(spec_path, "plan")
+                    found_codes = {f["code"] for f in findings}
+                    self.assertFalse(
+                        {"DSX-INT-010", "DSX-INT-011"} <= found_codes,
+                        f"both codes fired for risk={risk!r} mitigation={mitigation!r}",
+                    )
+                    has_either = bool(found_codes & {"DSX-INT-010", "DSX-INT-011"})
+                    if has_either:
+                        self.assertEqual(code, 1)
+                    else:
+                        self.assertEqual(code, 0)
 
 
 def _stability_causal_spec(**overrides: object) -> dict:
@@ -921,7 +920,7 @@ class TestStabilityAssessment(unittest.TestCase):
 
     def test_stability_where_names_sub_block_explicitly_not_bare_field_name(self):
         report = interference.check(_stability_causal_spec())
-        found = [f for f in report.findings if f.code == "DSX-INT-040"][0]
+        found = next(f for f in report.findings if f.code == "DSX-INT-040")
         self.assertEqual(
             found.where, "spec.validity_frame.stability.novelty_primacy_assessed"
         )
@@ -929,12 +928,12 @@ class TestStabilityAssessment(unittest.TestCase):
         report2 = interference.check(
             _stability_causal_spec(novelty_primacy_assessed=True, evidence="")
         )
-        found2 = [f for f in report2.findings if f.code == "DSX-INT-040"][0]
+        found2 = next(f for f in report2.findings if f.code == "DSX-INT-040")
         self.assertEqual(found2.where, "spec.validity_frame.stability.evidence")
 
     def test_stability_detail_names_dsx_exp_030_and_states_disjointness(self):
         report = interference.check(_stability_causal_spec())
-        found = [f for f in report.findings if f.code == "DSX-INT-040"][0]
+        found = next(f for f in report.findings if f.code == "DSX-INT-040")
         self.assertIn("DSX-EXP-030", found.detail)
 
     def test_stability_gate_level_severity_alone_selects_verify_not_plan(self):
@@ -979,20 +978,19 @@ class TestStabilityAssessment(unittest.TestCase):
         )
         self.assertTrue(specs, "no example specs found")
         for path in specs:
-            with self.subTest(spec=path.name):
-                with tempfile.TemporaryDirectory() as phase_dir:
-                    out, err = io.StringIO(), io.StringIO()
-                    with redirect_stdout(out), redirect_stderr(err):
-                        code = cli.main(
-                            ["gate", "ship", "--spec", str(path), "--phase-dir", phase_dir]
-                        )
-                    self.assertNotIn(
-                        "DSX-INT-040", out.getvalue() + err.getvalue(),
-                        f"{path.name} unexpectedly names DSX-INT-040 at ship",
+            with self.subTest(spec=path.name), tempfile.TemporaryDirectory() as phase_dir:
+                out, err = io.StringIO(), io.StringIO()
+                with redirect_stdout(out), redirect_stderr(err):
+                    cli.main(
+                        ["gate", "ship", "--spec", str(path), "--phase-dir", phase_dir]
                     )
+                self.assertNotIn(
+                    "DSX-INT-040", out.getvalue() + err.getvalue(),
+                    f"{path.name} unexpectedly names DSX-INT-040 at ship",
+                )
 
 
-_MALFORMED_SHAPES: "tuple[object, ...]" = ("s", [], None, 3, {})
+_MALFORMED_SHAPES: tuple[object, ...] = ("s", [], None, 3, {})
 
 
 class TestModuleHardenedAgainstMalformedShapes(unittest.TestCase):
@@ -1022,7 +1020,7 @@ class TestModuleHardenedAgainstMalformedShapes(unittest.TestCase):
                         spec["validity_frame"] = {sub: shape}
                     try:
                         interference.check(spec)
-                    except Exception as exc:  # pragma: no cover - failure path
+                    except Exception as exc:  # noqa: BLE001 -- the property is "never raises"; any exception is the failure
                         self.fail(f"check() raised {exc!r} for {target}={shape!r}")
 
     def test_malformed_top_level_and_sub_block_values_produce_no_int_finding(self):
@@ -1053,7 +1051,7 @@ class TestModuleHardenedAgainstMalformedShapes(unittest.TestCase):
             with self.subTest(bad_spec=repr(bad_spec)):
                 try:
                     report = interference.check(bad_spec)
-                except Exception as exc:  # pragma: no cover - failure path
+                except Exception as exc:  # noqa: BLE001 -- the property is "never raises"; any exception is the failure
                     self.fail(f"check() raised {exc!r} for spec={bad_spec!r}")
                 self.assertEqual(codes(report), set())
 
@@ -1067,7 +1065,7 @@ class TestModuleHardenedAgainstMalformedShapes(unittest.TestCase):
         }
         try:
             report = interference.check(spec)
-        except Exception as exc:  # pragma: no cover - failure path
+        except Exception as exc:  # noqa: BLE001 -- the property is "never raises"; any exception is the failure
             self.fail(f"check() raised {exc!r} for a metrics list of bare strings")
         self.assertEqual(codes(report), set())
 

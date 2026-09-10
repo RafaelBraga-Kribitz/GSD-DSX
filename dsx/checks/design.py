@@ -251,7 +251,7 @@ def _check_allocation(design: dict, spec: dict, report: Report) -> None:
             "CRITICAL",
             f"Sample ratio mismatch: chi2={statistic:.2f}, p={p_value:.2e}",
             detail=(
-                f"Observed split {['{:.4f}'.format(s) for s in actual_share]} against expected "
+                f"Observed split {[f'{s:.4f}' for s in actual_share]} against expected "
                 f"{expected}. A p below {SRM_ALPHA} means the assignment mechanism is broken — "
                 "bot filtering, redirect loss, logging drop or a bucketing bug. Any treatment "
                 "effect estimated from this data is confounded by whatever caused the imbalance."

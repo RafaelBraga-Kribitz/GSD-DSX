@@ -25,9 +25,9 @@ FORBIDDEN_FILENAMES = ("FORBIDDEN-CLAIMS.yaml", "FORBIDDEN-CLAIMS.yml")
 
 def check(
     spec: dict,
-    phase_dir: "str | None" = None,
+    phase_dir: str | None = None,
     *,
-    gate_point: "str | None" = None,
+    gate_point: str | None = None,
 ) -> Report:
     report = Report(check="narrative")
     claims = items(spec, "claims")
@@ -117,7 +117,7 @@ def check(
     return report
 
 
-def _roots(phase_dir: "str | None") -> list[Path]:
+def _roots(phase_dir: str | None) -> list[Path]:
     roots: list[Path] = []
     if phase_dir:
         roots.append(Path(phase_dir))
@@ -146,7 +146,7 @@ def _load_forbidden(roots: list[Path]) -> list[tuple[str, str]]:
                 continue
             try:
                 data = load_yaml(path.read_text(encoding="utf-8"), suffix=path.suffix)
-            except Exception:
+            except Exception:  # noqa: BLE001 -- an optional pattern file that will not parse is skipped, never fatal
                 continue
             for entry in data.get("patterns") or []:
                 if not isinstance(entry, dict):

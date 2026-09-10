@@ -14,8 +14,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from dsx.checks import chart_review  # noqa: E402
-from dsx.findings import Report, Severity  # noqa: E402
+from dsx.checks import chart_review
+from dsx.findings import Report, Severity
 
 ROOT = Path(__file__).resolve().parent.parent
 EXAMPLES_DIR = ROOT / "examples"
@@ -28,7 +28,7 @@ def codes(report: Report) -> set[str]:
     return {f.code for f in report.findings}
 
 
-def severity_of(report: Report, code: str) -> "Severity | None":
+def severity_of(report: Report, code: str) -> Severity | None:
     for finding in report.findings:
         if finding.code == code:
             return finding.severity
