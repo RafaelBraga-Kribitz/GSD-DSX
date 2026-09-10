@@ -81,6 +81,7 @@ def check(
         _check_causal_support(claim, ctype, strategy, strength, where, report)
         _check_evidence_pointer(claim, where, report, roots)
         _check_numeric_overlap(claim, text, tests, where, report)
+        _check_supported_by_traceability(claim, text, tests, where, report)
         _check_predictive_support(claim, ctype, spec, where, report)
         _check_generalisation(claim, text, spec, where, report)
         _check_precision(claim, text, where, report)
@@ -441,6 +442,136 @@ def _close_enough(a: float, b: float, rel: float = 0.05, abs_tol: float = 0.0005
         return True
     scale = max(abs(a), abs(b), 1e-12)
     return abs(a - b) / scale <= rel
+
+
+def _round_sig(x: float, sig: int) -> float:
+    """Round x to `sig` significant figures."""
+    if x == 0:
+        return 0.0
+    return round(x, -int(math.floor(math.log10(abs(x)))) + (sig - 1))
+
+
+def _sig_figs_from_claim(claim: dict) -> int:
+    """Read claims[].rounding as significant figures, defaulting to 2 (D-28-03)."""
+    value = as_number(claim.get("rounding", 2))
+    if value is None:
+        return 2
+    sig = int(value)
+    return sig if sig >= 1 else 2
+
+
+def _reconciles_to_sig_figs(a: float, b: float, sig: int) -> bool:
+    """True iff a and b agree to `sig` significant figures AND fall within
+    DSX-CLM-033's rel-5%/abs-5e-4 window.
+
+    The significant-figures test is the tightening leg (D-28-03: `rounding` may
+    tighten per claim, never loosen); the ``_close_enough`` conjunct guarantees the
+    comparator is never LOOSER than DSX-CLM-033's window.
+    """
+    same_sig = math.isclose(
+        _round_sig(a, sig), _round_sig(b, sig), rel_tol=1e-9, abs_tol=1e-12
+    )
+    return same_sig and _close_enough(a, b)
+
+
+def _check_supported_by_traceability(
+    claim: dict, text: str, tests: list, where: str, report: Report
+) -> None:
+    """Every claim magnitude must trace to its cited test (DSX-CLM-034).
+
+    Citation: Wilkinson, L. & the Task Force on Statistical Inference (1999),
+    American Psychologist 54(8):594-604. This is the MOTIVATING PRINCIPLE only
+    ("Always present effect sizes for primary outcomes"; "Interval estimates should
+    be given for any effect sizes involving principal outcomes"). Wilkinson mandates
+    *reporting* effect sizes and intervals for primary outcomes; it does NOT mandate
+    any numeric-overlap mechanism, and this check does not claim it does.
+
+    Structural criterion: a declaration-level traceability corollary of that
+    principle. When a claim declares ``supported_by`` (the ``metric`` of the
+    ``results.tests[]`` entry it rests on), every numeric literal in the claim text
+    must trace to a reported number of THAT specific cited test -- its effect, the
+    x100 percent/proportion scale bridge DSX-CLM-033 already uses, or a CI bound --
+    to ``claims[].rounding`` significant figures (default 2). This is a
+    text-to-declared-number overlap (the DSX-REP-061 mould), never a recomputation:
+    the gate reads only declared numbers and runs nothing. It resolves numbers from
+    ONLY the named test(s), not the all-tests union DSX-CLM-033 uses.
+
+    Tolerance / tie-break contract: a literal ``L`` reconciles with a cited number
+    ``T`` iff they agree when both are rounded to ``rounding`` significant figures
+    AND they fall within DSX-CLM-033's rel-5%/abs-5e-4 window. The sig-figs leg is
+    only ever TIGHTER than that window (``rounding`` may tighten per claim, never
+    loosen). A literal agreeing to exactly ``rounding`` significant figures is
+    silent; one disagreeing at the last significant figure fires.
+
+    Bounded-catch honesty: this catches only via a STRAY claim number that lies
+    outside the cited test -- never via metric-identity. A claim whose every number
+    happens to sit inside the one cited test still passes, even if that test measured
+    the wrong metric. The check closes "a claim number absent from the cited test,"
+    not "the cited test measures the wrong metric."
+    """
+    supported_by = claim.get("supported_by")
+    if not supported_by:
+        return  # declaration-gated: absent pointer -> silent (attribution, not detection)
+    if not tests:
+        return
+
+    if isinstance(supported_by, (list, tuple)):
+        cited = [str(name) for name in supported_by if str(name).strip()]
+    else:
+        cited = [str(supported_by)] if str(supported_by).strip() else []
+    if not cited:
+        return
+
+    reference: list[float] = []
+    for test in tests:
+        if not isinstance(test, dict):
+            continue
+        if str(test.get("metric", "")) not in cited:
+            continue
+        effect = as_number(test.get("effect"))
+        if effect is not None:
+            reference.append(effect)
+            reference.append(effect * 100.0)
+        ci = test.get("ci")
+        if isinstance(ci, (list, tuple)) and len(ci) == 2:
+            for bound in ci:
+                value = as_number(bound)
+                if value is not None:
+                    reference.append(value)
+                    reference.append(value * 100.0)
+    if not reference:
+        return  # the named test(s) declare no numbers to trace against
+
+    claim_numbers = _extract_claim_magnitudes(text, claim)
+    if not claim_numbers:
+        return
+
+    rounding = _sig_figs_from_claim(claim)
+    unmatched = [
+        number
+        for number in claim_numbers
+        if not any(_reconciles_to_sig_figs(number, ref, rounding) for ref in reference)
+    ]
+    if unmatched:
+        report.add(
+            "DSX-CLM-034",
+            "HIGH",
+            "Claim magnitude does not trace to its cited test",
+            detail=(
+                f"Claim declares supported_by={cited!r} but the figure(s) "
+                f"{', '.join(f'{n:g}' for n in unmatched)} do not appear among that "
+                "test's reported numbers (effect, x100 pp/% bridge, or CI bound) to "
+                f"{rounding} significant figure(s). The magnitude is not traceable to "
+                "the cited test — it may have been copied from a different metric's row."
+            ),
+            remedy=(
+                "Point supported_by at the results.tests entry that actually reports "
+                "this magnitude, correct the claim figure, or add the covering test."
+            ),
+            where=where,
+        )
+    else:
+        report.ok("claim magnitudes trace to cited test(s)")
 
 
 def _check_predictive_support(

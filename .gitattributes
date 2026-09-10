@@ -4,3 +4,11 @@
 # recorded seals are of those exact bytes and the off-gate-path double-render determinism
 # test re-renders on the same platform. Marking them binary preserves both.
 examples/figures/*.svg binary
+
+# Profiler reference fixtures are content-addressed by `dsx profile` (`source_hash` is
+# a sha256 of the file's exact bytes, and the committed golden records that hash). They
+# must survive commit/checkout on any platform byte-exact, exactly like the sealed
+# figures above -- never line-ending-normalised. Found 2026-09-10 at the v2.6 ship
+# check: on a CRLF checkout the hash no longer matched the golden recorded from an LF
+# working copy.
+tests/fixtures/profiler/*.csv -text

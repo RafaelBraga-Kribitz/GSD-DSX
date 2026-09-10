@@ -1,6 +1,7 @@
 # Roadmap: gsd-dsx
 
-**Shipped:** v2.4 Visual Excellence — Phases 21–24 (2026-09-03); v2.3 Test Catalog — Phases 17–20 (2026-09-02); v2.2 Analytic Surface — Phases 13–16 (2026-08-29); v2.0.0 DSX Validity Frame — Phases 6–12 (2026-08-28); v1.1.0–v1.5.0 — Phases 1–5
+**Active:** none — v2.7 has not been opened (candidate scope listed under the Next section at the end of this file)
+**Shipped:** v2.6 Exploration Depth and Backlog Evidence — Phases 25–30 (2026-09-10); v2.4 Visual Excellence — Phases 21–24 (2026-09-03); v2.3 Test Catalog — Phases 17–20 (2026-09-02); v2.2 Analytic Surface — Phases 13–16 (2026-08-29); v2.0.0 DSX Validity Frame — Phases 6–12 (2026-08-28); v1.1.0–v1.5.0 — Phases 1–5
 
 > **Milestone name vs. release tag.** The DSX Validity Frame is named **v2.0.0**
 > throughout planning (its archives are `v2.0.0-ROADMAP.md`, `v2.0.0-REQUIREMENTS.md`,
@@ -19,6 +20,7 @@
 - ✅ **v2.2 Analytic Surface** — Phases 13–16 (shipped 2026-08-29, tag `v2.2.0`)
 - ✅ **v2.3 Test Catalog** — Phases 17–20 (shipped 2026-09-02, tag `v2.3.0`)
 - ✅ **v2.4 Visual Excellence** — Phases 21–24 (shipped 2026-09-03, tag `v2.4.0`)
+- ✅ **v2.6 Exploration Depth and Backlog Evidence** — Phases 25–30 (shipped 2026-09-10, tag `v2.6.0`)
 
 ## Phases
 
@@ -117,6 +119,24 @@ colors being unattributed ColorBrewer stops) before ship.
 
 </details>
 
+<details>
+<summary>✅ v2.6 Exploration Depth and Backlog Evidence (Phases 25–30) — SHIPPED 2026-09-10</summary>
+
+- [x] Phase 25: Hermetic profile depth (4/4 plans; zero-mint) — completed 2026-09-07
+- [x] Phase 26: Per-skill read contracts (4/4 plans; skill-only, zero-mint) — completed 2026-09-07
+- [x] Phase 27: Evidence case — feature-origin-only leak (2/2 plans; LIVE MISS → `DSX-ML-034`, attribution-only) — completed 2026-09-07
+- [x] Phase 28: Evidence case — magnitude no test computed (2/2 plans; LIVE MISS → `DSX-CLM-034`, attribution-only) — completed 2026-09-08
+- [x] Phase 29: Evidence case — subgroup harm under a prescriptive recommendation (2/2 plans; LIVE MISS → `DSX-COH-041`, the corpus's first `kind: target` — a real catch) — completed 2026-09-10
+- [x] Phase 30: Calibration re-baseline (2/2 plans; miss 5/5, FPR 0/15 with its one-sided 95% bound ≈0.181 stated; zero-mint 279→279) — completed 2026-09-10
+
+Phase detail is archived at `.planning/milestones/v2.6-ROADMAP.md`; requirements
+(18/18 Met) at `.planning/milestones/v2.6-REQUIREMENTS.md`; the milestone audit
+(`passed`) at `.planning/milestones/v2.6-MILESTONE-AUDIT.md`; the ceremony's own
+ledger and queue at `.planning/milestones/v2.6-LOOP-LEDGER*.md` /
+`v2.6-HUMAN-QUEUE.md`.
+
+</details>
+
 ## Progress
 
 | Phase | Milestone | Plans Complete | Status | Completed |
@@ -149,6 +169,12 @@ colors being unattributed ColorBrewer stops) before ship.
 | 22. Catalog spine, uncertainty family, selection heuristic | v2.4 | 4/4 | Complete | 2026-09-03 |
 | 23. Style and snippet layer | v2.4 | 3/3 | Complete | 2026-09-03 |
 | 24. Portfolio exemplar and viz calibration | v2.4 | 3/3 | Complete | 2026-09-03 |
+| 25. Hermetic profile depth | v2.6 | 4/4 | Complete | 2026-09-07 |
+| 26. Per-skill read contracts | v2.6 | 4/4 | Complete | 2026-09-07 |
+| 27. Evidence case — feature-origin-only leak | v2.6 | 2/2 | Complete | 2026-09-07 |
+| 28. Evidence case — magnitude no test computed | v2.6 | 2/2 | Complete | 2026-09-08 |
+| 29. Evidence case — subgroup harm (prescriptive) | v2.6 | 2/2 | Complete | 2026-09-10 |
+| 30. Calibration re-baseline | v2.6 | 2/2 | Complete | 2026-09-10 |
 
 **v2.0.0 totals:** 11 phases, 89 plans, 208 tasks. Milestone audit `passed` (`.planning/milestones/v2.0.0-MILESTONE-AUDIT.md`); all 11 phases verified and Nyquist-validated; cross-phase integration INTEGRATED.
 
@@ -158,12 +184,26 @@ colors being unattributed ColorBrewer stops) before ship.
 
 **v2.4 totals:** 4 phases, 11 plans. Milestone audit `passed` (`.planning/milestones/v2.4-MILESTONE-AUDIT.md`); all 4 phases verified and Nyquist-validated; cross-phase integration INTEGRATED (5/5 seams).
 
+**v2.6 totals:** 6 phases, 16 plans. Milestone audit `passed` (`.planning/milestones/v2.6-MILESTONE-AUDIT.md`); all 6 phases verified and Nyquist-validated; cross-phase integration WIRED (4/4 seams). Catalogue 276 → 279 (three D-13 evidence mints, each under a human-read D-05 citation); known-bad corpus 39 → 42 with 15 good-control specs; full suite 1629 OK on the real interpreter.
+
 ## Next
 
-v2.0.0, v2.2, v2.3, and v2.4 are shipped and archived (`.planning/milestones/v2.0.0-*`,
-`v2.2-*`, `v2.3-*`, `v2.4-*`). Two dormant seeds still carry forward (deepen
-`dsx-explore-data` into a reusable EDA protocol; grow DATA-PROFILE into
-hermetic EDA artifacts) — see `.planning/STATE.md` Deferred Items; both are
-natural v2.5 candidates given the EDA-adjacent chart work v2.4 just shipped.
+v2.0.0, v2.2, v2.3, v2.4 and v2.6 are shipped and archived (`.planning/milestones/`);
+v2.4.1 and v2.5.0 shipped interactively on 2026-09-06 (`.planning/MILESTONES.md`).
+**No milestone is open.** Candidate scope for v2.7 — every item entry-conditioned
+under D-13, none promoted on estimate:
 
-Start the next milestone with `/gsd-new-milestone`.
+- `SEED-003` (analyst conduct, notebook execution integrity, share-vs-risk quantity
+  kinds; medium question settled 2026-09-10 — two media with an explicit boundary).
+- `SEED-001` E-27 … E-31 (entry conditions unchanged).
+- `SEED-002`'s residue — a producer-side `parse_health` block (a gate reading it is
+  a separate D-02/D-06 decision).
+- The good-control corpus: 15 specs is a thin false-positive-rate denominator
+  (one-sided 95% bound ≈0.181 on 0/15); growing it is the real fix.
+- brief §6.5 items 1–6, entry conditions unchanged (paradigm-paired items wait for
+  their mirrors, D-12a).
+
+Opening v2.7 is interactive: `/gsd-new-milestone`, a fresh `LOOP-BRIEF.md` /
+`LOOP-LEDGER.md` / `HUMAN-QUEUE.md`, a new `gsd/v2.7.0-*` branch cut from `main`,
+`$Branch` repointed in `scripts/run-ceremony-firing.ps1`, then removing
+`.planning/loop-logs/.paused`.

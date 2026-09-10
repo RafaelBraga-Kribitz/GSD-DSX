@@ -13,7 +13,7 @@ a suppression or a reference in a review stays valid across versions.
 **Gate thresholds.** `plan` and `execute` block at CRITICAL; `verify` and
 `ship` block at HIGH.
 
-**Total: 276 codes.**
+**Total: 279 codes.**
 
 ## Contract structure — `DSX-SPEC-*`
 
@@ -160,6 +160,7 @@ Leakage, splits, metric choice, baselines, evaluation hygiene.
 | `DSX-ML-031` | CRITICAL | Target '<…>' appears in the feature list |
 | `DSX-ML-032` | HIGH | <…> feature(s) match known leakage patterns |
 | `DSX-ML-033` | MEDIUM | model.prediction_time_definition is not declared |
+| `DSX-ML-034` | CRITICAL | Feature '<…>' is declared available only after the prediction moment |
 | `DSX-ML-040` | HIGH | model.primary_metric is not declared |
 | `DSX-ML-041` | HIGH | '<…>' is the primary metric on data with a <…> minority class |
 | `DSX-ML-042` | MEDIUM | R² is the only regression metric declared |
@@ -232,6 +233,7 @@ Causal language, evidence, generalisation, precision.
 | `DSX-CLM-031` | HIGH | Evidence pointer does not resolve to an existing file |
 | `DSX-CLM-032` | HIGH | Evidence anchor #<…> not found in <…> |
 | `DSX-CLM-033` | CRITICAL | Claim numbers do not overlap results.tests |
+| `DSX-CLM-034` | HIGH | Claim magnitude does not trace to its cited test |
 | `DSX-CLM-040` | HIGH | Predictive claim with no model block |
 | `DSX-CLM-041` | HIGH | Predictive claim with no out-of-sample score reported |
 | `DSX-CLM-050` | MEDIUM | Claim generalises broadly (<…>) without naming its population |
@@ -352,6 +354,7 @@ Question ↔ claim ↔ decision agreement.
 | `DSX-COH-030` | HIGH | Causal/prescriptive question has an empty assumptions list |
 | `DSX-COH-031` | HIGH | Assumption[<…>] is neither checked nor waived |
 | `DSX-COH-040` | CRITICAL | decision.revisit_when is missing or not a usable re-visit trigger |
+| `DSX-COH-041` | HIGH | decision.subgroup_harm[] accepts harm to <…> without a rationale |
 
 ## Figure seals — `DSX-FIG-*`
 

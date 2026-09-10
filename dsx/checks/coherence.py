@@ -51,6 +51,7 @@ def check(spec: dict, *, strict: bool = False) -> Report:
     _check_decision_language(spec, qtype, report)
     _check_experiment_decision(spec, report)
     _check_revisit_completeness(spec, qtype, report)
+    _check_subgroup_harm_disposition(spec, qtype, report)
     _check_assumptions(spec, qtype, report, strict=strict)
     return report
 
@@ -192,6 +193,166 @@ def _check_revisit_completeness(spec: dict, qtype: str, report: Report) -> None:
         ),
         where="spec.decision.revisit_when",
     )
+
+
+def _sign(value: float) -> int:
+    """Sign convention reused verbatim from metrics.py:352-353 — never recomputed
+    or diverged, so ``harmed(S)`` here means exactly what an opposing segment means
+    to ``_check_simpsons_paradox``."""
+    return (value > 0) - (value < 0)
+
+
+def _ci_excludes_zero(ci: object) -> bool:
+    """Latent OR-arm of the harm trigger (D-29 trigger predicate).
+
+    A declared two-bound interval excludes zero when both bounds share a non-zero
+    sign. results.segments[] carries no ``ci`` field on today's schema
+    (templates/ANALYSIS-SPEC.yaml:260 is ``[{ name, effect, n }]``), so this arm is
+    written in to honour the scope's OR but never bites until the segment schema
+    gains a ``ci`` — the ``n >= floor`` arm is the one that fires today.
+    """
+    if not isinstance(ci, (list, tuple)) or len(ci) != 2:
+        return False
+    lo = as_number(ci[0])
+    hi = as_number(ci[1])
+    if lo is None or hi is None:
+        return False
+    return _sign(lo) == _sign(hi) and _sign(lo) != 0
+
+
+def _check_subgroup_harm_disposition(spec: dict, qtype: str, report: Report) -> None:
+    """Emit DSX-COH-041 when a prescriptive recommendation leaves a declared,
+    opposite-sign minority segment above the disposition floor without a matching
+    ``decision.subgroup_harm[]`` row carrying a recognised disposition (CRITICAL),
+    or with an ``accept`` row whose rationale is blank (HIGH).
+
+    Citation: Gail, M. & Simon, R. (1985), "Testing for qualitative interactions
+    between treatment effects and patient subsets", Biometrics 41(2):361-372, PMID
+    4027319 — the MOTIVATING DEFINITION only: a qualitative (crossover) interaction
+    is treatment effects of opposite sign across subsets, which is precisely when a
+    segment counts as *harmed* relative to a recommendation's premised direction.
+    Gail & Simon describe a formal likelihood-ratio TEST for qualitative
+    interaction; this check runs NO such test and computes NO statistic on the gate
+    path (D-02). It does not cite Gail & Simon as authority for the enforcement
+    mechanic — only for the definition of when a declared segment is harmed.
+
+    Structural criterion: a pure structural read of declared fields — a
+    ``results.segments[]`` entry whose declared ``effect`` opposes
+    ``results.overall_effect`` by ``_sign`` (metrics.py:352-353, reused verbatim)
+    AND whose declared ``n >= decision.subgroup_harm_floor`` (default 0, a missing
+    ``n`` read as 0 so an omitted count cannot escape the strict default) must carry
+    a ``decision.subgroup_harm[]`` row matched by ``segment`` name whose
+    ``disposition`` is one of ``accept | exclude | mitigate`` — a row that names the
+    segment with a missing or unrecognised disposition discloses nothing and is
+    treated as absent (CRITICAL). No threshold, interval, or statistic is computed
+    here; the obligation is enforced as a declaration, the DSX-COH-040 mould applied
+    to subgroup harm.
+
+    Bounded catch: this buys attribution over HONESTLY-DECLARED segments, not
+    detection of hidden harm. A spec that omits the harmed segment, lies about its
+    sign, or declares a gamed floor above the segment's n still passes — the catch
+    is "you declared a harmed segment above the floor and failed to disposition it",
+    never "you have a harmed subgroup".
+    """
+    if qtype != "prescriptive":
+        return
+    results = section(spec, "results")
+    overall = as_number(results.get("overall_effect"))
+    segments = items(results, "segments")
+    # Per-segment obligation (D-29-01): each declared opposing segment is judged
+    # against ``overall_effect`` on its own, so a single segment suffices — this is
+    # NOT the ≥2-to-compare-segments rationale of _check_simpsons_paradox.
+    if overall is None or not segments:
+        return
+    overall_sign = _sign(overall)
+    if overall_sign == 0:
+        return
+
+    decision = section(spec, "decision")
+    floor = as_number(decision.get("subgroup_harm_floor"))
+    if floor is None:
+        floor = 0.0
+
+    rows_by_segment: dict[str, dict] = {}
+    for row in items(decision, "subgroup_harm"):
+        rows_by_segment[normalize(str(row.get("segment", "")))] = row
+
+    for segment in segments:
+        effect = as_number(segment.get("effect"))
+        if effect is None or _sign(effect) != -overall_sign:
+            continue  # only opposite-sign segments are candidates
+        n = as_number(segment.get("n"))
+        # D-29-01 "no escape by omission": a declared opposing segment that omits
+        # ``n`` must not slip under the maximally-strict default floor 0, so read a
+        # missing ``n`` as 0. To NOT disposition it, the analyst must affirmatively
+        # declare a floor above 0.
+        n_for_floor = 0.0 if n is None else n
+        above_floor = n_for_floor >= floor
+        if not (above_floor or _ci_excludes_zero(segment.get("ci"))):
+            continue
+        name = str(segment.get("name", "?"))
+        row = rows_by_segment.get(normalize(name))
+        if row is None:
+            report.add(
+                "DSX-COH-041",
+                "CRITICAL",
+                f"Opposing segment {name!r} above the disposition floor carries no "
+                "decision.subgroup_harm[] row",
+                detail=(
+                    f"Segment {name!r} moves {effect:+.6g} against the {overall:+.6g} "
+                    "aggregate this prescriptive recommendation rolls out, at declared "
+                    f"n={segment.get('n')} (floor {floor:g}). A recommendation to act on "
+                    "the aggregate while a declared minority is harmed must state what "
+                    "happens to that minority."
+                ),
+                remedy=(
+                    "Add a decision.subgroup_harm[] row for this segment with a "
+                    "disposition (accept | exclude | mitigate) and, for accept, a "
+                    "rationale — or declare a subgroup_harm_floor above its n and defend "
+                    "why the cut is too small to act on."
+                ),
+                where="spec.decision.subgroup_harm",
+            )
+        else:
+            disposition = normalize(str(row.get("disposition", "")))
+            if disposition not in ("accept", "exclude", "mitigate"):
+                report.add(
+                    "DSX-COH-041",
+                    "CRITICAL",
+                    f"decision.subgroup_harm[] row for {name!r} carries no valid "
+                    "disposition",
+                    detail=(
+                        f"Segment {name!r} moves {effect:+.6g} against the "
+                        f"{overall:+.6g} aggregate and a decision.subgroup_harm[] row "
+                        f"names it, but its disposition is {row.get('disposition')!r}, "
+                        "not one of accept | exclude | mitigate. A row that names the "
+                        "segment without a recognised disposition discloses nothing and "
+                        "is treated identically to an absent row."
+                    ),
+                    remedy=(
+                        "Set decision.subgroup_harm[].disposition to accept | exclude | "
+                        "mitigate (and, for accept, add a rationale)."
+                    ),
+                    where="spec.decision.subgroup_harm",
+                )
+            elif disposition == "accept" and is_blank(row.get("rationale")):
+                report.add(
+                    "DSX-COH-041",
+                    "HIGH",
+                    f"decision.subgroup_harm[] accepts harm to {name!r} without a "
+                    "rationale",
+                    detail=(
+                        f"Segment {name!r} opposes the aggregate at {effect:+.6g} and "
+                        "its row disposition is 'accept', but the rationale is blank. An "
+                        "accept is the one disposition that proceeds despite the harm; it "
+                        "needs a stated justification a reviewer can challenge."
+                    ),
+                    remedy=(
+                        "Write decision.subgroup_harm[].rationale for this accept row, "
+                        "or change the disposition to exclude/mitigate."
+                    ),
+                    where="spec.decision.subgroup_harm",
+                )
 
 
 def _check_assumptions(

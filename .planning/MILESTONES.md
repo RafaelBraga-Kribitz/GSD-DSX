@@ -1,5 +1,77 @@
 # Milestones
 
+## v2.6 Exploration Depth and Backlog Evidence (Shipped: 2026-09-10)
+
+**Phases completed:** 6 (Phases 25–30), 16 plans, 113 commits on
+`gsd/v2.6.0-exploration-depth` (2026-09-06 → 2026-09-10). Driven by the scheduled
+ceremony from S0-1 through the milestone audit (S7-4, `passed` — 18/18 requirements,
+6/6 phases verified, 4/4 integration seams, Nyquist 6/6); the six security + UAT
+sign-offs (HQ-41..46), the archive and the ship were done interactively by the
+operator's decision. Tag `v2.6.0` on the merge commit into `main`.
+
+**Delivered:** `dsx profile` now computes the explore protocol's trust-core numbers
+itself — numeric five-number summaries with mean/sd/zeros/negatives, categorical
+shares and singletons, time depth (rows per day, edge-period ratios, hour-00 share),
+rows per declared unit, and a weekly base-rate table with a ±20 % verdict on a
+declared binary target — additive, byte-stable, stdlib-only, cited (Hyndman & Fan
+type 7 verified against the interpreter's own definition), and provably inert to the
+data-quality gate (the profiler is a producer, never a gate). Five downstream skills
+read `EDA.md` front-matter and the profile through named contracts, guarded by a
+CRLF-tolerant, negative-controlled repo-integrity test. Three brief §6.5 backlog items
+were then tested against real corpus cases rather than left with unmet entry
+conditions: each case was built, measured live at all four gate points *before* any
+check was designed, and recorded with a `VERDICT:` first line. All three were genuine
+live misses, so three codes were minted under human-read D-05 citations —
+`DSX-ML-034` (feature provenance; attribution-only, Kaufman et al. 2012),
+`DSX-CLM-034` (claim-to-cited-test traceability; attribution-only, Wilkinson & TFSI
+1999) and `DSX-COH-041` (subgroup-harm disposition under a prescriptive recommendation;
+a real catch and the corpus's first `kind: target`, Gail & Simon 1985 as motivating
+definition, Obermeyer et al. 2019 as the documented public case). Calibration was
+re-baselined with the new cases classified: miss 5/5 by construction (no interval
+quoted), FPR 0/15 with its one-sided 95 % upper bound ≈0.181 stated as a bounded
+observation, zero-mint 279 → 279.
+
+Catalogue 276 → 279, additively; known-bad corpus 39 → 42 plus 15 good-control specs;
+full suite 1590 → 1629 OK on the real interpreter; `node install.mjs --check` passing at
+every phase close. The one citation that could not be opened at mint time (Kaufman,
+paywalled after nine routes) shipped **labelled as secondary-corroborated in the code
+itself** and was upgraded to a first-hand read at close from the operator-supplied PDF
+(definition confirmed at p. 15:8–9, eq. 3), every record corrected the same day with
+the earlier status kept as history. Three firings crashed mid-unit during the
+milestone; each orphaned artifact was adopted only after independent re-verification.
+Operator tooling added along the way — the stray-branch reconcile guard
+(`scripts/gsd-reconcile-branch.ps1`) and the `.paused` switch — was proven in a
+sandbox and then exercised for real (a five-day shutdown, one stranded `SECURITY.md`).
+
+Carried forward, not hidden: fifteen good-control specs is a thin false-positive
+denominator; `SEED-003` records that, the notebook-execution-integrity and
+share-vs-risk evidence candidates, and the settled two-media conduct decision.
+Pre-close audit acknowledged two dormant seeds (dormant by design) and three parser
+false-positives — recorded in STATE.md Deferred Items; verified close-out.
+
+**What the pre-ship check caught — and why the check exists.** Re-running the full
+suite *on `main` after the merge* and then *in a fresh clone*, rather than trusting the
+branch's last green run, found five release defects the branch never showed, none of
+them in the gate logic: (1) two corpus fixtures (Phases 28 and 29) pointed their
+`evidence` and `narrative.path` at spike files under `.planning/phases/`, which the
+milestone close archives — two gate findings fired and four golden-set tests drifted;
+(2) the profiler's reference CSVs were hashed byte-for-byte while git rewrote them as
+CRLF on checkout; (3) the profiler golden had pinned this machine's absolute path in
+`source_path`, so it passed only where the repository lives here; (4) the example-profile
+byte-invariant pins were recorded from an LF working copy while the test hashed raw
+bytes — every Windows clone fails; (5) the planning archives carry paths up to ~135
+characters below the root, which a deep checkout location pushes past Windows' 260-char
+limit. None was visible on the ceremony branch: its working copy was LF where the loop
+had written files, the phase directories still existed when its suite last ran, and it
+lives at a short path. All fixed before the tag (`e52d7da`, `0f61eb5`): the narratives became
+fixture siblings in `examples/known-bad/` (five older fixtures' convention),
+`tests/fixtures/profiler/*.csv` are `-text` like the sealed figures, the golden compares
+`source_path` by basename and records a relative path, the pins hash LF-normalised bytes
+(the suite's own `design.py` precedent), and the README documents `core.longpaths`.
+Proven by a full green run in a fresh clone before the merge was redone.
+
+---
+
 ## v2.5.0 Corpus Coverage and Install Integrity (Shipped: 2026-09-06)
 
 **Phases completed:** none — executed interactively in a single operator session on

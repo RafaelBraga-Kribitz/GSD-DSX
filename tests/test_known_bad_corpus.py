@@ -100,6 +100,44 @@ _INCIDENTAL_GAP_CODES = {
                     # (plan 07-05, D-14)
 }
 
+# Per-fixture, POINT-SCOPED incidental map (D-28-06, plan 28-02). Unlike the GLOBAL
+# _INCIDENTAL_GAP_CODES above — a corpus-wide allow-list of codes that are nobody's
+# declared target — this map records an incidental that fires on ONE fixture and is
+# ANOTHER fixture's legitimate target, so it can be neither globalised (that would
+# launder the other fixture's target into "noise" and fail
+# test_incidental_allowlist_names_no_slugs_own_target_code) nor added to this
+# fixture's own-target maps (that would falsely credit the MISS with a catch and
+# corrupt the ABSENT-partition calibration). It is read ONLY by the two completeness
+# tests (test_every_spec_blocks_only_on_its_target_defect_at_critical_threshold_points
+# at the CRITICAL-threshold points, and test_ship_gate_findings_are_all_documented_
+# incidental_corpus_gaps at ship) — NEVER by _own_target_codes / _effective_target_map,
+# so _EXPECTED_CAUGHT_DEFECTS[slug] stays frozenset() and the fixture is never credited
+# with a catch. Structure: slug -> gate point -> the frozenset of codes tolerated as
+# incidental at that point.
+#
+# magnitude-without-computed-effect (the measured LIVE MISS, 28-MEASUREMENT.md /
+# D-28-06): its one claim is typed `association` (strength 1) under a `descriptive`
+# question_type (strength 0), so DSX-COH-001 (dsx/checks/coherence.py::
+# _check_claim_ceiling, which reads ONLY claims[].type and question_type and no numeric
+# literal) fires CRITICAL at plan / verify / ship — a swap-invariant structural theorem,
+# genuinely incidental to the magnitude->test traceability defect the fixture targets
+# (which stays uncaught, the miss). Not execute: `coherence` is absent from that gate
+# profile (dsx/cli.py::GATE_PROFILES). Minimal {DSX-COH-001} — COH-010 does NOT fire (no
+# causal decision language). DSX-COH-001 is prescriptive-churn-recommendation's OWN
+# declared target (_TARGET_DEFECT_CODES), which is exactly why it lives here, point-scoped
+# to this one fixture, rather than in the global list. DSX-CLM-034 (HIGH, the code that
+# ATTRIBUTES this miss) is deliberately kept OUT of this map and out of this slug's
+# own-target codes: it must fire NOWHERE on this fixture, so test_ship_gate_findings_are_
+# all_documented_incidental_corpus_gaps stays its live falsifier if it ever ships HIGH
+# here (the CRITICAL-only falsifiability test is vacuous for a HIGH code — D-28-06 guard 6).
+_PER_FIXTURE_INCIDENTAL_CODES: "dict[str, dict[str, frozenset[str]]]" = {
+    "magnitude-without-computed-effect": {
+        "plan": frozenset({"DSX-COH-001"}),
+        "verify": frozenset({"DSX-COH-001"}),
+        "ship": frozenset({"DSX-COH-001"}),
+    },
+}
+
 # Per-fixture target-defect map (D-15 structural rewrite, plan 08-02): for each fixture
 # slug (filename with "-ANALYSIS-SPEC.yaml" stripped, matching `_slugs`), the finding
 # code that fixture exists to demonstrate, keyed by the gate point at which it is
@@ -271,6 +309,34 @@ _TARGET_DEFECT_CODES: "dict[str, dict[str, str | frozenset[str]]]" = {
     # tempfile.TemporaryDirectory() per gate point: plan/execute exit 0; verify/ship
     # exit 1 with DSX-VIZ-020 as the only finding above INFO.
     "chart-truncated-axis-bar": {"verify": "DSX-VIZ-020", "ship": "DSX-VIZ-020"},
+    # Phase 29 (REQ-P29-01/02/03, D-29-00/02): the subgroup-harm-without-disposition
+    # TARGET — the first fixture for DSX-COH-041 (minted in plan 29-01 on the LIVE MISS
+    # branch, catalogue Total 279). A genuinely prescriptive rollout recommendation on a
+    # positive +3.2pp aggregate that declares an opposing minority segment D (−6.0pp,
+    # n=1000) above the declared subgroup_harm_floor (500) with no
+    # decision.subgroup_harm[] disposition row. `coherence` is registered at
+    # plan/verify/ship and ABSENT from execute (dsx/cli.py::GATE_PROFILES), so
+    # DSX-COH-041 fires CRITICAL at exactly those three points — the same point-scoped,
+    # bare-string shape chart-truncated-axis-bar above uses, and the prescriptive-churn-
+    # recommendation precedent's plan-not-execute split (:294-298). Measured 2026-09-08
+    # against a fresh tempfile.TemporaryDirectory() per gate point on CPython 3.12.10:
+    # validate 0; plan 1 (DSX-COH-041 CRITICAL); execute 0; verify 1 (DSX-COH-041
+    # CRITICAL); ship 1 (DSX-COH-041 CRITICAL). The swap-still-fires counterfactual (flip
+    # D to +0.06) toggles DSX-COH-041 off at every point, confirming it as this fixture's
+    # real catch; the residual DSX-STA-011 (MEDIUM, aggregate effect-size advisory) is
+    # swap-invariant and below the HIGH threshold, so it never blocks and is not this
+    # fixture's target. Deliberately NOT added to _EXPECTED_CAUGHT_DEFECTS with a code:
+    # that map contributes its whole set at BOTH _CRITICAL_THRESHOLD_POINTS (plan AND
+    # execute), and DSX-COH-041 fires at plan but not execute (coherence is absent from
+    # the execute profile), so an entry there would wrongly demand it at execute and fail
+    # test_every_spec_blocks_only_on_its_target_defect_at_critical_threshold_points. Its
+    # _EXPECTED_CAUGHT_DEFECTS entry is an empty frozenset() (below), key-parity only —
+    # exactly the prescriptive-churn-recommendation resolution (:294-298 / :519).
+    "subgroup-harm-without-disposition": {
+        "plan": "DSX-COH-041",
+        "verify": "DSX-COH-041",
+        "ship": "DSX-COH-041",
+    },
 }
 
 
@@ -281,6 +347,7 @@ def _classify_target_defect(
     findings: list[dict],
     target_map: "dict[str, dict[str, str | frozenset[str]]]",
     severity: str = "CRITICAL",
+    incidental: "frozenset[str]" = frozenset(),
 ) -> list[str]:
     """Classify one (slug, point) gate result against `target_map` and return a list of
     problem strings (empty when the result matches the map's expectation).
@@ -310,6 +377,17 @@ def _classify_target_defect(
     decided by this one classifier rather than by two divergent inline branches —
     which is what let a merge of the two phases silently keep one guarantee and drop
     the other.
+
+    `incidental` (D-28-06, plan 28-02) is the point-scoped frozenset of codes that are
+    tolerated as documented per-fixture incidentals at this (slug, point) — the value
+    `_per_fixture_incidental_codes` flattens out of `_PER_FIXTURE_INCIDENTAL_CODES`. It
+    loosens ONLY the no-expected branch, and ONLY when every finding of the chosen
+    severity is a member of it: a fixture that is nobody's-target at `point` may still
+    exit non-zero iff its whole `severity` finding set is documented-incidental. With
+    the default empty `incidental` the tolerance collapses to `False` (a non-empty
+    matched set is never a subset of the empty set), so every existing call site — which
+    passes no `incidental` — is byte-for-byte unchanged: a stray non-incidental finding,
+    or a second CRITICAL beside a tolerated one, still fails loudly naming itself.
     """
     raw = target_map.get(slug, {}).get(point)
     expected: frozenset[str]
@@ -322,10 +400,15 @@ def _classify_target_defect(
     matched = [f["code"] for f in findings if f.get("severity") == severity]
     problems: list[str] = []
     if not expected:
-        if exit_code != 0:
+        # No-expected branch: exit 0 is the clean default. A non-zero exit is tolerated
+        # ONLY when every finding of the chosen severity is a documented per-fixture
+        # incidental (matched non-empty and a subset of `incidental`); with the default
+        # empty `incidental` this is never satisfiable, preserving today's behaviour.
+        if exit_code != 0 and not (matched and set(matched) <= incidental):
             problems.append(
                 f"{slug!r} has no target code at {point!r} but exited {exit_code} "
-                f"({severity} findings: {matched})"
+                f"({severity} findings: {matched}; documented incidental: "
+                f"{sorted(incidental)})"
             )
         return problems
     if exit_code != 1:
@@ -537,6 +620,46 @@ _EXPECTED_CAUGHT_DEFECTS: "dict[str, frozenset[str]]" = {
     "chart-takeaway-without-magnitude": frozenset(),
     "chart-estimates-without-uncertainty": frozenset(),
     "chart-alphabetical-ranking": frozenset(),
+    # Phase 27 (REQ-P27-01/03, D-27-01/02): the feature-origin-only-leak fixture
+    # is a MISS — an honest, well-formed churn spec whose one defect (a feature
+    # whose value depends on the outcome window, under the innocuous name
+    # `account_health_index`) sails through the entire ml/code leakage-detection
+    # surface. Empty by design, not omission, exactly like the coverage-class MISS
+    # entries above: no shipped check fires its target defect at any point, so the
+    # caught-defect set is empty. The currently-silent code that attributes the
+    # miss (DSX-ML-034, shipped in plan 27-01 but declaration-only, so silent on a
+    # spec that declares no per-feature origin list) and the §6.5 item it promotes
+    # live in feature-origin-only-leak-ATTRIBUTION.yaml (D-06/D-07), never here.
+    # The key is required so test_expected_caught_defects_keys_match_the_corpus_on_disk
+    # stays green.
+    "feature-origin-only-leak": frozenset(),
+    # Phase 28 (REQ-P28-01/03, D-28-01/02/06): the magnitude-without-computed-effect
+    # fixture is a MISS — an honest, well-formed descriptive churn spec whose headline
+    # magnitude is quoted for a metric no results.tests entry computes, a defect the
+    # numeric-overlap gate (DSX-CLM-033) structurally cannot see because the claim's
+    # literals collide with two other metrics' reported effects via the x100 bridge.
+    # Empty by design, not omission, exactly like the coverage-class MISS entries
+    # above: no shipped check fires its target defect at any point, so the caught-defect
+    # set is empty. The currently-silent code that ATTRIBUTES the miss (DSX-CLM-034,
+    # shipped in plan 28-01 but declaration-only, so silent on a spec that declares no
+    # claim-to-cited-test pointer) and the §6.5 item it promotes live in
+    # magnitude-without-computed-effect-ATTRIBUTION.yaml (D-06/D-07), never here. The
+    # fixture's sole blocking residual — DSX-COH-001 at plan/verify/ship — is NOT its
+    # target: it is a swap-invariant incidental encoded in _PER_FIXTURE_INCIDENTAL_CODES
+    # (D-28-06), point-scoped so it is never credited as this fixture's catch. The key is
+    # required so test_expected_caught_defects_keys_match_the_corpus_on_disk stays green.
+    "magnitude-without-computed-effect": frozenset(),
+    # Phase 29 (REQ-P29-01/02/03, D-29-00): the subgroup-harm-without-disposition
+    # TARGET. Empty by design, not by omission — this map's frozenset applies at every
+    # point in _CRITICAL_THRESHOLD_POINTS ("plan", "execute"), but DSX-COH-041 fires at
+    # plan and NOT execute (`coherence` is registered at plan/verify/ship and absent from
+    # the execute gate profile, dsx/cli.py::GATE_PROFILES), so there is nothing this
+    # both-points map could correctly claim. The fixture's real, point-scoped catch
+    # (DSX-COH-041 at plan/verify/ship) lives entirely in _TARGET_DEFECT_CODES above —
+    # exactly the prescriptive-churn-recommendation resolution (:519). The key is
+    # required here solely so test_expected_caught_defects_keys_match_the_corpus_on_disk
+    # stays green.
+    "subgroup-harm-without-disposition": frozenset(),
 }
 
 
@@ -731,6 +854,32 @@ def _own_target_codes(
     codes.update(expected_map.get(slug, frozenset()))
     for value in high_map.get(slug, {}).values():
         codes.add(value)
+    return frozenset(codes)
+
+
+def _per_fixture_incidental_codes(
+    slug: str,
+    incidental_map: "dict[str, dict[str, frozenset[str]]] | None" = None,
+) -> "frozenset[str]":
+    """Every code documented as a per-fixture, point-scoped incidental for `slug`,
+    flattened across all its gate points into one set (D-28-06, plan 28-02).
+
+    Mirrors `_own_target_codes`'s flattening discipline: the ship-completeness test
+    (`test_ship_gate_findings_are_all_documented_incidental_corpus_gaps`) unions this
+    flattened set into its `allowed` set, while the critical-threshold test reads the
+    exact per-point frozenset directly from `_PER_FIXTURE_INCIDENTAL_CODES`. This is
+    NEVER read by `_own_target_codes` / `_effective_target_map`, so a code documented
+    here is never credited as the fixture's own catch (D-28-06). `incidental_map`
+    defaults to the module constant `_PER_FIXTURE_INCIDENTAL_CODES` — every real call
+    site passes one argument — but is a parameter so a synthetic map can exercise the
+    flattening independent of the filesystem and the real gate, the same testability
+    discipline `_own_target_codes` and `_classify_target_defect` already set out.
+    """
+    if incidental_map is None:
+        incidental_map = _PER_FIXTURE_INCIDENTAL_CODES
+    codes: "set[str]" = set()
+    for point_codes in incidental_map.get(slug, {}).values():
+        codes.update(point_codes)
     return frozenset(codes)
 
 
@@ -1164,7 +1313,10 @@ class TestKnownBadCorpus(unittest.TestCase):
                 with self.subTest(spec=path.name, point=point):
                     code, findings = self._gate_findings(path, point)
                     problems = _classify_target_defect(
-                        slug, point, code, findings, effective
+                        slug, point, code, findings, effective,
+                        incidental=_PER_FIXTURE_INCIDENTAL_CODES.get(slug, {}).get(
+                            point, frozenset()
+                        ),
                     )
                     self.assertEqual(problems, [], "; ".join(problems))
 
@@ -1309,7 +1461,11 @@ class TestKnownBadCorpus(unittest.TestCase):
                 blocking = {
                     f["code"] for f in findings if f["severity"] in ("CRITICAL", "HIGH")
                 }
-                allowed = set(_INCIDENTAL_GAP_CODES) | set(_own_target_codes(slug))
+                allowed = (
+                    set(_INCIDENTAL_GAP_CODES)
+                    | set(_own_target_codes(slug))
+                    | set(_per_fixture_incidental_codes(slug))
+                )
                 undocumented = blocking - allowed
                 self.assertEqual(
                     undocumented, set(),
@@ -1651,9 +1807,12 @@ class TestKnownBadCorpus(unittest.TestCase):
                 )
                 kind = data.get("kind", "miss")
                 self.assertIn(
-                    kind, ("miss", "caught"),
+                    kind, ("miss", "caught", "target"),
                     f"{path.name} has kind {kind!r}; the D-07 schema allows only "
-                    "'miss' (default) or 'caught'",
+                    "'miss' (default, the absent code fires nowhere), 'caught' (the "
+                    "code fires — a pure catch), or 'target' (Phase 29 D-29-00: a "
+                    "caught §6.5-promotion — the code fires CRITICAL live AND the "
+                    "sidecar records the backlog item it promotes)",
                 )
 
     def test_protocol_adherence_is_additive_and_ignored(self):
@@ -1721,8 +1880,12 @@ class TestKnownBadCorpus(unittest.TestCase):
         - `kind == "miss"`: the named absent_code must fire NOWHERE CRITICAL across
           the union — a miss whose code actually fires is a laundered catch and a
           hard failure (T-12-05).
-        - `kind == "caught"`: the named code MUST fire CRITICAL somewhere in the
-          union.
+        - any non-miss kind (`"caught"` or Phase 29's `"target"`): the named code
+          MUST fire CRITICAL somewhere in the union. `target` (D-29-00) is a caught
+          §6.5-promotion — the code is PRESENT/DETECTED and the sidecar additionally
+          records the backlog item it promotes; the enforcement here is identical to
+          `caught` (the `else` branch's `assertIn`), so a `target` sidecar naming a
+          code that does not fire fails exactly as a `caught` one would.
 
         A named §6.5 backlog code that is not in the shipped catalogue is inherently
         absent live — it can never appear in `all_critical` — so it satisfies the
@@ -1758,7 +1921,7 @@ class TestKnownBadCorpus(unittest.TestCase):
                         f"({sorted(all_critical)}) — a code that fires is a laundered catch, "
                         "not a miss",
                     )
-                else:  # kind == "caught"
+                else:  # kind == "caught" or "target" (Phase 29 D-29-00): must fire
                     self.assertIn(
                         absent_code, all_critical,
                         f"{path.name} tags {absent_code!r} as caught, but it never fires "
@@ -2393,6 +2556,187 @@ class TestClassifyTargetDefectHelper(unittest.TestCase):
         findings = [{"code": "DSX-XXX-040", "severity": "CRITICAL"}]
         problems = _classify_target_defect("fixture-b", "plan", 0, findings, fake_map)
         self.assertEqual(problems, [])
+
+    def test_empty_incidental_leaves_the_no_expected_branch_byte_identical(self):
+        # D-28-06 guard 1: the default empty `incidental` must not change today's
+        # behaviour — a nobody's-target fixture that exits non-zero is still a problem,
+        # whatever its findings, exactly as before the param existed.
+        fake_map: "dict[str, dict[str, str]]" = {}
+        findings = [{"code": "DSX-COH-001", "severity": "CRITICAL"}]
+        problems = _classify_target_defect("fixture-a", "plan", 1, findings, fake_map)
+        self.assertNotEqual(problems, [])
+        # exit 0 with the same empty map still clears.
+        self.assertEqual(
+            _classify_target_defect("fixture-a", "plan", 0, findings, fake_map), []
+        )
+
+    def test_sole_critical_in_incidental_is_tolerated_but_a_second_is_not(self):
+        # D-28-06 guard 7 / criterion (i): a nobody's-target fixture whose ONLY
+        # CRITICAL finding is a documented per-fixture incidental exits 1 yet
+        # classifies clean; add a second, non-incidental CRITICAL and it fails,
+        # naming the whole set — the point-scoped loosening never becomes a blanket
+        # "any non-zero exit is fine".
+        fake_map: "dict[str, dict[str, str]]" = {}
+        incidental = frozenset({"DSX-COH-001"})
+        sole = [{"code": "DSX-COH-001", "severity": "CRITICAL"}]
+        self.assertEqual(
+            _classify_target_defect(
+                "fixture-a", "plan", 1, sole, fake_map, incidental=incidental
+            ),
+            [],
+        )
+        second = [
+            {"code": "DSX-COH-001", "severity": "CRITICAL"},
+            {"code": "DSX-XXX-010", "severity": "CRITICAL"},
+        ]
+        problems = _classify_target_defect(
+            "fixture-a", "plan", 1, second, fake_map, incidental=incidental
+        )
+        self.assertNotEqual(problems, [])
+
+    def test_incidental_does_not_loosen_a_targeted_point(self):
+        # The `incidental` param only touches the no-expected branch: a fixture WITH a
+        # declared target at this point is judged exactly as before, so a stray
+        # incidental cannot mask a missing target-code catch.
+        fake_map = {"fixture-a": {"plan": "DSX-XXX-010"}}
+        findings = [{"code": "DSX-COH-001", "severity": "CRITICAL"}]
+        problems = _classify_target_defect(
+            "fixture-a", "plan", 1, findings, fake_map,
+            incidental=frozenset({"DSX-COH-001"}),
+        )
+        self.assertNotEqual(problems, [])
+
+
+class TestPerFixtureIncidentalCodes(unittest.TestCase):
+    """The D-28-06 guard set for the point-scoped per-fixture incidental map
+    (`_PER_FIXTURE_INCIDENTAL_CODES`, plan 28-02): a static self-target disjointness
+    guard, a static justification-binding guard (the teeth that force "why not
+    global"), a live non-inertness proof, and filesystem-independent synthetic controls
+    of both — matching the two-proofs discipline `TestClassifyTargetDefectHelper` sets.
+    """
+
+    def test_per_fixture_incidental_is_disjoint_from_each_slugs_own_target(self):
+        # Guard (f): a per-fixture incidental code must NEVER be that same fixture's own
+        # target — that would falsely credit the MISS with a catch. Checked live against
+        # the real module constants, per slug.
+        for slug in _PER_FIXTURE_INCIDENTAL_CODES:
+            with self.subTest(slug=slug):
+                overlap = _per_fixture_incidental_codes(slug) & _own_target_codes(slug)
+                self.assertEqual(
+                    overlap, frozenset(),
+                    f"{slug}'s per-fixture incidental {sorted(overlap)} is also its own "
+                    "target code — an incidental must never double as the fixture's catch",
+                )
+
+    def test_every_per_fixture_incidental_is_some_other_slugs_declared_target(self):
+        # Guard (g), the teeth: every per-fixture incidental code MUST be some OTHER
+        # slug's declared target in _effective_target_map(). A code that is nobody's
+        # target can and must go into the GLOBAL _INCIDENTAL_GAP_CODES instead — this
+        # forces every _PER_FIXTURE_INCIDENTAL_CODES entry to prove why it cannot be
+        # global, keeping this mechanism strictly narrower than the global list.
+        effective = _effective_target_map()
+        for slug, points in _PER_FIXTURE_INCIDENTAL_CODES.items():
+            incidental_codes = _per_fixture_incidental_codes(slug)
+            for code in sorted(incidental_codes):
+                with self.subTest(slug=slug, code=code):
+                    other_targets: "set[str]" = set()
+                    for other_slug, other_points in effective.items():
+                        if other_slug == slug:
+                            continue
+                        for pt_codes in other_points.values():
+                            other_targets |= set(pt_codes)
+                    self.assertIn(
+                        code, other_targets,
+                        f"{code} is a per-fixture incidental for {slug} but is no OTHER "
+                        "slug's declared target — a code that is nobody's target belongs "
+                        "in the global _INCIDENTAL_GAP_CODES, not here (D-28-06 guard g)",
+                    )
+
+    def test_dsx_clm_034_is_not_a_per_fixture_incidental_anywhere(self):
+        # D-28-06 guard 6 (severity trap): DSX-CLM-034 (HIGH) must fire NOWHERE on this
+        # fixture, so the ship-completeness test stays its live falsifier. It must be in
+        # NEITHER the per-fixture incidental map NOR any slug's own-target codes.
+        for slug in _PER_FIXTURE_INCIDENTAL_CODES:
+            with self.subTest(slug=slug):
+                self.assertNotIn("DSX-CLM-034", _per_fixture_incidental_codes(slug))
+                self.assertNotIn("DSX-CLM-034", _own_target_codes(slug))
+
+    def test_magnitude_fixture_lives_fires_coh_001_critical_at_ship(self):
+        # Guard (h), live non-inertness: a stale or wrong allowlist entry must fail. The
+        # magnitude-without-computed-effect fixture MUST actually fire DSX-COH-001
+        # CRITICAL at ship — mirrors the truncated-axis positive test. Run against a
+        # real gate, not the map.
+        fixture = CORPUS_DIR / "magnitude-without-computed-effect-ANALYSIS-SPEC.yaml"
+        code, findings = self._gate_findings(fixture, "ship")
+        self.assertEqual(code, 1)
+        critical = {f["code"] for f in findings if f["severity"] == "CRITICAL"}
+        self.assertIn(
+            "DSX-COH-001", critical,
+            "magnitude-without-computed-effect no longer fires DSX-COH-001 CRITICAL at "
+            "ship — its _PER_FIXTURE_INCIDENTAL_CODES entry would then be inert/stale",
+        )
+        # And DSX-CLM-034 must NOT fire (the miss stays a miss).
+        self.assertNotIn("DSX-CLM-034", critical)
+
+    def _gate_findings(self, spec_path: Path, point: str) -> "tuple[int, list[dict]]":
+        """Inline the same real-gate run TestKnownBadCorpus._gate_findings performs
+        (fresh tempdir, entrypoint seeded, plan header for verify/ship) so this guard
+        class does not depend on instantiating another TestCase."""
+        with tempfile.TemporaryDirectory() as tmp:
+            _seed_entrypoint(tmp, spec_path)
+            if point in ("verify", "ship"):
+                seed_plan_header(tmp, spec_path)
+            out, err = io.StringIO(), io.StringIO()
+            with redirect_stdout(out), redirect_stderr(err):
+                code = cli.main(
+                    ["gate", point, "--spec", str(spec_path), "--phase-dir", tmp, "--json"]
+                )
+            raw = err.getvalue() or out.getvalue()
+            report = json.loads(raw)
+        return code, report["findings"]
+
+    def test_synthetic_incidental_equal_to_own_target_is_caught(self):
+        # Guard (f), synthetic direction: a fabricated map where a slug's incidental
+        # equals its own target has a non-empty intersection (the guard would catch it);
+        # a disjoint fabrication has an empty one. Filesystem-independent.
+        overlapping_incidental = {"fixture-a": {"plan": frozenset({"DSX-XXX-010"})}}
+        overlapping_target = {"fixture-a": {"plan": "DSX-XXX-010"}}
+        overlap = _per_fixture_incidental_codes(
+            "fixture-a", incidental_map=overlapping_incidental
+        ) & _own_target_codes("fixture-a", target_map=overlapping_target, expected_map={})
+        self.assertEqual(overlap, frozenset({"DSX-XXX-010"}))
+
+        disjoint_incidental = {"fixture-a": {"plan": frozenset({"DSX-YYY-020"})}}
+        disjoint = _per_fixture_incidental_codes(
+            "fixture-a", incidental_map=disjoint_incidental
+        ) & _own_target_codes("fixture-a", target_map=overlapping_target, expected_map={})
+        self.assertEqual(disjoint, frozenset())
+
+    def test_synthetic_incidental_equal_to_another_fixtures_target_is_permitted(self):
+        # Guard (g), synthetic direction: a code that is ANOTHER slug's target satisfies
+        # the justification-binding membership; a code that is nobody's target does not.
+        # Filesystem-independent, over fabricated maps.
+        fake_incidental = {"fixture-a": {"plan": frozenset({"DSX-ZZZ-030"})}}
+        # fixture-b legitimately targets DSX-ZZZ-030 -> membership holds.
+        other_targets_present = _own_target_codes(
+            "fixture-b", target_map={"fixture-b": {"plan": "DSX-ZZZ-030"}}, expected_map={}
+        )
+        self.assertIn(
+            "DSX-ZZZ-030",
+            other_targets_present,
+            "a code that is another fixture's declared target must satisfy the "
+            "justification-binding guard",
+        )
+        # nobody targets DSX-QQQ-099 -> membership fails, so the guard would flag it.
+        other_targets_absent = _own_target_codes(
+            "fixture-b", target_map={"fixture-b": {"plan": "DSX-ZZZ-030"}}, expected_map={}
+        )
+        self.assertNotIn(
+            "DSX-QQQ-099",
+            other_targets_absent,
+            "a code that is nobody's target must fail the justification-binding guard "
+            "and be pushed to the global incidental list instead",
+        )
 
 
 class TestOwnTargetCodesFlattening(unittest.TestCase):

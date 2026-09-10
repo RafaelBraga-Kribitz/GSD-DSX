@@ -17,6 +17,33 @@ A metric definition precise enough that two people implementing it independently
 produce the same number.
 </objective>
 
+<inputs>
+**Read `EDA.md` front-matter first when it exists** in the phase directory — so a
+metric is defined against the measured grain and duplicate rate, not a grain the
+author assumed.
+
+EDA front-matter keys read:
+- `grain.declared`
+- `grain.observed`
+- `grain.verdict`
+- `grain.duplicate_rate`
+
+DATA-PROFILE keys read (the fallback source when EDA is absent):
+- `primary_key`
+- `primary_key_unique`
+- `duplicate_rate`
+- `columns[].n_unique`
+- `columns[].dtype`
+
+These set: the metric `grain`, the `denominator` and its fan-out / double-count
+risk, and the `computed_by` provenance the definition must carry.
+Also consult (EDA prose, not front-matter): section 1 Joins — the join fan-out matrix that tells the denominator whether a join multiplies rows.
+When absent: no `EDA.md` → record `eda_artifact: none` and source grain,
+duplicate-rate and uniqueness facts from the DATA-PROFILE keys above; where the
+profile is also absent, declare each with `computed_by` honesty rather than
+asserting it.
+</inputs>
+
 <definition_contract>
 Every metric declares, without exception:
 

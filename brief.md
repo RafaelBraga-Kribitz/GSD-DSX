@@ -373,9 +373,9 @@ estimate about future workload, including the operator's own.
 | Convergence declarations (`DSX-PAR-030`) | Frequentist estimation convergence: mixed-model non-convergence, separation in logistic models. **Not written.** | Same, at least two cases |
 | Bayesian procedure admissibility (`DSX-ADM-*`, second axis) | The frequentist ontology (M4) | M4 ships, **and** `dsx stats --paradigm` shows Bayesian frames above 15% of the operator's history |
 | `dsx quiz` fading mode | n/a, not a check | M5 ships. Weekly, on a sample of past decisions, never inline. |
-| Feature-provenance per-feature list (origin, method, fitted-on, motivating result) | Not a paradigm-paired item. | The M5 corpus contains at least one case whose target defect is attributable **only** through feature origin — no name pattern matches, no fit call is visible, and no declaration contradicts. Until then the leakage principle is covered elsewhere; this buys attribution, not a catch (2026-08-20 paper-evaluation integration) |
-| Magnitude-without-computed-effect residual (absolute magnitudes; relative % that declares its base) | Not a paradigm-paired item. | A corpus case passes all claims checks while asserting a magnitude no reported test computed. The paper-shaped instances all fire `DSX-CLM-070` and the per-test effect-size finding already (2026-08-20) |
-| Subgroup-harm declaration for prescriptive work | Not a paradigm-paired item. | A primary source with operationalisable criteria (D-05) **and** a corpus case where subgroup harm was the documented failure. Until promoted, the question lives in the architect and storyteller prompts as an agent guardrail (2026-08-20) |
+| Feature-provenance per-feature list (origin, method, fitted-on, motivating result) | Not a paradigm-paired item. | **Satisfied (Phase 27, 2026-09-07).** The M5 corpus now contains the `feature-origin-only-leak` case, whose target defect is attributable **only** through feature origin — no name pattern matches, no fit call is visible, and no declaration contradicts. It was measured a **LIVE MISS** at all four gate points (D-13; 27-MEASUREMENT.md), and `DSX-ML-034` was minted under D-05 (Kaufman 2012) to attribute it. Declaration-only: this buys attribution, not a catch — a spec that declares no per-feature origin list stays silent (2026-08-20 paper-evaluation integration; promoted 2026-09-07) |
+| Magnitude-without-computed-effect residual (absolute magnitudes; relative % that declares its base) | Not a paradigm-paired item. | **Satisfied (Phase 28, 2026-09-07).** The M5 corpus now contains the `magnitude-without-computed-effect` case: an honest descriptive churn readout whose headline magnitude (churn "at 27% against 18%") is quoted for a metric no `results.tests` entry computes, while the two computed tests are on other metrics whose reported effects collide with 27/18 via the ×100 bridge — so `DSX-CLM-033` clears on its full union-membership logic and nothing verifies churn was measured. It was measured a **LIVE MISS** at all four gate points (D-13; 28-MEASUREMENT.md — the swap-invariant `DSX-COH-001` residual is a documented incidental, not the target), and `DSX-CLM-034` was minted under D-05 (Wilkinson & TFSI 1999) to attribute it. Declaration-only: this buys attribution, not a catch — a spec that declares no claim-to-cited-test pointer stays silent (promoted 2026-09-07). The scope's literal "appears in no test" shape is caught by `DSX-CLM-033` already and remains the no-mint control |
+| Subgroup-harm declaration for prescriptive work | Not a paradigm-paired item. | **Satisfied (Phase 29, 2026-09-08).** The M5 corpus now contains the `subgroup-harm-without-disposition` case: a genuinely prescriptive retention-rollout recommendation on a positive +3.2pp n-weighted aggregate that declares an opposing minority segment D (−6.0pp, n=1000) above the declared `subgroup_harm_floor` (500) with no `decision.subgroup_harm[]` disposition row. It was measured a **LIVE MISS** at the gate points pre-mint (D-13; 29-MEASUREMENT.md — `DSX-MET-030`/`031` structurally silent at 1-of-4 opposing, `1==4` and `1>=2` both false), and `DSX-COH-041` was minted under D-05/D-06 to **catch** it. Unlike items 7/8, this is a **real closed catch (PRESENT/DETECTED)**, not an attribution-only miss: `DSX-COH-041` fires CRITICAL at plan/verify/ship on the honestly-declared harm, and the swap-still-fires counterfactual (flip D to +0.06) toggles it off. The documented public failure case is **Obermeyer et al. 2019** (*Science* 366(6464):447–453), recorded at abstract + authoritative metadata grade (Crossref + Semantic Scholar; body not read); **Gail & Simon (1985)** is the motivating definition of a qualitative interaction only, never the enforcement mechanic (their paper is a likelihood-ratio test; the check computes nothing on the gate path). Bounded catch: attribution over honestly-declared segments, not detection of hidden/mis-signed/omitted harm (promoted 2026-09-08) |
 
 **v2.2 Analytic Surface backlog** (queued milestone, not individually numbered above — does not
 reopen or renumber items 1–9):
@@ -427,16 +427,47 @@ promoted by manufacturing a case to hit a threshold (D-02/D-15).
 - **Magnitude-without-computed-effect residual** (item 8) — **carried; likely none.**
   No corpus case passes all claims checks while asserting an uncomputed magnitude; the
   paper-shaped instances already fire `DSX-CLM-070` and the per-test effect-size finding.
-- **Subgroup-harm declaration for prescriptive work** (item 9) — **carried.** Promotion
-  needs an admissible D-05 source with operationalisable criteria **and** a corpus case
-  where subgroup harm was the documented failure; neither is in the measured corpus.
+- **Subgroup-harm declaration for prescriptive work** (item 9) — **promoted (Phase 29,
+  2026-09-08).** Both halves are now met: the admissible D-05 source with operationalisable
+  criteria (Gail & Simon 1985, the qualitative-interaction definition) **and** a documented
+  public failure case (Obermeyer et al. 2019, abstract + authoritative metadata grade). The
+  `subgroup-harm-without-disposition` corpus case measured a **LIVE MISS** pre-mint, and
+  `DSX-COH-041` was minted to catch it — a real closed catch (PRESENT/DETECTED), the
+  load-bearing inverse of the items-7/8 attribution-only misses. Not manufactured (D-13:
+  segment D is not shaved toward a trivial n or effect).
 
 The calibration backdrop these dispositions read: the measured headline is
 **(miss-rate 1.0, FPR 0.0)** — zero false positives over the twelve-spec good-control
 corpus (plan 12-05, 0/12), a benign per-family friction column over the same corpus
 (plan 12-06, reported raw and net), and a 3/3 miss on the semantic-defect class a
-declaration-only gate structurally cannot catch. Those misses are what items 1/3/7/9
-would eventually address; none is promotable on today's measured evidence.
+declaration-only gate structurally cannot catch. Those misses are what items 1/3/7
+would eventually address; none is promotable on today's measured evidence (item 9,
+subgroup-harm, was promoted in Phase 29 as a PRESENT/DETECTED target, not an ABSENT miss).
+
+### Phase 30 re-evaluation of the gated backlog (terminal re-baseline, 2026-09-10)
+
+Phase 30 re-measured the calibration over the grown corpus after Phases 27–29 wired the
+three v2.6 evidence cases, and re-read the §6.5 item-7/8/9 rows against their measured
+disposition. **Zero codes minted** (set-identity 279 → 279): the measurement routes
+entirely to existing codes. The durable record is
+`.planning/phases/30-calibration-rebaseline/30-READOUT.md`, reproduced by the unittest
+`test_stratified_catch_rate_and_fpr_report`.
+
+The calibration backdrop the terminal state reads: the measured headline is the **pair
+(miss-rate 1.0, FPR 0.0)** (D-10 — never catch-rate alone) — **0/15** false positives
+over the fifteen-spec good-control corpus (a bounded observation, one-sided 95% upper
+confidence bound ≈ 0.181, **not** a point estimate — D-04), a per-family friction column
+reported raw and net, and a **five-case** ABSENT/miss partition (floored at 3, now met
+comfortably at 5 ≥ 3, up from exactly 3 in Phase 12). Per F3 the 5/5 miss-rate is a
+**construction invariant** of a curated partition, not a sampled propensity, so no
+confidence interval is quoted on it; its evidential content is the five independent
+per-case `fires_at_any_severity: false` confirmations. The partition now names two new
+v2.6 misses — `DSX-ML-034` on `feature-origin-only-leak` (item 7) and `DSX-CLM-034` on
+`magnitude-without-computed-effect` (item 8), each measured silent at every severity —
+and one new v2.6 target, `DSX-COH-041` on `subgroup-harm-without-disposition` (item 9),
+which fires CRITICAL at plan/verify/ship (the corpus's first PRESENT/DETECTED
+`kind: target`). Items 7 and 8 stay attribution-only misses; item 9 is a real closed
+catch — the load-bearing inverse of the two misses.
 
 ### Removed / permanently out of scope (D-14)
 

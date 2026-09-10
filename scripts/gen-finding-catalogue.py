@@ -199,6 +199,34 @@ _D05_ALLOWLIST_CODES = frozenset(
         # helper this phase wrote (cites Wilke §5.6 + §16.2); same exact-code
         # precedent as the DSX-STA-* blocks above.
         "DSX-VIZ-071",
+        # Phase 27 (REQ-P27-02) adds DSX-ML-034 here by EXACT CODE, not via a
+        # "DSX-ML-" prefix: DSX-ML-* is a pre-existing family (v1.0.0) whose ~40
+        # legacy codes carry no Citation:/Structural criterion: docstring line and
+        # no `# D-05:` marker, so a prefix add would fail the build red on all of
+        # them. DSX-ML-034 lives in the brand-new `_check_feature_provenance`
+        # helper this phase wrote (cites Kaufman et al. 2012 -- read first-hand from
+        # the ACM PDF on 2026-09-10; it was secondary-corroborated / paywalled at
+        # mint time, 2026-09-07); same exact-code precedent as DSX-VIZ-071 above.
+        "DSX-ML-034",
+        # Phase 28 (REQ-P28-02) adds DSX-CLM-034 here by EXACT CODE, not via a
+        # "DSX-CLM-" prefix: DSX-CLM-* is a pre-existing family whose ~15 legacy
+        # codes carry no Citation:/Structural criterion: docstring line and no
+        # `# D-05:` marker, so a prefix add would fail the build red on all of them.
+        # DSX-CLM-034 is the FIRST DSX-CLM code to carry a D-05 citation; it lives in
+        # the brand-new `_check_supported_by_traceability` helper this phase wrote
+        # (cites Wilkinson & TFSI 1999 as the motivating principle only); same
+        # exact-code precedent as DSX-ML-034 above.
+        "DSX-CLM-034",
+        # Phase 29 (REQ-P29-03) adds DSX-COH-041 here by EXACT CODE, not via a
+        # "DSX-COH-" prefix: DSX-COH-* is a pre-existing family whose legacy codes
+        # 001/010/020/030/031 carry no Citation:/Structural criterion: docstring line
+        # and no `# D-05:` marker, so a prefix add would fail the build red on all of
+        # them (DSX-COH-040 is already carried here by exact code for the same reason).
+        # DSX-COH-041 lives in the brand-new `_check_subgroup_harm_disposition` helper
+        # this phase wrote (cites Gail & Simon 1985 as the motivating definition of a
+        # qualitative/crossover interaction only, never the enforcement mechanic); same
+        # exact-code precedent as DSX-CLM-034 above.
+        "DSX-COH-041",
     }
 )
 

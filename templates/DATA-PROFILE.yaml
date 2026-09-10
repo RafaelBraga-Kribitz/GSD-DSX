@@ -21,6 +21,26 @@ columns:
   #   null_rate: 0.0
   #   n_unique: 0
   #   dtype: string | integer | float | date | mixed
+  #   # numeric columns (dtype integer|float) append a `numeric:` sub-map — produced by
+  #   # `dsx profile`, copied into EDA.md step 4a (never recomputed). Producer-only:
+  #   numeric:
+  #     min: 0.0
+  #     q1: 0.0
+  #     median: 0.0
+  #     q3: 0.0
+  #     max: 0.0
+  #     mean: 0.0
+  #     sd: 0.0            # sample sd (n-1); null when n < 2
+  #     n_zero: 0
+  #     n_negative: 0
+  #     n: 0               # non-null parseable-numeric count (the denominator)
+  #   # categorical columns (dtype string|mixed) append a `categorical:` sub-map instead —
+  #   # copied into EDA.md steps 4b/4e:
+  #   categorical:
+  #     share_top1: 0.0
+  #     share_top10: 0.0
+  #     rare_share: 0.0
+  #     n_singleton: 0
 primary_key: []
 primary_key_unique: true
 duplicate_rate: 0.0
@@ -29,4 +49,24 @@ time:
   min: null
   max: null
   max_gap_days: null
+  # additive keys produced by `dsx profile --time <col>` — copied into EDA.md step 3a.
+  # Producer-only (no gate reads them); each omitted when no time column is declared:
+  # rows_per_day: { min: 0, median: 0, max: 0 }
+  # first_period_ratio: null   # ISO-week edge ratio; null when < 5 populated weeks
+  # last_period_ratio: null    # ISO-week edge ratio; null when < 5 populated weeks
+  # share_at_hour_00: null     # share of time-bearing rows at hour 00; null when no row carries a time token
 sentinels_found: []
+# unit block — emitted only by `dsx profile --unit <col>`; omitted entirely when the flag
+# is absent (never emitted as null). Copied into EDA.md step 1a. Producer-only:
+# unit:
+#   rows_per_unit: { p50: 0, p95: 0, max: 0 }
+#   largest_unit_share: 0.0
+# target block — emitted only by `dsx profile --target <col>` (hard-requires --time; values
+# must be binary {0,1}); omitted entirely when the flag is absent. Copied into EDA.md step 4f.
+# Producer-only:
+# target:
+#   overall: 0.0
+#   weekly:
+#     - { week: [2026, 23], n: 0, base_rate: 0.0 }
+#   weekly_range: [0.0, 0.0]
+#   verdict: stable        # stable | drifting | null (null when < 2 populated weeks)

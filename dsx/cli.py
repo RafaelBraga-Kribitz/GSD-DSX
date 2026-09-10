@@ -412,6 +412,8 @@ def cmd_profile(args: argparse.Namespace) -> int:
         primary_key=pk,
         time_column=args.time,
         sentinels=sentinels or None,
+        unit=args.unit,
+        target=args.target,
     )
     out = Path(args.out or "DATA-PROFILE.yaml")
     write_profile(profile, out)
@@ -1081,6 +1083,11 @@ def build_parser() -> argparse.ArgumentParser:
     p_profile.add_argument("--out", "-o", default="DATA-PROFILE.yaml")
     p_profile.add_argument("--pk", help="comma-separated primary key columns")
     p_profile.add_argument("--time", help="time column for gap detection")
+    p_profile.add_argument("--unit", help="unit column for rows-per-unit stats")
+    p_profile.add_argument(
+        "--target",
+        help="binary {0,1} target column for the weekly base rate (requires --time)",
+    )
     p_profile.add_argument(
         "--sentinel",
         action="append",

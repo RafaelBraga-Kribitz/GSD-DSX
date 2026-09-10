@@ -55,6 +55,11 @@ Requires GSD Core ≥ 1.6 and Python 3.9+. **No third-party Python packages** �
 statistics kernel is stdlib-only, because a gate that breaks on a missing
 dependency is a gate that gets turned off.
 
+On Windows, if your checkout location is deep, clone with long paths enabled
+(`git -c core.longpaths=true clone …`, or `git config --global core.longpaths true`):
+the planning archives under `.planning/milestones/` carry paths up to ~135 characters
+below the repository root, and Windows refuses paths beyond 260 without it.
+
 The installer runs a self-test: it asserts the known-good fixture passes every
 gate and the known-bad fixture is blocked by every gate. If either fails, the
 install aborts.
@@ -63,6 +68,30 @@ install aborts.
 node install.mjs --check         # verify an existing install
 node install.mjs --uninstall
 ```
+
+---
+
+## Which path applies to you
+
+`node install.mjs` installs the capability **once, globally, for the whole
+machine** — it is not a per-project version. What varies per project is
+whether [GSD Core](https://github.com/open-gsd/gsd-core) is running there at
+all, and whether that project already has an `ANALYSIS-SPEC.yaml` written
+against an older ruleset. Five starting points, and the path for each:
+
+| Your situation | Path |
+|---|---|
+| **Brand-new project.** Nothing exists yet. | `/gsd-new-project` (bootstraps GSD) → `node install.mjs` (once per machine, skip if already installed) → `pwsh scripts/gsd-stamp.ps1 -Project . -Tier <N>` → set `dsx.require_spec true` if this is a pure analytics project → `/gsd-plan-phase`. |
+| **Already being built**, but never used GSD or DSX. | Same as above, except use `/gsd-onboard` in place of `/gsd-new-project` — it maps the existing codebase and ingests any existing docs before anything is wired in. DSX gates apply from the next phase you plan onward; it does not retroactively judge code already written. |
+| **Already runs GSD**, no DSX yet. | Skip the GSD bootstrap entirely. Install DSX globally if this machine doesn't have it yet, then `pwsh scripts/gsd-stamp.ps1 -Project .` to wire this project's skills, pick a tier (§3 of the [operating guide](docs/operating-guide.md)), and set `dsx.require_spec` if wanted. The next phase you plan picks up the gates; phases already shipped are untouched. |
+| **Already built and shipped.** No active GSD phase running on it any more. | There is no phase loop left to gate. If you plan to keep evolving the project, treat it as "has GSD, no DSX" or "no GSD, no DSX" above, depending on what it already runs, and the gates cover future work only. If you instead want a trust check on the *finished* piece before calling it portfolio-grade, skip GSD entirely: write an `ANALYSIS-SPEC.yaml` describing what was actually done, then run `dsx audit --spec ANALYSIS-SPEC.yaml --verbose --report DATA-REVIEW.md` by hand (see [Standalone CLI](#standalone-cli)) and fix whatever it finds. |
+| **Already on gsd-dsx, on an older version.** | Re-run `node install.mjs` — it overwrites the one global install and self-tests before committing, so there's nothing to do per project for the tool itself. What can lag is a project's *spec*: an `ANALYSIS-SPEC.yaml` written against an older ruleset can start failing gates it used to pass. Run `dsx audit` against every existing spec in that project; a newly-blocking finding is a version-delta, not a new bug in your work. Only one jump so far has been schema-breaking rather than additive — see [Migrating a pre-v2.0.0 spec](#migrating-a-pre-v200-spec) — and `suppressions[]` with a named authority is the documented interim path when a real fix needs more time. |
+
+`gsd-stamp.ps1` requires `.planning/` to already exist, which is exactly the
+marker that GSD has been bootstrapped on that project — it is the check that
+tells "has GSD" apart from "does not" in the table above. Full mechanics for
+rollout, tiers and propagating a DSX change to every project already using it
+are in the [operating guide](docs/operating-guide.md).
 
 ---
 
@@ -454,6 +483,16 @@ valid.
 pass every gate at every threshold; `examples/bad-ANALYSIS-SPEC.yaml` must be
 blocked by every gate. If a new check breaks the good fixture, either the check is
 wrong or the fixture has a real defect. Both are worth finding out.
+
+**Fixtures and goldens are location- and checkout-independent.** A committed,
+gate-read fixture must never reference anything under `.planning/` — that
+directory is planning history and the milestone close moves it. Anything a test
+hashes or compares byte-for-byte is either marked `-text`/`binary` in
+`.gitattributes` (the profiler's reference CSVs, the sealed figures) or normalised
+to LF before hashing, and a golden never records an absolute path — this
+repository checks out CRLF on Windows, and a pin recorded from one working copy is
+otherwise only valid on the machine that recorded it. Before tagging a release, run
+the suite on `main` after the merge and in a fresh clone, not only on the branch.
 
 ---
 

@@ -162,6 +162,17 @@ _GOLDEN_SHIP_FINDINGS: "dict[str, frozenset[str]]" = {
         "DSX-CLM-031", "DSX-CODE-020", "DSX-CODE-021", "DSX-CODE-030", "DSX-COH-031",
         "DSX-EXP-051", "DSX-MET-040", "DSX-ML-090", "DSX-NAR-001",
     }),
+    # Phase 27 (REQ-P27-01/03, D-27-01/02): the feature-origin-only-leak MISS.
+    # Measured 2026-09-07 against a fresh tempfile.TemporaryDirectory() via
+    # _ship_findings above — never guessed. This set is SMALLER than full-frame's
+    # because this fixture has no code defect (no DSX-CODE-020/021/030), a complete
+    # selection_ledger (no DSX-ML-090), and declares no comparisons_looked_at (no
+    # DSX-EXP-051): only the four swap-invariant incidental corpus-gap residuals
+    # remain. DSX-ML-034 (shipped, declaration-only) stays silent because the spec
+    # declares no per-feature origin list — the miss it attributes, not a catch.
+    "examples/known-bad/feature-origin-only-leak-ANALYSIS-SPEC.yaml": frozenset({
+        "DSX-CLM-031", "DSX-COH-031", "DSX-MET-040", "DSX-NAR-001",
+    }),
     # Phase 12-01 (REQ-P12-01/02, D-01/D-02): three coverage-class MISS fixtures.
     # Each set measured 2026-08-27 against a fresh tempfile.TemporaryDirectory()
     # per fixture with a plan-time header seeded, via _ship_findings above — never
@@ -299,6 +310,31 @@ _GOLDEN_SHIP_FINDINGS: "dict[str, frozenset[str]]" = {
         "DSX-VIZ-070",
     }),
     "examples/known-bad/chart-alphabetical-ranking-ANALYSIS-SPEC.yaml": frozenset(),
+    # Phase 28 (REQ-P28-01/03, D-28-01/02/06): the magnitude-without-computed-effect
+    # MISS. Measured 2026-09-07 against a fresh tempfile.TemporaryDirectory() via
+    # _ship_findings above — never guessed, and re-measured live to match the four-point
+    # table in 28-MEASUREMENT.md. The ONLY CRITICAL/HIGH ship residual is DSX-COH-001
+    # (an association-typed claim under a descriptive question_type — a swap-invariant,
+    # defect-orthogonal incidental, encoded per D-28-06 in _PER_FIXTURE_INCIDENTAL_CODES,
+    # never this fixture's catch). DSX-CLM-033 clears on its full union-membership logic
+    # via the x100 collision, and DSX-CLM-034 (HIGH, the code that attributes the miss)
+    # stays silent because the spec declares no claim-to-cited-test pointer — so it is
+    # ABSENT from this set, the frozen-design invariant that keeps the fixture a MISS.
+    "examples/known-bad/magnitude-without-computed-effect-ANALYSIS-SPEC.yaml": frozenset({
+        "DSX-COH-001",
+    }),
+    # Phase 29 (REQ-P29-01/02/03, D-29-00): the subgroup-harm-without-disposition
+    # TARGET. Measured 2026-09-08 against a fresh tempfile.TemporaryDirectory() via
+    # _ship_findings above — never guessed, and re-measured live to match the four/five-
+    # point table in 29-MEASUREMENT.md and the paired POSTMORTEM. This INVERTS the
+    # magnitude MISS above: DSX-COH-041 is PRESENT because it fires CRITICAL at ship (the
+    # honestly-declared, undispositioned opposing minority segment D is DETECTED — the
+    # D-29-00 target polarity), not absent. It is the ONLY CRITICAL/HIGH ship residual;
+    # DSX-STA-011 (MEDIUM, aggregate effect-size advisory, swap-invariant) sits below the
+    # CRITICAL/HIGH stratum this set records and DSX-PAR-001 is INFO.
+    "examples/known-bad/subgroup-harm-without-disposition-ANALYSIS-SPEC.yaml": frozenset({
+        "DSX-COH-041",
+    }),
 }
 
 

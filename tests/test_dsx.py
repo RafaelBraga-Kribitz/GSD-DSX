@@ -567,6 +567,20 @@ class TestSpecStructure(unittest.TestCase):
         # are the twenty-fourth through forty-second; count updated from 23 to 42 in
         # the same commit that adds them. Each is a copy of a clean good-corpus control
         # plus exactly one bad visual, so all satisfy the same assertion.
+        # 2026-09-07 (Phase 27, plan 27-02): the feature-origin-only-leak known-bad
+        # fixture is the forty-third; count updated from 42 to 43 in the same commit
+        # that promotes it. Its validity_frame is a clone of full-frame-cleaning's
+        # (difference_in_proportions), so it satisfies the same estimand assertion.
+        # 2026-09-07 (Phase 28, plan 28-02): the magnitude-without-computed-effect
+        # known-bad fixture is the forty-fourth; count updated from 43 to 44 in the same
+        # commit that promotes it. It declares validity_frame.estimand.type
+        # difference_in_proportions (a descriptive churn readout), so it satisfies the
+        # same estimand assertion.
+        # 2026-09-08 (Phase 29, plan 29-02): the subgroup-harm-without-disposition
+        # known-bad fixture is the forty-fifth; count updated from 44 to 45 in the same
+        # commit that promotes it. It declares validity_frame.estimand.type
+        # difference_in_proportions (a prescriptive retention-rollout recommendation), so
+        # it satisfies the same estimand assertion.
         from dsx.loader import load
         from dsx.spec import ESTIMAND_TYPES
 
@@ -576,7 +590,7 @@ class TestSpecStructure(unittest.TestCase):
             + sorted((root / "examples" / "known-bad").glob("*-ANALYSIS-SPEC.yaml"))
             + sorted((root / "templates").glob("ANALYSIS-SPEC.yaml"))
         )
-        self.assertEqual(len(paths), 42, [str(p) for p in paths])
+        self.assertEqual(len(paths), 45, [str(p) for p in paths])
         bad = []
         for p in paths:
             estimand_type = load(str(p)).get("validity_frame", {}).get("estimand", {}).get("type")
@@ -3122,6 +3136,58 @@ class TestProfiler(unittest.TestCase):
             self.assertEqual(code, 0, err)
             self.assertTrue(out.exists())
             self.assertIn("row_count", stdout)
+
+    def test_profile_cli_unit_target_writes_blocks(self):
+        # D-03: --unit/--target parse, feed profile_csv, and emit the unit/target blocks.
+        with tempfile.TemporaryDirectory() as tmp:
+            csv_path = Path(tmp) / "s.csv"
+            csv_path.write_text(
+                "ts,unit_id,y\n"
+                "2024-01-01,u1,1\n"
+                "2024-01-01,u1,0\n"
+                "2024-01-08,u2,1\n"
+                "2024-01-08,u2,0\n",
+                encoding="utf-8",
+            )
+            out = Path(tmp) / "p.yaml"
+            code, _, err = self._run_cli(
+                [
+                    "profile", str(csv_path), "--out", str(out),
+                    "--unit", "unit_id", "--target", "y", "--time", "ts",
+                ]
+            )
+            self.assertEqual(code, 0, err)
+            text = out.read_text(encoding="utf-8")
+            self.assertIn("unit:", text)
+            self.assertIn("target:", text)
+
+    def test_profile_cli_target_without_time_exits_2(self):
+        # D-03: --target hard-requires --time; CheckError → CLI exit 2 (EXIT_ERROR).
+        with tempfile.TemporaryDirectory() as tmp:
+            csv_path = Path(tmp) / "s.csv"
+            csv_path.write_text("ts,y\n2024-01-01,1\n2024-01-02,0\n", encoding="utf-8")
+            code, _, _ = self._run_cli(["profile", str(csv_path), "--target", "y"])
+            self.assertEqual(code, 2)
+
+    def test_profile_cli_non_binary_target_exits_2(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            csv_path = Path(tmp) / "s.csv"
+            csv_path.write_text("ts,y\n2024-01-01,1\n2024-01-02,2\n", encoding="utf-8")
+            code, _, _ = self._run_cli(
+                ["profile", str(csv_path), "--target", "y", "--time", "ts"]
+            )
+            self.assertEqual(code, 2)
+
+    def test_profile_help_names_unit_and_target(self):
+        # argparse --help prints to stdout then raises SystemExit(0).
+        out, err = io.StringIO(), io.StringIO()
+        with redirect_stdout(out), redirect_stderr(err):
+            with self.assertRaises(SystemExit) as ctx:
+                cli.main(["profile", "--help"])
+        self.assertEqual(ctx.exception.code, 0)
+        help_text = out.getvalue()
+        self.assertIn("--unit", help_text)
+        self.assertIn("--target", help_text)
 
     def _run_cli(self, argv):
         out, err = io.StringIO(), io.StringIO()

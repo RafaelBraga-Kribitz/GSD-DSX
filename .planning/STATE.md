@@ -1,64 +1,74 @@
 ---
 gsd_state_version: 1.0
-milestone: v2.4
-milestone_name: Visual Excellence
-status: completed
-stopped_at: v2.5.0 shipped interactively (ad43ec6); development paused by operator decision; loop paused.
-last_updated: "2026-09-06T20:30:00.000Z"
-last_activity: 2026-09-06
-last_activity_desc: v2.4.1 and v2.5.0 shipped interactively; development paused
+milestone: v2.6
+milestone_name: Exploration Depth and Backlog Evidence
+status: shipped — v2.6 closed 2026-09-10 (S7-5 archive + S7-6 merge to `main`, tag `v2.6.0`); no milestone open; the ceremony loop is PAUSED until v2.7 opens
+stopped_at: "v2.6 shipped 2026-09-10. Archive committed on gsd/v2.6.0-exploration-depth, merged into main by explicit branch name (--no-ff), tag v2.6.0 on the merge commit, pushed. Loop paused (.planning/loop-logs/.paused). Next = open v2.7 interactively."
+last_updated: "2026-09-10T22:44:00.000Z"
+last_activity: 2026-09-10
+last_activity_desc: "Pre-ship check on main + fresh clone caught 5 release defects (fixture pointers into .planning/phases; byte-hashed CSVs/YAML pins vs CRLF checkout; absolute path in a golden; long archive paths) — fixed e52d7da+0f61eb5, proven in a fresh clone, merge redone. v2.6 close-out (interactive, 2026-09-10T22:44Z): S7-2 sign-offs HQ-41..46; S7-5 archive (milestones/v2.6-*, phases archived, REQUIREMENTS.md removed after archival); S7-6 ship (merge --no-ff into main, tag v2.6.0). Kaufman D-05 upgraded to a first-hand read the same day (da99ccf). Ceremony paused until v2.7 opens."
 progress:
-  total_phases: 4
-  completed_phases: 4
-  total_plans: 11
-  completed_plans: 11
+  total_phases: 6
+  completed_phases: 6
+  total_plans: 16
+  completed_plans: 16
   percent: 100
-current_phase: null
-current_phase_name: null
+current_phase: 30
+current_phase_name: Calibration re-baseline (terminal — milestone shipped)
 ---
 
 # Project state
 
-**Status:** v2.4 milestone complete, archived, and shipped (tag `v2.4.0`); follow-on releases **v2.4.1** (`07d3db0`) and **v2.5.0** (`ad43ec6`) shipped interactively on 2026-09-06 — development paused by operator decision while the project is used for portfolio work
-**Progress:** [████████████████████] v2.4 — 4/4 phases shipped (21 viz vocabulary reconciliation → 22 catalog spine/uncertainty/heuristic → 23 style/snippet layer → 24 portfolio exemplar/calibration)
-**Predecessors:** v2.3 Test Catalog SHIPPED 2026-09-02 (tag `v2.3.0`); v2.2 Analytic Surface SHIPPED 2026-08-29 (tag `v2.2.0`); v2.0.0 DSX Validity Frame SHIPPED 2026-08-28 (tag `v2.1.0`). Archives under `.planning/milestones/`.
+**Status:** v2.6 Exploration Depth and Backlog Evidence — **SHIPPED 2026-09-10** (tag
+`v2.6.0`, merge commit on `main`). **No milestone is open.**
+**Progress:** [████████████████████] v2.6 — 6/6 phases, 16/16 plans, 18/18 requirements
+Met, milestone audit `passed`; catalogue 279 (zero-mint terminal phase verified);
+corpus 42 known-bad + 15 good-control; full suite 1629 OK on the real interpreter.
+**Predecessors:** v2.5.0 and v2.4.1 SHIPPED 2026-09-06 interactively (`ad43ec6`,
+`07d3db0`); v2.4 Visual Excellence SHIPPED 2026-09-03 (`v2.4.0`); v2.3 Test Catalog
+SHIPPED 2026-09-02 (`v2.3.0`); v2.2 Analytic Surface SHIPPED 2026-08-29 (`v2.2.0`);
+v2.0.0 DSX Validity Frame SHIPPED 2026-08-28 (`v2.1.0`). Archives under
+`.planning/milestones/` — v2.6's are `v2.6-ROADMAP.md`, `v2.6-REQUIREMENTS.md`,
+`v2.6-MILESTONE-AUDIT.md`, `v2.6-LOOP-LEDGER.md`, `v2.6-LOOP-LEDGER-ARCHIVE.md`,
+`v2.6-HUMAN-QUEUE.md` and `v2.6-phases/`.
 
-**Loop control:** the autonomous ceremony drove this milestone through S5-4 (milestone
-audit PASSED) headlessly; S5-5/S5-6 (completion + ship) ran interactively per
-`.planning/LOOP-LEDGER.md`'s own design and are now complete (merge commit `89f77eb`,
-tag `v2.4.0`). The loop is **PAUSED** (`.planning/loop-logs/.paused`): v2.4.1 and v2.5.0
-were shipped interactively without it, and no milestone is open. Resuming needs the flag
-removed and `$Branch` in `scripts/run-ceremony-firing.ps1` repointed at a new branch.
+**Loop control:** the autonomous ceremony is **PAUSED** (`.planning/loop-logs/.paused`,
+set 2026-09-10 for the interactive close-out). It has nothing to do until a new milestone
+exists. `scripts/run-ceremony-firing.ps1` `$Branch` still names
+`gsd/v2.6.0-exploration-depth`; its branch guard would abort safely on `main` even if
+un-paused. `.planning/LOOP-BRIEF.md` is the v2.6 contract and is rewritten at the next
+open; the v2.6 ledger and queue are archived (see above) — there is no active
+`LOOP-LEDGER.md` / `HUMAN-QUEUE.md` until v2.7 writes its own.
 
-**Usage-limit posture (proven 2026-08-30 through 2026-09-02):** the firing
-wrapper (`scripts/run-ceremony-firing.ps1`) detects limit hits, backs off
-gracefully, and — critically — re-probes every 30 minutes during any hold to
-catch an early release rather than blindly waiting the full computed window
-(fixed 2026-09-01 after Anthropic released a weekly limit early and the
-original dead-reckoning design missed it). Observed live: four separate
-5-hour-window hits on 2026-09-02 each self-recovered in 2–7 minutes. Firings
-must not retry in a loop — log one line and stop; the wrapper owns the pacing.
+**Usage-limit posture (proven 2026-08-30 through 2026-09-10):** the firing wrapper
+detects limit hits, backs off gracefully, and re-probes every 30 minutes during any
+hold to catch an early release. Firings must not retry in a loop — log one line and
+stop; the wrapper owns the pacing.
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-09-03; Key Decisions table there is the full decision log)
+See: .planning/PROJECT.md (updated 2026-09-10; the Key Decisions table there is the full
+decision log, v2.6-01 … v2.6-06 added at this close)
 
 **Core value:** Gate analytical work on validity before the data is touched.
-**Current focus:** v2.4 Visual Excellence is complete (4/4 phases, 16/16 requirements,
-milestone audit PASSED), archived to `.planning/milestones/`, and shipped (merge
-commit `89f77eb`, tag `v2.4.0`). Two follow-on releases shipped interactively on
-2026-09-06 (v2.4.1, v2.5.0 — see MILESTONES.md). No milestone is open and none is
-planned: the project now enters use as the operator's portfolio toolkit.
+**Current focus:** none open. Candidate scope for v2.7 — every item entry-conditioned
+under D-13 (`.planning/ROADMAP.md` `## Next`): `SEED-003` (analyst conduct, notebook
+execution integrity, share-vs-risk quantity kinds; medium question settled 2026-09-10),
+`SEED-001` E-27 … E-31, `SEED-002`'s producer-side residue, growing the good-control
+corpus past 15, brief §6.5 items 1–6.
 
 ## Current Position
 
-Phase: Milestone v2.4 complete and shipped
+Phase: none — v2.6 shipped, v2.7 not opened
 Plan: —
-Status: v2.5.0 shipped (`ad43ec6`, tag `v2.5.0`); development paused
-Last activity: 2026-09-06 — v2.4.1 and v2.5.0 shipped interactively; loop paused
+Status: Between milestones; loop paused by operator switch
+Last activity: 2026-09-10 — v2.6 close-out (sign-offs, archive, merge, tag)
 
 ## Performance Metrics
 
+v2.6: 6 phases, 16 plans, 113 commits, 176 files changed (+46823/-917),
+2026-09-06 → 2026-09-10 (four calendar days of ceremony time; paused 2026-09-08 → 2026-09-10
+for travel). Three firings crashed mid-unit and were recovered by orphan adoption.
 v2.4: 4 phases, 11 plans, 54 commits, 113 files changed (+15324/-161), 2026-09-02 → 2026-09-03.
 v2.3, v2.2, and v2.0.0 velocity are archived with their milestone artifacts.
 
@@ -66,70 +76,76 @@ v2.3, v2.2, and v2.0.0 velocity are archived with their milestone artifacts.
 
 ### Decisions
 
-Full decision log: PROJECT.md Key Decisions. Standing v2.4 decisions (carried from the original v2.3/v2.4 scoping, operator-directed 2026-08-29, re-confirmed at open):
+Full decision log: PROJECT.md Key Decisions. Standing v2.6 decisions, all recorded there:
 
-- **The chart catalog is citable, not exhaustive-for-its-own-sake** — union of five named taxonomies (FT Visual Vocabulary, Wilke, Graphic Continuum, DVC, Datawrapper) after synonym merge and principled exclusions, target band 75–90 entries.
-- **License audit is a plan-review gate, not an afterthought** — dsx-538/dsx-urban forked or built from permissively-licensed sources; dsx-econ/dsx-bbc reimplemented from published doctrine only, never porting GPL code (bbplot) or embedding an unlicensed PDF (the 2017 Economist styleguide).
-- **Faceting is a declaration, not a chart type** — `facet_by` orthogonal to the mark, per the scope research's completeness-critic finding.
-- **Contingency:** split Phase 23–24 off as v2.5 if the D-05 queue materially outruns cadence (expected lighter than v2.3's — ~8–12 reads vs 27).
+- **Evidence phases measure first (D-13, applied three times)** — a corpus case is
+  run at all four gate points before any check is designed; a caught case closes
+  with no mint. All three v2.6 cases were genuine live misses.
+- **The profiler is a producer, never a gate** — Phase 25's new keys are provably
+  inert to the DQ gate; a gate reading them is a separate D-02/D-06 decision.
+- **Attribution-only mints say so in their docstrings** (`DSX-ML-034`, `DSX-CLM-034`);
+  `DSX-COH-041` is a real catch and the corpus's first `kind: target`.
+- **D-05 honesty over corroboration** — Kaufman shipped labelled secondary-corroborated
+  and was upgraded to a first-hand read at close, history kept.
+- **Crashed-firing orphans are adopted only after independent re-verification.**
+- **Close-out is interactive with the framework's four documented defects bypassed
+  by hand** (explicit branch name; plain git; generated records read before commit;
+  verification files read directly).
 
 ### Pending Todos
 
-None beyond the ledger.
+None. v2.7 scope is a decision, not a todo — see `SEED-003` and ROADMAP `## Next`.
 
 ### Blockers/Concerns
 
-None open.
+None open. The one soft spot carried forward is a scope observation, not a defect:
+the good-control corpus (15 specs) gives a thin false-positive denominator
+(one-sided 95 % upper bound ≈0.181 on 0/15); growing it is a v2.7 candidate.
 
 ## Deferred Items
 
-Carried forward from v2.0.0 close — captured future ideas, not gaps:
+Carried forward from earlier closes — captured future ideas, not gaps:
 
 | Category | Item | Status | Deferred At |
 |----------|------|--------|-------------|
-| seed | SEED-001-deepen-dsx-explore-data-eda-protocol | dormant — natural v2.5 candidate, not touched by v2.4 | 2026-08-28 |
-| seed | SEED-002-grow-data-profile-hermetic-eda-artifacts | dormant — natural v2.5 candidate, not touched by v2.4 | 2026-08-28 |
+| seed | SEED-001-deepen-dsx-explore-data-eda-protocol | E-26 shipped in v2.6 Phase 26 (HQ-39); E-27 … E-31 still deferred with their entry conditions | 2026-08-28 |
+| seed | SEED-002-grow-data-profile-hermetic-eda-artifacts | Core shipped in v2.6 Phase 25 (HQ-39, reversing HQ-38); residue = a producer-side `parse_health` block (SEED-003 AC-20) | 2026-08-28 |
+| seed | SEED-003-analyst-conduct-and-notebook-integrity | Planted 2026-09-10; dormant by design until v2.7 opens with matching scope; six gate candidates (D-13 entry-conditioned), six skill/reference items, one profiler item; medium question settled (two media, explicit boundary) | 2026-09-10 |
 
-Acknowledged at v2.4 milestone close (`gsd_run query audit-open`, 2026-09-03) — the two
-seeds above, genuinely deferred; plus 3 items the CLI flags as open that are **not**
+Acknowledged at the v2.6 milestone close (`gsd-tools query audit-open`, 2026-09-10) — the
+seeds above are genuinely deferred; plus one item the CLI flags as open that is **not**
 actually open:
 
 | Category | Item | Status | Deferred At |
 |----------|------|--------|-------------|
-| context-question | 21-CONTEXT.md open questions (HQ-28) | **false positive** — HQ-28 answered 2026-09-03 (accepted, no veto); the CLI text-matches "open question" bullet markers in CONTEXT.md, which are never rewritten once the linked HUMAN-QUEUE item resolves. Standing CLI blind spot, same class as `/gsd-audit-uat`'s documented under-reporting. | 2026-09-03 |
-| context-question | 22-CONTEXT.md open questions (HQ-30) | same false positive — HQ-30 answered 2026-09-03 (accepted, no veto) | 2026-09-03 |
-| context-question | 23-CONTEXT.md open questions (HQ-32) | same false positive — HQ-32 answered 2026-09-03 (accepted, no veto) | 2026-09-03 |
+| context-question | 25-CONTEXT.md "open questions" (3 bullets: the D-01 nested-map veto window, the HQ-40 row 40a note, the frozen-vocabulary risk) | **false positive** — all three are non-blocking veto windows / notes closed by silence or by HQ-40 (answered 2026-09-07); the CLI text-matches bold bullet markers that are never rewritten once resolved. Same standing blind spot as at the v2.4 close (21/22/23-CONTEXT.md). | 2026-09-10 |
 
 ## Session Continuity
 
-Last session: 2026-09-06 (interactive — operator direction: close the audit's last
-escalated item, verify the EDA brief was fully implemented, map *The AI Data Scientist*
-onto the project, then pause development). Shipped v2.5.0 (`ad43ec6`): 19 DSX-VIZ
-fixtures + LOW stratum + every-VIZ-code invariant; installer self-test fixed (it had
-failed on every fresh install since Phase 10 and shipped the gitignored decision trail);
-installed skill/agent copies re-synced; `docs/literature/the-ai-data-scientist.md`; EDA
-brief committed at `.planning/research/EDA-enhancement-brief.md`. Earlier the same day:
-v2.4.1 (`07d3db0`), the metric-direction fix.
-Stopped at: development paused by operator decision. Post-ship audit: 2 escalated, 2
-resolved, 0 open. Full suite 1528 OK; catalogue 276.
+Last session: 2026-09-10 (interactive, the operator present). Resumed the paused loop after
+travel; it ran Phase 29's remainder, all of Phase 30 and S7-1/S7-3/S7-4 unattended.
+Then interactively: answered the analyst-method evaluation (SEED-003), signed
+HQ-41..46 after independent re-verification, upgraded the Kaufman citation to a
+first-hand read from the operator-supplied PDF, archived the milestone with the
+CLI's generated records hand-corrected (its accomplishment extraction produced
+fragments for the fourth consecutive close; its STATE rewrite regressed the
+counters), merged into `main` by explicit branch name and tagged `v2.6.0`.
+The first merge into `main` was discarded after the post-merge suite failed; five
+release defects were fixed on the branch (`e52d7da`, `0f61eb5`), proven green in a fresh clone,
+and the merge redone on the fixed tip before tagging.
+Stopped at: v2.6 shipped; loop paused; nothing open.
 Resume file: None.
 
 ## Operator Next Steps
 
-- **Development is paused.** The project is in use for portfolio work; nothing is
-  scheduled. The loop stays PAUSED (`.planning/loop-logs/.paused`); resuming needs the
-  flag removed and `$Branch` in `scripts/run-ceremony-firing.ps1` repointed.
-- **Decided by the operator 2026-09-06 (HQ-38, Option A):** SEED-002 (grow
-  `dsx profile` so the EDA protocol's step 1–4 numbers become hermetic artifacts) stays
-  dormant. Its D-13 entry condition — real phases producing `EDA.md` files that gates
-  ignore — is not yet met because no real phase has run; the portfolio work will produce
-  the evidence. Promote only if those files show agents skipping the insight steps.
-- **Three paper-derived backlog items** (brief §6.5 items 7, 8, 9) stay on the backlog
-  with their entry conditions; see `docs/literature/the-ai-data-scientist.md`.
-- **Two kinds of local file are deliberately untracked:** `references/The AI Data
-  Scientist.md` (a full-text clipping of an arXiv paper — do not commit; the literature
-  record cites the arXiv listing) and the `.claude/`, `.vscode/`, `graphify-out/`
-  operator files.
-- The stale agent worktree at `.claude/worktrees/agent-a9a54fddf75afc02f` (branch
-  `worktree-agent-a9a54fddf75afc02f`) is fully merged into `main`; `git worktree remove`
-  it at leisure.
+- **Open v2.7 (interactive):** `/gsd-new-milestone` with scope from `SEED-003` and
+  ROADMAP `## Next`; write the new `LOOP-BRIEF.md` / `LOOP-LEDGER.md` /
+  `HUMAN-QUEUE.md`; cut `gsd/v2.7.0-<slug>` from `main`; repoint `$Branch` in
+  `scripts/run-ceremony-firing.ps1`; remove `.planning/loop-logs/.paused`.
+- **Two kinds of local file stay untracked:** `references/The AI Data Scientist.md`
+  (a full-text clipping of an arXiv paper — do not commit) and the `.claude/`,
+  `.vscode/`, `graphify-out/` operator files.
+- The stale agent worktree at `.claude/worktrees/agent-a9a54fddf75afc02f` is fully
+  merged into `main`; `git worktree remove` it at leisure.
+- **Stamp records from `date -u`**, never from the session's local date — the
+  project's convention is UTC and the two diverged at this close.

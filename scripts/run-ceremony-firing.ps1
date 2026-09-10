@@ -33,12 +33,16 @@
 $ErrorActionPreference = 'Stop'
 
 $Repo   = 'C:\Users\Benutzer1\Dev\AI\gsd-dsx'
-# Milestone branch. Updated 2026-09-02 when v2.3 Test Catalog shipped (merged
-# to main, tag v2.3.0) and the loop was repointed at v2.4 Visual Excellence.
+# Milestone branch. Updated 2026-09-06 when the loop was repointed at v2.6
+# Exploration Depth and Backlog Evidence (v2.4 shipped 2026-09-03 as tag v2.4.0;
+# v2.4.1 and v2.5.0 followed interactively the same week, without the loop).
 # The branch guard below deliberately ABORTS rather than checking out: if this value
 # and the working tree disagree, something unexpected has happened and a headless
 # firing must not guess.
-$Branch = 'gsd/v2.4.0-visual-excellence'
+$Branch = 'gsd/v2.6.0-exploration-depth'
+# Model for the headless firing itself (GSD subagents are routed by model_profile).
+# See the comment above the `claude -p` call for why this is pinned here.
+$Model  = 'opus'
 $LogDir = Join-Path $Repo '.planning\loop-logs'
 $Lock   = Join-Path $LogDir '.firing.lock'
 $Backoff = Join-Path $LogDir '.backoff-until'
@@ -269,6 +273,12 @@ try {
     if ($ffOutput.Trim()) { Write-Log $ffOutput.Trim() }
   }
 
+  # Recorded so the post-firing stray-branch guard below (gsd-reconcile-branch.ps1)
+  # can tell a branch created BY THIS FIRING apart from the growing pile of
+  # genuinely stale gsd/* branches left over from prior milestones -- ancestry
+  # from this exact tip is the filter, not the branch name.
+  $preFiringTip = (git rev-parse $Branch | Out-String).Trim()
+
   # --- The firing prompt -----------------------------------------------------
   # Deliberately short. LOOP-BRIEF.md is the real contract and is re-read every
   # firing; duplicating its rules here would let the two drift apart.
@@ -330,7 +340,18 @@ of any previous firing. Everything you need to know is on disk.
   try {
     # --dangerously-skip-permissions is required: a headless run has no human to
     # answer a permission prompt, so without it the firing stalls and does nothing.
+    #
+    # --model is pinned on purpose (2026-09-06). Without it the firing inherits the
+    # `model` key of ~/.claude/settings.json, which is whatever the operator last
+    # chose with /model in an interactive session. The v2.6 open firing died in five
+    # seconds that way: the interactive session had selected a Fable-tier model, and
+    # the npm `claude` on this machine's PATH (2.1.218) refuses it ("version 2.1.251
+    # or newer is required"). The loop's model is a recorded decision of this script,
+    # not a side effect of the operator's last terminal session. `opus` is the alias
+    # the brief's routing table names for orchestration-grade work; change it here,
+    # with a Log line, never via /model.
     & claude -p $prompt `
+        --model $Model `
         --permission-mode bypassPermissions `
         --dangerously-skip-permissions 2>&1 |
       ForEach-Object { $_.ToString() } |
@@ -344,6 +365,29 @@ of any previous firing. Everything you need to know is on disk.
   Write-Log "Firing finished (exit code $claudeExit)."
   if ($claudeExit -ne 0) {
     Write-Log "WARNING: non-zero exit -- check the transcript above before trusting this firing."
+  }
+
+  # --- Stray-branch guard (gsd-core defect, HUMAN-QUEUE.md standing note) ----
+  # `gsd-tools query commit`, called by GSD subagents, can create + switch to a
+  # stray branch mid-run and commit there instead of $Branch, while its own
+  # return value confidently misreports success on the canonical branch --
+  # confirmed three times in v2.4 alone before this guard existed. Runs
+  # regardless of $claudeExit: a subagent can leave a stray commit behind even
+  # on a firing that later hits a usage limit or errors out.
+  #
+  # A separate pwsh process on purpose: gsd-reconcile-branch.ps1 calls `exit`
+  # on several of its paths, and `exit` inside a script invoked in-process
+  # (via `&`, not a new process) would terminate this wrapper's own process too
+  # -- skipping the `finally` block below and leaving the lock file behind.
+  Write-Log "Checking for a stray branch left by a subagent commit..."
+  $reconcileScript = Join-Path $Repo 'scripts\gsd-reconcile-branch.ps1'
+  $reconcileOutput = & pwsh -NoProfile -File $reconcileScript `
+      -Branch $Branch -BaselineRef $preFiringTip -Repo $Repo 2>&1 |
+    ForEach-Object { $_.ToString() }
+  $reconcileExit = $LASTEXITCODE
+  $reconcileOutput | ForEach-Object { Write-Log $_ }
+  if ($reconcileExit -ne 0) {
+    Write-Log "WARNING: stray-branch reconciliation left something unresolved -- a human must reconcile by hand (see [reconcile] lines above)."
   }
 
   # --- Usage-limit detection --> graceful backoff -----------------------------

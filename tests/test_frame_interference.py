@@ -273,9 +273,17 @@ class TestNeedsCausalBlock(unittest.TestCase):
     # defect is undisclosed selective exclusion and weighting, a stylised-fact
     # comparison, not a causal claim), so needs_causal_block is legitimately False
     # for it — excluded here by slug rather than silently, same as the flagship.
+    # Plan 28-02 (REQ-P28-01): the magnitude-without-computed-effect fixture is
+    # deliberately descriptive/observational (FROZEN as D-28-01 in 28-CONTEXT.md: a
+    # descriptive question + observational design keeps the causal-identification and
+    # decision.replay obligations off the spec, which is what keeps the encoded
+    # magnitude→test miss clean). needs_causal_block is legitimately False for it, so it
+    # is excluded here by slug rather than silently, exactly like the two fixtures
+    # above.
     _NON_CAUSAL_KNOWN_BAD = {
         "prescriptive-churn-recommendation-ANALYSIS-SPEC.yaml",
         "operator-known-answer-selective-exclusion-ANALYSIS-SPEC.yaml",
+        "magnitude-without-computed-effect-ANALYSIS-SPEC.yaml",
     }
 
     def test_needs_causal_block_true_for_known_bad_and_canonical_fixtures(self):

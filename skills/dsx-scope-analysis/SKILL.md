@@ -18,6 +18,37 @@ Produce `ANALYSIS-SPEC.yaml` — the contract every later gate reads. Nothing el
 in the analytical loop is checkable until this exists.
 </objective>
 
+<inputs>
+**Read `EDA.md` front-matter first when it exists** in the phase directory — so the
+scope is drawn from the measured grain, dependence and missingness this phase
+already established, not from assumption.
+
+EDA front-matter keys read:
+- `grain.verdict`
+- `grain.implied_dependence.structure`
+- `grain.implied_dependence.cluster_var`
+- `missingness[]`
+- `base_rate.verdict`
+- `contradictions`
+- `stop_triggered`
+
+DATA-PROFILE keys read (the fallback source when EDA is absent):
+- `primary_key_unique`
+- `duplicate_rate`
+- `unit.rows_per_unit`
+- `unit.largest_unit_share`
+- `columns[].null_rate`
+- `target.verdict`
+
+These set: the validity-frame units the spec is allowed to claim, the dependence
+and missingness the scope must carry into every later gate, and the refusal to
+scope past `stop_triggered: true` until the listed `contradictions` are resolved.
+When absent: no `EDA.md` → record `eda_artifact: none` and source grain,
+dependence, missingness and base-rate facts from the DATA-PROFILE keys above;
+where the profile is also absent, declare each with `computed_by` honesty rather
+than asserting it — and never read a missing EDA as a `stop_triggered` clear.
+</inputs>
+
 <process>
 
 0. **Search dated learnings before framing.** Before scaffolding and before spawning

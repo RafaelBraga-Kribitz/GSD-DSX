@@ -1,0 +1,48 @@
+# Catch-attribution sidecar (Phase 29 D-29-00, REQ-P29-01/02/03).
+#
+# The corpus's FIRST `kind: target` sidecar. Unlike the Phase 27/28 `kind: miss`
+# sidecars (whose absent_code is silent live and attributes an uncaught defect), this
+# fixture is a TARGET: DSX-COH-041 (minted in plan 29-01, catalogue Total 279) fires
+# CRITICAL at plan/verify/ship on the honestly-declared, undispositioned opposing
+# segment — a real DETECTED catch (D-29-00, the load-bearing INVERSE of Phases 27/28).
+#
+# Lives OUTSIDE the ANALYSIS-SPEC (D-06) so it cannot perturb frame_digest (placement
+# precedent 11.2 D-08 / dsx/decisions.py:99-121). No DSX-* code is minted here:
+# absent_code REFERENCES the code shipped in plan 29-01.
+#
+# Schema (D-07, extended this plan): absent_code (required), promotes_backlog_item
+# (required), rationale? (optional), kind? (optional, default "miss"; vocabulary
+# extended to "miss" | "caught" | "target" this plan), protocol_adherence? (optional,
+# additive — Phase 16 REQ-P16-03/D-10), reported beside catch rate / FPR, never inside
+# them. For a `target` kind the `absent_code` field name is schema legacy shared by
+# both falsifiability branches; here it names the code that FIRES, and the
+# falsifiability non-miss branch asserts it fires CRITICAL live.
+
+absent_code: DSX-COH-041
+promotes_backlog_item: "6.5-item-9-subgroup-harm-declaration"
+kind: target
+# Whether the dsx-reproduce protocol was followed for this promoted-spike fixture.
+# Vocabulary: adhered | skipped | not_applicable. The entrypoint is static text read
+# by the code scan and is never executed (a documented no-op cloned from the
+# good-corpus control readout), so the reproduce skill never ran — 'skipped' is the
+# honest value, accepted-but-ignored by calibration (REQ-P16-03 / D-10), mirroring the
+# promoted-spike siblings.
+protocol_adherence: skipped
+rationale: >
+  DSX-COH-041 fires CRITICAL at plan/verify/ship because the spec makes a genuinely
+  prescriptive rollout recommendation on a positive +3.2pp n-weighted aggregate while
+  declaring an opposing minority segment D (−6.0pp, n=1000) above the declared
+  decision.subgroup_harm_floor of 500, with no matching decision.subgroup_harm[]
+  disposition row. This is a real DETECTED catch (D-29-00, PRESENT), not an
+  attribution-only miss: the honestly-declared harm is caught, and the swap-still-fires
+  counterfactual (flip D to +0.06) toggles DSX-COH-041 off, confirming it is the code
+  that catches this exact defect rather than a swap-invariant artefact. DSX-MET-030/031
+  are structurally silent at 1-of-4 opposing (1==4 False, 1>=2 False), the pre-mint LIVE
+  MISS seam recorded in 29-MEASUREMENT.md. Gail & Simon (1985) is the MOTIVATING
+  DEFINITION of a qualitative/crossover interaction (opposite-sign-across-subsets = when
+  a segment counts as harmed) only — their paper is a likelihood-ratio test and the check
+  computes nothing on the gate path (D-02); it is NOT the enforcement mechanic. Obermeyer
+  et al. 2019 is the real-world motivation, recorded at abstract + authoritative metadata
+  grade (Crossref + Semantic Scholar; the paper body was not read), not an enforcement
+  authority. Bounded catch: DSX-COH-041 buys attribution over honestly-declared segments,
+  not detection of hidden, mis-signed, or omitted harm — an evasive frame still passes.
