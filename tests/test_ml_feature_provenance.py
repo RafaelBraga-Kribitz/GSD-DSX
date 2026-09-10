@@ -9,9 +9,13 @@ still passes (the standing "a frame that lies passes" limit).
 # D-05: DSX-ML-034
 The citation carried by ``_check_feature_provenance`` — Kaufman, Rosset, Perlich &
 Stitelman (2012), "Leakage in Data Mining: Formulation, Detection, and Avoidance,"
-ACM Transactions on Knowledge Discovery from Data 6(4), Article 15 — is
-secondary-corroborated, primary PDF paywalled. These tests assert the check's
-behaviour, not a first-hand read of the ACM PDF (per 27-CONTEXT.md §S3-1-CLOSE).
+ACM Transactions on Knowledge Discovery from Data 6(4), Article 15 — was
+read first-hand from the ACM PDF on 2026-09-11 (operator-supplied copy; locators
+recorded in the check docstring: Sec. 3.1 p. 15:8 and Sec. 3.2 eq. (3) p. 15:9).
+From 2026-09-07 until that read it had been secondary-corroborated only, the PDF
+paywalled (27-CONTEXT.md §S3-1-CLOSE; HUMAN-QUEUE HQ-40 row 40b, dated update).
+These tests assert the check's behaviour; the read is recorded, not re-performed,
+here.
 """
 
 from __future__ import annotations

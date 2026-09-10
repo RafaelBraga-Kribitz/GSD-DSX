@@ -3,10 +3,10 @@ phase: 27
 phase_name: Evidence case — feature-origin-only leak
 milestone: v2.6
 unit: S3-1 (discuss + persona round)
-status: SETTLED — design frozen + LIVE MISS measured (27-MEASUREMENT.md); mint UNBLOCKED by HQ-40 row 40b (Kaufman CONFIRMED, secondary-corroborated); S3-1 CLOSED 2026-09-07
+status: SETTLED — design frozen + LIVE MISS measured (27-MEASUREMENT.md); mint UNBLOCKED by HQ-40 row 40b (Kaufman CONFIRMED, secondary-corroborated); S3-1 CLOSED 2026-09-07. D-05 UPGRADED 2026-09-11 — Kaufman read first-hand from the ACM PDF (HQ-40 40b dated update); the §S3-1-CLOSE "must not claim a first-hand read" rule is superseded by the read itself
 box_checked: true
 requirements: [REQ-P27-01, REQ-P27-02, REQ-P27-03]
-d05_burden: 1 (Kaufman 2012 TKDD — HQ-40 row 40b ANSWERED 2026-09-07: CONFIRMED, secondary-corroborated, primary PDF paywalled)
+d05_burden: 1 (Kaufman 2012 TKDD — HQ-40 row 40b ANSWERED 2026-09-07: CONFIRMED, secondary-corroborated, primary PDF paywalled; UPGRADED 2026-09-11 to a first-hand read of the ACM PDF from the operator-supplied copy — locators Sec. 3.1 p. 15:8, Sec. 3.2 eq. (3) p. 15:9, recorded in the check docstring and the test marker)
 codes_minted: 0 (DSX-ML-034 authored at S3-3, not S3-1)
 ---
 

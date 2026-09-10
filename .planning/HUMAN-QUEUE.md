@@ -59,6 +59,20 @@ this citation, this is sufficient to unblock the mint** — proceed with
 "secondary-corroborated, primary PDF paywalled" rather than claim a direct read,
 so the record stays honest.
 
+**Update 2026-09-11 — PRIMARY READ COMPLETED.** The operator supplied the ACM PDF
+(DOI 10.1145/2382577.2382579, 21 pp.) and the interactive session read it. Identity
+confirmed at p. 15:1 (title, all four authors, TKDD 6(4) Art. 15, Dec. 2012). The
+definition is confirmed verbatim at the source: the abstract/§1 sentence quoted above;
+Sec. 3.1 p. 15:8 — "We say a second observable v is u leakage legitimate if v is
+observable to the client for the purpose of inferring u" (v ∈ legit{u}; trivial rule
+y ∉ legit{y}, eq. 1); Sec. 3.2 p. 15:9, eq. (3) t{x} < t{y} ⇔ x ∈ legit{y} — "A
+legitimate feature is an ordered set whose every element is observable to the client
+earlier than its W-associated target element." That timing form is exactly the
+boundary `DSX-ML-034`'s `after_prediction` branch encodes. Updated the same day: the
+`DSX-ML-034` docstring, the `# D-05:` test marker, the catalogue-generator comment,
+27-CONTEXT.md, 27-SECURITY.md T-27-03 (+ audit-trail row) and the literature record.
+The secondary-corroborated status is now historical (2026-09-07 → 2026-09-11).
+
 **40c vs 40d — CONFIRMED: cite 40c only, drop 40d.** Read Wilkinson & the Task
 Force on Statistical Inference (1999) in full, primary text. It states the rule
 unconditionally, three times: "Always present effect sizes for primary outcomes";
@@ -139,7 +153,8 @@ Approval line; a UAT note) and checks this item off. **Non-blocking until S7-2.*
 verify:post gates technically; two items need the operator's sign-off at close-out
 (S7-2), neither blocking any earlier work. Phase 27 mints one code (`DSX-ML-034`,
 feature provenance) under a **secondary-corroborated** D-05 citation (Kaufman et al.
-2012, HQ-40 row 40b — primary ACM PDF paywalled, flagged honestly) and promotes a
+2012, HQ-40 row 40b — primary ACM PDF paywalled, flagged honestly) [**2026-09-11:
+since read first-hand from the operator-supplied PDF — see the HQ-40 40b update**] and promotes a
 corpus **MISS** fixture; the attack surface is provenance laundering, catalogue/count
 tampering, and a fixture silently flipping MISS→CATCH — not runtime input handling.
 `dsx/checks/dq.py` stays byte-frozen.

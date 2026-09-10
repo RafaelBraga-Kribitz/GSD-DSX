@@ -556,9 +556,18 @@ def _check_feature_provenance(model: dict, report: Report) -> None:
     observable, for the entity in question, strictly before the target instance
     becomes known — is the general statement of the boundary a declared
     available_at of after_prediction (or an unattested unknown) violates. This
-    citation is secondary-corroborated across independent indexes; the primary
-    ACM Digital Library PDF was paywalled and was not read first-hand in this
-    session, so no section or page locator is asserted (do not invent one).
+    citation was read first-hand from the ACM PDF (DOI above) on 2026-09-11 by
+    the interactive session, from the operator-supplied copy; from 2026-09-07
+    until then it had been secondary-corroborated only, the PDF paywalled.
+    Locators, read at the source: Sec. 3.1 "Preliminaries and Legitimacy",
+    p. 15:8 -- "We say a second observable v is u leakage legitimate if v is
+    observable to the client for the purpose of inferring u"; Sec. 3.2 "Leaking
+    Features", p. 15:9, eq. (3): t{x} < t{y} <=> x in legit{y}, which the paper
+    reads as "A legitimate feature is an ordered set whose every element is
+    observable to the client earlier than its W-associated target element."
+    That timing form is exactly the boundary this check's after_prediction
+    branch encodes; the paper's trivial rule y not-in legit{y} (eq. 1) is the
+    degenerate case.
 
     Structural criterion: DSX-ML-034 is a membership test of each entry's
     declared, normalised available_at value against that closed vocabulary —
