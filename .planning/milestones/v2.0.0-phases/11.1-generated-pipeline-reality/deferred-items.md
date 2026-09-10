@@ -39,13 +39,13 @@ reproduced, deliberately deferred at UAT rather than fixed. The other five
 (CR-01, CR-02, CR-03, CR-04, WR-01) were routed to a gap-closure plan due
 before Phase 11.2 — see `11.1-UAT.md` test 2.
 
-**WR-02 — `dsx/decisions.py::append()` writes `
+**WR-02 — `dsx/decisions.py::append()` writes `
 `, contract says `
 `.**
 The module docstring (`dsx/decisions.py:13-15`) states each record is followed
 by a single `
 `; `append()` (line 116) opens in text mode with no `newline=`
-argument, so Windows translates it to `
+argument, so Windows translates it to `
 `. Reproduced. Note the review
 understated one thing and overstated another: this is *already materialised*,
 not latent — roughly 28.5 MB / 31,290 lines of existing decision-trail files
