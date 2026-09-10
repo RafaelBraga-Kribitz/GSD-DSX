@@ -253,6 +253,49 @@ vocabulary mis-routing a code — not runtime input handling. `dsx/checks/dq.py`
 An interactive session records both verdicts in the proper artifacts (SECURITY.md
 Approval line; a UAT note) and checks this item off. **Non-blocking until S7-2.**
 
+### HQ-46 — Phase 30 end-of-phase sign-off: security + UAT (filed 2026-09-10 by S6-5; non-blocking until S7-2)
+
+**What this is.** Phase 30 (Calibration re-baseline, terminal) passed both verify:post
+gates technically; two items need the operator's sign-off at close-out (S7-2), neither
+blocking any earlier work. Phase 30 **measures** the grown corpus (42 known-bad + 15
+good-control) with the three v2.6 cases classified from the committed harness wiring
+(2 misses DSX-ML-034/DSX-CLM-034 + 1 target DSX-COH-041) and **mints zero codes**
+(set-identity 279 → 279). It designs nothing. The attack surface is record integrity —
+a readout number drifting from a measured value, an FPR of 0/15 dressed as a ~0 point
+estimate, a frozen gate module/fixture/catalogue silently reshaped, a stale doc claim
+left un-pinned, a `kind: target` case double-counted into the headline — not runtime
+input handling. `dsx/` (incl. `dq.py`, `cli.py`, `viz.py`), `examples/` and
+`references/finding-codes.md` stay byte-frozen for the whole phase.
+
+1. **Security sign-off (SECURITY.md approval line — brief §4.4).** The loop re-gated
+   all 11 threats at their code locators on real Python 3.12.10 → **SECURED,
+   `threats_open: 0`, 11/11 CLOSED** (`30-SECURITY.md`, `status: verified` technical):
+   the three CRITICAL threats are closed at the byte level — frozen-surface `git diff`
+   **empty** for `dsx/`+`examples/`+`references/finding-codes.md` (T-30-03), catalogue/
+   fixtures/`dq.py`/`viz.py` byte-frozen + invariant "code SET == frozen Phase-12
+   snapshot + sanctioned mints" (T-30-09), and set-identity **279 → 279** re-measured,
+   not assumed (T-30-11 zero-mint); the readout numbers equal measured values,
+   reproduced live by `test_stratified_catch_rate_and_fpr_report` **OK** (T-30-01); FPR
+   0/15 is reported as a bounded observation with its one-sided 95% upper bound ≈0.181,
+   never a ~0 point estimate, and no interval is quoted on the construction-invariant
+   miss-rate (T-30-02); the doc re-baselines name the three v2.6 codes and flip
+   39→42 with the new agreement test pinning doc==live (T-30-06/07/08); full suite
+   **1629 OK** (no skips), `node install.mjs --check` self-test passed, `scripts/check.sh`
+   all passed (T-30-04/10). The Approval line is written but **unsigned** — the loop
+   verifies mitigations, it does not sign. **To answer:** read `30-SECURITY.md`; confirm
+   the register + the three CRITICAL freeze/zero-mint threats and the two HIGH
+   record-integrity threats (T-30-01, T-30-02); approve.
+2. **UAT round.** `30-VALIDATION.md` is `nyquist_compliant: true`, 0 gaps, all 3
+   requirements COVERED by named tests (reproducer + `tests.test_literature_corpus_count_agreement`
+   + `tests.test_finding_catalogue_invariant` green on real 3.12.10; full suite 1629 OK;
+   `scripts/check.sh` all passed). Phase 30 has no user-facing runtime behaviour beyond
+   the declaration-only doc records and the static agreement guard, so its acceptance test
+   IS the automated invariant set. **To answer:** confirm UAT accepted (or name a manual
+   check to run).
+
+An interactive session records both verdicts in the proper artifacts (SECURITY.md
+Approval line; a UAT note) and checks this item off. **Non-blocking until S7-2.**
+
 ## Will be added by the loop when reached
 
 - ~~S0-3: the v2.6 D-05 citation evidence pack~~ — **FILED as HQ-40 (2026-09-06)**,
@@ -261,7 +304,8 @@ Approval line; a UAT note) and checks this item off. **Non-blocking until S7-2.*
 - Phase 25/26/27/28/29/30 end-of-phase security sign-off + UAT rounds (batched per
   phase; non-blocking until S7-2). **Phase 25 filed as HQ-41; Phase 26 filed as HQ-42;
   Phase 27 filed as HQ-43 (all 2026-09-07); Phase 28 filed as HQ-44; Phase 29 filed as
-  HQ-45 (both 2026-09-08).**
+  HQ-45 (both 2026-09-08); Phase 30 filed as HQ-46 (2026-09-10) — all six phase
+  sign-offs now batched to S7-2.**
 - D-06 numbering veto windows for any code Phases 27–29 mint, and for any number
   reserved in `_SECTION_65_BACKLOG_CODES` for a miss sidecar (from a freshly
   re-measured live catalogue count; silence = accept).
