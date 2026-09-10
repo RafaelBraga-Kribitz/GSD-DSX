@@ -243,3 +243,68 @@ sign; they are the S7-2 drain, which blocks the S7-5/S7-6 ship path.
 only outstanding close-out work is the operator sign-off (S7-2) and the
 interactive ship steps (S7-5/S7-6). S7-3 (`/gsd-extract-learnings`) is the next
 loop-actionable unit, independent of the sign-offs.
+
+## S7-3 — extract-learnings across the milestone (2026-09-10)
+
+Full evidence for the S7-3 checkbox. The `extract-learnings` workflow
+(`~/.claude/gsd-core/workflows/extract-learnings.md`) is **per-phase** — it reads a
+phase's PLAN/SUMMARY (+optional VERIFICATION/UAT/STATE), extracts four categories
+(decisions, lessons, patterns, surprises), writes `${PADDED}-LEARNINGS.md`, updates
+STATE `Last Activity`, and reports. S7-3 for the milestone = run it across all six
+phases 25–30, matching how every prior milestone produced one `NN-LEARNINGS.md` per
+phase. No `NN-LEARNINGS.md` existed for 25–30 before this firing (ran fresh).
+
+**Execution model.** Fanned out six `sonnet` subagents (one per phase), each pointed
+at its exact phase dir + output path, each reading that phase's full artifact set
+(PLAN/SUMMARY/CONTEXT/RESEARCH/VERIFICATION/REVIEW/SECURITY/VALIDATION plus
+MEASUREMENT/READOUT/STATS-REVIEW where present). **Single-writer honored:** each
+subagent was instructed to write ONLY its own `NN-LEARNINGS.md` — no git, no branch
+creation, no STATE/REQUIREMENTS/ROADMAP/ledger edits; the orchestrator did the STATE
+update + all git serially. Chosen over inline extraction to keep orchestrator context
+lean over 6 phases × ~10 artifacts each, and it is a naturally parallel, non-gated,
+reversible synthesis task (brief §3: not a checklist, not an irreversible design
+decision → sonnet/profile-default is the defensible middle).
+
+**Orchestrator verification (not trusted from the subagent reports).** All six files
+written and independently checked:
+
+| File | decisions | lessons | patterns | surprises | Σ items | `###` count | `**Source:**` lines |
+|---|---|---|---|---|---|---|---|
+| 25-LEARNINGS.md | 6 | 6 | 6 | 5 | 23 | 23 | 23 |
+| 26-LEARNINGS.md | 7 | 6 | 6 | 6 | 25 | 25 | 25 |
+| 27-LEARNINGS.md | 8 | 7 | 6 | 5 | 26 | 26 | 26 |
+| 28-LEARNINGS.md | 8 | 5 | 5 | 4 | 22 | 22 | 22 |
+| 29-LEARNINGS.md | 9 | 6 | 6 | 5 | 26 | 26 | 26 |
+| 30-LEARNINGS.md | 4 | 4 | 4 | 3 | 15 | 15 | 15 |
+| **Total** | 42 | 34 | 33 | 28 | **137** | **137** | **137** |
+
+- Each file: exactly 4 top-level sections (`## Decisions/Lessons/Patterns/Surprises`),
+  grep-confirmed 4-of-4 across all six.
+- Frontmatter shape correct in all six: `phase`, `phase_name`, `project: "gsd-dsx"`,
+  `generated: "2026-09-10"`, `counts:` (4 keys), `missing_artifacts: ["UAT.md"]`
+  (no `*-UAT.md` files exist for any phase — acceptance = the automated invariant sets).
+- **Declared frontmatter counts == actual `###` item counts in every file** (137/137),
+  and **every item carries a `**Source:**` line** (137/137) — no fabricated or
+  mis-counted frontmatter.
+- Content faithfulness spot-check: read `30-LEARNINGS.md` in full — GA-1 inline
+  persona-round decision, FPR 0/15 one-sided 95% bound ≈0.181, 279→279 zero-mint,
+  the F1 "four"→"three" reliability-fixture amendment and F2 catchable-in-declared-form
+  distinction, the `_measure_readout.py` read-only companion, and
+  `test_literature_corpus_count_agreement` all rendered accurately and attributed to
+  the correct source artifacts. No fabrication.
+
+**capture_thought integration.** No `capture_thought` tool is present in this session
+(no memory/KB MCP server exposes it) → the workflow's optional integration step is a
+silent no-op; `LEARNINGS.md` file output is the primary and complete deliverable, per
+the workflow's explicit graceful-degradation rule.
+
+**STATE update (single-writer).** `last_activity` already `2026-09-10` (the workflow's
+prescribed field); orchestrator also refreshed the `status` headline + `Next` clause
+(→ S7-4) and `last_updated` → `2026-09-10T18:18Z`. `last_activity_desc` left as-is
+(pre-existing lag; the `status` field is the authoritative human-facing summary).
+
+**Conclusion:** S7-3 DONE. Six per-phase LEARNINGS.md written and orchestrator-verified;
+137 source-attributed items, zero fabrication, counts internally consistent. **Next =
+S7-4 (`/gsd-audit-milestone` — must reach `passed`), the next loop-actionable unit;
+S7-2 (drain HUMAN-QUEUE, HQ-41..46 sign-offs) remains BLOCKED on the operator and gates
+the S7-5/S7-6 interactive ship path.**
