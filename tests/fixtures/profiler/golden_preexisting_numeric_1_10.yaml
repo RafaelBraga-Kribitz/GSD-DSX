@@ -1,6 +1,6 @@
 profile_version: 1
 computed_by: dsx-profile
-source_path: "C:/Users/Benutzer1/Dev/AI/gsd-dsx/tests/fixtures/profiler/numeric_1_10.csv"
+source_path: "tests/fixtures/profiler/numeric_1_10.csv"
 source_hash: "sha256:5c92bc1cc9a0ff9580bf1163810b70b793441f3a8bd377ac40ef2605c0619055"
 row_count: 10
 columns:

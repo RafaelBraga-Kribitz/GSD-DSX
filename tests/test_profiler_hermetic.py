@@ -36,6 +36,26 @@ ASSERTIONS_REF = REPO / "references" / "data-quality-assertions.md"
 EXAMPLES = REPO / "examples"
 
 
+def _normalize_source_path(lines: list[str]) -> list[str]:
+    """Compare the rendered `source_path:` line by basename only.
+
+    The profiler records whatever path the caller handed it -- absolute on the
+    machine that recorded the golden. A raw text compare then passes only where the
+    repository lives at that exact path (found 2026-09-10 in a fresh clone: the golden
+    had pinned C:/Users/<user>/Dev/AI/gsd-dsx/...). Every other line stays a raw text
+    compare, as 25-RESEARCH.md Pitfall 3 requires; this is the one line that is
+    location-bound by construction.
+    """
+    out: list[str] = []
+    for line in lines:
+        if line.startswith("source_path:"):
+            value = line.split(":", 1)[1].strip().strip('"').strip("'")
+            out.append(f'source_path: "{Path(value).name}"')
+        else:
+            out.append(line)
+    return out
+
+
 def _strip_new_blocks(text: str) -> str:
     """Drop every line belonging to a `numeric:`/`categorical:` sub-map, leaving only
     pre-Phase-25 rendered lines (D-04 guard #3). CRLF-tolerant — splits on `\\r?\\n`,
@@ -192,7 +212,9 @@ class TestProfilerDeterminism(unittest.TestCase):
         )
         golden_lines = re.split(r"\r?\n", golden_text)
         filtered_lines = re.split(r"\r?\n", filtered)
-        self.assertEqual(filtered_lines, golden_lines)
+        self.assertEqual(
+            _normalize_source_path(filtered_lines), _normalize_source_path(golden_lines)
+        )
         # The golden must contain no additive-block lines at all.
         self.assertNotIn("numeric:", golden_text)
         self.assertNotIn("categorical:", golden_text)
@@ -607,8 +629,12 @@ target:
 class TestExampleProfilesByteInvariant(unittest.TestCase):
     """D-04 guard #4 (Task 2, REQ-P25-02): the committed example profiles are byte-invariant.
 
-    The sha256 is over RAW bytes (CRLF included, this repo checks out CRLF on Windows), pinned
-    from the current committed files — so any future edit to either file fails the suite.
+    The sha256 is over the files' bytes with line endings normalised to LF first -- the
+    same rule tests/test_frame_val.py applies to design.py -- pinned from the committed
+    (LF-normalised) blobs, so any future edit to either file fails the suite on every
+    checkout. A raw-byte pin was checkout-dependent: this repo checks out CRLF on
+    Windows, the pins were recorded from an LF working copy, and every fresh clone
+    failed (found 2026-09-10 at the v2.6 ship check).
     """
 
     EXPECTED = {
@@ -624,7 +650,7 @@ class TestExampleProfilesByteInvariant(unittest.TestCase):
         import hashlib
 
         for name, expected in self.EXPECTED.items():
-            raw = (EXAMPLES / name).read_bytes()
+            raw = (EXAMPLES / name).read_bytes().replace(b"\r\n", b"\n")
             actual = hashlib.sha256(raw).hexdigest()
             self.assertEqual(actual, expected, name)
 

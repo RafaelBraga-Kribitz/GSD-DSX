@@ -55,6 +55,11 @@ Requires GSD Core ≥ 1.6 and Python 3.9+. **No third-party Python packages** �
 statistics kernel is stdlib-only, because a gate that breaks on a missing
 dependency is a gate that gets turned off.
 
+On Windows, if your checkout location is deep, clone with long paths enabled
+(`git -c core.longpaths=true clone …`, or `git config --global core.longpaths true`):
+the planning archives under `.planning/milestones/` carry paths up to ~135 characters
+below the repository root, and Windows refuses paths beyond 260 without it.
+
 The installer runs a self-test: it asserts the known-good fixture passes every
 gate and the known-bad fixture is blocked by every gate. If either fails, the
 install aborts.
