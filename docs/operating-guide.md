@@ -57,7 +57,7 @@ agents that talk to you, sets the readability flags, and then verifies by
 resolving the skills back out rather than trusting that the write succeeded.
 
 ```powershell
-pwsh scripts/gsd-stamp.ps1 -Project C:\Users\Benutzer1\Dev\warehouse_humanoid_tco -Tier 2
+pwsh scripts/gsd-stamp.ps1 -Project C:\path\to\your-project -Tier 2
 pwsh scripts/gsd-stamp.ps1 -Project . -VerifyOnly
 ```
 

@@ -18,7 +18,7 @@ PowerShell:
 
 ```powershell
 $GSD  = "$env:USERPROFILE\.claude\gsd-core\bin\gsd-tools.cjs"
-$PROJ = "c:\Users\Benutzer1\Dev\AI\gsd-dsx"
+$PROJ = "C:\path\to\gsd-dsx"   # your checkout
 node $GSD config-set workflow.research false --cwd $PROJ
 ```
 
