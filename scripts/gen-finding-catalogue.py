@@ -205,7 +205,7 @@ _D05_ALLOWLIST_CODES = frozenset(
         # no `# D-05:` marker, so a prefix add would fail the build red on all of
         # them. DSX-ML-034 lives in the brand-new `_check_feature_provenance`
         # helper this phase wrote (cites Kaufman et al. 2012 -- read first-hand from
-        # the ACM PDF on 2026-09-11; it was secondary-corroborated / paywalled at
+        # the ACM PDF on 2026-09-10; it was secondary-corroborated / paywalled at
         # mint time, 2026-09-07); same exact-code precedent as DSX-VIZ-071 above.
         "DSX-ML-034",
         # Phase 28 (REQ-P28-02) adds DSX-CLM-034 here by EXACT CODE, not via a

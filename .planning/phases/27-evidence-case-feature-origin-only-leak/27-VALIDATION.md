@@ -119,3 +119,7 @@ Python 3.12.10 (`C:\Users\Benutzer1\AppData\Local\Programs\Python\Python312\pyth
 3/3 requirements COVERED by named tests, phase module 60/60 green on real 3.12.10.
 UAT round batched to HUMAN-QUEUE as **HQ-43** (non-blocking until S7-2 per
 LOOP-LEDGER S3-5).
+
+## Operator UAT sign-off — 2026-09-10 (HQ-43)
+
+**UAT accepted by the operator** (interactive session, 2026-09-10; batched here from LOOP-LEDGER S3-5). Acceptance = the automated invariant set above, plus the session's hands-on run: the promoted fixture was run through `dsx audit`: the minted code stays silent on the honest miss and the incidental findings equal the recorded golden set; the D-05 citation is now a first-hand read. Full suite re-run on real Python 3.12.10 before signing: **1629 tests OK**; `gen-finding-catalogue.py --check` current at 279; `node install.mjs --check` self-test passed (6/6 agents, 14/14 skills, 5 gates). Caveat recorded honestly: the hands-on runs used generated data and the project's own fixtures; the first real portfolio dataset is the live acceptance of the user-facing surface.

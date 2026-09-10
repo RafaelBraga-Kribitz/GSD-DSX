@@ -143,3 +143,7 @@ not trusted from a subagent report):
 3/3 requirements COVERED by named tests, reproducer + agreement + invariant green and full suite
 1629 OK on real 3.12.10. UAT round batched to HUMAN-QUEUE as **HQ-46** (non-blocking until S7-2
 per LOOP-LEDGER S6-5).
+
+## Operator UAT sign-off — 2026-09-10 (HQ-46)
+
+**UAT accepted by the operator** (interactive session, 2026-09-10; batched here from LOOP-LEDGER S6-5). Acceptance = the automated invariant set above, plus the session's hands-on run: the stratified reproducer, the catalogue currency check and the literature agreement test were re-run green; the readout's numbers match the reproducer. Full suite re-run on real Python 3.12.10 before signing: **1629 tests OK**; `gen-finding-catalogue.py --check` current at 279; `node install.mjs --check` self-test passed (6/6 agents, 14/14 skills, 5 gates). Caveat recorded honestly: the hands-on runs used generated data and the project's own fixtures; the first real portfolio dataset is the live acceptance of the user-facing surface.

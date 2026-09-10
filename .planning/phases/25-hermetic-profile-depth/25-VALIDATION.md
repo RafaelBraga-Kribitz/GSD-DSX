@@ -95,3 +95,7 @@ Existing infrastructure covers all phase requirements. The phase is test-driven 
 | Escalated | 0 |
 
 **Approval:** validated (technical) 2026-09-07 — Nyquist-compliant, 0 gaps: all 3 requirements COVERED by named automated tests, phase module re-run green (51/51) on real Python 3.12.10, full suite 1583 OK at S1-4. **UAT round batched to HUMAN-QUEUE (non-blocking until S7-2 per LOOP-LEDGER S1-5).**
+
+## Operator UAT sign-off — 2026-09-10 (HQ-41)
+
+**UAT accepted by the operator** (interactive session, 2026-09-10; batched here from LOOP-LEDGER S1-5). Acceptance = the automated invariant set above, plus the session's hands-on run: the user-facing surface (`dsx profile --pk/--time/--unit/--target`) was run by hand on a generated CSV and on the project's hand-computed fixture; every new block appeared and the fixture's expected values matched exactly; two runs byte-identical. Full suite re-run on real Python 3.12.10 before signing: **1629 tests OK**; `gen-finding-catalogue.py --check` current at 279; `node install.mjs --check` self-test passed (6/6 agents, 14/14 skills, 5 gates). Caveat recorded honestly: the hands-on runs used generated data and the project's own fixtures; the first real portfolio dataset is the live acceptance of the user-facing surface.

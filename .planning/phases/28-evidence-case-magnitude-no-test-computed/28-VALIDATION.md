@@ -126,3 +126,7 @@ not trusted from a subagent report):
 3/3 requirements COVERED by named tests, phase modules 67/67 green on real 3.12.10.
 UAT round batched to HUMAN-QUEUE as **HQ-44** (non-blocking until S7-2 per
 LOOP-LEDGER S4-5).
+
+## Operator UAT sign-off — 2026-09-10 (HQ-44)
+
+**UAT accepted by the operator** (interactive session, 2026-09-10; batched here from LOOP-LEDGER S4-5). Acceptance = the automated invariant set above, plus the session's hands-on run: the promoted fixture was run through `dsx audit`: the minted code stays silent on the honest miss; the one CRITICAL is the documented incidental. Full suite re-run on real Python 3.12.10 before signing: **1629 tests OK**; `gen-finding-catalogue.py --check` current at 279; `node install.mjs --check` self-test passed (6/6 agents, 14/14 skills, 5 gates). Caveat recorded honestly: the hands-on runs used generated data and the project's own fixtures; the first real portfolio dataset is the live acceptance of the user-facing surface.

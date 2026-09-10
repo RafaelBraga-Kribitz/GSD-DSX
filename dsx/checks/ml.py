@@ -556,7 +556,7 @@ def _check_feature_provenance(model: dict, report: Report) -> None:
     observable, for the entity in question, strictly before the target instance
     becomes known — is the general statement of the boundary a declared
     available_at of after_prediction (or an unattested unknown) violates. This
-    citation was read first-hand from the ACM PDF (DOI above) on 2026-09-11 by
+    citation was read first-hand from the ACM PDF (DOI above) on 2026-09-10 by
     the interactive session, from the operator-supplied copy; from 2026-09-07
     until then it had been secondary-corroborated only, the PDF paywalled.
     Locators, read at the source: Sec. 3.1 "Preliminaries and Legitimacy",
