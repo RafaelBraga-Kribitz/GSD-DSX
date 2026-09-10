@@ -479,6 +479,16 @@ observation, zero-mint 279 → 279. Catalogue 276 → 279; corpus 39 → 42 know
 - **A firing died mid-S5-5** (dropped connection) with a complete `SECURITY.md`
   written but uncommitted; the operator's session had to find and reconcile it
   minutes before a laptop shutdown.
+- **"Green on the branch" was not "green as a release."** The ship step's
+  re-verification on `main` and then in a fresh clone found five defects the
+  branch never showed — fixtures pointing into `.planning/phases/` (archived at
+  close), byte-hashed CSVs and profile YAMLs whose pins were recorded from an LF
+  working copy, a golden that pinned this machine's absolute path, and archive
+  paths that overrun Windows' 260-character limit from a deep checkout. All
+  fixed (`e52d7da`, `0f61eb5`) and proven in a fresh clone before the merge was redone. The
+  branch was never a valid stand-in for a clone: the loop wrote LF files git
+  would check out as CRLF, the phase directories still existed, and it sat at
+  a 34-character root.
 - **Fifteen good-control specs is a thin FPR denominator.** The readout is
   honest about the 18% upper bound, but the fix is more controls, not better
   wording — carried to v2.7.
@@ -509,6 +519,15 @@ observation, zero-mint 279 → 279. Catalogue 276 → 279; corpus 39 → 42 know
 - A check's own docstring is the best place to find its next gap:
   `DSX-CLM-034` concedes it never checks metric identity, which is precisely the
   share-vs-risk hole SEED-003 AC-02 names.
+- A committed, gate-read fixture must never reference anything under
+  `.planning/` — that directory is planning history, and the close moves it.
+  Anything a test hashes or compares byte-for-byte must either be `-text` in
+  `.gitattributes` or be normalised before hashing; and a golden must never
+  carry an absolute path. Otherwise the pin is only valid on the machine that
+  recorded it.
+- "Green on the branch" is a claim about one working copy. The release property
+  is "green on `main` after the merge, in a fresh clone at a normal path" — keep
+  that check in the ship step even when the branch is green.
 - Framework close-out helpers are a standing cost; budget the hand-verification
   and stop rediscovering it.
 

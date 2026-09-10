@@ -484,6 +484,16 @@ pass every gate at every threshold; `examples/bad-ANALYSIS-SPEC.yaml` must be
 blocked by every gate. If a new check breaks the good fixture, either the check is
 wrong or the fixture has a real defect. Both are worth finding out.
 
+**Fixtures and goldens are location- and checkout-independent.** A committed,
+gate-read fixture must never reference anything under `.planning/` — that
+directory is planning history and the milestone close moves it. Anything a test
+hashes or compares byte-for-byte is either marked `-text`/`binary` in
+`.gitattributes` (the profiler's reference CSVs, the sealed figures) or normalised
+to LF before hashing, and a golden never records an absolute path — this
+repository checks out CRLF on Windows, and a pin recorded from one working copy is
+otherwise only valid on the machine that recorded it. Before tagging a release, run
+the suite on `main` after the merge and in a fresh clone, not only on the branch.
+
 ---
 
 ## Known limits

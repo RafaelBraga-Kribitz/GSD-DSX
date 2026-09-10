@@ -49,6 +49,27 @@ share-vs-risk evidence candidates, and the settled two-media conduct decision.
 Pre-close audit acknowledged two dormant seeds (dormant by design) and three parser
 false-positives — recorded in STATE.md Deferred Items; verified close-out.
 
+**What the pre-ship check caught — and why the check exists.** Re-running the full
+suite *on `main` after the merge* and then *in a fresh clone*, rather than trusting the
+branch's last green run, found five release defects the branch never showed, none of
+them in the gate logic: (1) two corpus fixtures (Phases 28 and 29) pointed their
+`evidence` and `narrative.path` at spike files under `.planning/phases/`, which the
+milestone close archives — two gate findings fired and four golden-set tests drifted;
+(2) the profiler's reference CSVs were hashed byte-for-byte while git rewrote them as
+CRLF on checkout; (3) the profiler golden had pinned this machine's absolute path in
+`source_path`, so it passed only where the repository lives here; (4) the example-profile
+byte-invariant pins were recorded from an LF working copy while the test hashed raw
+bytes — every Windows clone fails; (5) the planning archives carry paths up to ~135
+characters below the root, which a deep checkout location pushes past Windows' 260-char
+limit. None was visible on the ceremony branch: its working copy was LF where the loop
+had written files, the phase directories still existed when its suite last ran, and it
+lives at a short path. All fixed before the tag (`e52d7da`, `0f61eb5`): the narratives became
+fixture siblings in `examples/known-bad/` (five older fixtures' convention),
+`tests/fixtures/profiler/*.csv` are `-text` like the sealed figures, the golden compares
+`source_path` by basename and records a relative path, the pins hash LF-normalised bytes
+(the suite's own `design.py` precedent), and the README documents `core.longpaths`.
+Proven by a full green run in a fresh clone before the merge was redone.
+
 ---
 
 ## v2.5.0 Corpus Coverage and Install Integrity (Shipped: 2026-09-06)

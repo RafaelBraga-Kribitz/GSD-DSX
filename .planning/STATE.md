@@ -6,7 +6,7 @@ status: shipped — v2.6 closed 2026-09-10 (S7-5 archive + S7-6 merge to `main`,
 stopped_at: "v2.6 shipped 2026-09-10. Archive committed on gsd/v2.6.0-exploration-depth, merged into main by explicit branch name (--no-ff), tag v2.6.0 on the merge commit, pushed. Loop paused (.planning/loop-logs/.paused). Next = open v2.7 interactively."
 last_updated: "2026-09-10T22:44:00.000Z"
 last_activity: 2026-09-10
-last_activity_desc: "v2.6 close-out (interactive, 2026-09-10T22:44Z): S7-2 sign-offs HQ-41..46; S7-5 archive (milestones/v2.6-*, phases archived, REQUIREMENTS.md removed after archival); S7-6 ship (merge --no-ff into main, tag v2.6.0). Kaufman D-05 upgraded to a first-hand read the same day (da99ccf). Ceremony paused until v2.7 opens."
+last_activity_desc: "Pre-ship check on main + fresh clone caught 5 release defects (fixture pointers into .planning/phases; byte-hashed CSVs/YAML pins vs CRLF checkout; absolute path in a golden; long archive paths) — fixed e52d7da+0f61eb5, proven in a fresh clone, merge redone. v2.6 close-out (interactive, 2026-09-10T22:44Z): S7-2 sign-offs HQ-41..46; S7-5 archive (milestones/v2.6-*, phases archived, REQUIREMENTS.md removed after archival); S7-6 ship (merge --no-ff into main, tag v2.6.0). Kaufman D-05 upgraded to a first-hand read the same day (da99ccf). Ceremony paused until v2.7 opens."
 progress:
   total_phases: 6
   completed_phases: 6
@@ -130,6 +130,9 @@ first-hand read from the operator-supplied PDF, archived the milestone with the
 CLI's generated records hand-corrected (its accomplishment extraction produced
 fragments for the fourth consecutive close; its STATE rewrite regressed the
 counters), merged into `main` by explicit branch name and tagged `v2.6.0`.
+The first merge into `main` was discarded after the post-merge suite failed; five
+release defects were fixed on the branch (`e52d7da`, `0f61eb5`), proven green in a fresh clone,
+and the merge redone on the fixed tip before tagging.
 Stopped at: v2.6 shipped; loop paused; nothing open.
 Resume file: None.
 
