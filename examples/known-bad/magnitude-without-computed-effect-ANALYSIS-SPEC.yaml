@@ -129,7 +129,7 @@ claims:
   - text: >-
       Customers holding fewer than two products churn at 27% against 18% for the rest of the book, over the 2026-Q2 window.
     type: association
-    evidence: ".planning/phases/28-evidence-case-magnitude-no-test-computed/spike/magnitude-no-test-computed-NARRATIVE.md"
+    evidence: "examples/known-bad/magnitude-without-computed-effect-NARRATIVE.md"
     population: "Customers active at 2026-Q2 start, warehouse.fct_customer_book"
     base_n: 5000
 
@@ -149,7 +149,7 @@ reproducibility:
     dsx_version: "2.0.0"
 
 narrative:
-  path: .planning/phases/28-evidence-case-magnitude-no-test-computed/spike/magnitude-no-test-computed-NARRATIVE.md
+  path: examples/known-bad/magnitude-without-computed-effect-NARRATIVE.md
   audience: executive
   lead_claim: 0
 

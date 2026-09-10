@@ -1,6 +1,6 @@
 # A known-bad ANALYSIS-SPEC (REQ-P29-01, REQ-P29-02, REQ-P29-03; ROADMAP Phase 29
 # "Evidence case — subgroup harm under a prescriptive recommendation"). Promoted
-# from the S5-3 measurement spike (.planning/phases/29-evidence-case-subgroup-harm-
+# from the S5-3 measurement spike (.planning/milestones/v2.6-phases/29-evidence-case-subgroup-harm-
 # prescriptive/spike/) into the committed corpus on a confirmed LIVE MISS
 # (29-MEASUREMENT.md records `VERDICT: LIVE MISS`; the D-13 measure-first entry
 # condition that licenses the mint).
@@ -161,7 +161,7 @@ claims:
       retention by 3.2 percentage points on the n-weighted aggregate (95% CI 2.4
       to 4.0pp) across the at-risk book in the test window.
     type: prescriptive
-    evidence: ".planning/phases/29-evidence-case-subgroup-harm-prescriptive/spike/subgroup-harm-without-disposition-NARRATIVE.md"
+    evidence: "examples/known-bad/subgroup-harm-without-disposition-NARRATIVE.md"
     population: "At-risk accounts in the test window (2026-07-01 to 2026-07-14)"
     identification: randomized_experiment
 
@@ -189,7 +189,7 @@ reproducibility:
     dsx_version: "2.0.0"
 
 narrative:
-  path: .planning/phases/29-evidence-case-subgroup-harm-prescriptive/spike/subgroup-harm-without-disposition-NARRATIVE.md
+  path: examples/known-bad/subgroup-harm-without-disposition-NARRATIVE.md
   audience: executive
   lead_claim: 0
 
