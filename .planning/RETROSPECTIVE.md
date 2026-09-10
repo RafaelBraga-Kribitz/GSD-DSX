@@ -417,6 +417,110 @@ snapshots (Phase-12, v2.2's set, v2.3's set) unmutated.
   the ship decision) reviewed and approved across two batched interactive
   sessions on the operator's explicit go-ahead.
 
+## Milestone: v2.6 — Exploration Depth and Backlog Evidence
+
+**Shipped:** 2026-09-10
+**Phases:** 6 (25, 26, 27, 28, 29, 30) | **Plans:** 16
+
+### What Was Built
+
+The exploration artifact made hash-bound and consumed, then the three
+paper-derived backlog items tested against real corpus cases. Phase 25 grew
+`dsx profile` into a producer of the explore protocol's trust-core numbers
+(numeric five-number summaries, categorical shares, time depth, rows per unit, a
+weekly base-rate table with verdict) — additive, byte-stable, stdlib-only, with
+the DQ gate proven inert to every new key. Phase 26 gave five downstream skills
+named read contracts over `EDA.md` and the profile, guarded by a CRLF-tolerant,
+negative-controlled repo-integrity test. Phases 27–29 each built a corpus case,
+measured it live at all four gate points *before* designing anything, recorded a
+`VERDICT:` first line, and — all three being genuine misses — minted one code
+each: `DSX-ML-034` (feature provenance, attribution-only), `DSX-CLM-034`
+(claim-to-cited-test traceability, attribution-only) and `DSX-COH-041`
+(subgroup-harm disposition, a real catch and the corpus's first `kind: target`).
+Phase 30 re-baselined calibration with the new cases classified: miss 5/5 by
+construction, FPR 0/15 with its one-sided 95% bound ≈0.181 stated as a bounded
+observation, zero-mint 279 → 279. Catalogue 276 → 279; corpus 39 → 42 known-bad
++ 15 good-control; full suite 1629 OK.
+
+### What Worked
+
+- **Measure-first held under pressure, three times.** Every mint was authorized
+  by a live measurement, not by a paper — which is exactly why Phase 27 could
+  ship honestly on a secondary-corroborated citation: the measurement proved the
+  gap, the citation only framed it. When the primary PDF finally arrived at
+  close-out, upgrading the record was a one-commit correction, not a retraction.
+- **The loop survived three mid-unit crashes without losing work or trusting a
+  crashed firing.** Orphaned plans (S4-2, S5-2), orphaned code-review work
+  (S5-4) and a stranded `SECURITY.md` (S5-5) were each adopted only after
+  independent re-verification on the real interpreter — an adoption protocol
+  that emerged from the incidents and held.
+- **The sign-off round re-ran everything.** Full suite, catalogue, both guards,
+  the reproducer, the three fixtures through `dsx audit`, the new profiler flags
+  by hand on generated data and on the hand-computed fixture — before any of the
+  six approvals was written. The one soft spot it surfaced (Kaufman unread) was
+  closed at the source the same day.
+- **Operator tooling built mid-milestone earned its keep immediately.** The
+  stray-branch guard was proven against six scripted scenarios before being
+  wired in, and its first live encounter exposed its own over-strictness on
+  untracked files before that ever cost a firing. The pause switch carried the
+  loop cleanly through a five-day shutdown.
+
+### What Was Inefficient
+
+- **`init.manager`/`audit-uat` under-reported for the fourth consecutive
+  close** — hand-checked every verification file directly, as always.
+- **The milestone-complete CLI's accomplishment extraction produced fragments
+  for the fourth time** ("[Rule 3 - Blocking] …", "Status: COMPLETE.") — entry
+  hand-written from the phase records, as at every prior close.
+- **Two date conventions collided at close.** The interactive session stamped
+  D-05 records from its local "today" while the project stamps in UTC; eleven
+  stamps had to be normalized before the queue's own headings agreed with their
+  bodies. Rule recorded: stamp from `date -u`, never from the harness date.
+- **A firing died mid-S5-5** (dropped connection) with a complete `SECURITY.md`
+  written but uncommitted; the operator's session had to find and reconcile it
+  minutes before a laptop shutdown.
+- **Fifteen good-control specs is a thin FPR denominator.** The readout is
+  honest about the 18% upper bound, but the fix is more controls, not better
+  wording — carried to v2.7.
+
+### Patterns Established
+
+- **Evidence phase shape:** frozen design → spike → measure at four points →
+  `VERDICT:` first line → mint only on LIVE MISS; a CAUGHT verdict is a valid
+  no-mint terminal, and the swap-still-fires counterfactual is recorded either way.
+- **`kind: target` alongside `kind: miss`:** the harness now distinguishes a
+  fixture whose minted code fires (a catch) from one whose code attributes only
+  (a permanent miss), with the target excluded from miss denominators.
+- **Orphan adoption protocol** for crashed firings: adopt only what the ledger's
+  own `Next` predicted, re-verify every gate yourself, never trust the crashed
+  firing's report.
+- **Honest labelling of attribution-only checks** in the docstring itself
+  ("buys attribution, not detection").
+
+### Key Lessons
+
+- A citation proves the framing; a measurement proves the gap. Keep them
+  separate in the record, and the record survives a citation being upgraded or
+  corrected later.
+- When the artifact is already on disk, a self-declared boolean about it is the
+  weakest possible gate — `DSX-REP-040` trusts `runs_clean_top_to_bottom: true`
+  while `execution_count` sits unread in the same `.ipynb` the leakage scan
+  already parses (SEED-003 AC-01).
+- A check's own docstring is the best place to find its next gap:
+  `DSX-CLM-034` concedes it never checks metric identity, which is precisely the
+  share-vs-risk hole SEED-003 AC-02 names.
+- Framework close-out helpers are a standing cost; budget the hand-verification
+  and stop rediscovering it.
+
+### Process Observations
+
+- Delivered by the headless ceremony from S0-1 through S7-4 (audit `passed`),
+  with every human-gated item — HQ-38/39 (scope, a same-day recorded reversal),
+  HQ-40 (five D-05 reads), HQ-41..46 (six security + UAT sign-offs) and the ship
+  itself — decided across three interactive sessions. The loop was paused twice
+  by operator switch (a five-day trip; the interactive close-out) and resumed
+  from exactly where it stopped.
+
 ## Cross-Milestone Trends
 
 | Milestone | Phases | Plans | Shipped |
@@ -426,3 +530,4 @@ snapshots (Phase-12, v2.2's set, v2.3's set) unmutated.
 | v2.2 Analytic Surface | 4 | 20 | 2026-08-29 |
 | v2.3 Test Catalog | 4 | 11 | 2026-09-02 |
 | v2.4 Visual Excellence | 4 | 11 | 2026-09-03 |
+| v2.6 Exploration Depth and Backlog Evidence | 6 | 16 | 2026-09-10 |

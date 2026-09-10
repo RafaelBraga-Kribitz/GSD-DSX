@@ -280,28 +280,69 @@ discipline:**
 
 **v3.0 (models) remains future scope** — nothing here touches it.
 
-## Current Milestone: v2.6 Exploration Depth and Backlog Evidence
+## Shipped Milestone: v2.6 Exploration Depth and Backlog Evidence (shipped 2026-09-10)
 
-**Goal:** Make the exploration artifact hash-bound and consumed, then test the
-three paper-derived backlog items against real corpus cases instead of leaving
-their entry conditions unmet by default.
+**Goal (delivered):** The exploration artifact made hash-bound and consumed — `dsx
+profile` now computes the explore protocol's trust-core numbers itself (five-number
+summaries, zeros/negatives, categorical shares, daily volume and edge ratios, rows
+per unit, a weekly base-rate table with verdict), byte-stable and stdlib-only, and
+five downstream skills read `EDA.md` front-matter and the profile through named,
+guard-tested contracts — followed by the three paper-derived backlog items (brief
+§6.5 items 7, 8, 9) each tested against a real corpus case instead of left with
+unmet entry conditions, and a calibration re-baseline with the new cases classified.
 
-**Target features:**
-- `dsx profile` produces the explore protocol's step 1–4 numbers (five-number
-  summaries, zeros/negatives, categorical shares, daily volume and edge ratios,
-  rows per unit, weekly base rate) — additive, byte-stable, cited definitions,
-  reference-value tests; still a producer, never a gate (Phase 25).
-- Per-skill read contracts so five downstream skills consume `EDA.md` front-matter
-  and the profile, with a repo-integrity test on the named keys (Phase 26).
-- Three known-bad corpus cases for brief §6.5 items 7, 8 and 9 — feature-origin-only
-  leak, magnitude no test computed, subgroup harm under a prescriptive
-  recommendation — each measured live first; a live miss is closed by a D-05-cited
-  declaration check, a caught case is recorded with no mint (Phases 27–29).
-- Calibration re-baseline with the new cases classified (Phase 30).
+**Entry condition met:** v2.5.0 shipped 2026-09-06; the milestone was opened the same
+day by operator direction (HUMAN-QUEUE HQ-39, reversing HQ-38 on SEED-002 within
+hours — a recorded reversal, not a silent one). Scope written against the live tree
+at `d2f0140` (`.planning/research/V2.6-SCOPE.md`); no fresh scoping round needed.
 
-Opened 2026-09-06 by operator direction (HUMAN-QUEUE HQ-39, reversing HQ-38 on
-SEED-002 the same day). Scope: `.planning/research/V2.6-SCOPE.md`. Branch
-`gsd/v2.6.0-exploration-depth`; ships as `v2.6.0`.
+**Delivered features:** Phases 25–30, archived at
+`.planning/milestones/v2.6-ROADMAP.md`. All 18 requirements (REQ-P25-01 …
+REQ-P30-03) Met — archived traceability at `.planning/milestones/v2.6-REQUIREMENTS.md`.
+Milestone audit `passed` (18/18 requirements, 6/6 phases, 4/4 integration seams,
+Nyquist 6/6); catalogue 276 → 279, additively; known-bad corpus 39 → 42 plus 15
+good-control specs; full suite 1629 OK.
+
+**The measurement that mattered (D-13, applied three times):** every evidence phase
+built its case, ran it at all four gate points *before* designing anything, and
+recorded a `VERDICT:` first line. All three were genuine live misses, so all three
+minted — but the rule was the same rule that would have closed a caught case with
+no mint. Two of the mints (`DSX-ML-034`, `DSX-CLM-034`) buy attribution only, honestly
+labelled: a spec that declares no provenance or no claim-to-test pointer stays
+silent. The third (`DSX-COH-041`) is a real catch — the corpus's first `kind: target`
+fixture, on which the new code fires CRITICAL at plan/verify/ship and the
+swap-still-fires counterfactual toggles it off.
+
+**The independent verification that mattered:**
+
+1. *Citations (HQ-40, five rows read at their locators).* Wilkinson & the Task Force
+   on Statistical Inference (1999) was chosen over the APA JARS–Quant candidate
+   because only the hedged 2024 web table of the latter was reachable, not the 2018
+   article; Gail & Simon (1985) ships as the *motivating definition* of a
+   qualitative interaction only, never the likelihood-ratio mechanic the gate does
+   not run. Kaufman et al. (2012) could not be opened (paywalled, nine routes) and
+   shipped **secondary-corroborated with that label in the code itself** — then, at
+   close-out (2026-09-10), the operator supplied the PDF, the definition was read at
+   p. 15:8–9 (eq. 3: a feature is legitimate only if observable to the client earlier
+   than its target element) and every record was upgraded the same day, history kept.
+2. *The sign-off round re-ran everything rather than trusting reports* — the full
+   suite, the catalogue, both guards, the reproducer, the three fixtures through
+   `dsx audit`, the new profiler flags by hand on a generated CSV and on the
+   hand-computed fixture — before any of the six approvals was written.
+
+**Resilience, observed rather than claimed:** three firings crashed mid-unit (usage
+limits, a dropped connection); each time the next firing adopted the orphaned
+artifacts only after independently re-verifying them, and once the operator's
+session reconciled a stranded `SECURITY.md` before a laptop shutdown. A stray-branch
+guard was built mid-milestone, proven in a sandbox first, and had its own
+over-strictness caught before it ever mattered.
+
+**Carried forward, not hidden:** fifteen good-control specs is a thin false-positive
+denominator (the readout states the one-sided 95% bound ≈0.181 rather than a ~0
+point estimate); growing that corpus is a v2.7 candidate. SEED-003 records the next
+evidence candidates and the settled two-media conduct decision.
+
+**v3.0 (models) remains future scope** — nothing here touches it.
 
 ## Requirements
 
@@ -336,13 +377,19 @@ SEED-002 the same day). Scope: `.planning/research/V2.6-SCOPE.md`. Branch
 - ✓ License-audited style and snippet layer — four `.mplstyle` files (dsx-urban house default, dsx-538 fork, dsx-econ/dsx-bbc reimplemented from doctrine), one vendored OFL font, a proven SVG-determinism recipe, and a snippet catalog routing to existing codes — Phase 23 (REQ-P23-01 … REQ-P23-05; zero-mint, 276→276) — v2.4
 - ✓ Portfolio exemplar and viz calibration — the onboarding-activation exemplar upgraded in place with a real 95%-CI uncertainty figure and sealed manifest, plus the project's first bad-chart-choice fixtures — Phase 24 (REQ-P24-01 … REQ-P24-03; zero-mint, 276→276) — v2.4
 
+- ✓ Hermetic profile depth — `dsx profile` computes numeric/categorical/time/unit/target blocks additively and byte-stably, cited definitions (Hyndman & Fan type 7 for `statistics.quantiles(method="inclusive")`, verified), reference-value fixtures, the DQ gate provably inert to every new key — Phase 25 (REQ-P25-01 … -03; zero-mint 276→276) — v2.6
+- ✓ Per-skill read contracts — five skills name the `EDA.md`/`DATA-PROFILE.yaml` keys they read, with an off-gate-path guard (CRLF-tolerant, negative-controlled) that fails on any orphaned key — Phase 26 (REQ-P26-01 … -03; skill-only, zero-mint) — v2.6
+- ✓ Feature-origin-only leak case — measured LIVE MISS at all four points; optional `model.feature_provenance[]` + `DSX-ML-034` (CRITICAL after-prediction / HIGH unattested), attribution-only, D-05 Kaufman et al. 2012 (read first-hand at close) — Phase 27 (REQ-P27-01 … -03) — v2.6
+- ✓ Magnitude-without-computed-effect case — measured LIVE MISS; `claims[].supported_by` + `DSX-CLM-034` (HIGH, stray-number-in-cited-test, never metric identity — its own docstring says so), D-05 Wilkinson & TFSI 1999 — Phase 28 (REQ-P28-01 … -03) — v2.6
+- ✓ Subgroup-harm-under-prescriptive case — measured LIVE MISS; `decision.subgroup_harm[]` + `subgroup_harm_floor` + `DSX-COH-041` (missing-row CRITICAL / accept-without-rationale HIGH), the corpus's first `kind: target`; D-05 Gail & Simon 1985 as motivating definition; documented public case Obermeyer et al. 2019 — Phase 29 (REQ-P29-01 … -03) — v2.6
+- ✓ Calibration re-baseline — miss 5/5 (construction invariant, no interval), FPR 0/15 with its one-sided 95% bound ≈0.181 stated, `kind: target` excluded from the miss denominators with an invariance proof, docs re-pinned to the live corpus by an agreement test, zero-mint 279→279 — Phase 30 (REQ-P30-01 … -03) — v2.6
+
 ### Active
 
-v2.6 Exploration Depth and Backlog Evidence — 18 requirements in
-`.planning/REQUIREMENTS.md`: REQ-P25-01 … -03 (hermetic profile depth), REQ-P26-01 …
--03 (per-skill read contracts), REQ-P27-01 … -03 (feature-origin-only leak case),
-REQ-P28-01 … -03 (magnitude-no-test case), REQ-P29-01 … -03 (subgroup-harm case),
-REQ-P30-01 … -03 (calibration re-baseline). Earlier milestones' requirement sets are
+None open. v2.7 has not been scoped. Candidate seeds, all entry-conditioned under
+D-13: `SEED-003` (analyst conduct, notebook execution integrity, share-vs-risk),
+`SEED-001` E-27 … E-31, `SEED-002`'s producer-side residue, growing the good-control
+corpus past 15, and brief §6.5 items 1–6. Earlier milestones' requirement sets are
 archived at `.planning/milestones/*-REQUIREMENTS.md`.
 
 ### Out of Scope
@@ -385,9 +432,10 @@ archived at `.planning/milestones/*-REQUIREMENTS.md`.
     (2026-08-26). That file does not authorise finding codes.
   - The capability now registers 14 skills (v2.2 added `dsx-cohort`, `dsx-funnel`,
     `dsx-root-cause`, `dsx-segment`, `dsx-reproduce`); the finding catalogue holds
-    276 codes (v2.0.0 shipped 256; Phase 15 added `DSX-EXP-070`/`DSX-MET-021`,
+    279 codes (v2.0.0 shipped 256; Phase 15 added `DSX-EXP-070`/`DSX-MET-021`,
     Phase 16 added `DSX-REP-060`/`061`; v2.3 added 15 `DSX-STA-*` codes to 275;
-    Phase 22 added `DSX-VIZ-071` to 276).
+    Phase 22 added `DSX-VIZ-071` to 276; v2.6 added `DSX-ML-034`, `DSX-CLM-034` and
+    `DSX-COH-041` to 279, each under a human-read D-05 citation).
   - v2.4 shipped: `references/chart-catalog.md` (81-row merged chart catalog,
     three citable axes per entry), `styles/*.mplstyle` (four license-audited
     styles, `dsx-urban` house default), `templates/dsx_plotstyle.py`
@@ -395,6 +443,14 @@ archived at `.planning/milestones/*-REQUIREMENTS.md`.
     (route-to-codes snippet catalog), and an 11th `RELATIONSHIP_CHARTS` key
     `"uncertainty"` (10 Wilke marks). `dsx/checks/viz.py`'s `BANNED_TYPES`
     entries are now full `{reason, code, citation}` records.
+  - v2.6 shipped (2026-09-10): `dsx profile` numeric/categorical/time/unit/target blocks
+    (`--unit`/`--target` flags; producer, never a gate); per-skill read contracts with
+    `tests/test_skill_read_contracts.py` as the guard; three evidence fixtures
+    (`feature-origin-only-leak`, `magnitude-without-computed-effect`, `subgroup-harm-
+    without-disposition` — the last is the corpus's first `kind: target`); known-bad
+    corpus 42 + 15 good-control; calibration readout `30-READOUT.md` (miss 5/5, FPR 0/15,
+    bound ≈0.181); full suite 1629 OK. Operator tooling added the same milestone:
+    `scripts/gsd-reconcile-branch.ps1` (stray-branch guard) and the `.paused` switch.
 
 ## Constraints
 
@@ -440,6 +496,12 @@ archived at `.planning/milestones/*-REQUIREMENTS.md`.
 | **v2.5-01** Every `DSX-VIZ-*` code in the catalogue must be some known-bad fixture's declared target | Phase 24 scoped fixtures to the codes minted in v2.4 (GA-2/S4-1), a deliberate ruling the post-ship audit escalated rather than reopened unilaterally; the operator reversed it by direction on 2026-09-06. A phase-level ruling, not a D-table entry, so no `REVERSALS.md` record is owed. Enforcing the family-wide rule as a test makes the next minted visualization code owe its fixture in the same commit | Delivered v2.5.0 — 19 fixtures, a LOW stratum, MEDIUM/LOW positive guards, `test_every_viz_code_in_the_catalogue_is_some_fixtures_declared_target` |
 | **v2.5-02** The installer self-test gates each example spec at all four points, in order, in its own scratch copy, and never ships a decision trail | `gate ship` alone exits 2 by design wherever `gate plan` never ran (Phase 10's pre-registration lock), so the single-point self-test had failed every fresh install since then; the payload copy also carried the gitignored `examples/DECISIONS.jsonl`, whose digests trip `DSX-PRE-041` in the installed copy. README already stated the every-gate contract; the code now keeps it | Delivered v2.5.0 — `install.mjs::selfTest` mirrors `scripts/check.sh`; verified on a fresh overlay; `node install.mjs --check` passes |
 | **v2.5-03** *The AI Data Scientist*'s three positive ideas stay on the §6.5 backlog until their D-13 entry conditions are met | Items 7 (feature provenance), 8 (magnitude residual) and 9 (subgroup-harm declaration) carry explicit, falsifiable entry conditions and the corpus holds zero qualifying cases; promoting on the strength of a paper is the estimate-driven promotion D-13 forbids and D-14 would log as `SELF-001` | Recorded 2026-09-06 in `docs/literature/the-ai-data-scientist.md`, one row per item with its standing |
+| **v2.6-01** Every evidence phase measures its corpus case live at all four gate points before any check is designed; a caught case closes with no mint (D-13 applied three times) | The rule that authorizes a mint must be the same rule that would refuse one; "we estimate this matters" is how a backlog becomes a graveyard | Delivered Phases 27–29 — three `VERDICT: LIVE MISS` first lines (27/28/29-MEASUREMENT.md), each independently re-run by the orchestrator; three mints; the counterfactual (swap-still-fires) recorded for each |
+| **v2.6-02** The profiler stays a producer: Phase 25's new keys must be provably inert to every gate | D-01/D-02 — a gate reading the numbers is a separate D-06 decision, never a side effect of computing them | Delivered Phase 25 — `TestDQGateIgnoresNewKeys`; `dsx/checks/dq.py` byte-frozen through the whole milestone (empty diffs at every phase gate) |
+| **v2.6-03** Attribution-only mints are labelled as such in the code (`DSX-ML-034`, `DSX-CLM-034`); `DSX-COH-041` is a real catch and is wired as the corpus's first `kind: target` | Honesty about what a check buys prevents a declaration-only check being read as detection | Delivered Phases 27–29 — docstrings state "buys attribution, not detection"; the harness vocabulary grew `("miss","caught","target")` with the target excluded from miss denominators (Phase 30 invariance proof) |
+| **v2.6-04** D-05 reads: Wilkinson & TFSI (1999) alone (JARS–Quant dropped — only the hedged 2024 web table was reachable); Gail & Simon (1985) as motivating definition, never mechanic; Kaufman et al. (2012) shipped secondary-corroborated with the label in the docstring | A read at the locator beats corroboration; when a read is impossible, say so in the durable record rather than launder | Delivered HQ-40 (2026-09-07) and upgraded at close (2026-09-10) — the operator supplied the Kaufman PDF, the definition was read at p. 15:8–9, eleven records corrected the same day with the 09-07 status kept as history |
+| **v2.6-05** Crashed-firing orphans are adopted only after independent re-verification, never trusted from the crashed firing's own claims | Three firings died mid-unit (usage limits, a dropped connection); losing the work or trusting it blind are both wrong | Delivered S4-2, S5-2, S5-4, S5-5 (loop) and the operator's S5-5 reconcile before travel — every adopted artifact re-gated on the real interpreter first |
+| **v2.6-06** Close-out runs interactively with the four documented framework defects bypassed by hand: merge by explicit branch name, plain git by explicit path, generated records read before commit, verification files read directly | Each defect has now recurred at every close since v2.2; the cost is budgeted, not rediscovered | Delivered 2026-09-10 — S7-2 sign-offs, S7-5 archive and S7-6 ship all hand-driven; accomplishment auto-extraction produced fragments a fourth time and the entry was written from the phase records |
 
 ## Non-goals
 
@@ -472,5 +534,5 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-09-06 — v2.6 Exploration Depth and Backlog Evidence opened by
-operator direction (HQ-39) after v2.4.1 and v2.5.0 shipped interactively the same day.*
+*Last updated: 2026-09-10 — v2.6 Exploration Depth and Backlog Evidence shipped (tag
+`v2.6.0`, merge into `main` by explicit branch name); no milestone open.*
