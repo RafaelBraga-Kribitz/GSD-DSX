@@ -4713,6 +4713,156 @@ class TestPhase11_1Code(unittest.TestCase):
             self.assertEqual(len(found), 1)
             self.assertIn("Line 3", found[0].detail)
 
+    # ── Phase 11.1.1 (SC1): DSX-CODE-001 whitespace/continuation hardening ──
+
+    def test_fit_space_before_paren_before_split_fires_code_001(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(
+                tmp,
+                "from sklearn.model_selection import train_test_split\n"
+                "model.fit (df)\n"
+                "train_test_split(df)\n",
+            )
+            report = self._check(tmp, entry)
+            found = [f for f in report.findings if f.code == "DSX-CODE-001"]
+            self.assertEqual(len(found), 1)
+            self.assertEqual(found[0].severity, Severity.CRITICAL)
+
+    def test_fit_double_space_before_paren_before_split_fires_code_001(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(
+                tmp,
+                "from sklearn.model_selection import train_test_split\n"
+                "model.fit  (df)\n"
+                "train_test_split(df)\n",
+            )
+            report = self._check(tmp, entry)
+            found = [f for f in report.findings if f.code == "DSX-CODE-001"]
+            self.assertEqual(len(found), 1)
+            self.assertEqual(found[0].severity, Severity.CRITICAL)
+
+    def test_fit_tab_before_paren_before_split_fires_code_001(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(
+                tmp,
+                "from sklearn.model_selection import train_test_split\n"
+                "model.fit" + chr(9) + "(df)\n"
+                "train_test_split(df)\n",
+            )
+            report = self._check(tmp, entry)
+            found = [f for f in report.findings if f.code == "DSX-CODE-001"]
+            self.assertEqual(len(found), 1)
+            self.assertEqual(found[0].severity, Severity.CRITICAL)
+
+    def test_fit_backslash_continuation_before_split_fires_code_001(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(
+                tmp,
+                "from sklearn.model_selection import train_test_split\n"
+                "model.fit" + chr(92) + "\n"
+                "    (df)\n"
+                "train_test_split(df)\n",
+            )
+            report = self._check(tmp, entry)
+            found = [f for f in report.findings if f.code == "DSX-CODE-001"]
+            self.assertEqual(len(found), 1)
+            self.assertEqual(found[0].severity, Severity.CRITICAL)
+
+    def test_fit_zero_whitespace_before_split_still_fires_code_001(self):
+        # Adjacency edge: widening whitespace tolerance must not separate what
+        # already touches.
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(
+                tmp,
+                "from sklearn.model_selection import train_test_split\n"
+                "model.fit(df)\n"
+                "train_test_split(df)\n",
+            )
+            report = self._check(tmp, entry)
+            found = [f for f in report.findings if f.code == "DSX-CODE-001"]
+            self.assertEqual(len(found), 1)
+            self.assertEqual(found[0].severity, Severity.CRITICAL)
+
+    def test_empty_and_fitless_and_lone_backslash_sources_produce_no_code_001(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            texts = (
+                "",
+                "# only a comment\n",
+                "from sklearn.model_selection import train_test_split\nx = 1\n",
+                chr(92) + "\n",
+            )
+            for text in texts:
+                with self.subTest(text=text):
+                    entry = self._entrypoint(tmp, text)
+                    report = self._check(tmp, entry)
+                    self.assertNotIn("DSX-CODE-001", codes(report))
+
+    def test_lowest_physical_line_reported_for_code_001(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            entry = self._entrypoint(
+                tmp,
+                "from sklearn.model_selection import train_test_split\n"
+                "model_a.fit(df)\n"
+                "model_b.fit(df)\n"
+                "model_c.fit(df)\n"
+                "train_test_split(df)\n",
+            )
+            report = self._check(tmp, entry)
+            found = [f for f in report.findings if f.code == "DSX-CODE-001"]
+            self.assertEqual(len(found), 1)
+            self.assertEqual(found[0].data["fit_line"], 2)
+
+            report_again = self._check(tmp, entry)
+            found_again = [
+                f for f in report_again.findings if f.code == "DSX-CODE-001"
+            ]
+            self.assertEqual(found_again[0].data["fit_line"], found[0].data["fit_line"])
+
+    def test_join_backslash_continuations_preserves_line_count(self):
+        from dsx.checks import code as code_mod
+
+        cases = (
+            [],
+            ["a"],
+            ["model.fit" + chr(92), "    (df)"],
+            ["x = (" + chr(92), "    1 +" + chr(92), "    2)"],
+            ["# a comment ending in a backslash" + chr(92), "real_code()"],
+            ["a line ending in two backslashes" + chr(92) + chr(92)],
+            ["last line opens a continuation" + chr(92)],
+        )
+        for lines in cases:
+            with self.subTest(lines=lines):
+                joined = code_mod._join_backslash_continuations(lines)
+                self.assertEqual(len(joined), len(lines))
+
+        # A comment ending in a backslash must not swallow the next line.
+        comment_case = code_mod._join_backslash_continuations(
+            ["# a comment ending in a backslash" + chr(92), "real_code()"]
+        )
+        self.assertIn("real_code()", comment_case[1])
+
+        # A line ending in two backslashes is an escaped backslash, not a
+        # continuation — it must not be joined onto a following line.
+        double_backslash_case = code_mod._join_backslash_continuations(
+            ["line ends in two backslashes" + chr(92) + chr(92), "next_line()"]
+        )
+        self.assertIn("next_line()", double_backslash_case[1])
+
+    def test_join_backslash_continuations_timing_is_linear(self):
+        # Measured during planning: the index-preserving list-and-join
+        # implementation joined 40,000 continued lines in 0.0147 seconds; the
+        # accumulate-into-a-string alternative took 13.784 seconds at the same
+        # size — the denial-of-service class threat T-11.1.1-02 exists to keep
+        # closed.
+        import time
+
+        from dsx.checks import code as code_mod
+
+        lines = ["x = 1 +" + chr(92)] * 40000 + ["    2"]
+        start = time.perf_counter()
+        code_mod._join_backslash_continuations(lines)
+        self.assertLess(time.perf_counter() - start, 1.0)
+
     def test_lexicon_locked(self):
         from dsx.checks import code as code_mod
 
