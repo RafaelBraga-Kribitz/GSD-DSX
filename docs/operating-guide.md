@@ -287,6 +287,7 @@ script exists.
 | Check a project's wiring only | `pwsh scripts/gsd-stamp.ps1 -Project X -VerifyOnly` |
 | Switch ceremony tier | `pwsh scripts/gsd-tier.ps1 -Tier 0\|1\|2` |
 | Read current tier values | `pwsh scripts/gsd-tier.ps1 -Show` |
+| Every GSD Core defect this project works around, with its line and status | [docs/gsd-core-known-defects.md](gsd-core-known-defects.md) |
 | Recover a subagent commit stranded on a stray branch (`gsd-tools query commit` defect) | `pwsh scripts/gsd-reconcile-branch.ps1 -Branch <canonical>` — runs automatically after every headless ceremony firing; run by hand after an interactive `/gsd-execute-phase` or `/gsd-plan-phase` if you suspect the same thing happened |
 | Permitted charts for a data shape | `dsx charts IT005 --relationship comparison` |
 | Whole chart catalogue | `dsx charts --list` |
