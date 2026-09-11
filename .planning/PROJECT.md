@@ -168,7 +168,7 @@ continuous monitoring. Folding their playbooks into Phases 7–12 would delay
 that work. Entry condition was Phase 12 closed (`brief.md` §6.5).
 
 **Delivered features:** Phases 13–16, archived at `.planning/milestones/v2.2-ROADMAP.md`.
-All 23 requirements (REQ-P13-* … REQ-P16-*) satisfied — archived traceability at
+All 23 requirements (`REQ-P13-*` … `REQ-P16-*`) satisfied — archived traceability at
 `.planning/milestones/v2.2-REQUIREMENTS.md`. Comparison evidence:
 `.planning/research/SURFACE.md`.
 
@@ -212,8 +212,8 @@ routing surface plus declaration-only checks. See
 `.planning/research/V2.3-V2.4-SCOPE.md`.
 
 **Delivered features:** Phases 17–20, archived at
-`.planning/milestones/v2.3-ROADMAP.md`. All 22 requirements (REQ-P17-* …
-REQ-P20-*) satisfied — archived traceability at
+`.planning/milestones/v2.3-ROADMAP.md`. All 22 requirements (`REQ-P17-*` …
+`REQ-P20-*`) satisfied — archived traceability at
 `.planning/milestones/v2.3-REQUIREMENTS.md`.
 
 **The independent citation re-verification that mattered:** before shipping,
@@ -250,8 +250,8 @@ requirements `passed`). Scope re-verified against the live tree at open
 — no fresh scoping round needed.
 
 **Delivered features:** Phases 21–24, archived at
-`.planning/milestones/v2.4-ROADMAP.md`. All 16 requirements (REQ-P21-* …
-REQ-P24-*) satisfied — archived traceability at
+`.planning/milestones/v2.4-ROADMAP.md`. All 16 requirements (`REQ-P21-*` …
+`REQ-P24-*`) satisfied — archived traceability at
 `.planning/milestones/v2.4-REQUIREMENTS.md`. Milestone audit `passed` (16/16
 requirements, 4/4 phases, 5/5 integration seams, 0 critical gaps); catalogue
 grew 275 → 276, additively.
@@ -522,6 +522,7 @@ cheap, structured and repeatable, so it actually happens. To be stated in the RE
 This document evolves at phase transitions and milestone boundaries.
 
 **After each phase transition** (via `/gsd-transition`):
+
 1. Requirements invalidated? → Move to Out of Scope with reason
 2. Requirements validated? → Move to Validated with phase reference
 3. New requirements emerged? → Add to Active
@@ -529,6 +530,7 @@ This document evolves at phase transitions and milestone boundaries.
 5. "What This Is" still accurate? → Update if drifted
 
 **After each milestone** (via `/gsd-complete-milestone`):
+
 1. Full review of all sections
 2. Core Value check — still the right priority?
 3. Audit Out of Scope — reasons still valid?

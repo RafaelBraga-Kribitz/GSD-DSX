@@ -5,29 +5,183 @@ Run:  python3 -m unittest discover -s tests -v
 
 from __future__ import annotations
 
+import gc
 import io
 import json
+import math
 import re
+import statistics
 import sys
 import tempfile
+import time
 import unittest
+from collections.abc import Callable
 from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
+from typing import ClassVar
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from _trail_seed import seed_plan_header  # noqa: E402
-from dsx import cli, mathx  # noqa: E402
-from dsx.checks import claims, design, metrics, ml, repro, stats, viz  # noqa: E402
-from dsx.findings import Report, Severity  # noqa: E402
-from dsx.frame import interference  # noqa: E402
-from dsx.loader import SpecParseError, _parse_yaml_subset, loads  # noqa: E402
-from dsx.spec import PEEKING_POLICIES, describe_vocabulary, validate_structure  # noqa: E402
+from _trail_seed import seed_plan_header
+
+from dsx import cli, mathx
+from dsx.checks import claims, design, metrics, ml, repro, stats, viz
+from dsx.findings import Report, Severity
+from dsx.frame import interference
+from dsx.loader import SpecParseError, _parse_yaml_subset, loads
+from dsx.spec import PEEKING_POLICIES, describe_vocabulary, validate_structure
 
 
 def codes(report: Report) -> set[str]:
     return {f.code for f in report.findings}
+
+
+def assert_linear_scaling(
+    case: unittest.TestCase,
+    label: str,
+    make: Callable[[int], object],
+    run: Callable[[object], object],
+    large: int,
+    *,
+    spacing: int = 16,
+    repeats: int = 5,
+    floor: float = 0.05,
+    hang_guard: float = 2.0,
+) -> tuple[object, object]:
+    """Assert that ``run`` scales at most linearly in the size of ``make``'s input,
+    and return ``run``'s last result at the small and at the large size so the
+    caller asserts correctness on the very calls that were timed.
+
+    House shape for every timing pin in this file since v2.6.1. It replaced the
+    absolute-budget shape (one ``perf_counter`` bracket and ``assertLess(elapsed,
+    budget)``), whose budgets sat 2-3x above the measured time on the full-pipeline
+    tests and failed under machine load. The first ratio design (commit 40d96f2)
+    was then put through mutation tests and a flake hunt under saturating load:
+    the kills all worked, but the design took the best of several brackets per
+    size, and a 5 ms small bracket dodges a scheduler preemption far more often
+    than a 40-500 ms large one, so load pushed the ratio up (5 of 300 loaded runs
+    failed, none of 120 idle) and occasionally down. This version is what that
+    evidence asked for.
+
+    Method.
+    * Two sizes ``spacing`` apart (default 16x): ``large`` and ``large // spacing``.
+      ``make(size)`` builds the input outside the clock; ``run(input)`` is timed.
+    * Calibration: two calls at each size, the faster one is the estimate (a cold
+      first call measured 20x slower than steady state on a microsecond regex).
+    * Equal-length brackets: a target duration ``T = max(floor, one large call)``
+      is chosen and each size is looped ``ceil(T / estimate)`` times per bracket,
+      so both brackets last the same wall time and a scheduler quantum (15.6 ms on
+      Windows) is a small fraction of either. ``floor`` defaults to 50 ms.
+    * ``repeats`` interleaved pairs (small, large, small, large, ...). The
+      statistic is the MEDIAN of the per-pair per-call ratios: a load burst that
+      spans a pair cancels out of its ratio, and a burst that hits one bracket of
+      a pair spoils one ratio, which the median of five ignores.
+    * The cyclic garbage collector is frozen around the brackets (``gc.freeze``),
+      so the ratio does not depend on how large a heap the suite has accumulated
+      by the time the test runs (measured at 20-30 percent of the ratio on the
+      ``ast`` workloads before this was added).
+    * Limit ``spacing ** 1.5`` -- 64 at 16x, the geometric midpoint between linear
+      growth (16) and quadratic growth (256).
+
+    Brakes. Every call is watched: a call at the small size over ``hang_guard``
+    seconds, or at the large size over ``hang_guard * spacing``, fails at once with
+    the time it took, so a runaway regression costs one call, not ``repeats`` of
+    them; and when the two calibration estimates alone ratio above three times
+    the limit, the test fails there without running any bracket (a quadratic
+    regression ratios ~256 at 16x; a cubic one ~4,000; noise never reaches 192).
+    A genuinely exponential regex would still hang at the small size: CPython's
+    regex engine holds the interpreter lock for the whole match (a worker thread
+    cannot be timed out -- verified 2026-09-11), so callers whose old
+    construction was worse than quadratic keep their sizes small enough for that
+    construction to trip the small-size guard on its first call.
+
+    Measured with this code on 2026-09-11 (Windows 11, CPython 3.12.10, 16 logical
+    CPUs): 10 idle passes over every pin in this file and 10 passes under 16
+    busy-loop processes (a full suite run overlapped the loaded passes) -- 0
+    failures in 240 test runs. Median-of-pairs ratio, idle max -> loaded max,
+    against the limit of 64:
+
+      falsifier_is_discriminating, 1,250 -> 20,000 chars        14.5 -> 15.7
+      FIT_CALL_RE, four inputs, 1,250 -> 20,000 chars and up    17.0 -> 20.1
+      FIT_LEAK_MARKERS / SCALER_FULL_RE / RESAMPLE_BEFORE_RE    17.9 -> 21.3
+      PIPELINE_FIT_TRAIN_RE worst shape, n = 250 -> 4,000       17.2 -> 18.1
+      full-frame predicates, 2,000 -> 32,000 chars              10.8 -> 11.9
+      AST fit-argument extraction, 1,250 -> 20,000 lines        23.5 -> 23.5
+      AST scan through check(), 1,250 -> 20,000 lines           20.7 -> 21.7
+      DSX-CODE-002 scan, first match suppressed, 1,000 -> 16,000  1.1 -> 1.2
+
+    Largest ratio anywhere 23.5 (margin 2.7x); load moved no pin by more than
+    +3.4. The documented regressions, run through this same code: the unbounded
+    PIPELINE_FIT_TRAIN_RE 252, the pre-hardening quadratic imputation regex 255
+    and the pre-hoist DSX-CODE-002 loop 247 -- all three stopped at calibration;
+    a synthetic quadratic in falsifier_is_discriminating 209 at the bracket
+    ratio; and the pre-hardening cubic spread filter stopped by the call guard
+    after one 24.6 s call at 2,000 characters.
+    """
+    small = large // spacing
+    case.assertGreaterEqual(small, 1, f"{label}: large={large} is too small for {spacing}x spacing")
+    sizes = (small, large)
+    inputs = (make(small), make(large))
+    results: list[object] = [None, None]
+    guards = (hang_guard, hang_guard * spacing)
+    limit = spacing**1.5
+
+    def one_call(i: int) -> float:
+        start = time.perf_counter()
+        results[i] = run(inputs[i])
+        elapsed = time.perf_counter() - start
+        if elapsed > guards[i]:
+            case.fail(
+                f"{label}: one call at size {sizes[i]} took {elapsed:.3f}s (guard "
+                f"{guards[i]:.1f}s) -- runaway regression, stopped after that call"
+            )
+        return elapsed
+
+    estimate = [min(one_call(i), one_call(i)) for i in (0, 1)]
+    calibration_ratio = estimate[1] / max(estimate[0], 1e-9)
+    if calibration_ratio > 3 * limit:
+        case.fail(
+            f"{label}: the calibration calls alone ratio {calibration_ratio:.0f} at {spacing}x "
+            f"spacing ({estimate[1]:.6f}s at size {large} vs {estimate[0]:.6f}s at size {small}; "
+            f"limit {limit:.0f}) -- super-linear regression, stopped before the brackets"
+        )
+    target = max(floor, estimate[1])
+    loops = tuple(max(1, min(1_000_000, math.ceil(target / max(estimate[i], 1e-9)))) for i in (0, 1))
+
+    def bracket(i: int) -> float:
+        """Wall time per call over ``loops[i]`` calls at size ``sizes[i]``."""
+        start = time.perf_counter()
+        for _ in range(loops[i]):
+            results[i] = run(inputs[i])
+        elapsed = time.perf_counter() - start
+        if elapsed > guards[i] * loops[i]:
+            case.fail(
+                f"{label}: a bracket of {loops[i]} call(s) at size {sizes[i]} took {elapsed:.3f}s "
+                f"(guard {guards[i] * loops[i]:.1f}s) -- runaway regression, stopped after that bracket"
+            )
+        return elapsed / loops[i]
+
+    per_call: list[tuple[float, float]] = []
+    gc.collect()
+    gc.freeze()
+    try:
+        for _ in range(repeats):
+            per_call.append((bracket(0), bracket(1)))
+    finally:
+        gc.unfreeze()
+    ratios = [big / tiny for tiny, big in per_call]
+    ratio = statistics.median(ratios)
+    case.assertLess(
+        ratio,
+        limit,
+        f"{label}: median of {repeats} paired brackets ratio {ratio:.1f} at {spacing}x spacing "
+        f"(linear ~{spacing}, quadratic ~{spacing**2}, limit {limit:.0f}); pairs "
+        f"{', '.join(f'{r:.1f}' for r in ratios)}; medians {statistics.median(b for _, b in per_call):.6f}s/call "
+        f"at size {large} vs {statistics.median(t for t, _ in per_call):.6f}s/call at size {small}; "
+        f"{loops[0]}/{loops[1]} calls per bracket -- super-linear regression",
+    )
+    return results[0], results[1]
 
 
 # ── mathx ────────────────────────────────────────────────────────────────────
@@ -93,7 +247,7 @@ class TestMath(unittest.TestCase):
         p = [0.01, 0.04, 0.03]
         adj_b, _ = mathx.bonferroni(p, 0.05)
         self.assertAlmostEqual(adj_b[0], 0.03)
-        adj_h, rej_h = mathx.holm(p, 0.05)
+        adj_h, _rej_h = mathx.holm(p, 0.05)
         self.assertTrue(adj_h[0] <= adj_h[2] <= adj_h[1])  # monotone in rank order
         self.assertTrue(all(h <= b + 1e-12 for h, b in zip(adj_h, adj_b)))
 
@@ -327,7 +481,7 @@ class TestSpecStructure(unittest.TestCase):
         from dsx import spec as spec_mod
 
         out = describe_vocabulary()
-        for name, obj in spec_mod._VOCABULARIES:
+        for name, _obj in spec_mod._VOCABULARIES:
             self.assertIn(name, out, f"{name} missing from describe_vocabulary() output")
             self.assertTrue(out[name], f"{name} maps to an empty container")
         # identity, not equality — the registry holds the actual module constant
@@ -390,7 +544,7 @@ class TestSpecStructure(unittest.TestCase):
         self.assertIs(registry["estimand_types"], spec_mod.ESTIMAND_TYPES)
 
     def test_estimand_type_row_registered_in_validity_frame_membership(self):
-        from dsx.spec import ESTIMAND_TYPES, _VALIDITY_FRAME_MEMBERSHIP
+        from dsx.spec import _VALIDITY_FRAME_MEMBERSHIP, ESTIMAND_TYPES
 
         self.assertIn(("estimand", "type", ESTIMAND_TYPES), _VALIDITY_FRAME_MEMBERSHIP)
 
@@ -938,22 +1092,20 @@ class TestFalsifierLexicon(unittest.TestCase):
         self.assertFalse(is_placeholder_or_refusal("none identified"))
 
     def test_long_input_classifies_without_catastrophic_backtracking(self):
-        import time
-
         from dsx.spec import falsifier_is_discriminating
 
-        text = ("the result will look different than we expect " * 500)[:20000]
-        self.assertEqual(len(text), 20000)
-        start = time.perf_counter()
-        falsifier_is_discriminating(text)
-        self.assertLess(time.perf_counter() - start, 1.0)
+        def make(size):
+            return ("the result will look different than we expect " * 500)[:size]
+
+        self.assertEqual(len(make(20000)), 20000)
+        assert_linear_scaling(self, "falsifier_is_discriminating", make, falsifier_is_discriminating, 20000)
 
 
 # ── design ───────────────────────────────────────────────────────────────────
 
 
 class TestDesign(unittest.TestCase):
-    BASE = {
+    BASE: ClassVar[dict] = {
         "question_type": "causal",
         "design": {
             "kind": "experiment",
@@ -1025,7 +1177,7 @@ class TestDesign(unittest.TestCase):
     def test_dsx_exp_060_fires_only_for_empty_and_fixed_horizon(self):
         # D-08: pins the property, not just the current members — fails if _check_peeking
         # is later widened to fire on a member it should not.
-        for policy in list(PEEKING_POLICIES) + [""]:
+        for policy in [*list(PEEKING_POLICIES), ""]:
             with self.subTest(policy=policy):
                 spec = {**self.BASE,
                         "design": {**self.BASE["design"], "peeking_policy": policy},
@@ -1075,7 +1227,7 @@ class TestDesign(unittest.TestCase):
 
 
 class TestML(unittest.TestCase):
-    BASE = {
+    BASE: ClassVar[dict] = {
         "question_type": "predictive",
         "model": {
             "task": "binary_classification",
@@ -1186,7 +1338,7 @@ class TestPhase11_1ML(unittest.TestCase):
     BASE = TestML.BASE
 
     def _model(self, **overrides):
-        model = {k: v for k, v in self.BASE["model"].items()}
+        model = dict(self.BASE["model"].items())
         model.update(overrides)
         for key, value in list(model.items()):
             if value is None:
@@ -1746,7 +1898,7 @@ class TestPhase11_1ML(unittest.TestCase):
         # Every basis in the locked vocabulary, plus blank, whitespace, a
         # differently-cased member, an out-of-vocabulary misspelling, and the
         # field being absent altogether.
-        bases = sorted(ml.SELECTION_BASES) + ["", "   ", "Test", "tset", None]
+        bases = [*sorted(ml.SELECTION_BASES), "", "   ", "Test", "tset", None]
         for algorithm in ("gradient_boosting", None):
             for candidates in (["a", "b"], [], None):
                 for configurations in (18, 0, None):
@@ -1808,7 +1960,7 @@ class TestPhase11_1MLCleaning(unittest.TestCase):
     BASE = TestML.BASE
 
     def _model(self, **overrides):
-        model = {k: v for k, v in self.BASE["model"].items()}
+        model = dict(self.BASE["model"].items())
         model.update(overrides)
         for key, value in list(model.items()):
             if value is None:
@@ -2221,7 +2373,7 @@ class TestClaims(unittest.TestCase):
 
 
 class TestViz(unittest.TestCase):
-    GOOD = {"visuals": [{"name": "activation by cohort", "relationship": "comparison",
+    GOOD: ClassVar[dict] = {"visuals": [{"name": "activation by cohort", "relationship": "comparison",
                          "type": "bar", "y_axis_starts_at_zero": True, "units": "%",
                          "takeaway": "March cohort activates 9pp below every other cohort",
                          "category_order": "by_value", "source": "warehouse, 2026-01..06"}]}
@@ -2759,9 +2911,8 @@ class TestCLI(unittest.TestCase):
 
     def test_explain_help_offers_no_block_on_flag(self):
         buf = io.StringIO()
-        with redirect_stdout(buf):
-            with self.assertRaises(SystemExit):
-                cli.main(["explain", "--help"])
+        with redirect_stdout(buf), self.assertRaises(SystemExit):
+            cli.main(["explain", "--help"])
         help_text = buf.getvalue()
         self.assertIn("--spec", help_text)
         self.assertIn("--phase-dir", help_text)
@@ -2772,9 +2923,8 @@ class TestCLI(unittest.TestCase):
     def test_other_subcommands_still_accept_block_on(self):
         for sub in ("validate", "check", "audit", "gate"):
             buf = io.StringIO()
-            with redirect_stdout(buf):
-                with self.assertRaises(SystemExit):
-                    cli.main([sub, "--help"])
+            with redirect_stdout(buf), self.assertRaises(SystemExit):
+                cli.main([sub, "--help"])
             self.assertIn("--block-on", buf.getvalue(), sub)
 
     # ── 06-09 Task 2: gate-path trail write (REQ-P6-07, D-14, D-16) ────────────
@@ -2853,7 +3003,7 @@ class TestCLI(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             spec_path = Path(tmp) / "ANALYSIS-SPEC.yaml"
             shutil.copy(self.ROOT / "examples" / "good-ANALYSIS-SPEC.yaml", spec_path)
-            control_code, _, control_err = self._run(["gate", "plan", "--spec", str(spec_path)])
+            control_code, _, _control_err = self._run(["gate", "plan", "--spec", str(spec_path)])
 
             # A regular file can never be a directory: DECISIONS.jsonl's parent
             # cannot be created there, forcing an OSError on write, without
@@ -2877,7 +3027,7 @@ class TestDecisionTrailCLI(unittest.TestCase):
 
     ROOT = Path(__file__).resolve().parent.parent
 
-    def _run(self, argv: "list[str]") -> "tuple[int, str, str]":
+    def _run(self, argv: list[str]) -> tuple[int, str, str]:
         out, err = io.StringIO(), io.StringIO()
         with redirect_stdout(out), redirect_stderr(err):
             code = cli.main(argv)
@@ -2890,7 +3040,7 @@ class TestDecisionTrailCLI(unittest.TestCase):
         shutil.copy(self.ROOT / "examples" / "good-ANALYSIS-SPEC.yaml", spec_path)
         return spec_path
 
-    def _append_undecodable_bytes(self, trail_path: "Path") -> None:
+    def _append_undecodable_bytes(self, trail_path: Path) -> None:
         """06-11 Task 1: write the exact corrupting byte sequence the reviewer
         and verifier used — the lead byte of a two-byte UTF-8 sequence whose
         continuation byte never arrives."""
@@ -3181,9 +3331,8 @@ class TestProfiler(unittest.TestCase):
     def test_profile_help_names_unit_and_target(self):
         # argparse --help prints to stdout then raises SystemExit(0).
         out, err = io.StringIO(), io.StringIO()
-        with redirect_stdout(out), redirect_stderr(err):
-            with self.assertRaises(SystemExit) as ctx:
-                cli.main(["profile", "--help"])
+        with redirect_stdout(out), redirect_stderr(err), self.assertRaises(SystemExit) as ctx:
+            cli.main(["profile", "--help"])
         self.assertEqual(ctx.exception.code, 0)
         help_text = out.getvalue()
         self.assertIn("--unit", help_text)
@@ -3780,7 +3929,7 @@ class TestPhase6ParadigmManifest(unittest.TestCase):
         for spec in ({}, {"inference": {}}):
             with self.subTest(spec=spec):
                 report = paradigm.check(spec)
-                finding = [f for f in report.findings if f.code == "DSX-PAR-001"][0]
+                finding = next(f for f in report.findings if f.code == "DSX-PAR-001")
                 combined = (finding.title + " " + finding.detail).lower()
                 self.assertIn("no", combined)
                 self.assertIn("paradigm", combined)
@@ -3790,7 +3939,7 @@ class TestPhase6ParadigmManifest(unittest.TestCase):
         from dsx.frame import paradigm
 
         report = paradigm.check({"inference": {"paradigm": "bayesian"}})
-        finding = [f for f in report.findings if f.code == "DSX-PAR-001"][0]
+        finding = next(f for f in report.findings if f.code == "DSX-PAR-001")
         self.assertIn("applied", finding.detail.lower())
         self.assertTrue(finding.data.get("applied"))
         not_applied = finding.data.get("not_applied") or {}
@@ -3871,11 +4020,11 @@ class TestPhase6ParadigmManifest(unittest.TestCase):
         from dsx.suppressions import known_codes
 
         known = known_codes()
-        for declared in list(PARADIGMS) + [""]:
+        for declared in [*list(PARADIGMS), ""]:
             spec = {"inference": {"paradigm": declared}} if declared else {}
             with self.subTest(declared=declared or "undeclared"):
                 report = paradigm.check(spec)
-                finding = [f for f in report.findings if f.code == "DSX-PAR-001"][0]
+                finding = next(f for f in report.findings if f.code == "DSX-PAR-001")
                 for prefix in finding.data.get("applied", []):
                     self.assertTrue(
                         [c for c in known if c.startswith(prefix)],
@@ -3916,7 +4065,7 @@ class TestPhase9MonitoringDiscipline(unittest.TestCase):
 
     ROOT = Path(__file__).resolve().parent.parent
 
-    UNCONTROLLED_DESIGN = {"peeking_policy": "uncontrolled_continuous", "alpha": 0.05}
+    UNCONTROLLED_DESIGN: ClassVar[dict] = {"peeking_policy": "uncontrolled_continuous", "alpha": 0.05}
 
     def _spec(self, paradigm=None, **inference_fields):
         inference = dict(inference_fields)
@@ -4021,7 +4170,7 @@ class TestPhase9MonitoringDiscipline(unittest.TestCase):
     def test_neither_code_fires_for_a_non_uncontrolled_peeking_policy(self):
         from dsx.frame import paradigm
 
-        for policy in list(PEEKING_POLICIES) + ["", None]:
+        for policy in [*list(PEEKING_POLICIES), "", None]:
             if policy == "uncontrolled_continuous":
                 continue
             with self.subTest(policy=policy):
@@ -4043,7 +4192,7 @@ class TestPhase9MonitoringDiscipline(unittest.TestCase):
         from dsx.checks import design as design_check
         from dsx.frame import paradigm
 
-        for policy in list(PEEKING_POLICIES) + [""]:
+        for policy in [*list(PEEKING_POLICIES), ""]:
             with self.subTest(policy=policy):
                 spec = {
                     "question_type": "causal",
@@ -4327,7 +4476,7 @@ class TestPhase9ParadigmJustification(unittest.TestCase):
     def test_no_inference_block_and_controlled_or_absent_policy_fires_nothing(self):
         from dsx.frame import paradigm
 
-        for policy in list(PEEKING_POLICIES) + ["", None]:
+        for policy in [*list(PEEKING_POLICIES), "", None]:
             if policy == "uncontrolled_continuous":
                 continue
             with self.subTest(policy=policy):
@@ -4370,7 +4519,7 @@ class TestPhase9ParadigmJustification(unittest.TestCase):
         from dsx.frame import paradigm
         from dsx.spec import PARADIGM_JUSTIFICATIONS, PARADIGMS
 
-        by_justification: "dict[str, dict[str, set[str]]]" = {}
+        by_justification: dict[str, dict[str, set[str]]] = {}
         for justification in PARADIGM_JUSTIFICATIONS:
             by_justification[justification] = {}
             for member in PARADIGMS:
@@ -4501,7 +4650,7 @@ class TestParadigmOutOfVocabularyFallback(unittest.TestCase):
                 with self.subTest(paradigm=declared, policy=policy):
                     report = paradigm.check(spec)
                     fired = {f.code for f in report.findings}
-                    manifest = [f for f in report.findings if f.code == "DSX-PAR-001"][0]
+                    manifest = next(f for f in report.findings if f.code == "DSX-PAR-001")
                     for prefix in manifest.data.get("not_applied") or {}:
                         contradicted = sorted(c for c in fired if c.startswith(prefix))
                         self.assertEqual(
@@ -4519,12 +4668,12 @@ class TestParadigmOutOfVocabularyFallback(unittest.TestCase):
 
         undeclared = paradigm.check({"inference": {}})
         baseline = set(
-            [f for f in undeclared.findings if f.code == "DSX-PAR-001"][0].data["applied"]
+            next(f for f in undeclared.findings if f.code == "DSX-PAR-001").data["applied"]
         )
         for declared in self.OUT_OF_VOCAB:
             with self.subTest(paradigm=declared):
                 report = paradigm.check({"inference": {"paradigm": declared}})
-                manifest = [f for f in report.findings if f.code == "DSX-PAR-001"][0]
+                manifest = next(f for f in report.findings if f.code == "DSX-PAR-001")
                 self.assertEqual(set(manifest.data["applied"]), baseline)
 
     def test_out_of_vocabulary_paradigm_under_uncontrolled_design_fires_par_002(self):
@@ -4583,9 +4732,9 @@ class TestParadigmOutOfVocabularyFallback(unittest.TestCase):
             for variant in (member.upper(), f"  {member} ", member.capitalize()):
                 with self.subTest(variant=variant):
                     report = paradigm.check({"inference": {"paradigm": variant}})
-                    manifest = [f for f in report.findings if f.code == "DSX-PAR-001"][0]
+                    manifest = next(f for f in report.findings if f.code == "DSX-PAR-001")
                     canonical = paradigm.check({"inference": {"paradigm": member}})
-                    expected = [f for f in canonical.findings if f.code == "DSX-PAR-001"][0]
+                    expected = next(f for f in canonical.findings if f.code == "DSX-PAR-001")
                     self.assertEqual(manifest.data["applied"], expected.data["applied"])
 
 
@@ -4619,30 +4768,85 @@ _END_TO_END_VARIANT_TABLE = (
     # RESEARCH.md Pitfall 3) already listed as caught by FIT_CALL_RE
     # before this phase -- still caught, now via the AST path.
     ("caught_bare_positional", _SPLIT_THEN + "model.fit(data)\n", frozenset({"DSX-CODE-021"}), "entry.py"),
-    ("caught_bracket_subscript_positional", _SPLIT_THEN + "model.fit(data[['Age']])\n", frozenset({"DSX-CODE-021"}), "entry.py"),
-    ("caught_fit_transform_bare", _SPLIT_THEN + "scaler.fit_transform(data)\n", frozenset({"DSX-CODE-021"}), "entry.py"),
-    ("caught_chained_constructor_plain_arg", _SPLIT_THEN + "build_pipeline().fit(data)\n", frozenset({"DSX-CODE-021"}), "entry.py"),
+    (
+        "caught_bracket_subscript_positional",
+        _SPLIT_THEN + "model.fit(data[['Age']])\n",
+        frozenset({"DSX-CODE-021"}),
+        "entry.py",
+    ),
+    (
+        "caught_fit_transform_bare",
+        _SPLIT_THEN + "scaler.fit_transform(data)\n",
+        frozenset({"DSX-CODE-021"}),
+        "entry.py",
+    ),
+    (
+        "caught_chained_constructor_plain_arg",
+        _SPLIT_THEN + "build_pipeline().fit(data)\n",
+        frozenset({"DSX-CODE-021"}),
+        "entry.py",
+    ),
     ("caught_whitespace_before_paren", _SPLIT_THEN + "model.fit (data)\n", frozenset({"DSX-CODE-021"}), "entry.py"),
-    ("caught_tab_before_paren", _SPLIT_THEN + "model.fit" + chr(9) + "(data)\n", frozenset({"DSX-CODE-021"}), "entry.py"),
+    (
+        "caught_tab_before_paren",
+        _SPLIT_THEN + "model.fit" + chr(9) + "(data)\n",
+        frozenset({"DSX-CODE-021"}),
+        "entry.py",
+    ),
     # The seven variants the same table listed as missed -- ALL now caught,
     # which is the phase's headline claim, made executable here rather
     # than asserted in prose.
     ("nowcaught_keyword_X", _SPLIT_THEN + "model.fit(X=data, y=target)\n", frozenset({"DSX-CODE-021"}), "entry.py"),
     ("nowcaught_keyword_data", _SPLIT_THEN + "model.fit(data=data)\n", frozenset({"DSX-CODE-021"}), "entry.py"),
-    ("nowcaught_fit_transform_keyword", _SPLIT_THEN + "scaler.fit_transform(X=data)\n", frozenset({"DSX-CODE-021"}), "entry.py"),
+    (
+        "nowcaught_fit_transform_keyword",
+        _SPLIT_THEN + "scaler.fit_transform(X=data)\n",
+        frozenset({"DSX-CODE-021"}),
+        "entry.py",
+    ),
     ("nowcaught_partial_fit_bare", _SPLIT_THEN + "model.partial_fit(data)\n", frozenset({"DSX-CODE-021"}), "entry.py"),
-    ("nowcaught_partial_fit_keyword", _SPLIT_THEN + "model.partial_fit(X=data)\n", frozenset({"DSX-CODE-021"}), "entry.py"),
-    ("nowcaught_chained_call_argument", _SPLIT_THEN + "model.fit(loader.get_full_frame())\n", frozenset({"DSX-CODE-021"}), "entry.py"),
+    (
+        "nowcaught_partial_fit_keyword",
+        _SPLIT_THEN + "model.partial_fit(X=data)\n",
+        frozenset({"DSX-CODE-021"}),
+        "entry.py",
+    ),
+    (
+        "nowcaught_chained_call_argument",
+        _SPLIT_THEN + "model.fit(loader.get_full_frame())\n",
+        frozenset({"DSX-CODE-021"}),
+        "entry.py",
+    ),
     ("nowcaught_multiline_call", _SPLIT_THEN + "model.fit(\n    data\n)\n", frozenset({"DSX-CODE-021"}), "entry.py"),
     # ROADMAP SC1 and SC3, made executable rather than "satisfied a
     # fortiori" (this plan's <mechanism_change_ledger>, "Restated, not
     # dropped").
-    ("sc1_backslash_continuation_before_split", "model.fit " + chr(92) + "\n(df)\n" + _SPLIT_THEN, frozenset({"DSX-CODE-001"}), "entry.py"),
-    ("sc3_semicolon_joined_two_fit_calls", _SPLIT_THEN + "imputer.fit(X_train); scaler.fit_transform(data)\n", frozenset({"DSX-CODE-021"}), "entry.py"),
+    (
+        "sc1_backslash_continuation_before_split",
+        "model.fit " + chr(92) + "\n(df)\n" + _SPLIT_THEN,
+        frozenset({"DSX-CODE-001"}),
+        "entry.py",
+    ),
+    (
+        "sc3_semicolon_joined_two_fit_calls",
+        _SPLIT_THEN + "imputer.fit(X_train); scaler.fit_transform(data)\n",
+        frozenset({"DSX-CODE-021"}),
+        "entry.py",
+    ),
     # The false positives this phase closes: a docstring, a comment and a
     # notebook markdown cell, each merely mentioning a fit call.
-    ("fp_closed_docstring_mentioning_fit", '"""We never call scaler.fit(X) on the full frame."""\n' + _SPLIT_THEN, frozenset(), "entry.py"),
-    ("fp_closed_comment_mentioning_fit", "x = 1  # scaler.fit(X) on the full frame\n" + _SPLIT_THEN, frozenset(), "entry.py"),
+    (
+        "fp_closed_docstring_mentioning_fit",
+        '"""We never call scaler.fit(X) on the full frame."""\n' + _SPLIT_THEN,
+        frozenset(),
+        "entry.py",
+    ),
+    (
+        "fp_closed_comment_mentioning_fit",
+        "x = 1  # scaler.fit(X) on the full frame\n" + _SPLIT_THEN,
+        frozenset(),
+        "entry.py",
+    ),
     (
         "fp_closed_notebook_markdown_mentioning_fit",
         json.dumps({
@@ -4650,8 +4854,8 @@ _END_TO_END_VARIANT_TABLE = (
                 {
                     "cell_type": "markdown",
                     "source": [
-                        "We must never call `scaler.fit(X)` on the full "
-                        "frame before the split.\n"
+                        ("We must never call `scaler.fit(X)` on the full "
+                        "frame before the split.\n")
                     ],
                 },
                 {
@@ -4840,11 +5044,10 @@ class TestPhase11_1Code(unittest.TestCase):
             "train_test_split(df)\n"
         )
         for label, text in (("multiline", multiline), ("single_line", single_line)):
-            with self.subTest(form=label):
-                with tempfile.TemporaryDirectory() as tmp:
-                    entry = self._entrypoint(tmp, text)
-                    report = self._check(tmp, entry)
-                    self.assertNotIn("DSX-CODE-020", codes(report))
+            with self.subTest(form=label), tempfile.TemporaryDirectory() as tmp:
+                entry = self._entrypoint(tmp, text)
+                report = self._check(tmp, entry)
+                self.assertNotIn("DSX-CODE-020", codes(report))
 
     def test_real_cleaning_idiom_still_fires_code_020_with_the_mask_wired(self):
         # Control: masking prose must not delete a true positive.
@@ -4995,16 +5198,15 @@ class TestPhase11_1Code(unittest.TestCase):
     def test_lexicon_prefix_variants_after_split_no_finding(self):
         variants = ("X_train_scaled", "train_df[cols]", "X_train.values")
         for variant in variants:
-            with self.subTest(variant=variant):
-                with tempfile.TemporaryDirectory() as tmp:
-                    entry = self._entrypoint(
-                        tmp,
-                        "from sklearn.model_selection import train_test_split\n"
-                        "train_test_split(df)\n"
-                        f"model.fit({variant})\n",
-                    )
-                    report = self._check(tmp, entry)
-                    self.assertNotIn("DSX-CODE-021", codes(report))
+            with self.subTest(variant=variant), tempfile.TemporaryDirectory() as tmp:
+                entry = self._entrypoint(
+                    tmp,
+                    "from sklearn.model_selection import train_test_split\n"
+                    "train_test_split(df)\n"
+                    f"model.fit({variant})\n",
+                )
+                report = self._check(tmp, entry)
+                self.assertNotIn("DSX-CODE-021", codes(report))
 
     def test_fit_call_before_split_no_dsx_code_021(self):
         # That case is DSX-CODE-001's.
@@ -5328,23 +5530,24 @@ class TestPhase11_1Code(unittest.TestCase):
         # (11.1.1-RESEARCH.md Pitfall 6), not inherited from the
         # single-keyword-prefix figure. Two adversarial non-matching inputs
         # built from repeated `name=value,` pairs -- short values, and
-        # values at the inner run's `{0,80}` bound -- each under a
-        # 1.0-second budget.
-        import time
-
+        # values at the inner run's `{0,80}` bound -- each pinned linear in
+        # input length (assert_linear_scaling).
         from dsx.checks import code as code_mod
 
-        short_value = ".fit(" + "n=1," * 200_000
-        self.assertEqual(len(short_value), 800_005)
-        start = time.perf_counter()
-        code_mod.FIT_CALL_RE.search(short_value)
-        self.assertLess(time.perf_counter() - start, 1.0)
+        def short_value(size):
+            return ".fit(" + "n=1," * (size // 4)
 
-        long_value = ".fit(" + ("n=" + "v" * 80 + ",") * 20_000
-        self.assertEqual(len(long_value), 1_660_005)
-        start = time.perf_counter()
-        code_mod.FIT_CALL_RE.search(long_value)
-        self.assertLess(time.perf_counter() - start, 1.0)
+        def long_value(size):
+            return ".fit(" + ("n=" + "v" * 80 + ",") * (size // 83)
+
+        self.assertEqual(len(short_value(800_000)), 800_005)
+        self.assertEqual(len(long_value(1_660_000)), 1_660_005)
+        assert_linear_scaling(
+            self, "FIT_CALL_RE short keyword values", short_value, code_mod.FIT_CALL_RE.search, 800_000
+        )
+        assert_linear_scaling(
+            self, "FIT_CALL_RE 80-char keyword values", long_value, code_mod.FIT_CALL_RE.search, 1_660_000
+        )
 
     def test_keyword_beyond_the_skip_bound_stays_uncaught_by_design_on_the_fallback(
         self,
@@ -5483,18 +5686,17 @@ class TestPhase11_1Code(unittest.TestCase):
         test should be promoted to a firing test rather than deleted.
         """
         for source in (
-            "getattr(model, 'fit')(data)\n"
+            ("getattr(model, 'fit')(data)\n"
             "from sklearn.model_selection import train_test_split\n"
-            "train_test_split(df)\n",
-            "handlers['fit'](data)\n"
+            "train_test_split(df)\n"),
+            ("handlers['fit'](data)\n"
             "from sklearn.model_selection import train_test_split\n"
-            "train_test_split(df)\n",
+            "train_test_split(df)\n"),
         ):
-            with self.subTest(source=source):
-                with tempfile.TemporaryDirectory() as tmp:
-                    entry = self._entrypoint(tmp, source)
-                    report = self._check(tmp, entry)
-                    self.assertNotIn("DSX-CODE-001", codes(report))
+            with self.subTest(source=source), tempfile.TemporaryDirectory() as tmp:
+                entry = self._entrypoint(tmp, source)
+                report = self._check(tmp, entry)
+                self.assertNotIn("DSX-CODE-001", codes(report))
 
     def test_out_of_allowlist_keyword_stays_uncaught_by_design(self):
         """Deliberate, not a bug: `model.fit(training_frame=data)` after the
@@ -5934,8 +6136,8 @@ class TestPhase11_1Code(unittest.TestCase):
                 {
                     "cell_type": "markdown",
                     "source": [
-                        "We must never call `scaler.fit(X)` on the full "
-                        "frame before the split.\n"
+                        ("We must never call `scaler.fit(X)` on the full "
+                        "frame before the split.\n")
                     ],
                 },
                 {
@@ -6060,12 +6262,11 @@ class TestPhase11_1Code(unittest.TestCase):
             },
         }
         for name, nb in shapes.items():
-            with self.subTest(shape=name):
-                with tempfile.TemporaryDirectory() as tmp:
-                    entry = self._entrypoint(tmp, json.dumps(nb), name="entry.ipynb")
-                    report = self._check(tmp, entry)
-                    self.assertNotIn("DSX-CODE-001", codes(report))
-                    self.assertNotIn("DSX-CODE-021", codes(report))
+            with self.subTest(shape=name), tempfile.TemporaryDirectory() as tmp:
+                entry = self._entrypoint(tmp, json.dumps(nb), name="entry.ipynb")
+                report = self._check(tmp, entry)
+                self.assertNotIn("DSX-CODE-001", codes(report))
+                self.assertNotIn("DSX-CODE-021", codes(report))
 
         # Malformed JSON: the whole document, not a per-cell shape.
         with tempfile.TemporaryDirectory() as tmp:
@@ -6082,18 +6283,17 @@ class TestPhase11_1Code(unittest.TestCase):
         from dsx.checks import code as code_mod
 
         for content in ("[]", "null"):
-            with self.subTest(content=content):
-                with tempfile.TemporaryDirectory() as tmp:
-                    path = Path(tmp, "entry.ipynb")
-                    path.write_text(content, encoding="utf-8")
-                    self.assertIsNone(code_mod._read_source(path))
+            with self.subTest(content=content), tempfile.TemporaryDirectory() as tmp:
+                path = Path(tmp, "entry.ipynb")
+                path.write_text(content, encoding="utf-8")
+                self.assertIsNone(code_mod._read_source(path))
 
-                    entry = self._entrypoint(tmp, content, name="entry.ipynb")
-                    report = self._check(tmp, entry)
-                    self.assertEqual(report.findings, [])
-                    self.assertTrue(
-                        any("NOT scanned" in line for line in report.passed_checks)
-                    )
+                entry = self._entrypoint(tmp, content, name="entry.ipynb")
+                report = self._check(tmp, entry)
+                self.assertEqual(report.findings, [])
+                self.assertTrue(
+                    any("NOT scanned" in line for line in report.passed_checks)
+                )
 
     def test_non_dict_notebook_cell_is_named_not_scanned_without_raising(self):
         # GAP-3 (SC5): the document is an object, but a cell inside `cells`
@@ -6108,18 +6308,17 @@ class TestPhase11_1Code(unittest.TestCase):
             '{"cells": ["not-a-dict-cell"]}',
             '{"cells": {"a": 1}}',
         ):
-            with self.subTest(content=content):
-                with tempfile.TemporaryDirectory() as tmp:
-                    path = Path(tmp, "entry.ipynb")
-                    path.write_text(content, encoding="utf-8")
-                    self.assertIsNone(code_mod._read_source(path))
+            with self.subTest(content=content), tempfile.TemporaryDirectory() as tmp:
+                path = Path(tmp, "entry.ipynb")
+                path.write_text(content, encoding="utf-8")
+                self.assertIsNone(code_mod._read_source(path))
 
-                    entry = self._entrypoint(tmp, content, name="entry.ipynb")
-                    report = self._check(tmp, entry)
-                    self.assertEqual(report.findings, [])
-                    self.assertTrue(
-                        any("NOT scanned" in line for line in report.passed_checks)
-                    )
+                entry = self._entrypoint(tmp, content, name="entry.ipynb")
+                report = self._check(tmp, entry)
+                self.assertEqual(report.findings, [])
+                self.assertTrue(
+                    any("NOT scanned" in line for line in report.passed_checks)
+                )
 
     def test_non_list_cells_value_is_named_not_scanned_without_raising(self):
         # SC5: a `cells` value that is valid JSON but not a list -- an
@@ -6141,18 +6340,17 @@ class TestPhase11_1Code(unittest.TestCase):
             '{"cells": "cells"}',
             "{}",
         ):
-            with self.subTest(content=content):
-                with tempfile.TemporaryDirectory() as tmp:
-                    path = Path(tmp, "entry.ipynb")
-                    path.write_text(content, encoding="utf-8")
-                    self.assertIsNone(code_mod._read_source(path))
+            with self.subTest(content=content), tempfile.TemporaryDirectory() as tmp:
+                path = Path(tmp, "entry.ipynb")
+                path.write_text(content, encoding="utf-8")
+                self.assertIsNone(code_mod._read_source(path))
 
-                    entry = self._entrypoint(tmp, content, name="entry.ipynb")
-                    report = self._check(tmp, entry)
-                    self.assertEqual(report.findings, [])
-                    self.assertTrue(
-                        any("NOT scanned" in line for line in report.passed_checks)
-                    )
+                entry = self._entrypoint(tmp, content, name="entry.ipynb")
+                report = self._check(tmp, entry)
+                self.assertEqual(report.findings, [])
+                self.assertTrue(
+                    any("NOT scanned" in line for line in report.passed_checks)
+                )
 
     def test_empty_cells_list_still_scans_as_an_empty_notebook(self):
         # Control (SC5 boundary): {"cells": []} is a legitimately empty
@@ -6214,18 +6412,17 @@ class TestPhase11_1Code(unittest.TestCase):
             ),
         )
         for content in docs:
-            with self.subTest(content=content):
-                with tempfile.TemporaryDirectory() as tmp:
-                    path = Path(tmp, "entry.ipynb")
-                    path.write_text(content, encoding="utf-8")
-                    self.assertIsNone(code_mod._read_source(path))
+            with self.subTest(content=content), tempfile.TemporaryDirectory() as tmp:
+                path = Path(tmp, "entry.ipynb")
+                path.write_text(content, encoding="utf-8")
+                self.assertIsNone(code_mod._read_source(path))
 
-                    entry = self._entrypoint(tmp, content, name="entry.ipynb")
-                    report = self._check(tmp, entry)
-                    self.assertEqual(report.findings, [])
-                    self.assertTrue(
-                        any("NOT scanned" in line for line in report.passed_checks)
-                    )
+                entry = self._entrypoint(tmp, content, name="entry.ipynb")
+                report = self._check(tmp, entry)
+                self.assertEqual(report.findings, [])
+                self.assertTrue(
+                    any("NOT scanned" in line for line in report.passed_checks)
+                )
 
     def test_non_string_non_list_source_is_named_not_scanned_without_raising(self):
         # SC5: a cell's `source` is neither absent, a string, nor a list
@@ -6248,18 +6445,17 @@ class TestPhase11_1Code(unittest.TestCase):
             json.dumps({"cells": [{"cell_type": "code", "source": 5}]}),
         )
         for content in docs:
-            with self.subTest(content=content):
-                with tempfile.TemporaryDirectory() as tmp:
-                    path = Path(tmp, "entry.ipynb")
-                    path.write_text(content, encoding="utf-8")
-                    self.assertIsNone(code_mod._read_source(path))
+            with self.subTest(content=content), tempfile.TemporaryDirectory() as tmp:
+                path = Path(tmp, "entry.ipynb")
+                path.write_text(content, encoding="utf-8")
+                self.assertIsNone(code_mod._read_source(path))
 
-                    entry = self._entrypoint(tmp, content, name="entry.ipynb")
-                    report = self._check(tmp, entry)
-                    self.assertEqual(report.findings, [])
-                    self.assertTrue(
-                        any("NOT scanned" in line for line in report.passed_checks)
-                    )
+                entry = self._entrypoint(tmp, content, name="entry.ipynb")
+                report = self._check(tmp, entry)
+                self.assertEqual(report.findings, [])
+                self.assertTrue(
+                    any("NOT scanned" in line for line in report.passed_checks)
+                )
 
     def test_deeply_nested_notebook_json_is_named_not_scanned_without_raising(self):
         # SC5, found while planning and named by neither the
@@ -6569,111 +6765,87 @@ class TestPhase11_1Code(unittest.TestCase):
         self.assertTrue(m.group(1).startswith("data"))
 
     def test_fit_call_re_timing_no_catastrophic_backtracking(self):
-        import time
-
         from dsx.checks import code as code_mod
 
-        text = ".fit(" + ("a" * 19990)
-        self.assertEqual(len(text), 19995)
-        start = time.perf_counter()
-        code_mod.FIT_CALL_RE.search(text)
-        self.assertLess(time.perf_counter() - start, 1.0)
+        def make(size):
+            return ".fit(" + "a" * (size - 5)
+
+        self.assertEqual(len(make(19995)), 19995)
+        assert_linear_scaling(self, "FIT_CALL_RE non-matching", make, code_mod.FIT_CALL_RE.search, 19995)
 
     # ── Phase 11.1.1 plan 02: this mechanism's own timing pins, not ──────────
     # ── inherited from a sibling's linearity proof (T-11.1-01, Rule from ────
     # ── 11.1.1-RESEARCH.md Pitfall 6) ─────────────────────────────────────
 
     def test_ast_fit_argument_extraction_timing_is_linear(self):
-        # House shape: local imports, inline input, one perf_counter bracket
-        # per size, hard assertLess, no subTest. Measures parse + walk +
-        # sort + ast.unparse of every fit argument -- the mechanism task 2
-        # wires into DSX-CODE-021's consumer loop --
-        # NOT the full check() pipeline (test_ast_scan_timing_is_linear_
-        # on_a_large_entrypoint above already covers that). Passes before
-        # task 2: ast.parse, _call_sites (plan 01) and ast.unparse are
-        # already fast at these sizes -- measured this session, well under
-        # budget on both rows.
+        # Measures parse + walk + sort + ast.unparse of every fit argument --
+        # the mechanism wired into DSX-CODE-021's consumer loop -- NOT the
+        # full check() pipeline (test_ast_scan_timing_is_linear_on_a_large_
+        # entrypoint covers that). Pinned as a scaling ratio over 1,250 ->
+        # 20,000 lines; the measured figures live in assert_linear_scaling's
+        # docstring.
         import ast
-        import time
 
         from dsx.checks import code as code_mod
 
-        for size, budget in ((5_000, 0.5), (20_000, 1.0)):
-            source = "model.fit(df)\n" * size
-            start = time.perf_counter()
+        def make(size):
+            return "model.fit(df)\n" * size
+
+        def run(source):
             tree = ast.parse(source)
             for site in code_mod._call_sites(tree):
                 if site.name in code_mod.FIT_METHOD_NAMES and site.node.args:
                     ast.unparse(site.node.args[0])
-            elapsed = time.perf_counter() - start
-            self.assertLess(
-                elapsed,
-                budget,
-                f"AST fit-argument extraction took {elapsed:.4f}s over "
-                f"{size} lines (budget {budget}s) -- possible quadratic "
-                "regression",
-            )
+
+        assert_linear_scaling(self, "AST fit-argument extraction", make, run, 20000, repeats=3)
 
     def test_fit_call_re_timing_no_catastrophic_backtracking_with_keyword_form(self):
         # The widened FALLBACK pattern gets its own measurement, not an
         # inherited figure. A 19,995-character non-matching input and a
-        # 1,000,000-character adversarial near-miss built from ".fit("
-        # followed by 500,000 repetitions of "x=", each under a
-        # 1.0-second budget. Uses code_mod.FIT_CALL_RE directly, so this
-        # re-measures whatever pattern is currently installed -- passes
-        # before task 2 (the unwidened pattern is already linear) and
-        # continues to pass after task 2 widens it.
-        import time
-
+        # 1,000,005-character adversarial near-miss built from ".fit("
+        # followed by 500,000 repetitions of "x=", each pinned linear in
+        # input length (assert_linear_scaling). Uses code_mod.FIT_CALL_RE
+        # directly, so this re-measures whatever pattern is installed.
         from dsx.checks import code as code_mod
 
-        non_matching = ".fit(" + ("a" * 19990)
-        self.assertEqual(len(non_matching), 19995)
-        start = time.perf_counter()
-        code_mod.FIT_CALL_RE.search(non_matching)
-        self.assertLess(time.perf_counter() - start, 1.0)
+        def non_matching(size):
+            return ".fit(" + "a" * (size - 5)
 
-        near_miss = ".fit(" + ("x=" * 500_000)
-        self.assertEqual(len(near_miss), 1_000_005)
-        start = time.perf_counter()
-        code_mod.FIT_CALL_RE.search(near_miss)
-        self.assertLess(time.perf_counter() - start, 1.0)
+        def near_miss(size):
+            return ".fit(" + "x=" * (size // 2)
+
+        self.assertEqual(len(non_matching(19995)), 19995)
+        self.assertEqual(len(near_miss(1_000_000)), 1_000_005)
+        assert_linear_scaling(self, "FIT_CALL_RE non-matching", non_matching, code_mod.FIT_CALL_RE.search, 19995)
+        assert_linear_scaling(self, "FIT_CALL_RE x= near-miss", near_miss, code_mod.FIT_CALL_RE.search, 1_000_000)
 
     def test_full_frame_cleaning_predicates_timing_no_catastrophic_backtracking(self):
         # Phase 11.1.1 (threat T-11.1-01). The previous single-pattern
         # construction was cubic (spread filter) and quadratic (imputation) in
-        # line length: 800 characters already took 1.4 seconds, so at this size
-        # it would not have finished in any practical time. Same house bar as
-        # test_fit_call_re_timing_no_catastrophic_backtracking above (20,000
-        # characters), but an order of magnitude tighter, because the replacement
-        # runs in well under a millisecond and a loose threshold would let a
-        # regression back to a backtracking construction slip through.
-        import time
-
+        # line length: 800 characters already took 1.4 seconds. Pinned as a
+        # scaling ratio over 2,000 -> 32,000 characters (assert_linear_scaling).
+        # The small size is chosen twice over: large enough that the regex work
+        # (about 75 ps per character) is not buried under the ~0.14 us call
+        # overhead -- at 800 characters a quadratic regression would have
+        # ratioed only ~70 against the 64 limit -- and small enough that the
+        # cubic construction (2,000 chars: ~22 s per call) trips the 2 s guard
+        # on its first call instead of running for hours at 32,000: a regex
+        # search cannot be interrupted mid-match, so input size is the brake.
+        # Each near-miss satisfies the predicate's FIRST sub-pattern and fails
+        # the second, so both regexes run on every call; a plain "x" * n line
+        # fails the first and `and` never reaches the second, which is what the
+        # pre-v2.6.1 pin measured without knowing it.
         from dsx.checks import code as code_mod
 
-        # The sizes ascend deliberately, and this loop must NOT use subTest: a
-        # regression to the old cubic construction has to abort at 800
-        # characters (about 1.4 seconds) rather than continue to 20,000, where
-        # the same construction runs for hours and would hang the suite instead
-        # of failing it. subTest records a failure and keeps going, which is
-        # exactly the wrong behaviour here.
-        for size, budget in ((800, 0.05), (20000, 0.1)):
-            for predicate in (
-                code_mod._is_full_frame_impute,
-                code_mod._is_full_frame_spread_filter,
-            ):
-                line = "x" * size  # satisfies neither predicate
-                start = time.perf_counter()
-                self.assertFalse(predicate(line))
-                elapsed = time.perf_counter() - start
-                self.assertLess(
-                    elapsed,
-                    budget,
-                    f"{predicate.__name__} took {elapsed:.4f}s on a "
-                    f"{size}-character non-matching line (budget {budget}s) — "
-                    "super-linear regression",
-                )
+        for predicate, prefix in (
+            (code_mod._is_full_frame_impute, ".fillna("),
+            (code_mod._is_full_frame_spread_filter, "a["),
+        ):
+            small_result, large_result = assert_linear_scaling(
+                self, predicate.__name__, lambda size, p=prefix: p + "x" * (size - len(p)), predicate, 32000
+            )
+            self.assertFalse(small_result)
+            self.assertFalse(large_result)
 
     def test_good_fixture_still_passes_all_four_gate_points(self):
         from dsx import cli
@@ -6744,7 +6916,7 @@ class TestPhase11_1Code(unittest.TestCase):
 
     # ── DSX-CODE-030/031: statistical test sees the declared target ─────────
 
-    def _check_with_target(self, tmp: str, entry: str, target: "str | None"):
+    def _check_with_target(self, tmp: str, entry: str, target: str | None):
         from dsx.checks import code as code_mod
 
         model: dict = {"task": "binary_classification"}
@@ -6907,11 +7079,10 @@ class TestPhase11_1Code(unittest.TestCase):
             "kruskal(g1, g2, dataset['Exited'])",
         )
         for call in calls:
-            with self.subTest(call=call):
-                with tempfile.TemporaryDirectory() as tmp:
-                    entry = self._entrypoint(tmp, f"result = {call}\n")
-                    report = self._check_with_target(tmp, entry, "Exited")
-                    self.assertIn("DSX-CODE-030", codes(report))
+            with self.subTest(call=call), tempfile.TemporaryDirectory() as tmp:
+                entry = self._entrypoint(tmp, f"result = {call}\n")
+                report = self._check_with_target(tmp, entry, "Exited")
+                self.assertIn("DSX-CODE-030", codes(report))
 
     def test_blank_target_produces_neither_code(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -6990,15 +7161,14 @@ class TestPhase11_1Code(unittest.TestCase):
             "dataset.Exited",
         )
         for form in forms:
-            with self.subTest(form=form):
-                with tempfile.TemporaryDirectory() as tmp:
-                    entry = self._entrypoint(
-                        tmp,
-                        f"contingency_table = pd.crosstab(x, {form})\n"
-                        "chi2, p, _, _ = chi2_contingency(contingency_table)\n",
-                    )
-                    report = self._check_with_target(tmp, entry, "Exited")
-                    self.assertIn("DSX-CODE-030", codes(report))
+            with self.subTest(form=form), tempfile.TemporaryDirectory() as tmp:
+                entry = self._entrypoint(
+                    tmp,
+                    f"contingency_table = pd.crosstab(x, {form})\n"
+                    "chi2, p, _, _ = chi2_contingency(contingency_table)\n",
+                )
+                report = self._check_with_target(tmp, entry, "Exited")
+                self.assertIn("DSX-CODE-030", codes(report))
 
     def test_stat_test_scan_leaves_a_second_decision_record(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -7037,39 +7207,30 @@ class TestPhase11_1Code(unittest.TestCase):
     # -- already-over-budget quadratic fixed, the one retained pattern ----
     # -- made linear by construction -----------------------------------
 
+    def _timed_entrypoint(self, size: int, body: str, prefix: str = "") -> tuple[str, str]:
+        """``make`` for the full-pipeline scaling pins: a fresh directory
+        (cleaned up with the test) holding an entrypoint of ``prefix`` plus
+        ``size`` copies of ``body``."""
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        return tmp.name, self._entrypoint(tmp.name, prefix + body * size)
+
+    def _timed_check(self, target: tuple[str, str]):
+        """``run`` for the full-pipeline scaling pins: one check() call."""
+        return self._check(*target)
+
     def test_ast_scan_timing_is_linear_on_a_large_entrypoint(self):
         # The subject here is OUR code, not CPython's parser: the
         # regression guard against re-walking the tree per code, rendering
         # tokens for non-fit calls, or any accidental quadratic in
-        # call-site assembly. House shape: local imports, inline input,
-        # perf_counter around one check() call, hard assertLess, NO
-        # subTest (a super-linear regression must abort at the small size
-        # rather than hang the suite at the large one). Measured this
-        # session, full check() pipeline (not just ast.parse + walk):
-        # 0.107 s / 0.431 s on `python` 3.12.10, 0.104 s / 0.479 s on
-        # `python3` 3.14.6, at 5,000 / 20,000 lines of `model.fit(df)`.
-        import time
+        # call-site assembly. Full check() pipeline (not just ast.parse +
+        # walk), pinned as a scaling ratio over 1,250 -> 20,000 lines of
+        # `model.fit(df)`; the measured figures live in assert_linear_scaling's
+        # docstring.
+        def make(size):
+            return self._timed_entrypoint(size, "model.fit(df)\n")
 
-        from dsx.checks import code as code_mod
-
-        for size, budget in ((5000, 0.5), (20000, 1.0)):
-            with tempfile.TemporaryDirectory() as tmp:
-                entry = self._entrypoint(tmp, "model.fit(df)\n" * size)
-                start = time.perf_counter()
-                code_mod.check(
-                    {
-                        "model": {"task": "binary_classification"},
-                        "reproducibility": {"entrypoint": entry},
-                    },
-                    tmp,
-                )
-                elapsed = time.perf_counter() - start
-                self.assertLess(
-                    elapsed,
-                    budget,
-                    f"AST scan took {elapsed:.4f}s over {size} lines "
-                    f"(budget {budget}s) -- possible quadratic regression",
-                )
+        assert_linear_scaling(self, "AST scan (full check())", make, self._timed_check, 20000, repeats=3)
 
     def test_scaler_full_loop_timing_is_linear(self):
         # Phase 11.1.1 plan 01 (threat T-11.1.1-13). Input IS the matching
@@ -7078,39 +7239,27 @@ class TestPhase11_1Code(unittest.TestCase):
         # lines, each SUPPRESSED (X_train already in prior), which is
         # exactly the shape that made the old (break-inside-the-inner-if)
         # loop rebuild `"\n".join(lines[:index])` for every one of the N
-        # matching lines. Measured this session, the OLD loop alone (not
-        # the full check() pipeline): 0.0223 / 0.0852 / 0.4545 / 1.4211 s
-        # at 2,000 / 4,000 / 8,000 / 16,000 matching lines -- roughly 4x
-        # per doubling. No subTest: a regression must abort at the small
-        # size.
-        import time
-
+        # matching lines. Measured then, the OLD loop alone: 0.0223 / 0.0852 /
+        # 0.4545 / 1.4211 s at 2,000 / 4,000 / 8,000 / 16,000 matching lines
+        # -- 4x per doubling, so ~256 over this pin's 1,000 -> 16,000 span
+        # against a limit of 64. The pin times `_first_unsuppressed_scaler_line`
+        # ALONE (the pure scan; the report.add stays in check() per Pin 4 below):
+        # inside the full check() pipeline the parse and the other scans
+        # diluted that quadratic to a ratio of 25-31 against the earlier 22.6
+        # limit (mutation-tested 2026-09-11), a margin no test should rest on.
+        # This was also the one timing test that failed under machine load on
+        # its old absolute budget (0.6 s at 8,000 lines).
         from dsx.checks import code as code_mod
 
-        for size, budget in ((8000, 0.6), (16000, 1.0)):
-            with tempfile.TemporaryDirectory() as tmp:
-                entry = self._entrypoint(
-                    tmp,
-                    "X_train = 1\n"
-                    + "StandardScaler().fit_transform(X)\n" * size,
-                )
-                start = time.perf_counter()
-                report = code_mod.check(
-                    {
-                        "model": {"task": "binary_classification"},
-                        "reproducibility": {"entrypoint": entry},
-                    },
-                    tmp,
-                )
-                elapsed = time.perf_counter() - start
-                self.assertNotIn("DSX-CODE-002", codes(report))
-                self.assertLess(
-                    elapsed,
-                    budget,
-                    f"DSX-CODE-002 scan took {elapsed:.4f}s over {size} "
-                    f"suppressed matching lines (budget {budget}s) -- "
-                    "possible quadratic regression",
-                )
+        def make(size):
+            return ["X_train = 1", *(["StandardScaler().fit_transform(X)"] * size)]
+
+        small_index, large_index = assert_linear_scaling(
+            self, "DSX-CODE-002 suppressed-match loop", make, code_mod._first_unsuppressed_scaler_line, 16000
+        )
+        self.assertIsNone(small_index)  # suppressed: X_train sits above the first match
+        self.assertIsNone(large_index)
+        self.assertEqual(code_mod._first_unsuppressed_scaler_line(make(3)[1:]), 0)  # unsuppressed: line 1
 
     def test_scaler_full_loop_finding_set_unchanged_by_the_break_hoist(self):
         # The equivalence proof (see the comment above the loop in
@@ -7148,29 +7297,26 @@ class TestPhase11_1Code(unittest.TestCase):
         # deliberately malformed (missing the closing paren and the final
         # "n" of X_train) so the overall match fails everywhere and
         # re.search must retry from every one of the n "Pipeline(" start
-        # positions. Measured this session at n = 4,000: the OLD `.*`
-        # pattern and an UNBOUNDED `[^)\n]*` swap are both still quadratic
-        # (0.1357s / 0.4360s); only bounding the repetition
-        # (`[^)\n]{0,200}`) makes each retry O(1) instead of
-        # O(remaining-length), measured 0.0048s at n = 4,000 and 0.33s
-        # even at n = 256,000. A budget a quadratic construction breaks.
-        import time
-
+        # positions. Measured then at n = 4,000: the OLD `.*` pattern and
+        # an UNBOUNDED `[^)\n]*` swap are both still quadratic (0.1357s /
+        # 0.4360s); only bounding the repetition (`[^)\n]{0,200}`) makes
+        # each retry O(1) instead of O(remaining-length), measured 0.0048s
+        # at n = 4,000 and 0.33s even at n = 256,000.
+        #
+        # Pinned as a scaling ratio over n = 250 -> 4,000
+        # (assert_linear_scaling): the unbounded swap is quadratic and ratios
+        # ~256 against the 64 limit (mutation-tested 2026-09-11 at the earlier
+        # 8x spacing: 68.7 against 22.6). The earlier absolute pin (plan 03
+        # task 3, Pin 2: 1.0 s tightened to 0.05 s) could only catch that
+        # regression by sitting 10x above one machine's measured time.
         from dsx.checks import code as code_mod
 
-        text = "Pipeline(" * 4000 + ").fit(X_trai"
-        start = time.perf_counter()
-        code_mod.PIPELINE_FIT_TRAIN_RE.search(text)
-        elapsed = time.perf_counter() - start
-        # Phase 11.1.1 plan 03 task 3, Pin 2. Tightened from 1.0s to 0.05s:
-        # a 1.0s budget would NOT catch a regression back to the unbounded-
-        # but-still-quadratic `[^)\n]*` swap this same comment block already
-        # measured at 0.4360s at n=4,000 -- comfortably under 1.0s, so that
-        # budget could not have caught the exact regression this pin exists
-        # to catch. Measured this session on the shipped bounded pattern:
-        # 0.0048s (`python` 3.12.10), 0.0053s (`python3` 3.14.6) -- both
-        # comfortably under 0.05s.
-        self.assertLess(elapsed, 0.05)
+        def make(n):
+            return "Pipeline(" * n + ").fit(X_trai"
+
+        assert_linear_scaling(
+            self, "PIPELINE_FIT_TRAIN_RE worst shape", make, code_mod.PIPELINE_FIT_TRAIN_RE.search, 4000
+        )
 
     def test_pipeline_fit_train_re_match_set_unchanged_across_probe_shapes(self):
         # 14 probe shapes (matching and non-matching), recorded in the
@@ -7227,56 +7373,56 @@ class TestPhase11_1Code(unittest.TestCase):
 
     def test_fit_leak_markers_timing_no_catastrophic_backtracking(self):
         # FIT_LEAK_MARKERS -- three bounded `\.method\s*\(` patterns, no
-        # nested quantifier -- measured on a 20,000-character non-matching
-        # line and on a near-miss (".fit" followed by whitespace with no
-        # opening parenthesis, which makes the trailing `\(` fail after the
-        # bounded `\s*` repetition has already been walked once).
-        import re
-        import time
-
+        # nested quantifier -- pinned linear (assert_linear_scaling) on a
+        # 20,000-character non-matching line and on a near-miss (".fit"
+        # followed by whitespace with no opening parenthesis, which makes
+        # the trailing `\(` fail after the bounded `\s*` repetition has
+        # already been walked once).
         from dsx.checks import code as code_mod
 
-        non_matching = "a" * 20000
-        near_miss = ".fit" + (" " * 19990)
+        shapes = {
+            "non-matching": lambda size: "a" * size,
+            "near-miss": lambda size: ".fit" + " " * (size - 4),
+        }
         for pattern in code_mod.FIT_LEAK_MARKERS:
             compiled = re.compile(pattern)
-            for text in (non_matching, near_miss):
-                with self.subTest(pattern=pattern, text=text[:10]):
-                    start = time.perf_counter()
-                    compiled.search(text)
-                    self.assertLess(time.perf_counter() - start, 1.0)
+            for shape, make in shapes.items():
+                with self.subTest(pattern=pattern, shape=shape):
+                    assert_linear_scaling(self, f"{pattern} {shape}", make, compiled.search, 20000)
 
     def test_scaler_full_re_timing_no_catastrophic_backtracking(self):
-        # SCALER_FULL_RE. Near-miss: a real "StandardScaler()" prefix and a
-        # real "fit_transform(" suffix with 20,000 characters of dots
-        # between them, so the `\s*\.\s*` between the two halves is walked
-        # to the end before the whole match fails.
-        import time
-
+        # SCALER_FULL_RE, pinned linear (assert_linear_scaling). Near-miss:
+        # a real "StandardScaler()" prefix and a real "fit_transform(" suffix
+        # with ~20,000 characters of dots between them, so the `\s*\.\s*`
+        # between the two halves is walked to the end before the whole
+        # match fails.
         from dsx.checks import code as code_mod
 
-        non_matching = "a" * 20000
-        near_miss = "StandardScaler()" + ("." * 19980) + "fit_transform(X"
-        for text in (non_matching, near_miss):
-            with self.subTest(text=text[:20]):
-                start = time.perf_counter()
-                code_mod.SCALER_FULL_RE.search(text)
-                self.assertLess(time.perf_counter() - start, 1.0)
+        shapes = {
+            "non-matching": lambda size: "a" * size,
+            "near-miss": lambda size: "StandardScaler()" + "." * (size - 31) + "fit_transform(X",
+        }
+        for shape, make in shapes.items():
+            with self.subTest(shape=shape):
+                assert_linear_scaling(
+                    self, f"SCALER_FULL_RE {shape}", make, code_mod.SCALER_FULL_RE.search, 20000
+                )
 
     def test_resample_before_re_timing_no_catastrophic_backtracking(self):
         # RESAMPLE_BEFORE_RE -- a `\b`-anchored alternation of four literal
-        # names with no quantifier inside the alternation at all.
-        import time
-
+        # names with no quantifier inside the alternation at all -- pinned
+        # linear (assert_linear_scaling).
         from dsx.checks import code as code_mod
 
-        non_matching = "a" * 20000
-        near_miss = "SMOT" + ("x" * 19996)  # "SMOT" without the final "E"
-        for text in (non_matching, near_miss):
-            with self.subTest(text=text[:20]):
-                start = time.perf_counter()
-                code_mod.RESAMPLE_BEFORE_RE.search(text)
-                self.assertLess(time.perf_counter() - start, 1.0)
+        shapes = {
+            "non-matching": lambda size: "a" * size,
+            "near-miss": lambda size: "SMOT" + "x" * (size - 4),  # "SMOT" without the final "E"
+        }
+        for shape, make in shapes.items():
+            with self.subTest(shape=shape):
+                assert_linear_scaling(
+                    self, f"RESAMPLE_BEFORE_RE {shape}", make, code_mod.RESAMPLE_BEFORE_RE.search, 20000
+                )
 
     def test_every_dsx_code_report_add_call_resolves_to_check(self):
         # Pin 4: the D-05 structural guard made mechanical. The finding-
@@ -7309,9 +7455,8 @@ class TestPhase11_1Code(unittest.TestCase):
                 and isinstance(node.args[0], ast.Constant)
                 and isinstance(node.args[0].value, str)
                 and node.args[0].value.startswith("DSX-CODE-")
-            ):
-                if id(node) not in check_call_ids:
-                    violations.append(node.args[0].value)
+            ) and id(node) not in check_call_ids:
+                violations.append(node.args[0].value)
 
         self.assertEqual(violations, [])
 
@@ -7346,22 +7491,21 @@ class TestPhase11_1Code(unittest.TestCase):
         line of the split call, not a splitlines()-shifted one, for the
         same two desynchronising shapes."""
         for prefix in (chr(12) + "\n", "s = 'before" + chr(8232) + "after'\n"):
-            with self.subTest(prefix=repr(prefix)):
-                with tempfile.TemporaryDirectory() as tmp:
-                    entry = self._entrypoint(
-                        tmp,
-                        prefix
-                        + "df['Age'] = df['Age'].fillna(df['Age'].mean())\n"
-                        "model.fit(df)\n"
-                        "from sklearn.model_selection import train_test_split\n"
-                        "train_test_split(df)\n",
-                    )
-                    report = self._check(tmp, entry)
-                    code_001 = [
-                        f for f in report.findings if f.code == "DSX-CODE-001"
-                    ]
-                    self.assertEqual(len(code_001), 1)
-                    self.assertIn("line 5", code_001[0].detail)
+            with self.subTest(prefix=repr(prefix)), tempfile.TemporaryDirectory() as tmp:
+                entry = self._entrypoint(
+                    tmp,
+                    prefix
+                    + "df['Age'] = df['Age'].fillna(df['Age'].mean())\n"
+                    "model.fit(df)\n"
+                    "from sklearn.model_selection import train_test_split\n"
+                    "train_test_split(df)\n",
+                )
+                report = self._check(tmp, entry)
+                code_001 = [
+                    f for f in report.findings if f.code == "DSX-CODE-001"
+                ]
+                self.assertEqual(len(code_001), 1)
+                self.assertIn("line 5", code_001[0].detail)
 
     def test_no_module_level_cache_grows_across_repeated_check_calls(self):
         """No committed module-level mutable container may grow across
@@ -7511,8 +7655,8 @@ class TestPhase11_1Code(unittest.TestCase):
         context under the check name, then collect_from_report flattens
         the decisions out of it. Proven here rather than a shape that
         stops at report.context."""
-        from dsx.findings import merge
         from dsx.decisions import collect_from_report
+        from dsx.findings import merge
 
         with tempfile.TemporaryDirectory() as tmp:
             entry = self._entrypoint(tmp, "model.fit(df)\n", name="entry.txt")
@@ -7556,18 +7700,17 @@ class TestPhase11_1Code(unittest.TestCase):
         comment mentioning a fit call produces a Call node, on the parsed
         path -- both shapes pinned here."""
         for source in (
-            '"""We never call scaler.fit(X) on the full frame."""\n'
+            ('"""We never call scaler.fit(X) on the full frame."""\n'
             "from sklearn.model_selection import train_test_split\n"
-            "train_test_split(df)\n",
-            "x = 1  # scaler.fit(X) on the full frame\n"
+            "train_test_split(df)\n"),
+            ("x = 1  # scaler.fit(X) on the full frame\n"
             "from sklearn.model_selection import train_test_split\n"
-            "train_test_split(df)\n",
+            "train_test_split(df)\n"),
         ):
-            with self.subTest(source=source):
-                with tempfile.TemporaryDirectory() as tmp:
-                    entry = self._entrypoint(tmp, source)
-                    report = self._check(tmp, entry)
-                    self.assertNotIn("DSX-CODE-001", codes(report))
+            with self.subTest(source=source), tempfile.TemporaryDirectory() as tmp:
+                entry = self._entrypoint(tmp, source)
+                report = self._check(tmp, entry)
+                self.assertNotIn("DSX-CODE-001", codes(report))
 
     def test_comment_mentioning_smote_still_fires_code_003_measured_not_assumed(
         self,
@@ -7640,11 +7783,10 @@ class TestPhase11_1Code(unittest.TestCase):
                 "closing",
             ),
         ):
-            with self.subTest(line=label):
-                with tempfile.TemporaryDirectory() as tmp:
-                    entry = self._entrypoint(tmp, source)
-                    report = self._check(tmp, entry)
-                    self.assertIn("DSX-CODE-021", codes(report))
+            with self.subTest(line=label), tempfile.TemporaryDirectory() as tmp:
+                entry = self._entrypoint(tmp, source)
+                report = self._check(tmp, entry)
+                self.assertIn("DSX-CODE-021", codes(report))
 
     # ── Phase 11.1.1 plan 03 task 5: the phase's headline number, made ────────
     # ── executable. _END_TO_END_VARIANT_TABLE is defined at module level, ─────
@@ -7658,11 +7800,10 @@ class TestPhase11_1Code(unittest.TestCase):
         the whole gate mechanism) and are never printed as one series --
         see README.md and this plan's SUMMARY."""
         for name, source, expected_codes, filename in _END_TO_END_VARIANT_TABLE:
-            with self.subTest(variant=name):
-                with tempfile.TemporaryDirectory() as tmp:
-                    entry = self._entrypoint(tmp, source, name=filename)
-                    report = self._check(tmp, entry)
-                    self.assertEqual(codes(report), expected_codes)
+            with self.subTest(variant=name), tempfile.TemporaryDirectory() as tmp:
+                entry = self._entrypoint(tmp, source, name=filename)
+                report = self._check(tmp, entry)
+                self.assertEqual(codes(report), expected_codes)
 
 
 # ── 11-07 Task 1: admissibility registered in CHECKS, GATE_PROFILES, run_checks ──
@@ -7758,7 +7899,7 @@ class TestAdmissibilityGateRegistration(unittest.TestCase):
                 .setdefault("estimand", {})
                 .update({"type": ""}),
             )
-            code, out, err = self._run(["gate", "plan", "--spec", str(spec_path), "--json"])
+            code, _out, err = self._run(["gate", "plan", "--spec", str(spec_path), "--json"])
             self.assertEqual(code, 1, err)
             # Blocking output goes to stderr (dsx.findings.emit); passing
             # output goes to stdout. code == 1 here means stderr carries it.
@@ -7774,7 +7915,7 @@ class TestAdmissibilityGateRegistration(unittest.TestCase):
             )
             for point in ("plan", "verify", "ship"):
                 with self.subTest(point=point):
-                    code, out, err = self._run(
+                    _code, out, _err = self._run(
                         ["gate", point, "--spec", str(spec_path), "--json"]
                     )
                     payload = json.loads(out)
@@ -7783,7 +7924,7 @@ class TestAdmissibilityGateRegistration(unittest.TestCase):
 
     def test_dsx_audit_runs_without_error_on_good_fixture(self):
         fixture = self.ROOT / "examples" / "good-ANALYSIS-SPEC.yaml"
-        code, out, err = self._run(["audit", "--spec", str(fixture), "--json"])
+        code, _out, err = self._run(["audit", "--spec", str(fixture), "--json"])
         self.assertEqual(code, 0, err)
 
     def test_gate_execute_excludes_admissibility(self):
@@ -7801,13 +7942,13 @@ class TestAdmissibilityGateRegistration(unittest.TestCase):
 class TestAdmissibilityRecommendComposition(unittest.TestCase):
     ROOT = Path(__file__).resolve().parent.parent
 
-    def _recommend(self, args: "list[str]", cwd: "str | None" = None):
+    def _recommend(self, args: list[str], cwd: str | None = None):
         import subprocess
 
         env = dict(__import__("os").environ, PYTHONPATH=str(self.ROOT))
         cmd = [sys.executable, "-m", "dsx.cli", "recommend-test", *args]
         return subprocess.run(
-            cmd, capture_output=True, text=True, cwd=cwd or str(self.ROOT), env=env
+            cmd, capture_output=True, text=True, cwd=cwd or str(self.ROOT), env=env, check=False
         )
 
     def test_no_spec_output_is_byte_identical_regardless_of_working_directory(self):
@@ -7897,7 +8038,7 @@ class TestAdmissibilityRecommendComposition(unittest.TestCase):
     # while holding size; Lydersen, Fagerland & Laake 2009 §9). stats.py is therefore NO
     # LONGER byte-identical to v1.4.0; this snapshot records the reconciled routing, and
     # every other field (test, rationale, effect_size) and the key order are unchanged.
-    _BASELINE_TWO_PROPORTION_NO_SPEC = {
+    _BASELINE_TWO_PROPORTION_NO_SPEC: ClassVar[dict] = {
         "test": "two_proportion_z",
         "rationale": "Two independent proportions with adequate expected cell counts.",
         "alternatives": ["boschloo_exact (any expected cell < 5)", "chi_square", "bootstrap"],
@@ -7948,14 +8089,13 @@ class TestAdmissibilityCorpusRegression(unittest.TestCase):
 
     ROOT = Path(__file__).resolve().parent.parent
 
-    def _run(self, argv: "list[str]") -> "tuple[int, str, str]":
+    def _run(self, argv: list[str]) -> tuple[int, str, str]:
         out, err = io.StringIO(), io.StringIO()
         with redirect_stdout(out), redirect_stderr(err):
             code = cli.main(argv)
         return code, out.getvalue(), err.getvalue()
 
-    def _committed_specs(self) -> "list[Path]":
-        import glob
+    def _committed_specs(self) -> list[Path]:
 
         paths = (
             sorted(self.ROOT.glob("examples/*-ANALYSIS-SPEC.yaml"))
@@ -8070,7 +8210,7 @@ class TestAdmissibilityCorpusRegression(unittest.TestCase):
                 "DSX-ADM-020", {f["code"] for f in payload["findings"]}
             )
 
-            code2, _, err2 = self._run(
+            code2, _, _err2 = self._run(
                 ["gate", "plan", "--spec", str(spec_path), "--block-on", "HIGH", "--json"]
             )
             self.assertEqual(code2, 1)

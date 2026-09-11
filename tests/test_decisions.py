@@ -12,7 +12,6 @@ from pathlib import Path
 import dsx.decisions as d
 from dsx.findings import Report, merge
 
-
 # ── Task 1: schema, crash-safe append, tolerant reader ─────────────────────
 
 

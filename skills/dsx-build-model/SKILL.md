@@ -23,12 +23,14 @@ designs leakage prevention in from the profile's measured suspects, dependence s
 and categorical cardinality rather than auditing for it after the split is drawn.
 
 EDA front-matter keys read:
+
 - `leakage_suspects[]`
 - `grain.implied_dependence.structure`
 - `grain.implied_dependence.cluster_var`
 - `segments_candidates[]`
 
 DATA-PROFILE keys read (the fallback source when EDA is absent):
+
 - `columns[].n_unique`
 - `columns[].dtype`
 - `columns[].categorical`

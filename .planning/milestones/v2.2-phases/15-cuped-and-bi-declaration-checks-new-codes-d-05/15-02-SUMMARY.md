@@ -2,7 +2,7 @@
 phase: 15-cuped-and-bi-declaration-checks-new-codes-d-05
 plan: 02
 status: complete
-requirements: [REQ-P15-04]
+requirements-completed: [REQ-P15-04]
 ---
 
 # 15-02 SUMMARY — DSX-MET-021 changing-denominator check (REQ-P15-04 PARTIAL, loud)

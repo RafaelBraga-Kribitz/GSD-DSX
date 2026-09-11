@@ -24,6 +24,7 @@ power arithmetic runs on the measured dependence, base rate and target, not on a
 guessed baseline.
 
 EDA front-matter keys read:
+
 - `dependence.icc`
 - `dependence.outcome_sd`
 - `dependence.weekly_cycle_amplitude`
@@ -32,6 +33,7 @@ EDA front-matter keys read:
 - `grain.implied_dependence.cluster_var`
 
 DATA-PROFILE keys read (the fallback source when EDA is absent):
+
 - `target.overall`
 - `target.weekly_range`
 - `unit.rows_per_unit`
@@ -52,9 +54,11 @@ input.
    hope for — the one below which you would do nothing. Ask if it is not given.
 
 2. **Compute the sample.** This is arithmetic, not negotiation:
+
    ```bash
    dsx power --baseline 0.31 --mde 0.02 --alpha 0.05 --power 0.8
    ```
+
    If the required sample exceeds available traffic in the available window, that
    is the finding. Raise the MDE, extend the window, or do not run the test.
    Running underpowered produces an uninterpretable null and burns the window.

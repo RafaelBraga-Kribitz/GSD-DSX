@@ -25,9 +25,11 @@ skill is the ONLY sanctioned place the entrypoint runs; the gate re-runs nothing
    run; `results.tests` gives the declared headline numbers (lead metric = `tests[0]`).
 
 2. **Re-run the entrypoint OFF the gate path**, in this skill's runtime only, via Bash:
+
    ```bash
    ${DSX_PYTHON:-python3} <entrypoint>        # or the command the entrypoint names
    ```
+
    This is the only place the entrypoint is executed. No dsx gate module runs it.
 
 3. Capture the fresh headline number for each metric in `results.tests` (lead metric

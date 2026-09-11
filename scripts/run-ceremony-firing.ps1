@@ -32,7 +32,9 @@
 
 $ErrorActionPreference = 'Stop'
 
-$Repo   = 'C:\Users\Benutzer1\Dev\AI\gsd-dsx'
+# The repository is the parent of the scripts/ directory this file lives in --
+# derived, never hardcoded, so the wrapper works from any checkout location.
+$Repo   = Split-Path -Parent $PSScriptRoot
 # Milestone branch. Updated 2026-09-06 when the loop was repointed at v2.6
 # Exploration Depth and Backlog Evidence (v2.4 shipped 2026-09-03 as tag v2.4.0;
 # v2.4.1 and v2.5.0 followed interactively the same week, without the loop).

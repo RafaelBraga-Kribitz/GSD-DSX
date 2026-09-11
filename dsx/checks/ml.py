@@ -946,7 +946,7 @@ def _check_baseline(model: dict, spec: dict, report: Report) -> None:
         # entirely. `score_source_display` folds the blank case into one
         # readable word instead, so the title still names the declared value
         # when there is one.
-        score_source_display = score_source_raw if score_source_raw else "not stated"
+        score_source_display = score_source_raw or "not stated"
         report.add(
             "DSX-ML-052",
             "HIGH",
@@ -1182,10 +1182,10 @@ def _check_selection_ledger(model: dict, report: Report) -> None:
                 else f"cleared: complete ledger, selection basis declared as {basis!r}"
             ),
             inputs=[
-                f"selection_ledger.candidates_evaluated:"
-                f"{'declared' if not is_blank(candidates) else 'missing'}",
-                f"selection_ledger.configurations_tried:"
-                f"{'declared' if not is_blank(configurations) else 'missing'}",
+                (f"selection_ledger.candidates_evaluated:"
+                f"{'declared' if not is_blank(candidates) else 'missing'}"),
+                (f"selection_ledger.configurations_tried:"
+                f"{'declared' if not is_blank(configurations) else 'missing'}"),
                 f"selection_ledger.selected_on:{basis_raw if not is_blank(basis_raw) else 'undeclared'}",
             ],
             rule=(

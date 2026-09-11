@@ -33,6 +33,7 @@ decisions:
 metrics:
   completed: 2026-09-08
 status: complete
+requirements-completed: [REQ-P29-01, REQ-P29-02, REQ-P29-03]
 ---
 
 # Phase 29 Plan 02: Subgroup-harm TARGET fixture promotion Summary

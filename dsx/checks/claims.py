@@ -43,7 +43,7 @@ _NUMBER_RE = re.compile(r"(\d+\.\d+|\d+)\s*(%|pp|percentage points)?")
 
 def check(
     spec: dict,
-    phase_dir: "str | None" = None,
+    phase_dir: str | None = None,
     *,
     strict: bool = False,
 ) -> Report:
@@ -94,7 +94,7 @@ def check(
     return report
 
 
-def _resolve_roots(phase_dir: "str | None") -> list[Path]:
+def _resolve_roots(phase_dir: str | None) -> list[Path]:
     roots: list[Path] = []
     if phase_dir:
         roots.append(Path(phase_dir))
@@ -448,7 +448,7 @@ def _round_sig(x: float, sig: int) -> float:
     """Round x to `sig` significant figures."""
     if x == 0:
         return 0.0
-    return round(x, -int(math.floor(math.log10(abs(x)))) + (sig - 1))
+    return round(x, -math.floor(math.log10(abs(x))) + (sig - 1))
 
 
 def _sig_figs_from_claim(claim: dict) -> int:
@@ -644,7 +644,7 @@ def _check_precision(claim: dict, text: str, where: str, report: Report) -> None
         resolution = width / 2.0
         if resolution <= 0:
             continue
-        justified = max(0, int(math.floor(-math.log10(resolution))) + 1)
+        justified = max(0, math.floor(-math.log10(resolution)) + 1)
         if decimals > justified + 1:
             report.add(
                 "DSX-CLM-060",

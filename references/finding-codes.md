@@ -13,6 +13,11 @@ a suppression or a reference in a review stays valid across versions.
 **Gate thresholds.** `plan` and `execute` block at CRITICAL; `verify` and
 `ship` block at HIGH.
 
+A code that fires at more than one severity lists every severity it can carry
+(`CRITICAL / HIGH`). A code emitted with more than one message lists its
+headline text first and the other texts after `also:`. `<…>` stands for a
+value filled in at run time.
+
 **Total: 279 codes.**
 
 ## Contract structure — `DSX-SPEC-*`
@@ -49,7 +54,7 @@ Shape and vocabulary of ANALYSIS-SPEC itself.
 | `DSX-SPEC-060` | HIGH | Claim has no text |
 | `DSX-SPEC-061` | HIGH | Claim <…> has no type |
 | `DSX-SPEC-062` | HIGH | Claim <…> has unrecognised type <…> |
-| `DSX-SPEC-070` | HIGH | suppression of <…> is missing authority |
+| `DSX-SPEC-070` | HIGH | suppression of <…> is missing authority (also: suppression entry is not a mapping; suppression is missing code; suppression of <…> is missing reason) |
 | `DSX-SPEC-071` | HIGH | suppression code <…> has invalid shape |
 | `DSX-SPEC-072` | CRITICAL | suppression references unknown code <…> |
 | `DSX-SPEC-080` | CRITICAL | validity_frame block is missing |
@@ -160,7 +165,7 @@ Leakage, splits, metric choice, baselines, evaluation hygiene.
 | `DSX-ML-031` | CRITICAL | Target '<…>' appears in the feature list |
 | `DSX-ML-032` | HIGH | <…> feature(s) match known leakage patterns |
 | `DSX-ML-033` | MEDIUM | model.prediction_time_definition is not declared |
-| `DSX-ML-034` | CRITICAL | Feature '<…>' is declared available only after the prediction moment |
+| `DSX-ML-034` | CRITICAL / HIGH | Feature '<…>' is declared available only after the prediction moment (also: Feature '<…>' <…> with no waiver) |
 | `DSX-ML-040` | HIGH | model.primary_metric is not declared |
 | `DSX-ML-041` | HIGH | '<…>' is the primary metric on data with a <…> minority class |
 | `DSX-ML-042` | MEDIUM | R² is the only regression metric declared |
@@ -227,8 +232,8 @@ Causal language, evidence, generalisation, precision.
 | `DSX-CLM-001` | HIGH | No claims declared |
 | `DSX-CLM-010` | MEDIUM | Claim mixes causal verbs with hedging: <…> |
 | `DSX-CLM-011` | CRITICAL | Claim typed '<…>' uses causal language: <…> |
-| `DSX-CLM-020` | CRITICAL | Causal claim with no identification strategy behind it |
-| `DSX-CLM-021` | HIGH | Unhedged causal claim resting on a weak strategy ('<…>') |
+| `DSX-CLM-020` | CRITICAL | Causal claim with no identification strategy behind it (also: Prescriptive claim recommends an intervention with no identification strategy behind it) |
+| `DSX-CLM-021` | HIGH | Unhedged causal claim resting on a weak strategy ('<…>') (also: Prescriptive claim recommends an intervention on a weak strategy ('<…>')) |
 | `DSX-CLM-030` | HIGH | Claim has no evidence pointer |
 | `DSX-CLM-031` | HIGH | Evidence pointer does not resolve to an existing file |
 | `DSX-CLM-032` | HIGH | Evidence anchor #<…> not found in <…> |
@@ -351,10 +356,10 @@ Question ↔ claim ↔ decision agreement.
 | `DSX-COH-001` | CRITICAL | Claim type <…> exceeds question_type <…> |
 | `DSX-COH-010` | CRITICAL | Decision rule uses causal language under question_type=<…> |
 | `DSX-COH-020` | CRITICAL | Experiment decision block incomplete (MPE or action_if_null) |
-| `DSX-COH-030` | HIGH | Causal/prescriptive question has an empty assumptions list |
+| `DSX-COH-030` | CRITICAL / HIGH | Causal/prescriptive question has an empty assumptions list |
 | `DSX-COH-031` | HIGH | Assumption[<…>] is neither checked nor waived |
 | `DSX-COH-040` | CRITICAL | decision.revisit_when is missing or not a usable re-visit trigger |
-| `DSX-COH-041` | HIGH | decision.subgroup_harm[] accepts harm to <…> without a rationale |
+| `DSX-COH-041` | CRITICAL / HIGH | decision.subgroup_harm[] accepts harm to <…> without a rationale (also: Opposing segment <…> above the disposition floor carries no decision.subgroup_harm[] row; decision.subgroup_harm[] row for <…> carries no valid disposition) |
 
 ## Figure seals — `DSX-FIG-*`
 
@@ -390,7 +395,7 @@ The declared inferential paradigm manifest and its symmetric peeking-monitoring 
 | Code | Severity | Finding |
 |---|---|---|
 | `DSX-PAR-001` | INFO | paradigm manifest — inference.paradigm: <…> |
-| `DSX-PAR-002` | HIGH | inference.paradigm is not declared under an uncontrolled continuous design |
+| `DSX-PAR-002` | HIGH | inference.paradigm is not declared under an uncontrolled continuous design (also: inference.paradigm (<…>) is declared with no paradigm_justification) |
 | `DSX-PAR-010` | CRITICAL | Uncontrolled continuous monitoring under a frequentist paradigm with no monitoring discipline declared |
 | `DSX-PAR-011` | CRITICAL | Uncontrolled continuous monitoring under a bayesian paradigm with no monitoring discipline declared |
 
@@ -403,12 +408,12 @@ Estimand, unit triad, dependence, identification, sampling frame, missingness an
 | `DSX-VAL-010` | CRITICAL | estimand is missing required attribute(s) |
 | `DSX-VAL-011` | HIGH | estimand falsifier does not discriminate |
 | `DSX-VAL-020` | CRITICAL | observation unit finer than assignment unit with no method family declared |
-| `DSX-VAL-021` | HIGH | validity frame analysis unit disagrees with design analysis unit |
+| `DSX-VAL-021` | HIGH | validity frame analysis unit disagrees with design analysis unit (also: validity frame assignment unit disagrees with design randomization unit) |
 | `DSX-VAL-030` | CRITICAL | dependence structure declared with no admissible method family |
 | `DSX-VAL-040` | CRITICAL | weak identification declared with no constraint |
 | `DSX-VAL-041` | HIGH | strong identification also carries a parameter-scale constraint |
 | `DSX-VAL-050` | HIGH | sampling frame is not internally consistent |
-| `DSX-VAL-060` | CRITICAL | missingness mechanism paired with a method it does not license |
+| `DSX-VAL-060` | CRITICAL / HIGH | missingness mechanism paired with a method it does not license |
 | `DSX-VAL-070` | HIGH | measurement construct declared with no operationalisation |
 | `DSX-VAL-080` | HIGH | exclusion rule declared without a justification |
 

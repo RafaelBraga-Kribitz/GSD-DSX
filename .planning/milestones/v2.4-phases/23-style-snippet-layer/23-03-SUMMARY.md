@@ -3,7 +3,7 @@ phase: 23-style-snippet-layer
 plan: 03
 wave: 3
 status: complete
-requirements:
+requirements-completed:
   - REQ-P23-04
 completed: 2026-09-03
 ---

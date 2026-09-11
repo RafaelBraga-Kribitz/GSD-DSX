@@ -97,7 +97,7 @@ are in the [operating guide](docs/operating-guide.md).
 
 ## What it adds to the loop
 
-```
+```text
   discuss ──▶ plan ──────▶ execute ──────▶ verify ──────▶ ship
                │             │               │              │
         ┌──────┴──────┐      │        ┌──────┴──────┐       │
@@ -322,7 +322,7 @@ finding itself already prints.
 
 Real output, not a description of it:
 
-```
+```bash
 $ dsx audit --spec examples/bad-ANALYSIS-SPEC.yaml
 
 [CRITICAL] DSX-EXP-006  Experiment is underpowered: 1,200 per arm vs 47,528 required
@@ -468,7 +468,7 @@ Tier presets are in [docs/gsd-tiers.md](docs/gsd-tiers.md).
 
 ```bash
 ./scripts/check.sh                           # the full gate: everything below
-python3 -m unittest discover -s tests -v     # 1508 tests
+python3 -m unittest discover -s tests -v     # 1633 tests at v2.6.1; the count grows with each phase
 python3 scripts/validate-capability.py       # manifest conformance
 python3 scripts/gen-finding-catalogue.py --write
 ```

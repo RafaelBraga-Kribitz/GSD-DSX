@@ -29,6 +29,7 @@ between segments, use `dsx-root-cause` or `dsx-segment`.
 </when_to_reach_for_this>
 
 <field_to_gate_routing>
+
 ## What you write, and which existing gate reads it
 
 | `ANALYSIS-SPEC.yaml` field you fill | What it looks like for a cohort question | Existing gate that adjudicates it |
@@ -43,6 +44,7 @@ output is the ruling; this skill only tells you where to look.
 </field_to_gate_routing>
 
 <naming_caveat>
+
 ## Naming caveat — read this before citing a code
 
 `DSX-COH-*` is the **Coherence** family (question / claim / decision agreement) — the letters are

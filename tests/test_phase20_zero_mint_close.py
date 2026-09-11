@@ -5,7 +5,8 @@ Phase 20 is the *terminal* phase of its milestone and mints ZERO codes: it adds 
 pre-allocated ``DSX-STA`` range stops at 122 with the 123-129 band unused and the
 130s reserve untouched. (A later milestone, Phase 22, additively mints DSX-VIZ-071,
 moving the live total to 276 — the count-pin below tracks the live total in
-lockstep, while the zero-mint tell here is the untouched DSX-STA reserve band.) This module turns that "mints zero codes" claim into a runnable oracle
+lockstep, while the zero-mint tell here is the untouched DSX-STA reserve band.) This
+module turns that "mints zero codes" claim into a runnable oracle
 rather than an unverified assertion, and also pins two standing invariants already
 satisfied during Phases 18-19 (all fifteen milestone codes are D-05-allowlisted by
 EXACT string; ``DSX-STA-`` is not an allowlisted prefix).
@@ -142,12 +143,12 @@ class TestPhase20ZeroMintClose(unittest.TestCase):
         present = {int(n) for n in _STA_RE.findall(_CATALOGUE.read_text(encoding="utf-8"))}
         # Construct the reserve band programmatically (123-129 band + 130s reserve and
         # beyond); never hard-code the tokens, so a future mint into the band is caught.
-        reserve = {n for n in range(123, 200)}
+        reserve = set(range(123, 200))
         leaked = sorted(reserve & present)
         self.assertFalse(
             leaked,
             f"reserve band leaked into the catalogue (Phase 20 must mint zero codes): "
-            f"{['DSX-STA-%d' % n for n in leaked]}",
+            f"{[f'DSX-STA-{n}' for n in leaked]}",
         )
         # And the tell holds positively: the highest DSX-STA code is 122.
         self.assertEqual(

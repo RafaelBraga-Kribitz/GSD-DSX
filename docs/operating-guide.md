@@ -3,7 +3,8 @@
 How GSD-DSX and the house-style skills reach a project, how to choose a ceremony
 tier, and how to run several phases at once without losing track of them.
 
-Written against GSD Core 1.7.0 and GSD-DSX 2.0.0. Every claim here was checked
+Written against GSD Core 1.7.0 and GSD-DSX 2.0.0 (the release steps in section 6
+were added at 2.6.1). Every claim here was checked
 against the running system rather than the reference documentation, because the
 two disagree in at least one place — see [gsd-tiers.md](gsd-tiers.md).
 
@@ -57,7 +58,7 @@ agents that talk to you, sets the readability flags, and then verifies by
 resolving the skills back out rather than trusting that the write succeeded.
 
 ```powershell
-pwsh scripts/gsd-stamp.ps1 -Project C:\Users\Benutzer1\Dev\warehouse_humanoid_tco -Tier 2
+pwsh scripts/gsd-stamp.ps1 -Project C:\path\to\your-project -Tier 2
 pwsh scripts/gsd-stamp.ps1 -Project . -VerifyOnly
 ```
 
@@ -277,6 +278,17 @@ script exists.
 
 ---
 
+### Cutting a release
+
+The release number lives in three places that must move together, and a test
+holds them together (`tests/test_release_version.py`): `dsx/__init__.py`
+(`__version__`, what `dsx --version` prints and what every decision record
+carries as `dsx_version`), `capabilities/dsx/capability.json` (`version`), and
+`repro_lock.dsx_version` in every example spec and in
+`templates/ANALYSIS-SPEC.yaml` (the gate's `DSX-REP-053` fires MEDIUM when a spec's
+declared lock version differs from the running package). Bump all three, run the
+suite, then tag.
+
 ## 7. Command reference
 
 | Task | Command |
@@ -287,6 +299,7 @@ script exists.
 | Check a project's wiring only | `pwsh scripts/gsd-stamp.ps1 -Project X -VerifyOnly` |
 | Switch ceremony tier | `pwsh scripts/gsd-tier.ps1 -Tier 0\|1\|2` |
 | Read current tier values | `pwsh scripts/gsd-tier.ps1 -Show` |
+| Every GSD Core defect this project works around, with its line and status | [docs/gsd-core-known-defects.md](gsd-core-known-defects.md) |
 | Recover a subagent commit stranded on a stray branch (`gsd-tools query commit` defect) | `pwsh scripts/gsd-reconcile-branch.ps1 -Branch <canonical>` — runs automatically after every headless ceremony firing; run by hand after an interactive `/gsd-execute-phase` or `/gsd-plan-phase` if you suspect the same thing happened |
 | Permitted charts for a data shape | `dsx charts IT005 --relationship comparison` |
 | Whole chart catalogue | `dsx charts --list` |

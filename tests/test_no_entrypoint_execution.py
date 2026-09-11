@@ -36,7 +36,7 @@ ROOT = Path(__file__).resolve().parent.parent
 DSX = ROOT / "dsx"
 
 
-def _attr_root(func: ast.AST) -> "str | None":
+def _attr_root(func: ast.AST) -> str | None:
     """The leftmost ``ast.Name`` id of an attribute chain (``a.b.c`` -> ``a``)."""
     cur = func
     while isinstance(cur, ast.Attribute):
@@ -68,9 +68,7 @@ def _execution_primitives(source: str) -> set[str]:
             if root == "subprocess":
                 found.add(f"subprocess.{attr}")
             elif root == "os" and (
-                attr in ("system", "popen", "posix_spawn", "posix_spawnp")
-                or attr.startswith("exec")
-                or attr.startswith("spawn")
+                attr in ("system", "popen", "posix_spawn", "posix_spawnp") or attr.startswith(("exec", "spawn"))
             ):
                 found.add(f"os.{attr}")
             elif root == "runpy" and attr in ("run_path", "run_module"):
@@ -107,7 +105,7 @@ class TestNoEntrypointExecution(unittest.TestCase):
         self.assertIn("dsx/checks/repro.py", scanned, scanned)
         for rel in scanned:
             self.assertTrue(
-                rel.startswith("dsx/checks/") or rel.startswith("dsx/frame/"),
+                rel.startswith(("dsx/checks/", "dsx/frame/")),
                 f"scanned a path outside the gate source tree: {rel}",
             )
 

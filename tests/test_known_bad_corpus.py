@@ -27,6 +27,7 @@ sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "tests"))
 
 from _trail_seed import seed_plan_header  # noqa: E402
+
 from dsx import cli  # noqa: E402
 from dsx.frame.paradigm import _MONITORING_DISCIPLINE  # noqa: E402
 from dsx.loader import load  # noqa: E402
@@ -130,7 +131,7 @@ _INCIDENTAL_GAP_CODES = {
 # own-target codes: it must fire NOWHERE on this fixture, so test_ship_gate_findings_are_
 # all_documented_incidental_corpus_gaps stays its live falsifier if it ever ships HIGH
 # here (the CRITICAL-only falsifiability test is vacuous for a HIGH code — D-28-06 guard 6).
-_PER_FIXTURE_INCIDENTAL_CODES: "dict[str, dict[str, frozenset[str]]]" = {
+_PER_FIXTURE_INCIDENTAL_CODES: dict[str, dict[str, frozenset[str]]] = {
     "magnitude-without-computed-effect": {
         "plan": frozenset({"DSX-COH-001"}),
         "verify": frozenset({"DSX-COH-001"}),
@@ -220,7 +221,7 @@ _PER_FIXTURE_INCIDENTAL_CODES: "dict[str, dict[str, frozenset[str]]]" = {
 # ship-completeness test — mirroring weak-identification-mmm's own second key
 # above, which documents the identical "this key is a dict-collision-avoidance
 # device, not a claim the code fires only at that one point" reasoning.
-_TARGET_DEFECT_CODES: "dict[str, dict[str, str | frozenset[str]]]" = {
+_TARGET_DEFECT_CODES: dict[str, dict[str, str | frozenset[str]]] = {
     "weak-identification-mmm": {"plan": "DSX-VAL-040", "verify": "DSX-INT-030"},
     "interference-shared-budget": {"plan": "DSX-INT-010"},
     "triggering-dilution": {"plan": "DSX-INT-030"},
@@ -345,9 +346,9 @@ def _classify_target_defect(
     point: str,
     exit_code: int,
     findings: list[dict],
-    target_map: "dict[str, dict[str, str | frozenset[str]]]",
+    target_map: dict[str, dict[str, str | frozenset[str]]],
     severity: str = "CRITICAL",
-    incidental: "frozenset[str]" = frozenset(),
+    incidental: frozenset[str] = frozenset(),
 ) -> list[str]:
     """Classify one (slug, point) gate result against `target_map` and return a list of
     problem strings (empty when the result matches the map's expectation).
@@ -512,7 +513,7 @@ _RETIRED_LOCATOR_ERRORS = (
 # still clear both CRITICAL-threshold gate points like any other fixture. Two entries
 # are empty for that reason today — interference-shared-budget (DSX-INT-010 ships in
 # plan 08-03) and triggering-dilution (DSX-INT-030 ships in plan 08-04).
-_EXPECTED_CAUGHT_DEFECTS: "dict[str, frozenset[str]]" = {
+_EXPECTED_CAUGHT_DEFECTS: dict[str, frozenset[str]] = {
     "bayesian-continuous-monitoring": frozenset({"DSX-PAR-011"}),
     "frequentist-uncontrolled-continuous": frozenset({"DSX-PAR-010"}),
     "interference-shared-budget": frozenset(),
@@ -683,7 +684,7 @@ _EXPECTED_CAUGHT_DEFECTS: "dict[str, frozenset[str]]" = {
 # _own_target_codes reads it so a fixture's own HIGH code is recognised by
 # test_ship_gate_findings_are_all_documented_incidental_corpus_gaps rather than
 # read as an undocumented over-block.
-_HIGH_TARGET_DEFECT_CODES: "dict[str, dict[str, str]]" = {
+_HIGH_TARGET_DEFECT_CODES: dict[str, dict[str, str]] = {
     "correlation-pearson-ordinal-scale": {"verify": "DSX-STA-050", "ship": "DSX-STA-050"},
     "correlation-for-agreement-estimand": {"verify": "DSX-STA-051", "ship": "DSX-STA-051"},
     "icc-incomplete-triple": {"verify": "DSX-STA-060", "ship": "DSX-STA-060"},
@@ -733,7 +734,7 @@ _HIGH_TARGET_DEFECT_CODES: "dict[str, dict[str, str]]" = {
 # BESIDE the (miss-rate, FPR) headline, NEVER folded into it (Risk P1 / T-24-02-02),
 # mirroring the HIGH stratum's D-06 headline-invariance. This is a DECLARATION of intent,
 # exactly like _HIGH_TARGET_DEFECT_CODES — the LIVE catch is never lifted from it (D-09).
-_MEDIUM_TARGET_DEFECT_CODES: "dict[str, dict[str, str]]" = {
+_MEDIUM_TARGET_DEFECT_CODES: dict[str, dict[str, str]] = {
     "chart-uncertainty-mark-misuse": {"verify": "DSX-VIZ-071", "ship": "DSX-VIZ-071"},
     # 2026-09-06 (post-ship audit, escalated item 2 — operator direction): the eight
     # DSX-VIZ coverage fixtures whose target code is MEDIUM, measured exactly as
@@ -760,14 +761,14 @@ _MEDIUM_TARGET_DEFECT_CODES: "dict[str, dict[str, str]]" = {
 # lowering the threshold in the measuring run; the readout is reported BESIDE the
 # (miss-rate, FPR) headline and never folded into it. A DECLARATION of intent, exactly
 # like the HIGH and MEDIUM maps — the LIVE catch is never lifted from it (D-09).
-_LOW_TARGET_DEFECT_CODES: "dict[str, dict[str, str]]" = {
+_LOW_TARGET_DEFECT_CODES: dict[str, dict[str, str]] = {
     "chart-axis-baseline-undeclared": {"verify": "DSX-VIZ-021", "ship": "DSX-VIZ-021"},
     "chart-source-note-missing": {"verify": "DSX-VIZ-062", "ship": "DSX-VIZ-062"},
     "chart-alphabetical-ranking": {"verify": "DSX-VIZ-080", "ship": "DSX-VIZ-080"},
 }
 
 
-def _effective_target_map() -> "dict[str, dict[str, frozenset[str]]]":
+def _effective_target_map() -> dict[str, dict[str, frozenset[str]]]:
     """Combine the corpus's two per-fixture expectation maps into the single
     (slug -> point -> expected CRITICAL codes) form `_classify_target_defect` decides.
 
@@ -784,7 +785,7 @@ def _effective_target_map() -> "dict[str, dict[str, frozenset[str]]]":
     rather than overwrite: a fixture may legitimately appear in both maps, and losing
     either contribution would silently retire a guarantee one of the two phases shipped.
     """
-    merged: "dict[str, dict[str, set[str]]]" = {}
+    merged: dict[str, dict[str, set[str]]] = {}
     for slug, points in _TARGET_DEFECT_CODES.items():
         for point, code in points.items():
             bucket = merged.setdefault(slug, {}).setdefault(point, set())
@@ -805,10 +806,10 @@ def _effective_target_map() -> "dict[str, dict[str, frozenset[str]]]":
 
 def _own_target_codes(
     slug: str,
-    target_map: "dict[str, dict[str, str | frozenset[str]]] | None" = None,
-    expected_map: "dict[str, frozenset[str]] | None" = None,
-    high_map: "dict[str, dict[str, str]] | None" = None,
-) -> "frozenset[str]":
+    target_map: dict[str, dict[str, str | frozenset[str]]] | None = None,
+    expected_map: dict[str, frozenset[str]] | None = None,
+    high_map: dict[str, dict[str, str]] | None = None,
+) -> frozenset[str]:
     """Every code `slug` is this corpus's declared demonstration of, across all maps.
 
     Plan 11.1-08: flattens a `_TARGET_DEFECT_CODES` value into its individual code
@@ -845,7 +846,7 @@ def _own_target_codes(
         expected_map = _EXPECTED_CAUGHT_DEFECTS
     if high_map is None:
         high_map = _HIGH_TARGET_DEFECT_CODES
-    codes: "set[str]" = set()
+    codes: set[str] = set()
     for value in target_map.get(slug, {}).values():
         if isinstance(value, str):
             codes.add(value)
@@ -859,8 +860,8 @@ def _own_target_codes(
 
 def _per_fixture_incidental_codes(
     slug: str,
-    incidental_map: "dict[str, dict[str, frozenset[str]]] | None" = None,
-) -> "frozenset[str]":
+    incidental_map: dict[str, dict[str, frozenset[str]]] | None = None,
+) -> frozenset[str]:
     """Every code documented as a per-fixture, point-scoped incidental for `slug`,
     flattened across all its gate points into one set (D-28-06, plan 28-02).
 
@@ -877,13 +878,13 @@ def _per_fixture_incidental_codes(
     """
     if incidental_map is None:
         incidental_map = _PER_FIXTURE_INCIDENTAL_CODES
-    codes: "set[str]" = set()
+    codes: set[str] = set()
     for point_codes in incidental_map.get(slug, {}).values():
         codes.update(point_codes)
     return frozenset(codes)
 
 
-def _seed_entrypoint(tmp: "str | Path", spec_path: "str | Path") -> None:
+def _seed_entrypoint(tmp: str | Path, spec_path: str | Path) -> None:
     """Copy a fixture's own declared reproducibility entrypoint into the temporary
     phase directory `_gate_findings` gates against (plan 11.1-08, REQ-P11.1-07/08).
 
@@ -942,7 +943,7 @@ _FINDING_CATALOGUE_PATH = ROOT / "references" / "finding-codes.md"
 _CATALOGUE_ROW_RE = re.compile(r"\|\s*`(DSX-[A-Z]+-\d+)`\s*\|")
 
 
-def _catalogue_codes() -> "frozenset[str]":
+def _catalogue_codes() -> frozenset[str]:
     """Every shipped finding code, enumerated from the generated catalogue.
 
     Returns the exact set of `DSX-*` codes listed in references/finding-codes.md
@@ -1016,7 +1017,9 @@ GOOD_CORPUS_DIR = ROOT / "examples" / "good-corpus"
 # This allowlist is the standing guard that keeps the FPR honest if a future control
 # spec ever references a sibling artifact that the fresh tempdir cannot resolve.
 _FPR_TEMPDIR_NOISE_CODES = {
-    "DSX-DQ-001":  "data[].assertions/profile_path resolve against a sibling DATA-PROFILE absent from the fresh tempdir",
+    "DSX-DQ-001": (
+        "data[].assertions/profile_path resolve against a sibling DATA-PROFILE absent from the fresh tempdir"
+    ),
     "DSX-CLM-031": "claims[].evidence points at a sibling file absent from the fresh tempdir",
     "DSX-FIG-001": "visuals[].artifact_path names a figure file absent from the fresh tempdir",
     "DSX-NAR-010": "narrative body/artifact absent from the fresh tempdir",
@@ -1033,8 +1036,8 @@ _ABSENT_PARTITION_FLOOR = 3
 
 
 def _false_positive_findings(
-    findings: list[dict], noise_codes: "dict[str, str] | set[str]"
-) -> "set[str]":
+    findings: list[dict], noise_codes: dict[str, str] | set[str]
+) -> set[str]:
     """A control spec's real false-positive codes: its CRITICAL/HIGH blocking findings
     minus the documented tempdir-noise codes (each of which names a file-path `where`,
     not a statistical-validity concept — RESEARCH Pitfall 1, D-04). Takes the findings
@@ -1051,8 +1054,8 @@ def _false_positive_findings(
 
 
 def _headline(
-    present: "tuple[int, int]", absent: "tuple[int, int]", fpr: "tuple[int, int]"
-) -> "tuple[float, float]":
+    present: tuple[int, int], absent: tuple[int, int], fpr: tuple[int, int]
+) -> tuple[float, float]:
     """The headline pair (miss-rate, FPR) (D-10). miss-rate is the ABSENT partition's
     rate alone (`absent` = (misses, denominator)); FPR is the good-control-corpus rate
     (`fpr` = (false-positive specs, control-spec count)). `present` = (caught,
@@ -1067,8 +1070,8 @@ def _headline(
 
 
 def _friction(
-    blocking: "set[str] | frozenset[str]", own: "set[str] | frozenset[str]"
-) -> "tuple[int, int]":
+    blocking: set[str] | frozenset[str], own: set[str] | frozenset[str]
+) -> tuple[int, int]:
     """The per-family friction pair ``(raw, net)`` (D-11). ``blocking`` is the set of
     ship-blocking finding codes a fixture fires (CRITICAL/HIGH at ship — the same live
     set the golden test consumes); ``own`` is that fixture's own-target codes
@@ -1100,9 +1103,9 @@ def _friction_rate(total: int, cells: int) -> float:
 
 
 def _non_target_in_profile_cells(
-    effective: "dict[str, dict[str, frozenset[str]]]",
-    slugs: "set[str] | frozenset[str]",
-    points: "tuple[str, ...]",
+    effective: dict[str, dict[str, frozenset[str]]],
+    slugs: set[str] | frozenset[str],
+    points: tuple[str, ...],
 ) -> int:
     """Count the non-target in-profile (fixture × gate-point) cells that normalise the
     friction rate (D-11): every ``(slug, point)`` cell over ``slugs`` × ``points`` where
@@ -1130,7 +1133,7 @@ class TestKnownBadCorpus(unittest.TestCase):
         return sorted(CORPUS_DIR.glob(f"*{ATTRIBUTION_SUFFIX}"))
 
     def _gate_findings(
-        self, spec_path: Path, point: str, block_on: "str | None" = None
+        self, spec_path: Path, point: str, block_on: str | None = None
     ) -> tuple[int, list[dict]]:
         """Run one real ``dsx gate <point>`` against one fixture and return
         ``(exit_code, findings)``.
@@ -1966,7 +1969,7 @@ class TestKnownBadCorpus(unittest.TestCase):
             f"the FPR denominator must have resolution (>=10 clean control specs), "
             f"found {len(good_specs)} under {GOOD_CORPUS_DIR}",
         )
-        fpr_blockers: "dict[str, list[str]]" = {}
+        fpr_blockers: dict[str, list[str]] = {}
         for path in good_specs:
             _code, findings = self._gate_findings(path, "ship")
             real_fp = _false_positive_findings(findings, _FPR_TEMPDIR_NOISE_CODES)
@@ -1978,7 +1981,7 @@ class TestKnownBadCorpus(unittest.TestCase):
         effective = _effective_target_map()
         present_denom = 0
         present_caught = 0
-        present_detail: "dict[tuple[str, str], tuple[list[str], bool]]" = {}
+        present_detail: dict[tuple[str, str], tuple[list[str], bool]] = {}
         for path in self._spec_paths():
             slug = path.name[: -len(SPEC_SUFFIX)]
             for point in _CRITICAL_THRESHOLD_POINTS:
@@ -1998,7 +2001,7 @@ class TestKnownBadCorpus(unittest.TestCase):
         # ── Task 2: ABSENT-partition miss-rate (live-confirmed miss tags) ─────────────
         absent_denom = 0
         absent_misses = 0
-        absent_detail: "dict[str, tuple[str, bool]]" = {}
+        absent_detail: dict[str, tuple[str, bool]] = {}
         for sidecar in self._attribution_paths():
             data = load(str(sidecar))
             if data.get("kind", "miss") != "miss":
@@ -2081,7 +2084,7 @@ class TestKnownBadCorpus(unittest.TestCase):
         high_points = ("verify", "ship")
         high_present_denom = 0
         high_present_caught = 0
-        high_detail: "dict[tuple[str, str], tuple[str, bool]]" = {}
+        high_detail: dict[tuple[str, str], tuple[str, bool]] = {}
         for slug, points in _HIGH_TARGET_DEFECT_CODES.items():
             spec_path = CORPUS_DIR / f"{slug}{SPEC_SUFFIX}"
             for point in high_points:
@@ -2135,7 +2138,7 @@ class TestKnownBadCorpus(unittest.TestCase):
         medium_points = ("verify", "ship")
         medium_present_denom = 0
         medium_present_caught = 0
-        medium_detail: "dict[tuple[str, str], tuple[str, bool]]" = {}
+        medium_detail: dict[tuple[str, str], tuple[str, bool]] = {}
         for slug, points in _MEDIUM_TARGET_DEFECT_CODES.items():
             spec_path = CORPUS_DIR / f"{slug}{SPEC_SUFFIX}"
             for point in medium_points:
@@ -2190,7 +2193,7 @@ class TestKnownBadCorpus(unittest.TestCase):
         low_points = ("verify", "ship")
         low_present_denom = 0
         low_present_caught = 0
-        low_detail: "dict[tuple[str, str], tuple[str, bool]]" = {}
+        low_detail: dict[tuple[str, str], tuple[str, bool]] = {}
         for slug, points in _LOW_TARGET_DEFECT_CODES.items():
             spec_path = CORPUS_DIR / f"{slug}{SPEC_SUFFIX}"
             for point in low_points:
@@ -2272,7 +2275,7 @@ class TestKnownBadCorpus(unittest.TestCase):
                     )
 
     def _stratum_target_codes_fire_and_are_named(
-        self, tier_map: "dict[str, dict[str, str]]", severity: str
+        self, tier_map: dict[str, dict[str, str]], severity: str
     ) -> None:
         """Shared body for the MEDIUM and LOW siblings of
         test_high_stratum_target_codes_fire_and_are_named (2026-09-06, post-ship audit
@@ -2383,7 +2386,7 @@ class TestKnownBadCorpus(unittest.TestCase):
         rather than only the codes minted in v2.4."""
         catalogue_viz = {c for c in _catalogue_codes() if c.startswith("DSX-VIZ-")}
         self.assertTrue(catalogue_viz, "no DSX-VIZ codes found in the catalogue")
-        declared: "set[str]" = set()
+        declared: set[str] = set()
         for tier_map in (
             _HIGH_TARGET_DEFECT_CODES, _MEDIUM_TARGET_DEFECT_CODES, _LOW_TARGET_DEFECT_CODES
         ):
@@ -2561,7 +2564,7 @@ class TestClassifyTargetDefectHelper(unittest.TestCase):
         # D-28-06 guard 1: the default empty `incidental` must not change today's
         # behaviour — a nobody's-target fixture that exits non-zero is still a problem,
         # whatever its findings, exactly as before the param existed.
-        fake_map: "dict[str, dict[str, str]]" = {}
+        fake_map: dict[str, dict[str, str]] = {}
         findings = [{"code": "DSX-COH-001", "severity": "CRITICAL"}]
         problems = _classify_target_defect("fixture-a", "plan", 1, findings, fake_map)
         self.assertNotEqual(problems, [])
@@ -2576,7 +2579,7 @@ class TestClassifyTargetDefectHelper(unittest.TestCase):
         # classifies clean; add a second, non-incidental CRITICAL and it fails,
         # naming the whole set — the point-scoped loosening never becomes a blanket
         # "any non-zero exit is fine".
-        fake_map: "dict[str, dict[str, str]]" = {}
+        fake_map: dict[str, dict[str, str]] = {}
         incidental = frozenset({"DSX-COH-001"})
         sole = [{"code": "DSX-COH-001", "severity": "CRITICAL"}]
         self.assertEqual(
@@ -2635,11 +2638,11 @@ class TestPerFixtureIncidentalCodes(unittest.TestCase):
         # forces every _PER_FIXTURE_INCIDENTAL_CODES entry to prove why it cannot be
         # global, keeping this mechanism strictly narrower than the global list.
         effective = _effective_target_map()
-        for slug, points in _PER_FIXTURE_INCIDENTAL_CODES.items():
+        for slug in _PER_FIXTURE_INCIDENTAL_CODES:
             incidental_codes = _per_fixture_incidental_codes(slug)
             for code in sorted(incidental_codes):
                 with self.subTest(slug=slug, code=code):
-                    other_targets: "set[str]" = set()
+                    other_targets: set[str] = set()
                     for other_slug, other_points in effective.items():
                         if other_slug == slug:
                             continue
@@ -2678,7 +2681,7 @@ class TestPerFixtureIncidentalCodes(unittest.TestCase):
         # And DSX-CLM-034 must NOT fire (the miss stays a miss).
         self.assertNotIn("DSX-CLM-034", critical)
 
-    def _gate_findings(self, spec_path: Path, point: str) -> "tuple[int, list[dict]]":
+    def _gate_findings(self, spec_path: Path, point: str) -> tuple[int, list[dict]]:
         """Inline the same real-gate run TestKnownBadCorpus._gate_findings performs
         (fresh tempdir, entrypoint seeded, plan header for verify/ship) so this guard
         class does not depend on instantiating another TestCase."""
@@ -2716,7 +2719,6 @@ class TestPerFixtureIncidentalCodes(unittest.TestCase):
         # Guard (g), synthetic direction: a code that is ANOTHER slug's target satisfies
         # the justification-binding membership; a code that is nobody's target does not.
         # Filesystem-independent, over fabricated maps.
-        fake_incidental = {"fixture-a": {"plan": frozenset({"DSX-ZZZ-030"})}}
         # fixture-b legitimately targets DSX-ZZZ-030 -> membership holds.
         other_targets_present = _own_target_codes(
             "fixture-b", target_map={"fixture-b": {"plan": "DSX-ZZZ-030"}}, expected_map={}

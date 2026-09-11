@@ -33,12 +33,11 @@ def has_relative_percent(text: str) -> bool:
         if "percentage point" in window or re.search(r"\bpp\b", window):
             continue
         # "to 100%" / "at 50%" as allocation targets are not relative lifts.
-        if re.search(r"(?i)\b(to|at|of)\s+" + re.escape(value) + r"\s*%", window):
-            if not re.search(
-                r"(?i)\b(up|down|increase|decrease|grew|dropped|rose|fell|lift|gain)\b",
-                window,
-            ):
-                continue
+        if re.search(r"(?i)\b(to|at|of)\s+" + re.escape(value) + r"\s*%", window) and not re.search(
+            r"(?i)\b(up|down|increase|decrease|grew|dropped|rose|fell|lift|gain)\b",
+            window,
+        ):
+            continue
         return True
     return False
 
@@ -52,9 +51,7 @@ def claim_supplies_base(claim: dict | None) -> bool:
         return False
     if claim.get("base_n") is not None and claim.get("base_n") != "":
         return True
-    if claim.get("from_value") is not None and claim.get("to_value") is not None:
-        return True
-    return False
+    return bool(claim.get("from_value") is not None and claim.get("to_value") is not None)
 
 
 def relative_percent_without_base(text: str, claim: dict | None = None) -> bool:
@@ -63,9 +60,7 @@ def relative_percent_without_base(text: str, claim: dict | None = None) -> bool:
         return False
     if claim_supplies_base(claim):
         return False
-    if has_nearby_base_language(text):
-        return False
-    return True
+    return not has_nearby_base_language(text)
 
 
 def normalize_ws(text: str) -> str:

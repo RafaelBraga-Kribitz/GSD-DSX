@@ -10,8 +10,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from ..findings import Report
 from .. import mathx
+from ..findings import Report
 from ..mathx import EFFECT_SIZE_KINDS, apply_correction, interpret_effect
 from ..spec import (
     AUTOCORRELATION_HANDLINGS,
@@ -44,7 +44,7 @@ OUTCOME_TYPES = {"proportion", "continuous", "count", "ordinal", "time_to_event"
 # no-op). ESTIMAND_KINDS is a name->description dict; `in` tests its keys. operand_scale
 # (OPERAND_SCALES, Phase 18 REQ-P18-03) joins here so a mis-slotted scale is loud via
 # DSX-STA-040 for free — zero new code for the recognition half of the DSX-STA-050 gate.
-_MEMBERSHIP_FIELDS: "tuple[tuple[str, Any], ...]" = (
+_MEMBERSHIP_FIELDS: tuple[tuple[str, Any], ...] = (
     ("outcome_type", OUTCOME_TYPES),
     ("estimand_kind", ESTIMAND_KINDS),
     ("operand_scale", OPERAND_SCALES),
@@ -73,7 +73,7 @@ CORRELATION_FAMILY = {
 # Dataless routing table: each association estimand_kind -> (acceptable-coefficient
 # frozenset, effect-size token, citation label). The three association kinds only;
 # agreement/method_comparison/ordered_trend route elsewhere (recommend_association raises).
-_ASSOCIATION_ROUTES: "dict[str, tuple[frozenset[str], str, str]]" = {
+_ASSOCIATION_ROUTES: dict[str, tuple[frozenset[str], str, str]] = {
     "linear_association": (
         frozenset({"pearson_correlation", "point_biserial"}),
         "fisher_z",
@@ -110,10 +110,10 @@ def recommend_test(
     outcome_type: str,
     n_groups: int,
     paired: bool = False,
-    normal: "bool | None" = None,
-    equal_variance: "bool | None" = None,
-    n_per_group: "int | None" = None,
-    overdispersed: "bool | None" = None,
+    normal: bool | None = None,
+    equal_variance: bool | None = None,
+    n_per_group: int | None = None,
+    overdispersed: bool | None = None,
 ) -> dict[str, object]:
     """Derive the appropriate test from the data's shape.
 
@@ -248,7 +248,7 @@ def recommend_association(estimand_kind: str) -> dict[str, object]:
 # Declared RM measurement kind -> acceptable RM-omnibus SET. The continuous route
 # is the UNCONDITIONAL Greenhouse-Geisser one-way RM-ANOVA (the RM analog of
 # always-Welch) — never a two-stage / Mauchly-conditional procedure.
-_RM_ROUTES: "dict[str, tuple[frozenset[str], str]]" = {
+_RM_ROUTES: dict[str, tuple[frozenset[str], str]] = {
     "continuous": (frozenset({"rm_anova_gg"}), "unconditional Greenhouse-Geisser RM-ANOVA (1959)"),
     "ranks": (frozenset({"friedman", "page_l"}), "Friedman; Page's L for an ordered alternative"),
     "ordinal": (frozenset({"friedman", "page_l"}), "Friedman; Page's L for an ordered alternative"),
@@ -256,7 +256,7 @@ _RM_ROUTES: "dict[str, tuple[frozenset[str], str]]" = {
 }
 
 # Declared trend context -> acceptable ordered-trend SET.
-_TREND_ROUTES: "dict[str, tuple[frozenset[str], str]]" = {
+_TREND_ROUTES: dict[str, tuple[frozenset[str], str]] = {
     "ordered_trend": (
         frozenset({"cochran_armitage", "jonckheere_terpstra", "mann_kendall", "sens_slope"}),
         "Cochran-Armitage / Jonckheere-Terpstra / Mann-Kendall + Sen's slope",
@@ -274,7 +274,7 @@ _TREND_ROUTES: "dict[str, tuple[frozenset[str], str]]" = {
 # Declared variance-test ROLE -> acceptable disposition SET (OQ-6). The
 # precondition role's ONLY acceptable disposition is to NOT pretest — use Welch
 # unconditionally — so it never endorses a variance pretest as a location gate.
-_VARIANCE_ROLE_ROUTES: "dict[str, tuple[frozenset[str], str]]" = {
+_VARIANCE_ROLE_ROUTES: dict[str, tuple[frozenset[str], str]] = {
     "scale_estimand": (
         frozenset({"levene", "brown_forsythe", "fligner_killeen", "bartlett"}),
         "a variance test reported as a scale estimand with a CI (Zimmerman 2004, extended)",
@@ -289,7 +289,7 @@ _VARIANCE_ROLE_ROUTES: "dict[str, tuple[frozenset[str], str]]" = {
 # with the house default. BCa is the house default for an interval; a permutation
 # test is the default for a hypothesis test. The full {method, seed, unit, B}
 # quadruple is validated in the Wave-2 gate, not here; B's value is never checked.
-_RESAMPLING_ROUTES: "dict[str, tuple[frozenset[str], str, str]]" = {
+_RESAMPLING_ROUTES: dict[str, tuple[frozenset[str], str, str]] = {
     "interval": (
         frozenset({"percentile_bootstrap", "bca"}), "bca",
         "BCa / percentile bootstrap interval (Efron-Tibshirani 1993; Davidson-MacKinnon 2000)",
@@ -311,7 +311,7 @@ _RESAMPLING_ROUTES: "dict[str, tuple[frozenset[str], str, str]]" = {
 # Declared proportion/count CONTEXT -> acceptable interval-method SET, house
 # default Wilson. Wald is NEVER a member (Brown-Cai-DasGupta 2001; the n cutoff
 # below which Wald misbehaves is confirm-at-source, not encoded).
-_PROPORTION_CI_ROUTES: "dict[str, tuple[frozenset[str], str, str]]" = {
+_PROPORTION_CI_ROUTES: dict[str, tuple[frozenset[str], str, str]] = {
     "proportion": (
         frozenset({"wilson", "clopper_pearson", "jeffreys", "agresti_coull"}), "wilson",
         "Wilson score interval, house default (Brown-Cai-DasGupta 2001)",
@@ -1032,22 +1032,24 @@ def _check_agreement_completeness(analysis: dict, report: Report) -> None:
 
     # DSX-STA-062 — kappa-family test missing either companion. BOTH p_pos AND p_neg are
     # required (D-04, the HQ-16-corrected Feinstein-Cicchetti Part II reading).
-    if normalize(analysis.get("test", "")) in ("cohens_kappa", "weighted_kappa", "fleiss_kappa"):
-        if is_blank(analysis.get("p_pos")) or is_blank(analysis.get("p_neg")):
-            report.add(
-                "DSX-STA-062",
-                "HIGH",
-                "Kappa declared without its p_pos/p_neg companions",
-                detail=(
-                    "Feinstein & Cicchetti (1990) Part I documents two paradoxes an omnibus "
-                    "kappa can hide (high raw agreement with low kappa under skewed "
-                    "prevalence, and asymmetric marginals); Part II recommends reporting the "
-                    "separate positive and negative agreement proportions alongside it. Both "
-                    "p_pos and p_neg are required, not either one."
-                ),
-                remedy="Declare both analysis.p_pos and analysis.p_neg alongside the kappa.",
-                where="spec.analysis",
-            )
+    if (
+        normalize(analysis.get("test", "")) in ("cohens_kappa", "weighted_kappa", "fleiss_kappa")
+        and (is_blank(analysis.get("p_pos")) or is_blank(analysis.get("p_neg")))
+    ):
+        report.add(
+            "DSX-STA-062",
+            "HIGH",
+            "Kappa declared without its p_pos/p_neg companions",
+            detail=(
+                "Feinstein & Cicchetti (1990) Part I documents two paradoxes an omnibus "
+                "kappa can hide (high raw agreement with low kappa under skewed "
+                "prevalence, and asymmetric marginals); Part II recommends reporting the "
+                "separate positive and negative agreement proportions alongside it. Both "
+                "p_pos and p_neg are required, not either one."
+            ),
+            remedy="Declare both analysis.p_pos and analysis.p_neg alongside the kappa.",
+            where="spec.analysis",
+        )
 
 
 def _check_declared_advanced_stats(analysis: dict, spec: dict, report: Report) -> None:

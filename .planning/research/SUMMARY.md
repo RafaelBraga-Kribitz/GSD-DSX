@@ -19,13 +19,13 @@ The DSX Validity Frame is a cross-cutting gate subsystem checking whether statis
 
 **No new third-party deps.** Stdlib only: ast, dataclasses, json, pathlib, argparse, random, math, statistics (Python 3.9+ compatible).
 
-**CRITICAL BUG FIX (M1, before M2a):** dsx/loader.py _NULL set incorrectly includes "none" as null, diverging from PyYAML/YAML standards. Corrupts four validity_frame fields declaring literal "none". **Bug reproduced:** _parse_yaml_subset("x: [none, clustered]") returns [None, "clustered"] instead of ["none", "clustered"]. **Fix:** Change _NULL = {"", "null", "~", "none"} to _NULL = {"", "null", "~"}. Backwards-safe; 160 tests unaffected.
+**CRITICAL BUG FIX (M1, before M2a):** dsx/loader.py _NULL set incorrectly includes "none" as null, diverging from PyYAML/YAML standards. Corrupts four validity_frame fields declaring literal "none". **Bug reproduced:** _parse_yaml_subset("x: [none, clustered]") returns [None, "clustered"] instead of ["none", "clustered"]. **Fix:** Change `_NULL = {"", "null", "~", "none"}` to `_NULL = {"", "null", "~"}`. Backwards-safe; 160 tests unaffected.
 
 ### Features and Reference Values
 
 **Every numeric claim traced to primary source.** UNSOURCED items explicitly flagged.
 
-**Ready now:** (1) DSX-VAL-020/021 unit triad: DEFF = 1 + (m-1)*ICC (Kish/Cornfield/Senn); (2) DSX-PAR-010: reuses inflation_from_peeking() (Armitage et al. 1969); (3) **DSX-PAR-011: CRITICAL CHOICE — asserts prior-averaged Ville's bound 1/(K+1), NOT point-null/LIL** (Deng/Lu/Chen 2016 Theorem 1; K=19 → 0.05 ceiling). Brief warns: "fixture against formulation (a), tested against (b) looks like bug"; (4) DSX-INT-030 dilution (additive): delta_diluted ≈ delta_triggered * trigger_rate (Deng & Hu 2015); (5) Missingness: MCAR/MAR/MNAR table (Rubin/Little & Rubin); (6) SUTVA: Imbens & Rubin 2015, Blake & Coey 2014; (7) Identification: Gelman/Simpson/Betancourt 2017; (8) Novelty/primacy: Sadeghi et al. 2021.
+**Ready now:** (1) DSX-VAL-020/021 unit triad: DEFF = 1 + (m-1)*ICC (Kish/Cornfield/Senn); (2) DSX-PAR-010: reuses inflation_from_peeking() (Armitage et al. 1969); (3) **DSX-PAR-011: CRITICAL CHOICE — asserts prior-averaged Ville's bound 1/(K+1), NOT point-null/LIL** (Deng/Lu/Chen 2016 Theorem 1; K=19 → 0.05 ceiling). Brief warns: "fixture against formulation (a), tested against (b) looks like bug"; (4) DSX-INT-030 dilution (additive): `delta_diluted ≈ delta_triggered * trigger_rate` (Deng & Hu 2015); (5) Missingness: MCAR/MAR/MNAR table (Rubin/Little & Rubin); (6) SUTVA: Imbens & Rubin 2015, Blake & Coey 2014; (7) Identification: Gelman/Simpson/Betancourt 2017; (8) Novelty/primacy: Sadeghi et al. 2021.
 
 **UNSOURCED:** Ratio-metric dilution (DSX-INT-030): Deng & Hu WSDM'15 exact equation could not be extracted. Ship additive-metric only; defer ratio via phase-specific spike pending ACM DL access.
 

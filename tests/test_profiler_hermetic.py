@@ -15,11 +15,12 @@ import tempfile
 import unittest
 from collections import Counter
 from pathlib import Path
+from typing import ClassVar
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from dsx.findings import CheckError  # noqa: E402
-from dsx.profiler import (  # noqa: E402
+from dsx.findings import CheckError
+from dsx.profiler import (
     _categorical_block,
     _extract_hour,
     _numeric_block,
@@ -305,7 +306,7 @@ class TestTimeBlock(unittest.TestCase):
         random.Random(1234).shuffle(shuffled)
         with tempfile.TemporaryDirectory() as tmp:
             shuf = Path(tmp) / "shuffled.csv"
-            shuf.write_text("\n".join([header] + shuffled) + "\n", encoding="utf-8")
+            shuf.write_text("\n".join([header, *shuffled]) + "\n", encoding="utf-8")
             a = profile_csv(FIXTURES / "time_edge_ratio.csv", time_column="ts")["time"]
             b = profile_csv(shuf, time_column="ts")["time"]
         for key in ("rows_per_day", "first_period_ratio", "last_period_ratio", "share_at_hour_00"):
@@ -361,7 +362,7 @@ class TestUnitBlock(unittest.TestCase):
         random.Random(99).shuffle(shuffled)
         with tempfile.TemporaryDirectory() as tmp:
             shuf = Path(tmp) / "shuffled.csv"
-            shuf.write_text("\n".join([header] + shuffled) + "\n", encoding="utf-8")
+            shuf.write_text("\n".join([header, *shuffled]) + "\n", encoding="utf-8")
             a = profile_csv(FIXTURES / "unit_counts.csv", unit="unit_id")["unit"]
             b = profile_csv(shuf, unit="unit_id")["unit"]
         self.assertEqual(a, b)
@@ -462,7 +463,7 @@ class TestTargetBlock(unittest.TestCase):
         random.Random(7).shuffle(shuffled)
         with tempfile.TemporaryDirectory() as tmp:
             shuf = Path(tmp) / "shuffled.csv"
-            shuf.write_text("\n".join([header] + shuffled) + "\n", encoding="utf-8")
+            shuf.write_text("\n".join([header, *shuffled]) + "\n", encoding="utf-8")
             a = profile_csv(FIXTURES / "target_drifting.csv", time_column="ts", target="y")["target"]
             b = profile_csv(shuf, time_column="ts", target="y")["target"]
         self.assertEqual(a, b)
@@ -491,7 +492,7 @@ class TestDocRipple(unittest.TestCase):
     """
 
     # Every additive Phase-25 key the profiler now produces (D-01/D-02 vocabulary).
-    NEW_KEY_TOKENS = [
+    NEW_KEY_TOKENS: ClassVar[list[str]] = [
         "numeric",
         "categorical",
         "q1",
@@ -637,7 +638,7 @@ class TestExampleProfilesByteInvariant(unittest.TestCase):
     failed (found 2026-09-10 at the v2.6 ship check).
     """
 
-    EXPECTED = {
+    EXPECTED: ClassVar[dict[str, str]] = {
         "good-DATA-PROFILE.yaml": (
             "3a2d220088a217f60523391f177d66561f2b7e051413855a60e639d30d3275d1"
         ),

@@ -40,12 +40,14 @@ from .checks import (
 from .decisions import (
     DecisionRecord,
     InvocationHeader,
-    append as append_decision,
     collect_from_report,
     decisions_path,
     frame_digest,
     next_invocation_id,
     read_all,
+)
+from .decisions import (
+    append as append_decision,
 )
 from .findings import EXIT_ERROR, CheckError, Report, Severity, emit, merge
 from .frame import admissibility, interference, paradigm, prereg, val
@@ -140,7 +142,7 @@ GATE_THRESHOLDS: dict[str, str] = {
 }
 
 
-def find_spec(explicit: "str | None", phase_dir: "str | None") -> Path:
+def find_spec(explicit: str | None, phase_dir: str | None) -> Path:
     if explicit:
         path = Path(explicit)
         if not path.exists():
@@ -164,11 +166,11 @@ def find_spec(explicit: "str | None", phase_dir: "str | None") -> Path:
 
 def run_checks(
     spec: dict,
-    names: "tuple[str, ...]",
-    phase_dir: "str | None",
+    names: tuple[str, ...],
+    phase_dir: str | None,
     *,
-    gate_point: "str | None" = None,
-    resolve_root: "str | None" = None,
+    gate_point: str | None = None,
+    resolve_root: str | None = None,
     gate_invocation: bool = False,
 ) -> Report:
     """Run named checks.
@@ -259,7 +261,7 @@ def cmd_validate(args: argparse.Namespace) -> int:
 def cmd_check(args: argparse.Namespace) -> int:
     path = find_spec(args.spec, args.phase_dir)
     spec = load(path)
-    names = tuple(args.checks) if args.checks else tuple(CHECKS) + ("repro",)
+    names = tuple(args.checks) if args.checks else (*tuple(CHECKS), "repro")
     report = run_checks(
         spec,
         names,
@@ -275,7 +277,7 @@ def cmd_audit(args: argparse.Namespace) -> int:
     spec = load(path)
     report = run_checks(
         spec,
-        tuple(CHECKS) + ("repro",),
+        (*tuple(CHECKS), "repro"),
         args.phase_dir,
         gate_point="ship",
         resolve_root=args.phase_dir or str(path.parent),
@@ -388,7 +390,7 @@ def _write_decision_trail(
             fields["id"] = f"DEC-{n:03d}"
             fields["invocation_id"] = inv
             append_decision(target, DecisionRecord(**fields))
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 -- D-04: the trail is a side channel; never fail the gate over it
         if verbose:
             print(f"dsx: could not write decision trail — {exc}", file=sys.stderr)
 
@@ -587,7 +589,7 @@ def cmd_explain(args: argparse.Namespace) -> int:
     contract a structural property of ``cmd_explain`` rather than an
     enumeration of the failure modes someone happened to test.
     """
-    path: "Path | None" = None
+    path: Path | None = None
     try:
         path = find_spec(args.spec, args.phase_dir)
         root = args.phase_dir or str(path.parent)
@@ -604,11 +606,11 @@ def cmd_explain(args: argparse.Namespace) -> int:
         # `_render_decision_trail` renders no self-reported section rather
         # than raising — the returns-0-by-construction contract is
         # unaffected by whether the spec is readable.
-        spec_data: "dict | None" = None
+        spec_data: dict | None = None
         if path is not None:
             try:
                 spec_data = load(path)
-            except Exception:
+            except Exception:  # noqa: BLE001 -- explain always renders; an unloadable spec renders without it
                 spec_data = None
 
         if args.invocation:
@@ -632,14 +634,14 @@ def cmd_explain(args: argparse.Namespace) -> int:
             print(not_found_message)
         else:
             print(_render_decision_trail(selected, spec_data))
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 -- explain always exits 0 (D-04); any failure reads as no trail
         print("dsx: no readable decision trail was found", file=sys.stdout)
         if args.verbose:
             print(f"dsx: {exc}", file=sys.stderr)
     return 0
 
 
-def _discover_operator_trails(root: "str | Path") -> "list[Path]":
+def _discover_operator_trails(root: str | Path) -> list[Path]:
     """Every ``DECISIONS.jsonl`` under ``root`` that counts as *operator*
     history (D-13). Hard-**excludes** any trail whose path passes through an
     ``examples/`` tree or a ``templates/`` tree — matched by path COMPONENT,
@@ -668,7 +670,7 @@ def _discover_operator_trails(root: "str | Path") -> "list[Path]":
     false promotion), an accepted known-limit of an absolute-boundary fix.
     """
     root_path = Path(root)
-    trails: "list[Path]" = []
+    trails: list[Path] = []
     excluded = {"examples", "templates"}
     for trail in root_path.rglob("DECISIONS.jsonl"):
         if excluded & {part.lower() for part in trail.resolve().parts}:
@@ -692,12 +694,9 @@ def cmd_stats(args: argparse.Namespace) -> int:
     so no failure reachable from ``rglob``/``read_all``/the aggregation can
     escape the "always returns 0" contract, exactly as ``cmd_explain`` does.
     """
-    try:
-        root = args.root or ".planning"
-    except Exception:
-        root = ".planning"
+    root = getattr(args, "root", None) or ".planning"
 
-    result: "dict[str, Any]" = {"root": str(root)}
+    result: dict[str, Any] = {"root": str(root)}
     try:
         # Dedup by distinct frame_digest (D-14): re-running the same spec
         # collapses to one frame, so raw invocation volume cannot move the
@@ -708,14 +707,14 @@ def cmd_stats(args: argparse.Namespace) -> int:
         # distinct frame. This multi-file aggregation is the deliberate
         # divergence from cmd_explain's single-root read (RESEARCH landmine 3):
         # reuse read_all() and the existing digest key, do not reparse trails.
-        digest_paradigm: "dict[str, str]" = {}
-        digests_seen: "set[str]" = set()
+        digest_paradigm: dict[str, str] = {}
+        digests_seen: set[str] = set()
         trails = 0
         raw_invocations = 0
         for trail in _discover_operator_trails(root):
             trails += 1
             records = read_all(trail)
-            local_inv: "dict[str, str]" = {}
+            local_inv: dict[str, str] = {}
             for rec in records:
                 if rec.get("record_type") == "invocation":
                     raw_invocations += 1
@@ -756,7 +755,7 @@ def cmd_stats(args: argparse.Namespace) -> int:
         else:
             result["shares"] = {k: v / distinct for k, v in buckets.items()}
         _print_stats(args, result, distinct)
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 -- stats always exits 0, like explain; failure reads as no history
         result.setdefault("paradigm_split", {"frequentist": 0, "bayesian": 0, "undeclared": 0})
         result.setdefault("distinct_frames", 0)
         result.setdefault("raw_invocation_count", 0)
@@ -767,7 +766,7 @@ def cmd_stats(args: argparse.Namespace) -> int:
     return 0
 
 
-def _print_stats(args: argparse.Namespace, result: "dict[str, Any]", denom: int) -> None:
+def _print_stats(args: argparse.Namespace, result: dict[str, Any], denom: int) -> None:
     """Render the paradigm split. ``--json`` is deterministic
     (``sort_keys=True``); the text form labels the raw invocation count as a
     secondary diagnostic so the 15% predicate has one unambiguous
@@ -792,7 +791,7 @@ def _print_stats(args: argparse.Namespace, result: "dict[str, Any]", denom: int)
     )
 
 
-def _self_reported_fields(spec: "dict") -> "list[tuple[str, Any]]":
+def _self_reported_fields(spec: dict) -> list[tuple[str, Any]]:
     """The compared-but-never-computed field set (D-13, T-11.2-11): every
     declared spec value the gate compares against but never itself computes
     -- ``validity_frame.*`` and ``inference.*`` in full (including
@@ -804,7 +803,7 @@ def _self_reported_fields(spec: "dict") -> "list[tuple[str, Any]]":
     ``frame_digest`` is COMPUTED (lives on the invocation header, not the
     spec) and is never a candidate here by construction -- there is no path
     by which this function could emit it."""
-    fields: "list[tuple[str, Any]]" = []
+    fields: list[tuple[str, Any]] = []
 
     def _flatten(prefix: str, value: Any) -> None:
         if isinstance(value, dict):
@@ -827,7 +826,7 @@ def _self_reported_fields(spec: "dict") -> "list[tuple[str, Any]]":
     return fields
 
 
-def _render_decision_trail(records: "list[dict]", spec: "dict | None" = None) -> str:
+def _render_decision_trail(records: list[dict], spec: dict | None = None) -> str:
     """Human-readable text: the invocation header line, then one block per
     decision record, then (D-13) a separately-labelled self-reported section
     listing every declared value the gate compared but never computed.
@@ -842,7 +841,7 @@ def _render_decision_trail(records: "list[dict]", spec: "dict | None" = None) ->
     if not records:
         return "no decision trail was found."
 
-    lines: "list[str]" = []
+    lines: list[str] = []
     header = next((r for r in records if r.get("record_type") == "invocation"), None)
     if header:
         lines.append(
@@ -900,7 +899,7 @@ def cmd_seal(args: argparse.Namespace) -> int:
     return 0
 
 
-def _tri(value: "str | None") -> "bool | None":
+def _tri(value: str | None) -> bool | None:
     if value is None:
         return None
     lowered = value.strip().lower()
@@ -1107,7 +1106,7 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def main(argv: "list[str] | None" = None) -> int:
+def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     try:

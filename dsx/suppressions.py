@@ -9,23 +9,19 @@ must name a real ``DSX-*`` code, a non-blank reason, and an authority pointer
 from __future__ import annotations
 
 import ast
+import functools
 import re
 from pathlib import Path
 from typing import Any
 
-from .findings import CheckError, Finding, Report, Severity
+from .findings import CheckError, Finding, Report
 from .spec import is_blank, items
 
 _CODE_RE = re.compile(r"^DSX-[A-Z]+-\d{3}$")
 _DSX_ROOT = Path(__file__).resolve().parent
-_KNOWN: set[str] | None = None
-
-
+@functools.cache
 def known_codes() -> set[str]:
-    """Codes emitted by ``report.add(...)`` under ``dsx/`` (cached)."""
-    global _KNOWN
-    if _KNOWN is not None:
-        return _KNOWN
+    """Codes emitted by ``report.add(...)`` under ``dsx/`` (cached; ``known_codes.cache_clear()`` resets)."""
     found: set[str] = set()
     for path in list(_DSX_ROOT.rglob("*.py")):
         try:
@@ -41,16 +37,17 @@ def known_codes() -> set[str]:
             if not node.args:
                 continue
             arg0 = node.args[0]
-            if isinstance(arg0, ast.Constant) and isinstance(arg0.value, str):
-                if arg0.value.startswith("DSX-"):
-                    found.add(arg0.value)
+            if (
+                isinstance(arg0, ast.Constant) and isinstance(arg0.value, str)
+                and arg0.value.startswith("DSX-")
+            ):
+                found.add(arg0.value)
     # SQL rule tuples in metrics.py
     metrics = _DSX_ROOT / "checks" / "metrics.py"
     if metrics.exists():
         text = metrics.read_text(encoding="utf-8")
         for match in re.finditer(r'"(DSX-(?:SQL|MET)-\d{3})"', text):
             found.add(match.group(1))
-    _KNOWN = found
     return found
 
 
@@ -152,9 +149,7 @@ def _matches(finding: Finding, row: dict, spec: dict) -> bool:
         return True
     if chart_id and chart_id in finding.where:
         return True
-    if name and name in finding.title:
-        return True
-    return False
+    return bool(name and name in finding.title)
 
 
 def apply_suppressions(spec: dict, report: Report) -> Report:

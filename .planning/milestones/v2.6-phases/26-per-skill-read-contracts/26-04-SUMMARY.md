@@ -3,7 +3,7 @@ phase: 26-per-skill-read-contracts
 plan: 04
 type: execute
 wave: 3
-requirements:
+requirements-completed:
   - REQ-P26-03
 status: complete
 ---

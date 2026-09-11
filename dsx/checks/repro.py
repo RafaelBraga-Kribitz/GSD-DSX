@@ -25,7 +25,7 @@ STOCHASTIC_MARKERS = (
 
 def check(
     spec: dict,
-    phase_dir: "str | None" = None,
+    phase_dir: str | None = None,
     *,
     strict: bool = False,
 ) -> Report:
@@ -147,7 +147,7 @@ def _check_data_identity(spec: dict, report: Report) -> None:
         report.ok(f"all {len(sources)} data source(s) identifiable")
 
 
-def _check_code_pointer(repro: dict, report: Report, phase_dir: "str | None") -> None:
+def _check_code_pointer(repro: dict, report: Report, phase_dir: str | None) -> None:
     entrypoint = repro.get("entrypoint")
     if is_blank(entrypoint):
         report.add(
@@ -283,7 +283,7 @@ def _check_repro_lock(spec: dict, repro: dict, report: Report) -> None:
 
 
 def _check_reproduce_report(
-    spec: dict, repro: dict, report: Report, phase_dir: "str | None"
+    spec: dict, repro: dict, report: Report, phase_dir: str | None
 ) -> None:
     """Declaration-only reproduce-report check (DSX-REP-060/061, strict-only).
 

@@ -24,6 +24,7 @@ population sentence and the base for every relative percentage must come from me
 numbers, not a restated claim.
 
 EDA front-matter keys read:
+
 - `dataset`
 - `base_rate.overall`
 - `base_rate.metric`
@@ -32,6 +33,7 @@ EDA front-matter keys read:
 - `artifact_status`
 
 DATA-PROFILE keys read (the fallback source when EDA is absent):
+
 - `row_count`
 - `time.min`
 - `time.max`

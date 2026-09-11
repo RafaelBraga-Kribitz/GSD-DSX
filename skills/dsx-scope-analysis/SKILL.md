@@ -24,6 +24,7 @@ scope is drawn from the measured grain, dependence and missingness this phase
 already established, not from assumption.
 
 EDA front-matter keys read:
+
 - `grain.verdict`
 - `grain.implied_dependence.structure`
 - `grain.implied_dependence.cluster_var`
@@ -33,6 +34,7 @@ EDA front-matter keys read:
 - `stop_triggered`
 
 DATA-PROFILE keys read (the fallback source when EDA is absent):
+
 - `primary_key_unique`
 - `duplicate_rate`
 - `unit.rows_per_unit`
@@ -114,7 +116,7 @@ flips):
 
 For the recommended tier, emit the exact command for the operator to run:
 
-```
+```powershell
 pwsh scripts/gsd-tier.ps1 -Tier N     # N in {0,1,2}
 ```
 

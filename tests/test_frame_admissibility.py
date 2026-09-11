@@ -249,21 +249,21 @@ class TestFamilyAndRankingRuleFrozen(_CacheClearingTestCase):
             rule.id = "mutated"  # type: ignore[misc]
 
 
-def _fam(**overrides) -> "admissibility.Family":
-    base = dict(
-        id="fam",
-        family="fam",
-        estimand="difference_in_means",
-        inference_method="frequentist",
-        dependence="none",
-        aliases=(),
-        buys=(),
-        charges=(),
-        traceability="fixture",
-        citation="Example (2020)",
-        locator_status="verified",
-        notes="fixture",
-    )
+def _fam(**overrides) -> admissibility.Family:
+    base = {
+        "id": "fam",
+        "family": "fam",
+        "estimand": "difference_in_means",
+        "inference_method": "frequentist",
+        "dependence": "none",
+        "aliases": (),
+        "buys": (),
+        "charges": (),
+        "traceability": "fixture",
+        "citation": "Example (2020)",
+        "locator_status": "verified",
+        "notes": "fixture",
+    }
     base.update(overrides)
     return admissibility.Family(**base)
 
@@ -677,7 +677,7 @@ class TestAdmissibleFamilies(_CacheClearingTestCase):
         self.assertEqual(result["resolution"], "in_candidate_set")
         self.assertEqual(result["refusal"], "")
         self.assertEqual(result["refusal_cause"], "")
-        self.assertTrue(_ADMISSIBLE_ENTRY_KEYS <= set(result["admissible"][0]))
+        self.assertTrue(set(result["admissible"][0]) >= _ADMISSIBLE_ENTRY_KEYS)
 
     def test_blank_estimand_refuses_with_required_axis_blank(self):
         spec = {
@@ -977,16 +977,14 @@ class TestCheck(_CacheClearingTestCase):
 
     # D-05: DSX-ADM-020
     def test_known_codes_contains_both_dsx_adm_codes(self):
-        from dsx.suppressions import known_codes
-
         # known_codes() is a module-global cache; a prior import of
         # dsx.suppressions in this same process may have cached it before
         # this module's report.add(...) call sites existed on disk during
         # earlier test runs in this file -- clear it so this assertion
         # reflects the live tree, matching the module's own re-scan pattern.
-        import dsx.suppressions as suppressions
+        from dsx.suppressions import known_codes
 
-        suppressions._KNOWN = None
+        known_codes.cache_clear()
         codes = known_codes()
         self.assertIn("DSX-ADM-010", codes)
         self.assertIn("DSX-ADM-020", codes)

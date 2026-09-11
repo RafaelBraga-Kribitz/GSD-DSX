@@ -22,18 +22,18 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from dsx import cli  # noqa: E402
-from dsx.decisions import DecisionRecord, InvocationHeader, append  # noqa: E402
+from dsx import cli
+from dsx.decisions import DecisionRecord, InvocationHeader, append
 
 
-def _run(argv: "list[str]") -> int:
+def _run(argv: list[str]) -> int:
     """Invoke the CLI, swallow its output, return the exit code."""
     out, err = io.StringIO(), io.StringIO()
     with redirect_stdout(out), redirect_stderr(err):
         return cli.main(argv)
 
 
-def _capture(argv: "list[str]") -> str:
+def _capture(argv: list[str]) -> str:
     """Invoke the CLI, return its stdout."""
     out, err = io.StringIO(), io.StringIO()
     with redirect_stdout(out), redirect_stderr(err):
@@ -41,7 +41,7 @@ def _capture(argv: "list[str]") -> str:
     return out.getvalue()
 
 
-def _seed_trail(path: Path, entries: "list[tuple[str, str, str]]") -> None:
+def _seed_trail(path: Path, entries: list[tuple[str, str, str]]) -> None:
     """Write a DECISIONS.jsonl at ``path`` from ``(invocation_id, frame_digest,
     paradigm)`` triples, using the real ``dsx.decisions`` primitives a genuine
     ``dsx gate`` run writes with — one invocation header plus one
@@ -74,7 +74,7 @@ class TestCmdStats(unittest.TestCase):
         # Empty root: no DECISIONS.jsonl anywhere under it.
         with tempfile.TemporaryDirectory() as tmp:
             for extra in ([], ["--json"]):
-                code = _run(["stats", "--paradigm", "--root", tmp] + extra)
+                code = _run(["stats", "--paradigm", "--root", tmp, *extra])
                 self.assertEqual(code, 0, f"empty-root run returned {code}")
             out = _capture(["stats", "--paradigm", "--root", tmp])
             self.assertIn(

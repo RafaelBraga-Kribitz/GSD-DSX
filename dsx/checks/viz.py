@@ -488,7 +488,8 @@ def _check_uncertainty_vocabulary(
     ``RELATIONSHIP_CHARTS["uncertainty"]`` (the single source of truth), never a
     computed threshold.
 
-    Citation: Wilke, C.O. (2019), Fundamentals of Data Visualization, O'Reilly, ch.5 §5.6 (the ten-mark set) and ch.16 §16.2 (frequentist/Bayesian paradigm symmetry).
+    Citation: Wilke, C.O. (2019), Fundamentals of Data Visualization, O'Reilly, ch.5 §5.6
+    (the ten-mark set) and ch.16 §16.2 (frequentist/Bayesian paradigm symmetry).
     Structural criterion: a declared uncertainty mark must be one of the ten named §5.6 members; no computed threshold.
     """
     raw = visual.get("uncertainty_mark")

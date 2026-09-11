@@ -40,7 +40,7 @@ from ..spec import (
 # manifest's own Phase 9 sibling — the second half of the symmetric
 # monitoring pair's manifest side — independent of which paradigm is
 # eventually declared.
-_PARADIGM_INDEPENDENT: "tuple[str, ...]" = (
+_PARADIGM_INDEPENDENT: tuple[str, ...] = (
     "DSX-SPEC-08",
     "DSX-VAL-",
     "DSX-INT-",
@@ -51,7 +51,7 @@ _PARADIGM_INDEPENDENT: "tuple[str, ...]" = (
 # Keyed by every member of PARADIGMS (D-12 symmetry) — a test asserts set
 # equality with dsx.spec.PARADIGMS, so a future PARADIGMS addition without a
 # matching key here fails loudly instead of silently under-reporting.
-_PARADIGM_CONDITIONAL: "dict[str, tuple[str, ...]]" = {
+_PARADIGM_CONDITIONAL: dict[str, tuple[str, ...]] = {
     "frequentist": ("DSX-PAR-010", "DSX-ADM-"),
     "bayesian": ("DSX-PAR-011",),
 }
@@ -71,7 +71,7 @@ _PARADIGM_CONDITIONAL: "dict[str, tuple[str, ...]]" = {
 # tests/test_dsx.py flips at the report.add(...) call site, independent of
 # whether the check is registered in GATE_PROFILES (plan 11-07's job). This
 # dict stays as the mechanism for the next unshipped family.
-_NOT_SHIPPED: "dict[str, str]" = {}
+_NOT_SHIPPED: dict[str, str] = {}
 
 # The single member of PEEKING_POLICIES both halves of the DSX-PAR-010/011
 # pair trigger on. Neither half reads results.interim_looks (D-04): at
@@ -98,15 +98,15 @@ _UNCONTROLLED_POLICY = "uncontrolled_continuous"
 #      scalar evaluated by the same text-only predicate (is_blank_text) as the
 #      shared field — no field on either side carries a stronger evidentiary
 #      bar than the other.
-_MONITORING_DISCIPLINE: "dict[str, tuple[str, tuple[str, ...]]]" = {
+_MONITORING_DISCIPLINE: dict[str, tuple[str, tuple[str, ...]]] = {
     "frequentist": ("DSX-PAR-010", ("alpha_spending", "threshold_calibration")),
     "bayesian": ("DSX-PAR-011", ("prior_justification", "threshold_calibration")),
 }
 
 
 def _blank_clearing_declarations(
-    inference: dict, fields: "tuple[str, ...]"
-) -> "list[str]":
+    inference: dict, fields: tuple[str, ...]
+) -> list[str]:
     """Return the subset of ``fields`` that are blank under ``inference``.
 
     The mechanical proof of cost symmetry (brief D-12): every clearing
@@ -210,13 +210,13 @@ def _check_monitoring_discipline(spec: dict, report: Report) -> None:
     paradigm = normalize(declared) if not is_blank(declared) else ""
 
     if paradigm in _MONITORING_DISCIPLINE:
-        rows: "dict[str, tuple[str, tuple[str, ...]]]" = {
+        rows: dict[str, tuple[str, tuple[str, ...]]] = {
             paradigm: _MONITORING_DISCIPLINE[paradigm]
         }
     else:
         rows = dict(_MONITORING_DISCIPLINE)
 
-    for _row_paradigm, (code, clearing_fields) in rows.items():
+    for (code, clearing_fields) in rows.values():
         blank = _blank_clearing_declarations(inference, clearing_fields)
         if len(blank) < len(clearing_fields):
             continue  # at least one clearing declaration is non-blank
@@ -530,11 +530,11 @@ def check(spec: dict) -> Report:
     declared = get(spec, "inference.paradigm")
     paradigm = normalize(declared) if not is_blank(declared) else ""
 
-    universe: "set[str]" = set(_PARADIGM_INDEPENDENT)
+    universe: set[str] = set(_PARADIGM_INDEPENDENT)
     for prefixes in _PARADIGM_CONDITIONAL.values():
         universe.update(prefixes)
 
-    selected: "set[str]" = set(_PARADIGM_INDEPENDENT)
+    selected: set[str] = set(_PARADIGM_INDEPENDENT)
     if paradigm in _PARADIGM_CONDITIONAL:
         selected.update(_PARADIGM_CONDITIONAL[paradigm])
     else:

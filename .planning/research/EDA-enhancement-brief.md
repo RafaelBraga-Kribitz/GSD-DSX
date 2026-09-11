@@ -76,7 +76,6 @@ Those findings are high leverage in this project (wrong grain, silent schema cha
 
 They will not usually answer *why the metric moved*, *who the effect is for*, or *whether the planned design is even identified*. For that you need question-shaped next questions, for example:
 
-
 | If the question is… | Step 5–6 should force…                                                                                      |
 | ------------------- | ----------------------------------------------------------------------------------------------------------- |
 | Descriptive         | Mix vs level, period boundaries, denominator drift                                                          |
@@ -85,13 +84,11 @@ They will not usually answer *why the metric moved*, *who the effect is for*, or
 | Causal              | Common support, treatment variation over time, who is never treated                                         |
 | Predictive          | Split first, then leakage, drift, calibration of the base rate — not Pearson correlations on the full frame |
 
-
 Pearson correlations as the default “relationship” tool are the weakest line in the protocol: they miss thresholds and lags, they leak if computed on the full frame, and they invite a modelling story before the grain is even trusted.
 
 There is also no **stopping rule**. A 3% duplicate rate, a category that vanished in March, or a reversing segment is supposed to be “the finding” — but the skill never says “stop, amend the spec, do not proceed to modelling.” Without that, agents will note the dirt and keep going.
 
 ## Verdict
-
 
 | Job                                                           | Already good enough?                                                |
 | ------------------------------------------------------------- | ------------------------------------------------------------------- |
@@ -99,7 +96,6 @@ There is also no **stopping rule**. A 3% duplicate rate, a category that vanishe
 | Versatile across DSX question types and warehouse joins       | No                                                                  |
 | Deep enough to drive analytical insight, not just cleanliness | No — strong at invalidating the table, thin at shaping the analysis |
 | Planned to become that                                        | No. Upcoming work hardens missingness declarations, not exploration |
-
 
 Keep steps 1–4 as the trust protocol; they are already the right reusable core. If you want this skill to drive insight, the gap is not “more profiling fields.” It is: a structured `EDA.md` (or spec patch) that later steps must read; question-type branches after step 4; and an explicit stop-and-re-scope rule when the table contradicts the planned grain, missingness, or segments.
 
@@ -151,13 +147,11 @@ Do **not** vendor this package into `dsx/`. Brief decision D-01 keeps the gate p
 - Mutual information / sklearn as a second ranker. One optional ranker is enough.
 - Making the correlation funnel mandatory.
 
-
-
 ## How this should enter GSD Core
 
 You are mid-milestone: Phase **11.1.1** is next, then 11, 11.2, 11.3, then **Phase 12 (calibration)**, which must stay last because it measures catch rate of **gates**. Exploratory-data-analysis (EDA) skill text is not a gate. Inserting an 11.4 would delay calibration and mix two different jobs.
 
-```
+```text
 DECISION NEEDED: How should the EDA deepening enter the existing GSD Core plan?
 
 Option A: Leave v2.0.0 phases untouched
@@ -196,8 +190,6 @@ If you do not answer: proceed with Option A.
 Dropped: putting `funnel_correlation_py` inside `dsx/` or adding pandas to the gate path — brief D-01 forbids it.
 
 ---
-
-
 
 ## Full recipe (paste in Agent mode)
 
@@ -293,14 +285,12 @@ SUCCESS CRITERIA FOR THE QUICK TASK
 - python -m unittest still green (no fixture drift).
 ```
 
-**How to operationalize in practice**
-
+**How to operationalize in practice:**
 
 | When                      | Command                                                    | What it changes                                              |
 | ------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------ |
 | Today, even during 11.1.1 | `/gsd-capture --seed …`                                    | `.planning/seeds/` only                                      |
 | After 11.1.1 is idle      | `/gsd-quick --full …`                                      | skill, template, executor note; not the roadmap              |
 | After Phase 12            | `/gsd-new-milestone` only if you want gated profile/EDA.md | new milestone, then `/gsd-discuss-phase` / `/gsd-plan-phase` |
-
 
 Switch to Agent mode to run step 1 now. Keep this chat’s locked decisions in the paste; a fresh agent will otherwise try to put Pearson on the gate path or insert 11.4.

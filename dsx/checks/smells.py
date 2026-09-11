@@ -146,7 +146,7 @@ def _check_self_correlation(
     # Patterns like a_over_b vs b, or y literally containing "/x"
     y_norm = y.replace(" ", "").lower()
     x_norm = x.replace(" ", "").lower()
-    if y_norm.endswith("/" + x_norm) or y_norm.endswith("_per_" + x_norm):
+    if y_norm.endswith(("/" + x_norm, "_per_" + x_norm)):
         report.add(
             "DSX-SMELL-011",
             "HIGH",

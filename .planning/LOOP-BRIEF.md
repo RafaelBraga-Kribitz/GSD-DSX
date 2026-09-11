@@ -69,6 +69,7 @@ rather than in a cloud sandbox. The pause switch `.planning/loop-logs/.paused` i
 the operator's; never create or delete it.
 
 **Every firing, in order, before touching any ledger item:**
+
 1. Read this file (`LOOP-BRIEF.md`) in full.
 2. Read `LOOP-LEDGER.md` in full — the Log section is your only memory.
 3. Read `HUMAN-QUEUE.md` in full — an item answered since the last firing may
@@ -163,6 +164,7 @@ by **rigour > reliability > flexibility**; decision + rationale recorded in the
 phase CONTEXT.md and one ledger line. Loud, never silent.
 
 Escalate to HUMAN-QUEUE.md **only** for:
+
 1. A D-05 human source read (personas may prepare evidence packs, never sign them).
 2. An irreversible destructive operation.
 3. A change to milestone scope (dropping or rewording a requirement).
@@ -226,7 +228,8 @@ HUMAN-QUEUE item).
     (`tests/test_causal_verb_golden.py`), `_EXPECTED_VAL_CODES`
     (`tests/test_frame_val.py`), the spec count in `tests/test_dsx.py` (42 today),
     and — for a miss — an ATTRIBUTION sidecar whose `absent_code` is a catalogue
-    code or a number reserved in `_SECTION_65_BACKLOG_CODES` and whose
+    code or a number reserved in `_SECTION_65_BACKLOG_CODES`
+    (`tests/test_known_bad_corpus.py:969`) and whose
     `promotes_backlog_item` is the matching `6.5-item-N-…` id.
   - **D-05 for any minted code:** citation + structural criterion in the docstring,
     a `# D-05:` test marker, and the exact code added to

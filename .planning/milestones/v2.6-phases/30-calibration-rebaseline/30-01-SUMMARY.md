@@ -1,3 +1,10 @@
+---
+phase: 30-calibration-rebaseline
+plan: 01
+status: complete
+requirements-completed: [REQ-P30-01, REQ-P30-03]
+---
+
 # Plan 30-01 — SUMMARY (S6-3 Wave 1: measurement + readout)
 
 **Status: COMPLETE.** Measured LIVE 2026-09-10 on the real 3.12.10 interpreter

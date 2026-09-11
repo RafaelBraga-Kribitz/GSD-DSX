@@ -36,7 +36,7 @@ for `DSX-VAL-020` (units).
 
 **The formula (testable, deterministic):**
 
-```
+```text
 DEFF = 1 + (m - 1) * ICC
 ```
 
@@ -102,7 +102,7 @@ have identical treatment and control distributions (they were never exposed to t
 diluted (all-up, eligible-population) effect is the triggered-subset effect multiplied by the
 trigger rate:
 
-```
+```text
 delta_diluted ≈ delta_triggered * trigger_rate
 ```
 
@@ -398,7 +398,7 @@ expected metric value in period `t` as `μ_t = α + β_t + (τ + δ_(t−t0)) I_
 is the user-learning (novelty/primacy) component measured from period `t0+1` onward. It
 proposes a **difference-in-differences estimator**:
 
-```
+```text
 δ̂_t = (T_t − T_1) − (C_t − C_1)
 ```
 
@@ -470,7 +470,7 @@ day" — already encoded in this repo's own `references/experiment-pitfalls.md`)
 
 ## 3. Feature Dependencies
 
-```
+```text
 DSX-PAR-010 (frequentist monitoring)
     └──reuses──> dsx.mathx.inflation_from_peeking()  [already shipped, already Armitage-cited]
 

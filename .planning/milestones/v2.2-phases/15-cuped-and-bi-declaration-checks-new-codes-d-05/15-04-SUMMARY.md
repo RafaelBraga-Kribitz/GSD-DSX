@@ -2,7 +2,7 @@
 phase: 15-cuped-and-bi-declaration-checks-new-codes-d-05
 plan: 04
 status: complete
-requirements: [REQ-P15-02]
+requirements-completed: [REQ-P15-02]
 ---
 
 # 15-04 SUMMARY — DSX-EXP-070 CUPED post-treatment gate check + off-path arithmetic

@@ -5,7 +5,7 @@ type: execute
 status: complete
 executed: 2026-09-10
 executor: orchestrator-direct (opus/high) — measurement-transcription + audit battery, no design decision (S6-3 Wave-1 routing precedent)
-requirements: [REQ-P30-01, REQ-P30-02, REQ-P30-03]
+requirements-completed: [REQ-P30-01, REQ-P30-02, REQ-P30-03]
 ---
 
 # Plan 30-02 — Doc re-baseline + REQ-P30-02 audit battery + zero-mint — SUMMARY

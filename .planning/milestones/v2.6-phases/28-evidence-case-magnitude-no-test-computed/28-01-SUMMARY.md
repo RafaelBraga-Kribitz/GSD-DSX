@@ -32,6 +32,7 @@ metrics:
   files_modified: 8
   full_suite: "OK (1606 tests)"
   catalogue_total: 278
+requirements-completed: [REQ-P28-01, REQ-P28-02]
 ---
 
 # Phase 28 Plan 01: Evidence case — magnitude no test computed (LIVE MISS mint) Summary

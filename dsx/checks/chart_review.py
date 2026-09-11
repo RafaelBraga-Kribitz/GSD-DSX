@@ -18,7 +18,8 @@ from __future__ import annotations
 from pathlib import Path
 
 from ..findings import Report
-from ..loader import SpecParseError, loads as load_yaml
+from ..loader import SpecParseError
+from ..loader import loads as load_yaml
 
 CHART_REVIEW_NAMES = ("CHART-REVIEW.md", "good-CHART-REVIEW.md")
 REQUIRED_SCHEMA = "dsx-chart-review-v1"
@@ -29,7 +30,7 @@ _FINDING_HEADINGS = ("## Critical Issues", "## Moderate Issues", "## Minor Issue
 
 def check(
     spec: dict,
-    phase_dir: "str | None" = None,
+    phase_dir: str | None = None,
     *,
     strict: bool = False,
 ) -> Report:
@@ -68,7 +69,7 @@ def check(
     return report
 
 
-def _resolve_roots(phase_dir: "str | None") -> list[Path]:
+def _resolve_roots(phase_dir: str | None) -> list[Path]:
     roots: list[Path] = []
     if phase_dir:
         roots.append(Path(phase_dir))
@@ -76,7 +77,7 @@ def _resolve_roots(phase_dir: "str | None") -> list[Path]:
     return roots
 
 
-def _find_chart_review(roots: list[Path]) -> "Path | None":
+def _find_chart_review(roots: list[Path]) -> Path | None:
     for root in roots:
         for name in CHART_REVIEW_NAMES:
             candidate = root / name
@@ -85,7 +86,7 @@ def _find_chart_review(roots: list[Path]) -> "Path | None":
     return None
 
 
-def _split_frontmatter(text: str) -> "tuple[dict, str]":
+def _split_frontmatter(text: str) -> tuple[dict, str]:
     """Split ``text`` into ``(frontmatter, body)``.
 
     Frontmatter is the YAML block between the first two ``---`` delimiter
@@ -238,7 +239,7 @@ def _check_finding_tokens(body: str, report: Report, path: Path) -> None:
         )
 
 
-def _untokenised_finding_lines(body: str) -> "list[tuple[int, str]]":
+def _untokenised_finding_lines(body: str) -> list[tuple[int, str]]:
     violations: list[tuple[int, str]] = []
     in_findings_section = False
     for offset, raw_line in enumerate(body.splitlines(), start=1):

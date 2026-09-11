@@ -110,7 +110,13 @@ SKIP_SECTIONS = {
 # Row-level exclusions inside otherwise-bound sections. Each entry is
 # (lowercase substring that uniquely identifies the row, reason).
 SKIP_ROW_MARKERS = [
-    ("`agreement`", "agreement/reliability route — outside recommend_association's association scope (DSX-STA-051 negative space)"),
+    (
+        "`agreement`",
+        (
+            "agreement/reliability route — outside recommend_association's association scope "
+            "(DSX-STA-051 negative space)"
+        ),
+    ),
     ("`method_comparison`", "method-comparison route — Bland-Altman, outside recommend_association scope"),
     ("distance correlation", "catalog-only pointer, no routing target (REQ-P18-01)"),
     ("partial correlation", "catalog-only pointer, conditions on an undeclared covariate set"),
@@ -121,7 +127,10 @@ SKIP_ROW_MARKERS = [
     ("one-sample count vs a rate", "count-model row; recommend_proportion_ci covers proportion contexts only"),
     ("risk difference (rd)", "surfaced-not-gated interval (Newcombe), no proportion-CI membership"),
     ("odds ratio (or)", "surfaced-not-gated interval (Woolf)"),
-    ("number needed to treat (nnt)", "NNT-with-CI is a DSX-STA-122 reporting gate, not a recommend_proportion_ci member"),
+    (
+        "number needed to treat (nnt)",
+        "NNT-with-CI is a DSX-STA-122 reporting gate, not a recommend_proportion_ci member",
+    ),
     ("zero-inflated / hurdle", "pointer row — excess-zero count structure, no routing target this phase"),
     ("vuong test", "deprecated misuse-finding, no replacement endorsed"),
 ]
@@ -152,7 +161,7 @@ def block(text, heading_prefix):
     the next heading of the same-or-higher level (fewer/equal leading '#')."""
     lines = _lines(text)
     level = len(heading_prefix) - len(heading_prefix.lstrip("#"))
-    start = next(i for i, l in enumerate(lines) if l.strip().startswith(heading_prefix))
+    start = next(i for i, ln in enumerate(lines) if ln.strip().startswith(heading_prefix))
     for j in range(start + 1, len(lines)):
         s = lines[j].strip()
         if s.startswith("#"):
@@ -207,8 +216,8 @@ def extract_methods(cell):
     """Acceptable-set column -> {code tokens}. Prefer a backticked code token per
     fragment; else canon() the prose. Fragments split on ';' and '/'."""
     out = set()
-    for frag in re.split(r"[;/]", cell):
-        frag = frag.strip()
+    for raw_frag in re.split(r"[;/]", cell):
+        frag = raw_frag.strip()
         if not frag:
             continue
         ticks = re.findall(r"`([^`]+)`", frag)

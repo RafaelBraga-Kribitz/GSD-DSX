@@ -11,7 +11,7 @@ in prose — which is what makes agent output checkable instead of merely plausi
 from __future__ import annotations
 
 import re
-from typing import Any, Iterable
+from typing import Any
 
 from .findings import Report
 
@@ -533,7 +533,7 @@ PROPORTION_CI_METHODS = {"wilson", "clopper_pearson", "jeffreys", "wald", "agres
 # unprotected LSD at k>3) are NEVER a member of any acceptable set (D-04).
 # Citation basis: Games & Howell (1976) for the Welch-ANOVA post-hoc; Hayter
 # (1986) for the protected-vs-unprotected distinction — no numeric alpha encoded.
-POSTHOC_FAMILY_MAP: "dict[str, frozenset[str]]" = {
+POSTHOC_FAMILY_MAP: dict[str, frozenset[str]] = {
     "welch_anova": frozenset({"games_howell", "dunnett_t3"}),
     "anova": frozenset({"tukey_hsd", "tukey_kramer", "dunnett", "scheffe"}),
     "kruskal_wallis": frozenset({"dunn", "nemenyi"}),
@@ -563,7 +563,7 @@ POSTHOC_FAMILY_MAP: "dict[str, frozenset[str]]" = {
 # Conley, T.G. (1999) was considered as a second source for the `spatial` pairing and
 # deliberately NOT cited: only training-knowledge attribution was available for it, and
 # this project does not ship a citation it has not confirmed.
-DEPENDENCE_ADMISSIBLE_METHODS: "dict[str, frozenset[str]]" = {
+DEPENDENCE_ADMISSIBLE_METHODS: dict[str, frozenset[str]] = {
     "clustered": frozenset({"cluster_robust", "bootstrap_cluster", "mixed_effects"}),
     "repeated_measures": frozenset({"mixed_effects", "cluster_robust"}),
     "temporal": frozenset({"cluster_robust", "bootstrap_cluster", "mixed_effects"}),
@@ -670,7 +670,7 @@ DECLARATION_POINTS = {
 # (d) brief.md's own worked example names a fact, `clusters`, that has never existed in
 # any spec in this repository — the brief binds structurally (fact -> number -> compare),
 # not at the token level.
-PREREG_FACTS: "dict[str, str]" = {
+PREREG_FACTS: dict[str, str] = {
     "alpha": "design.alpha",
     "comparisons_looked_at": "results.comparisons_looked_at",
     "interim_looks": "results.interim_looks",
@@ -704,7 +704,7 @@ PARADIGM_JUSTIFICATIONS = {
 # IMBALANCE_UNSAFE_METRICS, DEPENDENCE_ADMISSIBLE_METHODS and FALSIFIER_DISCRIMINATORS —
 # they are not vocabularies. chart_capabilities stays special-cased in
 # describe_vocabulary() below, exactly as before.
-_VOCABULARIES: "list[tuple[str, Any]]" = [
+_VOCABULARIES: list[tuple[str, Any]] = [
     ("question_types", QUESTION_TYPES),
     ("design_kinds", DESIGN_KINDS),
     ("identification_strategies", IDENTIFICATION_STRATEGIES),
@@ -810,7 +810,7 @@ def is_blank_text(value: Any) -> bool:
     return not isinstance(value, str) or is_blank(value)
 
 
-def as_number(value: Any) -> "float | None":
+def as_number(value: Any) -> float | None:
     if isinstance(value, bool):
         return None
     if isinstance(value, (int, float)):
@@ -1340,7 +1340,7 @@ _VALIDITY_FRAME_CAUSAL_REQUIRED = ("identification", "interference", "triggering
 # frequentist admissibility adjudicator (dsx/frame/admissibility.py) keys on; it is
 # deliberately optional — the membership loop below `continue`s on a blank value
 # before testing membership, so omitting it produces no finding.
-_VALIDITY_FRAME_MEMBERSHIP: "tuple[tuple[str, str, Any], ...]" = (
+_VALIDITY_FRAME_MEMBERSHIP: tuple[tuple[str, str, Any], ...] = (
     ("estimand", "type", ESTIMAND_TYPES),
     ("identification", "strength", IDENTIFICATION_STRENGTHS),
     ("identification", "constraint_source", CONSTRAINT_SOURCES),
@@ -1548,7 +1548,7 @@ _INFERENCE_FIELDS = (
     "threshold_calibration", "prior_justification", "decision_threshold",
 )
 
-_INFERENCE_MEMBERSHIP: "tuple[tuple[str, Any], ...]" = (
+_INFERENCE_MEMBERSHIP: tuple[tuple[str, Any], ...] = (
     ("paradigm", PARADIGMS),
     ("paradigm_justification", PARADIGM_JUSTIFICATIONS),
     ("declared_at", DECLARATION_POINTS),
@@ -1635,7 +1635,7 @@ def _validate_inference_shape(spec: dict, report: Report) -> None:
         )
 
 
-def describe_vocabulary() -> "dict[str, Any]":
+def describe_vocabulary() -> dict[str, Any]:
     """Machine-readable dump of every closed vocabulary — used by `dsx vocab`.
 
     Registry-driven (D-05): a dict-backed vocabulary dumps as a key-sorted dict of its
@@ -1652,7 +1652,7 @@ def describe_vocabulary() -> "dict[str, Any]":
     operator can discover a fact name the mini-language will accept (the other is
     reading `PREREG_FACTS` itself, imported by `dsx/frame/prereg.py`).
     """
-    out: "dict[str, Any]" = {}
+    out: dict[str, Any] = {}
     for name, obj in _VOCABULARIES:
         out[name] = {k: obj[k] for k in sorted(obj)} if isinstance(obj, dict) else sorted(obj)
     out["chart_capabilities"] = {

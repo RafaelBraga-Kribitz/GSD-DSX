@@ -85,7 +85,7 @@ def _check_definition_collisions(metrics: list[dict], report: Report) -> None:
             continue
         by_definition.setdefault(definition, []).append(str(name))
 
-    for definition, names in by_definition.items():
+    for names in by_definition.values():
         if len(names) > 1:
             report.add(
                 "DSX-MET-002",
@@ -546,17 +546,19 @@ def _lint_sql(metric: dict, where: str, report: Report) -> None:
             re.IGNORECASE,
         )
         region = tail[: next_boundary.start()] if next_boundary else tail[:200]
-        if not re.search(r"\bON\b", region, re.IGNORECASE):
-            if not re.search(r"\bUSING\s*\(", region, re.IGNORECASE):
-                report.add(
-                    "DSX-SQL-012",
-                    "HIGH",
-                    f"SQL for {name!r}: JOIN without ON",
-                    detail="JOIN without ON (after comment strip) is an implicit cross product.",
-                    remedy="Add an ON clause, or use CROSS JOIN deliberately with a filter.",
-                    where=f"{where}.sql",
-                )
-                break
+        if (
+            not re.search(r"\bON\b", region, re.IGNORECASE)
+            and not re.search(r"\bUSING\s*\(", region, re.IGNORECASE)
+        ):
+            report.add(
+                "DSX-SQL-012",
+                "HIGH",
+                f"SQL for {name!r}: JOIN without ON",
+                detail="JOIN without ON (after comment strip) is an implicit cross product.",
+                remedy="Add an ON clause, or use CROSS JOIN deliberately with a filter.",
+                where=f"{where}.sql",
+            )
+            break
 
     joins = len(_JOIN_RE.findall(stripped))
     if joins >= 2 and _AGGREGATE_RE.search(stripped) and not _DISTINCT_RE.search(stripped):

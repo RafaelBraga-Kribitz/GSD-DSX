@@ -84,7 +84,7 @@ class TimeToEventFallthroughPositionTest(unittest.TestCase):
         # truncate the table to that single row.
         text = TEST_SELECTION.read_text(encoding="utf-8")
         after = text.split("## Decision table", 1)[1]
-        block = re.split(r"\r?\n##\s", after, 1)[0]
+        block = re.split(r"\r?\n##\s", after, maxsplit=1)[0]
         rows = [
             r for r in re.split(r"\r?\n", block)
             if r.strip().startswith("|") and "---" not in r

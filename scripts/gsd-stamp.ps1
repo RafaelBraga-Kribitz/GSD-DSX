@@ -16,7 +16,7 @@
   nothing, so counting resolved paths is the only check that means anything.
 
 .EXAMPLE
-  pwsh scripts/gsd-stamp.ps1 -Project C:\Users\Benutzer1\Dev\warehouse_humanoid_tco
+  pwsh scripts/gsd-stamp.ps1 -Project C:\path\to\your-project
   pwsh scripts/gsd-stamp.ps1 -Project . -Tier 1
   pwsh scripts/gsd-stamp.ps1 -Project . -VerifyOnly
 #>
@@ -25,9 +25,11 @@ param(
     [Parameter(Mandatory)]
     [string]$Project,
 
-    # Canonical source of the two skills. The design-system template is the
-    # thing new projects derive from, so it is the stamping source.
-    [string]$SkillSource = "C:\Users\Benutzer1\Dev\braga-design-system-template\skills",
+    # Source of the two skills. Defaults to this repository's own tracked copy
+    # (.claude/skills/, one directory above scripts/), so the script is
+    # self-contained on any checkout; pass -SkillSource to stamp from another
+    # template.
+    [string]$SkillSource = (Join-Path (Split-Path -Parent $PSScriptRoot) '.claude\skills'),
 
     # Where the skills land inside the target. .claude/skills never collides
     # with a capability's own skills/ directory.

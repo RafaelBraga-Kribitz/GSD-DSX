@@ -11,3 +11,17 @@ DECISIONS.jsonl
 
 # graphify build artifacts (regenerable; large graph.json/html, cache dir)
 dsx/graphify-out/
+
+# Operator-local files that live in the working tree but never in the repo.
+# .claude/skills/ is tracked (the house-style skills gsd-stamp.ps1 copies into
+# projects); only the operator's own Claude Code state is ignored, by name.
+.claude/settings.json
+.claude/settings.local.json
+.claude/apply-session-groups.*
+.claude/session-groups.json
+.claude/sessions-index.md
+.claude/worktrees/
+.vscode/
+graphify-out/
+# A full-text clipping of an arXiv paper kept for reading; never committed.
+references/The AI Data Scientist.md

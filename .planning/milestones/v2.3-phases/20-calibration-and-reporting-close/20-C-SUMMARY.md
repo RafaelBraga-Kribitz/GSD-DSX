@@ -2,7 +2,7 @@
 phase: 20-calibration-and-reporting-close
 plan: C
 wave: 1
-requirements: [REQ-P20-03]
+requirements-completed: [REQ-P20-03]
 status: complete
 mints_codes: 0
 catalogue_total: 275

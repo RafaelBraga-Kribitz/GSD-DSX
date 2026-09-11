@@ -4,7 +4,7 @@ plan: 04
 type: execute
 wave: 4
 status: complete
-requirements:
+requirements-completed:
   - REQ-P22-04
 completed: 2026-09-03T04:39Z
 ---

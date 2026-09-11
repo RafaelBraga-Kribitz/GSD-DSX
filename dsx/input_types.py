@@ -20,7 +20,7 @@ from typing import Any
 
 _DATA = Path(__file__).resolve().parent / "data" / "input_types.json"
 
-_IT_PATTERN = re.compile(r"^it[\s_-]*0*(\d{1,3})$", re.I)
+_IT_PATTERN = re.compile(r"^it[\s_-]*0*(\d{1,3})$", re.IGNORECASE)
 
 
 class UnknownShape(KeyError):

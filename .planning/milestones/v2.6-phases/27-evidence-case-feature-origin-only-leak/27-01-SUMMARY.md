@@ -29,6 +29,7 @@ metrics:
   tasks: 3
   files: 7
 status: complete
+requirements-completed: [REQ-P27-02]
 ---
 
 # Phase 27 Plan 01: Mint DSX-ML-034 (feature-provenance leak) Summary

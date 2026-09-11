@@ -22,7 +22,7 @@ Do not spend ink on takeaway wording while A–D still emit CRITICAL/HIGH.
 
 **Run the deterministic audit and treat its output as evidence:**
 
-```
+```bash
 dsx gate verify --phase-dir <phase> --report <phase>/DATA-REVIEW.md --verbose
 ```
 

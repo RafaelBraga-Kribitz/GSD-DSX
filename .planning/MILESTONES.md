@@ -1,5 +1,46 @@
 # Milestones
 
+## v2.6.1 (Shipped: 2026-09-11)
+
+Patch release: the post-ship liabilities pass, executed interactively on 2026-09-11 by
+operator direction ("carry no more liabilities"). Content commit `6edb946` on
+`chore/v2.6.1-liabilities`, merged into `main` by explicit branch name (`--no-ff`,
+rehearsed on a throwaway branch first) and tagged `v2.6.1` on the merge commit.
+Zero codes minted; catalogue 279.
+
+**Delivered:**
+
+- Two linters adopted and driven to zero on the live surface, with the reason for
+  every relaxed rule written in the config file: ruff (`ruff.toml`; 131 findings after
+  the autofixes, all resolved by hand) and markdownlint (`.markdownlint-cli2.jsonc`;
+  4,462 → 0 across 126 files). `scripts/check.sh` runs both and says so when a tool is
+  absent.
+- The twelve timing pins moved from wall-clock budgets to `assert_linear_scaling`. The
+  first ratio design was refuted by its own verification (four mutation kills passed,
+  but five of 300 runs under load failed: unequal bracket lengths bias a best-of-k
+  ratio) and rebuilt on that evidence — equal-length brackets, the median of paired
+  ratios, a guard on every call, the DSX-CODE-002 scan timed as a pure function.
+  Measured on the shipped code: 240 runs, 120 under sixteen busy processes, zero
+  failures; every documented regression caught (ratios 209–255 against a limit of 64).
+- The finding catalogue lists every severity and every message of the nine codes that
+  are emitted with more than one text (row count unchanged at 279); the generator's
+  standing "declared twice" warning is gone, the test pin being the real guard.
+- Release provenance: `dsx --version`, the capability manifest, the 46 example specs
+  and the template all name 2.6.1, held together by `tests/test_release_version.py`.
+  Every decision record written since v2.0.0 had claimed `dsx_version: "2.0.0"`.
+- Records: `requirements-completed:` backfilled into 47 archived plan summaries; the
+  missing `29-01-SUMMARY.md` written with its provenance stated; SEED-004 planted
+  (decision-trail concurrent writers); `docs/gsd-core-known-defects.md` consolidates
+  ten framework defects, each checked by line against GSD Core 1.7.0.
+- Branch hygiene (operator decision, Option A): every merged milestone branch deleted
+  locally and on origin, the stale agent worktree removed, all histories kept under
+  `archive/*` tags. A cloud-scheduled job still firing the retired v2.0.0 brief every
+  four hours was found through its 49 no-op commits and stopped by the operator.
+- Suite 1629 → 1633 tests; OK on the real interpreter, on `main` after the merge, and in
+  a fresh clone at a normal-length path.
+
+---
+
 ## v2.6 Exploration Depth and Backlog Evidence (Shipped: 2026-09-10)
 
 **Phases completed:** 6 (Phases 25–30), 16 plans, 113 commits on

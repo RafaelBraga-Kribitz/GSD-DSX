@@ -316,7 +316,7 @@ comparison via `math.lgamma`.** Concretely:
   Beta(successes+prior_α, failures+prior_β) with integer counts under a standard prior), there is
   a well-known finite-sum closed form for `P(B>A)` requiring only `math.lgamma`, no sampling:
 
-  ```
+  ```text
   P(B > A) = Σ_{i=0}^{a2-1} exp( lbeta(a1+i, b1+b2) − ln(b2+i) − lbeta(1+i, b2) − lbeta(a1, b1) )
   ```
 
@@ -408,7 +408,7 @@ number cited elsewhere.
 environment, so the fallback path — the one that must never break, per D-01 — is exactly what was
 exercised):**
 
-```
+```yaml
 families:
   - id: cluster_robust_welch
     estimand: mean_difference
@@ -462,7 +462,7 @@ Standard YAML (both the 1.1 core schema PyYAML implements and YAML 1.2) recognis
 diverges from that and from PyYAML's own behaviour by treating the bare word `none` as null too.
 Reproduced directly against this repo's code:
 
-```
+```python
 >>> _parse_yaml_subset("x: none\n", "<t>")["x"]
 None                    # should be the string "none"
 >>> _parse_yaml_subset("x: [none, clustered]\n", "<t>")["x"]

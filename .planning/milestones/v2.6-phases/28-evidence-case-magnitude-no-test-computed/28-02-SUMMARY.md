@@ -34,6 +34,7 @@ metrics:
   tasks: 3
   files: 10
 status: complete
+requirements-completed: [REQ-P28-01, REQ-P28-03]
 ---
 
 # Phase 28 Plan 02: Promote magnitude-without-computed-effect into the known-bad corpus — Summary

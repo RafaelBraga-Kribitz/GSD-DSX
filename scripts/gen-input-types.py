@@ -115,7 +115,7 @@ def main() -> int:
         return 1
 
     text = SOURCE.read_text(encoding="utf-8", errors="replace")
-    match = re.search(r"```json\s*(\{.*?\})\s*```", text, re.S)
+    match = re.search(r"```json\s*(\{.*?\})\s*```", text, re.DOTALL)
     if not match:
         print("no JSON block found in the inventory", file=sys.stderr)
         return 1
@@ -131,7 +131,7 @@ def main() -> int:
 
     # Imported lazily so this script can run before the package is importable.
     sys.path.insert(0, str(ROOT))
-    from dsx.spec import CHART_CAPABILITIES  # noqa: E402
+    from dsx.spec import CHART_CAPABILITIES
 
     out = []
     for item in items:

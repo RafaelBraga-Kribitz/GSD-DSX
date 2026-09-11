@@ -315,10 +315,10 @@ class _CallSite:
     col: int
     end_col: int
     name: str
-    node: "ast.Call"
+    node: ast.Call
 
 
-def _resolve_callee_name(node: "ast.Call") -> str:
+def _resolve_callee_name(node: ast.Call) -> str:
     """Only the FINAL segment of the callee is used for matching (Phase
     11.1.1 plan 01, §3.2) -- `sklearn.model_selection.train_test_split(...)`
     and a bare `train_test_split(...)` must be treated identically. A
@@ -338,7 +338,7 @@ def _resolve_callee_name(node: "ast.Call") -> str:
     return ""
 
 
-def _call_sites(tree: "ast.AST") -> "tuple[_CallSite, ...]":
+def _call_sites(tree: ast.AST) -> tuple[_CallSite, ...]:
     """Walk `tree` ONCE, collect every `ast.Call`, resolve its callee name,
     and return the tuple sorted by `(line, col, end_col)` (Decision 6).
 
@@ -347,7 +347,7 @@ def _call_sites(tree: "ast.AST") -> "tuple[_CallSite, ...]":
     order would otherwise decide which token is reported, since
     `ast.walk` is breadth-first and NOT source-ordered -- as much as a
     performance one (one walk per `check()` call, not one per code)."""
-    sites: "list[_CallSite]" = []
+    sites: list[_CallSite] = []
     for node in ast.walk(tree):
         if isinstance(node, ast.Call):
             end_col = node.end_col_offset
@@ -363,7 +363,7 @@ def _call_sites(tree: "ast.AST") -> "tuple[_CallSite, ...]":
     return tuple(sorted(sites, key=lambda s: (s.line, s.col, s.end_col)))
 
 
-def _prose_line_indices(tree: "ast.AST") -> "frozenset[int]":
+def _prose_line_indices(tree: ast.AST) -> frozenset[int]:
     """ZERO-BASED physical line indices that are pure prose -- a docstring,
     a bare string statement, or the strictly interior lines of a
     multi-line string constant -- and therefore skip-worthy for a
@@ -394,7 +394,7 @@ def _prose_line_indices(tree: "ast.AST") -> "frozenset[int]":
     so the docstring false positive this plan closes on the parsed path
     for DSX-CODE-020, DSX-CODE-030 and DSX-CODE-031 persists there.
     """
-    masked: "set[int]" = set()
+    masked: set[int] = set()
     for node in ast.walk(tree):
         if (
             isinstance(node, ast.Expr)
@@ -419,7 +419,7 @@ def _prose_line_indices(tree: "ast.AST") -> "frozenset[int]":
     return frozenset(masked)
 
 
-def _first_argument(node: "ast.Call") -> "ast.AST | None":
+def _first_argument(node: ast.Call) -> ast.AST | None:
     """Resolve `node`'s first argument, positional-then-allowlisted-keyword
     (Phase 11.1.1 plan 02, §3.4). Returns `None` -- no token, no finding --
     when nothing qualifies.
@@ -445,7 +445,7 @@ def _first_argument(node: "ast.Call") -> "ast.AST | None":
        the primary path would newly emit a CRITICAL finding naming a token
        that is not a frame at all.
     """
-    resolved: "ast.AST | None" = None
+    resolved: ast.AST | None = None
     if node.args and not isinstance(node.args[0], ast.Starred):
         resolved = node.args[0]
     else:
@@ -458,7 +458,7 @@ def _first_argument(node: "ast.Call") -> "ast.AST | None":
     return resolved
 
 
-def _render_token(node: "ast.AST") -> str:
+def _render_token(node: ast.AST) -> str:
     """`ast.unparse`, ONE rendering path (Phase 11.1.1 plan 02, §3.5) --
     not `ast.get_source_segment`, which needs the original source threaded
     through every helper, returns `None` when position info is
@@ -474,7 +474,42 @@ def _render_token(node: "ast.AST") -> str:
     return ast.unparse(node)
 
 
-def check(spec: dict, phase_dir: "str | None" = None) -> Report:
+def _first_unsuppressed_scaler_line(lines: list[str]) -> int | None:
+    """Index of the first ``StandardScaler().fit_transform`` line with no
+    ``X_train`` anywhere above it; ``None`` when that first line is already
+    suppressed or there is none. Pure on purpose (v2.6.1): the DSX-CODE-002
+    ``report.add`` stays in ``check()`` -- Phase 11.1.1 plan 03 Pin 4 keeps every
+    DSX-CODE emission lexically inside ``check`` -- and the timing pin times this
+    scan by itself; see the note below on why that matters.
+
+    Phase 11.1.1 plan 01 (threat T-11.1.1-13, Decision 8): the ``break`` used to
+    sit inside the inner ``if``, so a SUPPRESSED match (prior already names
+    X_train) did not stop the outer loop -- it kept rebuilding
+    ``prior = "\n".join(lines[:index])``, an O(index) operation, for every one
+    of the remaining matching lines, making the whole loop O(n^2) on the
+    PRIMARY path. Measured then with an ``X_train = 1`` line above N matching
+    ``StandardScaler().fit_transform`` lines: 0.0223 / 0.0852 / 0.4545 /
+    1.4211 s at 2,000 / 4,000 / 8,000 / 16,000 -- roughly 4x per doubling.
+    Hoisting the ``break`` out of the inner ``if`` is provably
+    behaviour-preserving: ``lines[:j]`` is a prefix superset of ``lines[:i]``
+    for ``j > i``, so once "X_train" is in ``prior`` it is in every later
+    ``prior`` too, and the loop is dead after the first suppressed match
+    exactly as much as after the first accepted one. Pinned by
+    ``test_scaler_full_loop_timing_is_linear``, whose input is this exact shape
+    and which times this function alone: inside the full ``check()`` pipeline
+    the parse and the other scans dilute a quadratic here to a ratio the pin
+    can barely tell from linear.
+    """
+    for index, line in enumerate(lines):
+        if SCALER_FULL_RE.search(line):
+            prior = "\n".join(lines[:index])
+            if "X_train" not in prior and "x_train" not in prior.lower():
+                return index
+            return None
+    return None
+
+
+def check(spec: dict, phase_dir: str | None = None) -> Report:
     """Entrypoint fit-before-split, full-frame-cleaning and fit-after-split scans
     (DSX-CODE-*).
 
@@ -743,8 +778,8 @@ def check(spec: dict, phase_dir: "str | None" = None) -> Report:
     # widened FIT_CALL_RE / _fit_call_arguments (Edit F below), which now
     # AGREES with the AST path's keyword allowlist instead of
     # contradicting it.
-    fit_after_split_index: "int | None" = None
-    fit_after_split_token: "str | None" = None
+    fit_after_split_index: int | None = None
+    fit_after_split_token: str | None = None
     if first_split is not None:
         if tree is not None:
             for site in call_sites:
@@ -846,8 +881,8 @@ def check(spec: dict, phase_dir: "str | None" = None) -> Report:
         else _stat_test_lines_referencing(lines, target_text, masked=prose_mask)
     )
 
-    stat_before_index: "int | None" = None
-    stat_after_index: "int | None" = None
+    stat_before_index: int | None = None
+    stat_after_index: int | None = None
     for index in stat_test_lines:
         if first_split is None or index < first_split:
             if stat_before_index is None:
@@ -937,48 +972,28 @@ def check(spec: dict, phase_dir: "str | None" = None) -> Report:
         ),
     )
 
-    # Phase 11.1.1 plan 01 (threat T-11.1.1-13, Decision 8): the `break`
-    # used to sit inside the inner `if`, so a SUPPRESSED match (prior
-    # already names X_train) did not stop the outer loop -- it kept
-    # rebuilding `prior = "\n".join(lines[:index])`, an O(index)
-    # operation, for every one of the remaining matching lines, making the
-    # whole loop O(n^2) on the PRIMARY path. Measured this session with an
-    # `X_train = 1` line above N matching `StandardScaler().fit_transform`
-    # lines: 0.0223 / 0.0852 / 0.4545 / 1.4211 s at 2,000 / 4,000 / 8,000 /
-    # 16,000 -- roughly 4x per doubling, 1.4 s at 16,000, already over the
-    # house budget. Hoisting the `break` out of the inner `if` is provably
-    # behaviour-preserving: `lines[:j]` is a prefix superset of `lines[:i]`
-    # for `j > i`, so once "X_train" is in `prior` it is in every later
-    # `prior` too, and the loop is dead after the first suppressed match
-    # exactly as much as after the first accepted one. Pinned by
-    # test_scaler_full_loop_timing_is_linear, whose input is this exact
-    # shape.
-    for index, line in enumerate(lines):
-        if SCALER_FULL_RE.search(line):
-            prior = "\n".join(lines[:index])
-            if "X_train" not in prior and "x_train" not in prior.lower():
-                report.add(
-                    "DSX-CODE-002",
-                    "HIGH",
-                    "StandardScaler().fit_transform on full frame with no prior X_train",
-                    detail=f"Line {index + 1}: {line.strip()[:120]}",
-                    remedy="Fit the scaler on X_train only, then transform X_train and X_test.",
-                    where=f"entrypoint:{entry}",
-                )
-            break
+    scaler_index = _first_unsuppressed_scaler_line(lines)
+    if scaler_index is not None:
+        report.add(
+            "DSX-CODE-002",
+            "HIGH",
+            "StandardScaler().fit_transform on full frame with no prior X_train",
+            detail=f"Line {scaler_index + 1}: {lines[scaler_index].strip()[:120]}",
+            remedy="Fit the scaler on X_train only, then transform X_train and X_test.",
+            where=f"entrypoint:{entry}",
+        )
 
     for index, line in enumerate(lines):
-        if RESAMPLE_BEFORE_RE.search(line):
-            if first_split is None or index < first_split:
-                report.add(
-                    "DSX-CODE-003",
-                    "HIGH",
-                    "Resampler (SMOTE / RandomOverSampler / …) before split",
-                    detail=f"Line {index + 1}: {line.strip()[:120]}",
-                    remedy="Split first; resample only the training fold.",
-                    where=f"entrypoint:{entry}",
-                )
-                break
+        if RESAMPLE_BEFORE_RE.search(line) and (first_split is None or index < first_split):
+            report.add(
+                "DSX-CODE-003",
+                "HIGH",
+                "Resampler (SMOTE / RandomOverSampler / …) before split",
+                detail=f"Line {index + 1}: {line.strip()[:120]}",
+                remedy="Split first; resample only the training fold.",
+                where=f"entrypoint:{entry}",
+            )
+            break
 
     if has_model and path.suffix.lower() in {".py", ".ipynb"} and first_split is None:
         report.add(
@@ -1026,7 +1041,7 @@ def check(spec: dict, phase_dir: "str | None" = None) -> Report:
     return report
 
 
-def _resolve_entrypoint(entry: str, phase_dir: "str | None") -> Path | None:
+def _resolve_entrypoint(entry: str, phase_dir: str | None) -> Path | None:
     candidates: list[Path] = []
     if phase_dir:
         candidates.append(Path(phase_dir) / entry)
@@ -1107,7 +1122,7 @@ def _parse_failure_reason(exc: BaseException) -> str:
     return type(exc).__name__
 
 
-def _parse_source(source: str, suffix: str) -> "tuple[ast.Module | None, str]":
+def _parse_source(source: str, suffix: str) -> tuple[ast.Module | None, str]:
     """Attempt `ast.parse` once, with one notebook-only repair retry on
     failure. Returns `(tree, reason)` — `tree` is `None` and `reason` names
     why when both attempts (or the only attempt, for a non-notebook
@@ -1294,7 +1309,7 @@ def _read_source(path: Path) -> str | None:
 def _first_line_matching(
     lines: list[str],
     markers: tuple[str, ...],
-    masked: "frozenset[int]" = frozenset(),
+    masked: frozenset[int] = frozenset(),
 ) -> int | None:
     """Phase 11.1.1 plan 01 (Decision 5): `masked` -- zero-based line
     indices from `_prose_line_indices` -- are skipped in addition to the
@@ -1345,7 +1360,7 @@ def _first_fit_leak_line(lines: list[str]) -> int | None:
 
 
 def _first_full_frame_cleaning_line(
-    lines: list[str], masked: "frozenset[int]" = frozenset()
+    lines: list[str], masked: frozenset[int] = frozenset()
 ) -> int | None:
     """Lowest line index satisfying `_is_full_frame_impute` or
     `_is_full_frame_spread_filter` (REQ-P11.1-01). Repeats `_first_line_matching`'s
@@ -1372,7 +1387,7 @@ def _first_full_frame_cleaning_line(
     return None
 
 
-def _fit_call_arguments(lines: list[str]) -> "list[tuple[int, str]]":
+def _fit_call_arguments(lines: list[str]) -> list[tuple[int, str]]:
     """Index-and-token pairs for EVERY `FIT_CALL_RE` match on every
     non-comment, non-import line (REQ-P11.1-01; widened to `finditer` in
     Phase 11.1.1 plan 02, §2.2/Edit F -- SC3).
@@ -1396,7 +1411,7 @@ def _fit_call_arguments(lines: list[str]) -> "list[tuple[int, str]]":
 
     Exactly ONE extraction path exists per mechanism: no `search`-based
     single-match variant survives beside this one (plan 02 prohibition 3)."""
-    results: "list[tuple[int, str]]" = []
+    results: list[tuple[int, str]] = []
     for index, line in enumerate(lines):
         stripped = line.strip()
         if stripped.startswith("#"):
@@ -1420,7 +1435,7 @@ def _is_training_frame(token: str) -> bool:
 
 
 def _stat_test_lines_referencing(
-    lines: list[str], target: str, masked: "frozenset[int]" = frozenset()
+    lines: list[str], target: str, masked: frozenset[int] = frozenset()
 ) -> list[int]:
     """Indices of non-comment, non-import lines where `STAT_TEST_CALL_RE`
     matches, and either that line itself or one of the

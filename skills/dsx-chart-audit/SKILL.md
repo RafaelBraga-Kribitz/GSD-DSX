@@ -21,9 +21,11 @@ Produce a schema-valid CHART-REVIEW.md for the phase's declared visuals
 1. Resolve `PHASE_DIR` from `--phase-dir` or the current GSD phase.
 
 2. **Deterministic first:**
+
    ```bash
    dsx check viz smells figures --phase-dir "$PHASE_DIR" --verbose
    ```
+
    Record open CRITICAL/HIGH codes (minus ANALYSIS-SPEC `suppressions[]`).
 
 3. **Spawn `dsx-viz-critic`** with:

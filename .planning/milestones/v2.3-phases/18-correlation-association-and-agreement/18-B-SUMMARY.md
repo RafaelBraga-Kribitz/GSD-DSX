@@ -39,6 +39,7 @@ metrics:
   tasks: 2
   files: 3
 status: complete
+requirements-completed: [REQ-P18-05]
 ---
 
 # Phase 18 Plan B: Correlation/Agreement Effect-Size Conventions Summary

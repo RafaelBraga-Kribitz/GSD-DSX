@@ -96,7 +96,7 @@ Pass|Fail
 
 | Exhibit | Verdict | Notes |
 |---------|---------|-------|
-| chart_id | Approved|… | … |
+| chart_id | Approved \| … | … |
 
 ## Final Assessment
 

@@ -31,6 +31,7 @@ metric and experiment skills apply directly.
 </when_to_reach_for_this>
 
 <field_to_gate_routing>
+
 ## What you write, and which existing gate reads it
 
 | `ANALYSIS-SPEC.yaml` field you fill | What it looks like for a segmentation question | Existing gate that adjudicates it |
@@ -44,6 +45,7 @@ The gate output is the ruling; this skill only tells you where to look.
 </field_to_gate_routing>
 
 <candidate_promotion_handshake>
+
 ## Promoting a candidate cut — reuse the existing handshake, do not invent a new one
 
 A cut noticed while exploring is a candidate, not a confirmatory test, until it is promoted.

@@ -32,8 +32,6 @@ from ..decisions import DecisionRecord
 from ..findings import Report
 from ..spec import (
     INTERFERENCE_MITIGATIONS,
-    INTERFERENCE_RISKS,
-    METRIC_TYPES,
     get,
     is_blank,
     is_placeholder_or_refusal,
@@ -59,7 +57,7 @@ from ..spec import (
 # the book names a fifth technique the vocabulary omits, "network egocentric
 # randomization" (page 233) — noted here, not added, because a vocabulary member is
 # contract surface this phase is not scoped for.
-_RISK_MITIGATION_MAP: "dict[str, frozenset[str]]" = {
+_RISK_MITIGATION_MAP: dict[str, frozenset[str]] = {
     # The check short-circuits before consulting this cell (see the "none" guard in
     # both helpers below); the empty set documents that "none" grants no mitigation
     # any special status, it is simply never reached.
@@ -76,7 +74,8 @@ _RISK_MITIGATION_MAP: "dict[str, frozenset[str]]" = {
     # the other side's outcomes.
     "marketplace": frozenset(
         {
-            "cluster_randomisation",  # randomising whole market segments keeps both sides of an interaction inside one arm
+            # randomising whole market segments keeps both sides of an interaction inside one arm
+            "cluster_randomisation",
             "geo_split",  # a local market is the natural cluster when the market is geographic
             "time_split",  # the two sides of the market never meet across arms
             "modelled",  # the interference is estimated and adjusted for statistically
@@ -124,8 +123,8 @@ _RISK_MITIGATION_MAP: "dict[str, frozenset[str]]" = {
 # 08-CONTEXT.md is explicit that this silence is deliberate). Neither constant is
 # registered in dsx.spec._VOCABULARIES, for the same reason DEPENDENCE_ADMISSIBLE_METHODS
 # is not: each references an existing vocabulary's members rather than defining new ones.
-_ADDITIVE_METRIC_TYPES: "frozenset[str]" = frozenset({"count", "sum", "average"})
-_RATIO_METRIC_TYPES: "frozenset[str]" = frozenset({"ratio", "rate"})
+_ADDITIVE_METRIC_TYPES: frozenset[str] = frozenset({"count", "sum", "average"})
+_RATIO_METRIC_TYPES: frozenset[str] = frozenset({"ratio", "rate"})
 
 
 def _check_interference_unaddressed(frame: dict, report: Report) -> None:
@@ -480,7 +479,7 @@ def _check_triggering_dilution(spec: dict, frame: dict, report: Report) -> None:
     not_adjusted = dilution_adjusted is not True
     expected_trigger_rate = get(triggering, "expected_trigger_rate")
 
-    additive_metrics: "list[str]" = []
+    additive_metrics: list[str] = []
     for metric in items(spec, "metrics"):
         if not isinstance(metric, dict):
             continue

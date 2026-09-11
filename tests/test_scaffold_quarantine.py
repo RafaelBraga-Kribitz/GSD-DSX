@@ -78,7 +78,7 @@ def _scan_text_for_quarantined_dotted(text: str) -> list[str]:
     return violations
 
 
-def _subscript_key(slice_node: ast.AST) -> "str | None":
+def _subscript_key(slice_node: ast.AST) -> str | None:
     """Return a subscript's string key, tolerating both the modern (3.9+) and
     legacy (pre-3.9 ``ast.Index``-wrapped) AST shapes. Ducktypes on the class
     name rather than referencing ``ast.Index`` directly (removed in newer
@@ -107,25 +107,26 @@ def _scan_source_for_quarantined_reads_ast(text: str) -> list[str]:
         if isinstance(node, ast.Call):
             # dotted-path string-literal argument
             for arg in node.args:
-                if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
-                    if arg.value in _QUARANTINED_DOTTED:
-                        violations.append(
-                            f"line {node.lineno}: call argument string literal "
-                            f"{arg.value!r} reads a quarantined decision field"
-                        )
+                if (
+                    isinstance(arg, ast.Constant) and isinstance(arg.value, str)
+                    and arg.value in _QUARANTINED_DOTTED
+                ):
+                    violations.append(
+                        f"line {node.lineno}: call argument string literal "
+                        f"{arg.value!r} reads a quarantined decision field"
+                    )
             # `.get("reversible")` / `.get("deadline")`
-            if isinstance(node.func, ast.Attribute) and node.func.attr == "get":
-                if node.args:
-                    first = node.args[0]
-                    if (
-                        isinstance(first, ast.Constant)
-                        and isinstance(first.value, str)
-                        and first.value in _QUARANTINED_FIELDS
-                    ):
-                        violations.append(
-                            f"line {node.lineno}: .get({first.value!r}) reads a "
-                            f"quarantined decision field"
-                        )
+            if isinstance(node.func, ast.Attribute) and node.func.attr == "get" and node.args:
+                first = node.args[0]
+                if (
+                    isinstance(first, ast.Constant)
+                    and isinstance(first.value, str)
+                    and first.value in _QUARANTINED_FIELDS
+                ):
+                    violations.append(
+                        f"line {node.lineno}: .get({first.value!r}) reads a "
+                        f"quarantined decision field"
+                    )
         elif isinstance(node, ast.Subscript):
             key = _subscript_key(node.slice)
             if key in _QUARANTINED_FIELDS and isinstance(node.value, ast.Subscript):

@@ -12,6 +12,7 @@ findings_escalated_open: 0
 findings_investigated_and_dropped: 2
 ---
 
+<!-- markdownlint-disable MD029 -- one numbered list of corrections runs across the category headings; the numbers are the audit's item ids -->
 # Post-ship self-audit — 2026-09
 
 **Scope boundary used throughout:** fix directly only what's unambiguous and

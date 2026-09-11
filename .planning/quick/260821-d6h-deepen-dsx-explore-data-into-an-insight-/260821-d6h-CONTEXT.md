@@ -17,9 +17,11 @@ orchestrator against the live repo before writing.
 </domain>
 
 <decisions>
+
 ## Implementation Decisions
 
 ### Constraint envelope (locked, from brief.md D-01/D-02 and .planning/research/EDA-enhancement-brief.md)
+
 - Gate path stays stdlib-only; gates adjudicate declarations and never compute statistics.
 - No changes to `dsx/`, `dsx/checks/`, `dsx/profiler.py`, fixtures, or DATA-PROFILE schema.
 - No new `DSX-*` finding codes. No gate reads `EDA.md` in this pass.
@@ -29,6 +31,7 @@ orchestrator against the live repo before writing.
   `templates/ANALYSIS-SPEC.yaml`.
 
 ### What ships (25 catalog items, critic-corrected)
+
 - Trust core (current steps 1–4) kept, deepened with sub-steps: grain/dependence, joins,
   time integrity, robust summaries, concentration, outlier taxonomy, pathology sweep,
   base rate.
@@ -44,6 +47,7 @@ orchestrator against the live repo before writing.
 - Rerun contract, lifecycle/re-entry rules, single spec-write moment + `dsx validate`.
 
 ### Critic corrections applied (verified against repo before acceptance)
+
 - `DSX-VAL-020`'s real clearing condition is `dependence.method_family_required`
   (`dsx/frame/val.py:270+`), so the grain step names it — verified by reading the check.
 - `results.comparisons_looked_at` / `interim_looks` are adjudicated in
@@ -64,6 +68,7 @@ orchestrator against the live repo before writing.
   chosen by rule, outlier categorical search bounded and ordered.
 
 ### Claude's Discretion
+
 Wording, ordering within sections, and table column names — kept in the existing terse
 imperative style of the skill, with named outputs and a skip condition per step.
 
@@ -84,6 +89,7 @@ imperative style of the skill, with named outputs and a skip condition per step.
 </specifics>
 
 <canonical_refs>
+
 ## Canonical References
 
 - `.planning/research/EDA-enhancement-brief.md` — the evaluation and the locked decisions this task honours

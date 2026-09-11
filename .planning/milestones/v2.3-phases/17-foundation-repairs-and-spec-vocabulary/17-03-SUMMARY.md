@@ -1,3 +1,10 @@
+---
+phase: 17-foundation-repairs-and-spec-vocabulary
+plan: 03
+status: complete
+requirements-completed: [REQ-P17-02, REQ-P17-05]
+---
+
 # 17-03 SUMMARY — estimand_kind vocabulary + shared DSX-STA-040 guard
 
 **Plan:** 17-03 (Wave 2, depends_on 17-01) · **Requirements:** REQ-P17-02, REQ-P17-05

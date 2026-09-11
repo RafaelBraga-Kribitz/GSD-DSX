@@ -2,7 +2,7 @@
 phase: 16-re-run-verification-off-the-gate-path
 plan: 02
 status: complete
-requirements: [REQ-P16-01]
+requirements-completed: [REQ-P16-01]
 ---
 
 # 16-02 SUMMARY — dsx-reproduce skill + REPRO-REPORT.md template + capability register

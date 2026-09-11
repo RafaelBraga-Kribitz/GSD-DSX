@@ -28,8 +28,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from dsx.checks import coherence  # noqa: E402
-from dsx.findings import Severity  # noqa: E402
+from dsx.checks import coherence
+from dsx.findings import Severity
 
 
 def _coh041(report) -> list:

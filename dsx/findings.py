@@ -14,9 +14,10 @@ from __future__ import annotations
 
 import json
 import sys
-from dataclasses import dataclass, field, asdict
+from collections.abc import Iterable, Sequence
+from dataclasses import asdict, dataclass, field
 from enum import IntEnum
-from typing import Any, Iterable, Sequence
+from typing import Any
 
 EXIT_PASS = 0
 EXIT_BLOCK = 1
@@ -33,7 +34,7 @@ class Severity(IntEnum):
     CRITICAL = 50
 
     @classmethod
-    def parse(cls, value: "str | Severity") -> "Severity":
+    def parse(cls, value: str | Severity) -> Severity:
         if isinstance(value, Severity):
             return value
         key = str(value).strip().upper()
@@ -101,7 +102,7 @@ class Report:
     def add(
         self,
         code: str,
-        severity: "str | Severity",
+        severity: str | Severity,
         title: str,
         detail: str = "",
         remedy: str = "",
@@ -124,14 +125,14 @@ class Report:
         """Record a check that ran and passed. Makes the report auditable."""
         self.passed_checks.append(name)
 
-    def extend(self, other: "Report") -> None:
+    def extend(self, other: Report) -> None:
         self.findings.extend(other.findings)
         self.passed_checks.extend(other.passed_checks)
 
     # ---- querying ---------------------------------------------------------
 
     @property
-    def max_severity(self) -> "Severity | None":
+    def max_severity(self) -> Severity | None:
         return max((f.severity for f in self.findings), default=None)
 
     def at_or_above(self, threshold: Severity) -> list[Finding]:

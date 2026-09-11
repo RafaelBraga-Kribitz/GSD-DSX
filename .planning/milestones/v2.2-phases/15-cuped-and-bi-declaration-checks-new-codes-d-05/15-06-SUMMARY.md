@@ -2,7 +2,7 @@
 phase: 15-cuped-and-bi-declaration-checks-new-codes-d-05
 plan: 06
 status: complete
-requirements: [REQ-P15-07]
+requirements-completed: [REQ-P15-07]
 ---
 
 # 15-06 SUMMARY — catalogue regen to 260, D-05 allowlist, additive invariant rebaseline

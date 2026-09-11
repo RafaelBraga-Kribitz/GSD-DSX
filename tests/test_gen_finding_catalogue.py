@@ -212,12 +212,12 @@ report.add("DSX-PAR-001", "HIGH", "t")
             _write(
                 Path(code_dir),
                 "check.py",
-                '''
+                f'''
 def f(report):
     """No citation or reference value here."""
-    report.add("{enforced}", "HIGH", "t")
-    report.add("{neighbour}", "HIGH", "t")
-'''.format(enforced=enforced_code, neighbour=neighbour_code),
+    report.add("{enforced_code}", "HIGH", "t")
+    report.add("{neighbour_code}", "HIGH", "t")
+''',
             )
             _write(Path(tests_dir), "test_marker.py", f"# D-05: {enforced_code}\n")
 
@@ -301,6 +301,7 @@ class TestD05EnforcementFixture(unittest.TestCase):
             cwd=str(_ROOT),
             capture_output=True,
             text=True,
+            check=False,
         )
         # unittest exits 5 (not 0) when discovery finds zero tests — that IS the
         # assertion: bad_check.py's two functions must never be collected.
@@ -497,6 +498,7 @@ class TestFamiliesCitationGate(unittest.TestCase):
             cwd=str(_ROOT),
             capture_output=True,
             text=True,
+            check=False,
         )
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertNotIn("D-24:", result.stderr)
@@ -528,6 +530,7 @@ class TestFamiliesCitationGate(unittest.TestCase):
                 cwd=str(tree),
                 capture_output=True,
                 text=True,
+                check=False,
             )
             self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
             d24_lines = [
@@ -637,6 +640,7 @@ def f(report):
             cwd=str(_ROOT),
             capture_output=True,
             text=True,
+            check=False,
         )
         self.assertEqual(result.returncode, 0, result.stderr)
 
@@ -644,15 +648,15 @@ def f(report):
 # ── Task 3: canonical-declaration pin for codes emitted with divergent text from
 #    more than one report.add() site (v2.0.0 milestone audit GAP-PROC-05) ───────
 #
-# These five codes each fire from multiple report.add() sites with a different
-# (severity, title). collect() warns ("declared twice with different text") but
-# does not block, and only the last-seen row lands in the rendered catalogue — so
-# an edit to one site that diverges from its siblings, or a new site with new
-# text, passes silently today. This pins the exact declaration set the
-# generator's own extract() sees for each, and pins the membership of the
-# divergent set itself, so the next code that starts diverging (Phases 11.2/11.3
-# add more codes to the same catalogue) fails here and forces a conscious
-# dedupe-or-pin decision rather than drifting unnoticed.
+# These codes each fire from multiple report.add() sites with a different
+# (severity, title). This pins the exact declaration set the generator's own
+# extract() sees for each, and pins the membership of the divergent set itself,
+# so the next code that starts diverging fails here and forces a conscious
+# dedupe-or-pin decision rather than drifting unnoticed. Since v2.6.1 the
+# rendered catalogue row carries every severity and every text of such a code
+# (headline last-declared, the rest after "also:"); until then it kept only the
+# last-seen row and collect() printed a warning for the rest, which this pin
+# made redundant. TestCanonicalDeclarations proves the rendered rows complete.
 
 _PH = "<…>"  # what extract() renders any f-string interpolation as
 
@@ -687,8 +691,8 @@ _CANONICAL_DECLARATIONS = {
         ("CRITICAL", "Causal claim with no identification strategy behind it"),
         (
             "CRITICAL",
-            "Prescriptive claim recommends an intervention with no identification "
-            "strategy behind it",
+            ("Prescriptive claim recommends an intervention with no identification "
+            "strategy behind it"),
         ),
     },
     "DSX-CLM-021": {
@@ -705,9 +709,9 @@ _CANONICAL_DECLARATIONS = {
     # a missing/off-vocabulary available_at is now HIGH like an honest `unknown`,
     # not silently cleared), so the generator renders both interpolated names as
     # the placeholder — hence `Feature '<…>' <…> with no waiver`. The two
-    # report.add sites are ordered in `_check_feature_provenance` so collect()'s
-    # last-seen-wins dedupe lands the CRITICAL row in the catalogue (the headline
-    # disposition); this pin records both declarations deliberately.
+    # report.add sites are ordered in `_check_feature_provenance` so the CRITICAL
+    # text is the catalogue row's headline (the last-declared text); this pin
+    # records both declarations deliberately.
     "DSX-ML-034": {
         ("CRITICAL", f"Feature '{_PH}' is declared available only after the prediction moment"),
         ("HIGH", f"Feature '{_PH}' {_PH} with no waiver"),
@@ -720,14 +724,14 @@ _CANONICAL_DECLARATIONS = {
     # content-free `- segment: X` line must not silence the gate — implements the
     # D-29-03 discuss recommendation), and HIGH when a matching `accept` row has a
     # blank rationale. The three sites are per-segment mutually exclusive, ordered so
-    # collect()'s last-seen-wins dedupe lands the HIGH row in the catalogue; this pin
-    # records all three declarations deliberately (the `{name!r}` interpolation renders
-    # as the placeholder). Same divergent-text precedent as DSX-COH-030 above.
+    # the HIGH text is the catalogue row's headline; this pin records all three
+    # declarations deliberately (the `{name!r}` interpolation renders as the
+    # placeholder). Same divergent-text precedent as DSX-COH-030 above.
     "DSX-COH-041": {
         (
             "CRITICAL",
-            f"Opposing segment {_PH} above the disposition floor carries no "
-            "decision.subgroup_harm[] row",
+            (f"Opposing segment {_PH} above the disposition floor carries no "
+            "decision.subgroup_harm[] row"),
         ),
         (
             "CRITICAL",
@@ -742,8 +746,8 @@ class TestCanonicalDeclarations(unittest.TestCase):
     """Pin the divergent-text finding codes (milestone audit GAP-PROC-05)."""
 
     @staticmethod
-    def _declarations_by_code() -> "dict[str, set]":
-        by_code: "dict[str, set]" = {}
+    def _declarations_by_code() -> dict[str, set]:
+        by_code: dict[str, set] = {}
         for source in sorted((_ROOT / "dsx").rglob("*.py")):
             for code, severity, title in g.extract(source):
                 by_code.setdefault(code, set()).add((severity, title))
@@ -758,6 +762,24 @@ class TestCanonicalDeclarations(unittest.TestCase):
                 f"{code} declaration set drifted from its pin — if this change is "
                 "deliberate, update _CANONICAL_DECLARATIONS and say why in the commit",
             )
+
+    def test_rendered_row_carries_every_pinned_severity_and_text(self):
+        """v2.6.1 (Fork B, Option A): the catalogue row of a divergent code lists
+        every severity it is emitted at and every distinct text, so the public
+        catalogue describes what the gate actually emits."""
+        catalogue = (_ROOT / "references" / "finding-codes.md").read_text(encoding="utf-8")
+        for code, declarations in _CANONICAL_DECLARATIONS.items():
+            with self.subTest(code=code):
+                row = next(
+                    (line for line in catalogue.splitlines() if line.startswith(f"| `{code}` |")),
+                    None,
+                )
+                self.assertIsNotNone(row, f"{code}: no catalogue row")
+                cells = [cell.strip() for cell in row.strip("|").split(" | ")]
+                severities = set(cells[1].split(" / "))
+                self.assertEqual(severities, {severity for severity, _title in declarations})
+                for _severity, title in declarations:
+                    self.assertIn(title, cells[2], f"{code}: text missing from the row: {title!r}")
 
     def test_divergent_code_set_is_exactly_the_pinned_five(self):
         by_code = self._declarations_by_code()

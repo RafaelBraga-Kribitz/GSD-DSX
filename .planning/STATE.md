@@ -2,11 +2,11 @@
 gsd_state_version: 1.0
 milestone: v2.6
 milestone_name: Exploration Depth and Backlog Evidence
-status: shipped — v2.6 closed 2026-09-10 (S7-5 archive + S7-6 merge to `main`, tag `v2.6.0`); no milestone open; the ceremony loop is PAUSED until v2.7 opens
-stopped_at: "v2.6 shipped 2026-09-10. Archive committed on gsd/v2.6.0-exploration-depth, merged into main by explicit branch name (--no-ff), tag v2.6.0 on the merge commit, pushed. Loop paused (.planning/loop-logs/.paused). Next = open v2.7 interactively."
-last_updated: "2026-09-10T22:44:00.000Z"
-last_activity: 2026-09-10
-last_activity_desc: "Pre-ship check on main + fresh clone caught 5 release defects (fixture pointers into .planning/phases; byte-hashed CSVs/YAML pins vs CRLF checkout; absolute path in a golden; long archive paths) — fixed e52d7da+0f61eb5, proven in a fresh clone, merge redone. v2.6 close-out (interactive, 2026-09-10T22:44Z): S7-2 sign-offs HQ-41..46; S7-5 archive (milestones/v2.6-*, phases archived, REQUIREMENTS.md removed after archival); S7-6 ship (merge --no-ff into main, tag v2.6.0). Kaufman D-05 upgraded to a first-hand read the same day (da99ccf). Ceremony paused until v2.7 opens."
+status: shipped — v2.6 closed 2026-09-10 (tag `v2.6.0`); v2.6.1 patch (the post-ship liabilities pass) shipped 2026-09-11 (tag `v2.6.1`); no milestone open; the ceremony loop is PAUSED (`.planning/loop-logs/.paused`) until v2.7 opens
+stopped_at: "v2.6.1 shipped 2026-09-11: chore/v2.6.1-liabilities merged into main by explicit branch name (--no-ff, rehearsed on a throwaway branch), verified on main and in a fresh clone, tagged v2.6.1 on the merge commit, branch deleted. Nothing open; loop paused; next is opening v2.7 interactively."
+last_updated: "2026-09-11T14:09:00.000Z"
+last_activity: 2026-09-11
+last_activity_desc: "v2.6.1 shipped: ruff + markdownlint adopted and clean, timing pins redesigned on verification evidence, catalogue rows complete, version 2.6.1 everywhere with a test, records backfilled, branch hygiene done, cloud job stopped. Suite 1633 OK on main and in a fresh clone."
 progress:
   total_phases: 6
   completed_phases: 6
@@ -20,10 +20,11 @@ current_phase_name: Calibration re-baseline (terminal — milestone shipped)
 # Project state
 
 **Status:** v2.6 Exploration Depth and Backlog Evidence — **SHIPPED 2026-09-10** (tag
-`v2.6.0`, merge commit on `main`). **No milestone is open.**
+`v2.6.0`, merge commit on `main`); **v2.6.1 SHIPPED 2026-09-11** (patch: the post-ship
+liabilities pass, tag `v2.6.1` on its merge commit). **No milestone is open.**
 **Progress:** [████████████████████] v2.6 — 6/6 phases, 16/16 plans, 18/18 requirements
 Met, milestone audit `passed`; catalogue 279 (zero-mint terminal phase verified);
-corpus 42 known-bad + 15 good-control; full suite 1629 OK on the real interpreter.
+corpus 42 known-bad + 15 good-control; full suite 1633 OK on the real interpreter (v2.6.1).
 **Predecessors:** v2.5.0 and v2.4.1 SHIPPED 2026-09-06 interactively (`ad43ec6`,
 `07d3db0`); v2.4 Visual Excellence SHIPPED 2026-09-03 (`v2.4.0`); v2.3 Test Catalog
 SHIPPED 2026-09-02 (`v2.3.0`); v2.2 Analytic Surface SHIPPED 2026-08-29 (`v2.2.0`);
@@ -111,6 +112,7 @@ Carried forward from earlier closes — captured future ideas, not gaps:
 | seed | SEED-001-deepen-dsx-explore-data-eda-protocol | E-26 shipped in v2.6 Phase 26 (HQ-39); E-27 … E-31 still deferred with their entry conditions | 2026-08-28 |
 | seed | SEED-002-grow-data-profile-hermetic-eda-artifacts | Core shipped in v2.6 Phase 25 (HQ-39, reversing HQ-38); residue = a producer-side `parse_health` block (SEED-003 AC-20) | 2026-08-28 |
 | seed | SEED-003-analyst-conduct-and-notebook-integrity | Planted 2026-09-10; dormant by design until v2.7 opens with matching scope; six gate candidates (D-13 entry-conditioned), six skill/reference items, one profiler item; medium question settled (two media, explicit boundary) | 2026-09-10 |
+| seed | SEED-004-decisions-jsonl-concurrent-writers | Planted 2026-09-11 (v2.6.1 liabilities pass); the recorded WR-02 limitation — concurrent `dsx gate` runs against one root can share an invocation id — with three candidate designs and the test obligations; dormant until a scope actually races two gates on one root | 2026-09-11 |
 
 Acknowledged at the v2.6 milestone close (`gsd-tools query audit-open`, 2026-09-10) — the
 seeds above are genuinely deferred; plus one item the CLI flags as open that is **not**
@@ -136,16 +138,35 @@ and the merge redone on the fixed tip before tagging.
 Stopped at: v2.6 shipped; loop paused; nothing open.
 Resume file: None.
 
+2026-09-11 (interactive): post-ship liabilities pass on `chore/v2.6.1-liabilities`
+(from `main` = `v2.6.0`): ruff adopted and clean (`348ca6e`), timing pins moved to
+scaling-ratio assertions (`40d96f2`; an adversarial verification then found the helper
+biased under machine load — redesign in progress), 47 archived summaries backfilled
+with `requirements-completed:` plus the missing `29-01-SUMMARY.md` and `SEED-004`
+(`b922f76`), markdownlint adopted on the live surface and clean (`530d5bf`), branch
+hygiene executed (Operator Next Steps below). Merge to `main` and tag `v2.6.1` only on
+the operator's go.
+
 ## Operator Next Steps
 
 - **Open v2.7 (interactive):** `/gsd-new-milestone` with scope from `SEED-003` and
   ROADMAP `## Next`; write the new `LOOP-BRIEF.md` / `LOOP-LEDGER.md` /
   `HUMAN-QUEUE.md`; cut `gsd/v2.7.0-<slug>` from `main`; repoint `$Branch` in
-  `scripts/run-ceremony-firing.ps1`; remove `.planning/loop-logs/.paused`.
+  `scripts/run-ceremony-firing.ps1` **before** removing `.planning/loop-logs/.paused`
+  — the v2.6 branch it still names was deleted on 2026-09-11 (merged; branch
+  hygiene), so an un-paused firing would abort at the wrapper's branch guard.
 - **Two kinds of local file stay untracked:** `references/The AI Data Scientist.md`
   (a full-text clipping of an arXiv paper — do not commit) and the `.claude/`,
   `.vscode/`, `graphify-out/` operator files.
-- The stale agent worktree at `.claude/worktrees/agent-a9a54fddf75afc02f` is fully
-  merged into `main`; `git worktree remove` it at leisure.
+- **Branch hygiene done 2026-09-11 (operator: Option A).** Every merged milestone
+  branch was deleted locally and on origin; the stale agent worktree was removed
+  (its 150-line uncommitted test edit, already in `main` under the same names, is
+  kept under `archive/worktree-agent-a9a54fddf75afc02f`); the two unmerged
+  `cursor/*` one-commit drafts are kept under `archive/cursor-*` tags. The remote
+  `gsd/v2.0.0-dsx-validity-frame` carried 49 no-op `docs(loop)` commits written by a
+  **cloud-scheduled Claude Code job** that kept firing the retired v2.0.0 brief every
+  ~4 h from 2026-09-01 to 2026-09-11 08:13Z; the operator stopped the job, the tip is
+  kept under `archive/v2.0.0-cloud-firings`, and the branch is deleted. If that branch
+  reappears on origin, the job is not off.
 - **Stamp records from `date -u`**, never from the session's local date — the
   project's convention is UTC and the two diverged at this close.

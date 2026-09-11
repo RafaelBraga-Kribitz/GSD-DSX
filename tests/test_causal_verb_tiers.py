@@ -25,8 +25,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from dsx.checks import claims, coherence  # noqa: E402
-from dsx.findings import Report, Severity  # noqa: E402
+from dsx.checks import claims, coherence
+from dsx.findings import Report, Severity
 
 
 def codes(report: Report) -> set[str]:

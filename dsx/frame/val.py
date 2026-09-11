@@ -54,7 +54,7 @@ from ..spec import (
 # deliberately excluded — it routes entirely through DSX-VAL-011
 # (_check_estimand_falsifiability), so a blank falsifier fires exactly one
 # code, not two (D-05, disambiguating D-02 and D-05 read together).
-_ESTIMAND_REQUIRED_FIELDS: "tuple[str, ...]" = (
+_ESTIMAND_REQUIRED_FIELDS: tuple[str, ...] = (
     "quantity",
     "population",
     "contrast",
@@ -139,7 +139,7 @@ _IDENTIFICATION_CITATION = (
 # design_restriction has no counterpart in their paper at all. Say so in the
 # docstring too (D-05's whole point) — this comment is not a substitute for the
 # disclosure at the point of use.
-_PARAMETER_SCALE_CONSTRAINT_SOURCES: "frozenset[str]" = frozenset(
+_PARAMETER_SCALE_CONSTRAINT_SOURCES: frozenset[str] = frozenset(
     {"informative_priors", "penalisation", "design_restriction", "hierarchical_pooling"}
 )
 
@@ -194,7 +194,7 @@ _MISSINGNESS_CITATION = (
 # not_assessed also has no entry — that absence is what makes the mechanism a
 # skip: an author who has declared they have not evaluated the mechanism has not
 # made the claim this check judges.
-_MISSINGNESS_METHOD_VALIDITY: "dict[str, tuple[str, object, str]]" = {
+_MISSINGNESS_METHOD_VALIDITY: dict[str, tuple[str, object, str]] = {
     "mar": (
         "deny",
         {
@@ -1161,10 +1161,7 @@ def _check_missingness(frame: dict, report: Report) -> None:
     # `methods` maps each denied method to its own severity (D-05, REQ-P11.3-03), so
     # single_imputation resolves to CRITICAL while complete_case/available_case resolve
     # to HIGH. Under an allow mechanism every unlicensed method is the fallback severity.
-    if mode == "deny":
-        emit_severity = methods.get(normalized_method, fallback_severity)
-    else:
-        emit_severity = fallback_severity
+    emit_severity = methods.get(normalized_method, fallback_severity) if mode == "deny" else fallback_severity
 
     detail = (
         f"missingness.mechanism is {mechanism!r}, but missingness.method_implied is "

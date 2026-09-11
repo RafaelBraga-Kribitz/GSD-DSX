@@ -24,11 +24,11 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from dsx.checks import design  # noqa: E402
-from dsx.findings import Report  # noqa: E402
+from dsx.checks import design
+from dsx.findings import Report
 
 
-def codes(report: Report) -> "set[str]":
+def codes(report: Report) -> set[str]:
     return {f.code for f in report.findings}
 
 

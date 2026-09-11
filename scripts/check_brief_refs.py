@@ -52,7 +52,7 @@ def extract_section_7(text: str) -> str:
     match = re.search(
         r"##\s*7\.\s*Reference sources\r?\n\r?\n(.*?)\r?\n\r?\n---",
         text,
-        re.S,
+        re.DOTALL,
     )
     if not match:
         raise SystemExit("FAIL: could not locate '## 7. Reference sources' section in brief.md")

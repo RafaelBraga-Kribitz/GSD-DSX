@@ -29,7 +29,7 @@ _VOCAB_INVARIANT = _ROOT / "tests" / "test_viz_vocabulary_invariant.py"
 # The same fenced-json parse the input-type inventory uses (scripts/gen-input-types.py:
 # re.search(r"```json\s*(\{.*?\})\s*```", text, re.S)) — DOTALL + lazy, so it captures
 # the single json object regardless of CRLF line endings.
-_JSON_BLOCK = re.compile(r"```json\s*(\{.*?\})\s*```", re.S)
+_JSON_BLOCK = re.compile(r"```json\s*(\{.*?\})\s*```", re.DOTALL)
 
 # The eight HQ-27 still-unverified items and the two never-submitted heuristic
 # sources. None may back a shipped catalog citation. Tokens are chosen to catch

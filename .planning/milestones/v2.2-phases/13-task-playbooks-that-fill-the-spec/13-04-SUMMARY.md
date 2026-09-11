@@ -3,7 +3,7 @@ phase: 13-task-playbooks-that-fill-the-spec
 plan: 04
 type: execute
 status: complete
-requirements: [REQ-P13-04, REQ-P13-05]
+requirements-completed: [REQ-P13-04, REQ-P13-05]
 files_modified:
   - skills/dsx-scope-analysis/SKILL.md
   - capabilities/dsx/fragments/executor.md
