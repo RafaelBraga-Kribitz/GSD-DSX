@@ -40,7 +40,7 @@ class TestReleaseVersionAgreement(unittest.TestCase):
         self.assertEqual(manifest["version"], __version__)
 
     def test_every_example_spec_and_the_template_declare_the_package_version(self):
-        paths = sorted((ROOT / "examples").rglob("*.yaml")) + [ROOT / "templates" / "ANALYSIS-SPEC.yaml"]
+        paths = [*sorted((ROOT / "examples").rglob("*.yaml")), ROOT / "templates" / "ANALYSIS-SPEC.yaml"]
         declaring = 0
         for path in paths:
             for declared in _DECLARED.findall(path.read_text(encoding="utf-8")):
