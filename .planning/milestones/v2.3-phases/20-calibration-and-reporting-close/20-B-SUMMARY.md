@@ -2,7 +2,7 @@
 phase: 20-calibration-and-reporting-close
 plan: B
 wave: 2
-requirements: [REQ-P20-02]
+requirements-completed: [REQ-P20-02]
 status: complete
 mints_codes: 0
 catalogue_total: 275

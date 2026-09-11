@@ -1,7 +1,7 @@
 ---
 phase: 14-compounding-and-data-onboarding
 plan: 01
-requirements: [REQ-P14-01]
+requirements-completed: [REQ-P14-01]
 status: complete
 ---
 

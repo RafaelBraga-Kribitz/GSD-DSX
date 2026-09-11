@@ -31,6 +31,7 @@ metrics:
   tasks: 3
   files: 3
 status: complete
+requirements-completed: [REQ-P26-01]
 ---
 
 # Phase 26 Plan 01: Per-skill read contracts (three skills) Summary

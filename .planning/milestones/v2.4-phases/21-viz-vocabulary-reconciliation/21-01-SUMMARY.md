@@ -4,7 +4,7 @@ plan: 01
 type: tdd
 status: executed
 executed: 2026-09-02
-requirements: [REQ-P21-01, REQ-P21-02, REQ-P21-03]
+requirements-completed: [REQ-P21-01, REQ-P21-02, REQ-P21-03]
 ---
 
 # Phase 21 · Plan 01 — Execution summary (S1-3)

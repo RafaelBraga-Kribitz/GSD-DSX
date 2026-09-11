@@ -33,6 +33,7 @@ metrics:
   tasks: 2
   files: 2
 status: complete
+requirements-completed: [REQ-P26-01]
 ---
 
 # Phase 26 Plan 02: Per-skill read contracts (build-model, narrate) Summary

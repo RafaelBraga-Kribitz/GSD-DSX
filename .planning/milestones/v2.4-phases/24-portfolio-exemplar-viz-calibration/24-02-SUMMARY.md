@@ -1,3 +1,10 @@
+---
+phase: 24-portfolio-exemplar-viz-calibration
+plan: 02
+status: complete
+requirements-completed: [REQ-P24-02]
+---
+
 # 24-02 SUMMARY — First bad-CHART-choice fixtures + MEDIUM-stratum re-baseline (REQ-P24-02)
 
 **Plan:** 24-02 (Wave 1) · **Requirement:** REQ-P24-02 · **Status:** DONE

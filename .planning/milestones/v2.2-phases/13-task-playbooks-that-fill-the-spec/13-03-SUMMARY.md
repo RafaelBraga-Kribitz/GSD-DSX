@@ -3,7 +3,7 @@ phase: 13-task-playbooks-that-fill-the-spec
 plan: 03
 type: execute
 status: complete
-requirements: [REQ-P13-02, REQ-P13-03]
+requirements-completed: [REQ-P13-02, REQ-P13-03]
 files_modified:
   - skills/dsx-explore-data/SKILL.md
   - skills/dsx-narrate/SKILL.md

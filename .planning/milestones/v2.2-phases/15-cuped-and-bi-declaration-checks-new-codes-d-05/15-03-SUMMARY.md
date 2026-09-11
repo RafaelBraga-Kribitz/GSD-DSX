@@ -2,7 +2,7 @@
 phase: 15-cuped-and-bi-declaration-checks-new-codes-d-05
 plan: 03
 status: complete
-requirements: [REQ-P15-05, REQ-P15-06]
+requirements-completed: [REQ-P15-05, REQ-P15-06]
 ---
 
 # 15-03 SUMMARY — APA research template + Shapiro negative assertion, no mint

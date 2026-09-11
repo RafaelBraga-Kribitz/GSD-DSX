@@ -32,6 +32,7 @@ metrics:
   duration: ~20m
   completed: 2026-09-07
 status: complete
+requirements-completed: [REQ-P27-01, REQ-P27-03]
 ---
 
 # Phase 27 Plan 02: Feature-origin-only-leak corpus promotion Summary

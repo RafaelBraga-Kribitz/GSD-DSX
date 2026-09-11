@@ -1,3 +1,10 @@
+---
+phase: 24-portfolio-exemplar-viz-calibration
+plan: 01
+status: complete
+requirements-completed: [REQ-P24-01]
+---
+
 # 24-01 SUMMARY — Portfolio exemplar upgraded in place (REQ-P24-01)
 
 **Plan:** 24-01 (Wave 1) · **Requirement:** REQ-P24-01 · **Status:** DONE

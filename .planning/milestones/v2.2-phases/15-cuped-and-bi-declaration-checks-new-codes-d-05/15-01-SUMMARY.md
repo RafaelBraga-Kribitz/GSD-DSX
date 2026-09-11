@@ -2,7 +2,7 @@
 phase: 15-cuped-and-bi-declaration-checks-new-codes-d-05
 plan: 01
 status: complete
-requirements: [REQ-P15-01]
+requirements-completed: [REQ-P15-01]
 ---
 
 # 15-01 SUMMARY — CUPED vocabulary keystone (trap-12), no mint

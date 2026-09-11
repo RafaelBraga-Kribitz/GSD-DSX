@@ -2,7 +2,7 @@
 phase: 16-re-run-verification-off-the-gate-path
 plan: 04
 status: complete
-requirements: [REQ-P16-04]
+requirements-completed: [REQ-P16-04]
 ---
 
 # 16-04 SUMMARY — static AST no-entrypoint-execution guard

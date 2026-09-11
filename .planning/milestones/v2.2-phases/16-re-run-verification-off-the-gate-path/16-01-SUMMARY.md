@@ -2,7 +2,7 @@
 phase: 16-re-run-verification-off-the-gate-path
 plan: 01
 status: complete
-requirements: [REQ-P16-02]
+requirements-completed: [REQ-P16-02]
 ---
 
 # 16-01 SUMMARY — reproduce-report gate check + the phase's only catalogue mint

@@ -3,7 +3,7 @@ phase: 22-catalog-spine-uncertainty-heuristic
 plan: 02
 wave: 2
 status: complete
-requirements:
+requirements-completed:
   - REQ-P22-05
 completed: 2026-09-03T03:37Z
 ---

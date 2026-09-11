@@ -51,6 +51,7 @@ metrics:
   files_modified: 6
   tests_added: 26
 status: complete
+requirements-completed: [REQ-P18-01, REQ-P18-02, REQ-P18-03, REQ-P18-04, REQ-P18-06]
 ---
 
 # Phase 18 Plan A: Correlation, association and agreement routing + gates Summary

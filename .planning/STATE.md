@@ -111,6 +111,7 @@ Carried forward from earlier closes — captured future ideas, not gaps:
 | seed | SEED-001-deepen-dsx-explore-data-eda-protocol | E-26 shipped in v2.6 Phase 26 (HQ-39); E-27 … E-31 still deferred with their entry conditions | 2026-08-28 |
 | seed | SEED-002-grow-data-profile-hermetic-eda-artifacts | Core shipped in v2.6 Phase 25 (HQ-39, reversing HQ-38); residue = a producer-side `parse_health` block (SEED-003 AC-20) | 2026-08-28 |
 | seed | SEED-003-analyst-conduct-and-notebook-integrity | Planted 2026-09-10; dormant by design until v2.7 opens with matching scope; six gate candidates (D-13 entry-conditioned), six skill/reference items, one profiler item; medium question settled (two media, explicit boundary) | 2026-09-10 |
+| seed | SEED-004-decisions-jsonl-concurrent-writers | Planted 2026-09-11 (v2.6.1 liabilities pass); the recorded WR-02 limitation — concurrent `dsx gate` runs against one root can share an invocation id — with three candidate designs and the test obligations; dormant until a scope actually races two gates on one root | 2026-09-11 |
 
 Acknowledged at the v2.6 milestone close (`gsd-tools query audit-open`, 2026-09-10) — the
 seeds above are genuinely deferred; plus one item the CLI flags as open that is **not**

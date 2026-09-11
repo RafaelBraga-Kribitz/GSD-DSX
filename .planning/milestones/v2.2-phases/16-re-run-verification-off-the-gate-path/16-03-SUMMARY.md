@@ -2,7 +2,7 @@
 phase: 16-re-run-verification-off-the-gate-path
 plan: 03
 status: complete
-requirements: [REQ-P16-03]
+requirements-completed: [REQ-P16-03]
 ---
 
 # 16-03 SUMMARY — protocol_adherence sidecars + additive accepted-but-ignored corpus test

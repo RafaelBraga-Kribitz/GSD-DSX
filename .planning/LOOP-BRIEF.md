@@ -226,7 +226,8 @@ HUMAN-QUEUE item).
     (`tests/test_causal_verb_golden.py`), `_EXPECTED_VAL_CODES`
     (`tests/test_frame_val.py`), the spec count in `tests/test_dsx.py` (42 today),
     and — for a miss — an ATTRIBUTION sidecar whose `absent_code` is a catalogue
-    code or a number reserved in `_SECTION_65_BACKLOG_CODES` and whose
+    code or a number reserved in `_SECTION_65_BACKLOG_CODES`
+    (`tests/test_known_bad_corpus.py:969`) and whose
     `promotes_backlog_item` is the matching `6.5-item-N-…` id.
   - **D-05 for any minted code:** citation + structural criterion in the docstring,
     a `# D-05:` test marker, and the exact code added to

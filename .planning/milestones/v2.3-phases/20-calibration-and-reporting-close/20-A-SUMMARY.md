@@ -46,6 +46,7 @@ metrics:
   files_created: 24
   files_modified: 4
 status: complete
+requirements-completed: [REQ-P20-01]
 ---
 
 # Phase 20 Plan A: Known-bad calibration re-baseline + live HIGH verify/ship stratum — Summary

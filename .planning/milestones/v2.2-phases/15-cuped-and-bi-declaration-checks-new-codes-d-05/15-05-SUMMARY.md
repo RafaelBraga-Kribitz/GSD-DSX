@@ -2,7 +2,7 @@
 phase: 15-cuped-and-bi-declaration-checks-new-codes-d-05
 plan: 05
 status: complete
-requirements: [REQ-P15-03]
+requirements-completed: [REQ-P15-03]
 ---
 
 # 15-05 SUMMARY — good-fixture extension, silent at every threshold (D-08), no mint

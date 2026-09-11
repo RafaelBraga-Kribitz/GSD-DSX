@@ -4,7 +4,7 @@ plan: 03
 type: execute
 wave: 3
 status: complete
-requirements:
+requirements-completed:
   - REQ-P22-01
   - REQ-P22-05
 completed: 2026-09-03T04:33Z

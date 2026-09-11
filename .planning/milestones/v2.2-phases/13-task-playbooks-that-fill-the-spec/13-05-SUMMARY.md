@@ -3,7 +3,7 @@ phase: 13-task-playbooks-that-fill-the-spec
 plan: 05
 type: execute
 status: complete
-requirements: [REQ-P13-06]
+requirements-completed: [REQ-P13-06]
 files_modified:
   - tests/fixtures/finding-codes-phase12.md
   - tests/test_finding_catalogue_invariant.py
