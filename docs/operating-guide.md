@@ -3,7 +3,8 @@
 How GSD-DSX and the house-style skills reach a project, how to choose a ceremony
 tier, and how to run several phases at once without losing track of them.
 
-Written against GSD Core 1.7.0 and GSD-DSX 2.0.0. Every claim here was checked
+Written against GSD Core 1.7.0 and GSD-DSX 2.0.0 (the release steps in section 6
+were added at 2.6.1). Every claim here was checked
 against the running system rather than the reference documentation, because the
 two disagree in at least one place — see [gsd-tiers.md](gsd-tiers.md).
 
@@ -276,6 +277,17 @@ The asymmetry is the point: **capability changes are global and instant**, while
 script exists.
 
 ---
+
+### Cutting a release
+
+The release number lives in three places that must move together, and a test
+holds them together (`tests/test_release_version.py`): `dsx/__init__.py`
+(`__version__`, what `dsx --version` prints and what every decision record
+carries as `dsx_version`), `capabilities/dsx/capability.json` (`version`), and
+`repro_lock.dsx_version` in every example spec and in
+`templates/ANALYSIS-SPEC.yaml` (the gate's `DSX-REP-053` fires MEDIUM when a spec's
+declared lock version differs from the running package). Bump all three, run the
+suite, then tag.
 
 ## 7. Command reference
 
