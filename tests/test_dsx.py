@@ -7,10 +7,13 @@ from __future__ import annotations
 
 import io
 import json
+import math
 import re
 import sys
 import tempfile
+import time
 import unittest
+from collections.abc import Callable
 from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 from typing import ClassVar
@@ -30,6 +33,83 @@ from dsx.spec import PEEKING_POLICIES, describe_vocabulary, validate_structure
 
 def codes(report: Report) -> set[str]:
     return {f.code for f in report.findings}
+
+
+def assert_linear_scaling(
+    case: unittest.TestCase,
+    label: str,
+    make: Callable[[int], object],
+    run: Callable[[object], object],
+    large: int,
+    *,
+    spacing: int = 8,
+    repeats: int = 5,
+    floor: float = 0.005,
+    hang_guard: float = 2.0,
+) -> None:
+    """Assert that ``run`` scales at most linearly in the size of ``make``'s input.
+
+    This is the v2.6.1 house shape for every timing pin in this file. It replaced
+    the earlier shape (one ``perf_counter`` bracket per size and a hard
+    ``assertLess(elapsed, budget)``) whose absolute budgets sat only 2-3x above
+    the measured time on the full-pipeline tests and failed under machine load.
+    A ratio is what load cannot move: contention inflates both sizes alike.
+
+    Method. Two sizes ``spacing`` apart -- ``large`` and ``large // spacing``.
+    ``make(size)`` builds the input outside the clock; ``run(input)`` is what
+    gets timed, as the best of ``repeats`` brackets taken interleaved (small,
+    large, small, large, ...) so both sizes sample the same moments of load.
+    Each bracket repeats the call until it lasts at least ``floor`` seconds, so
+    a microsecond regex search is not measured at timer resolution. The
+    large/small ratio must stay below ``spacing ** 1.5``: the geometric midpoint
+    between linear growth (``spacing``) and quadratic growth (``spacing ** 2``),
+    which puts a linear workload and a quadratic regression each a factor
+    ``sqrt(spacing)`` -- 2.8x at the default 8x spacing -- from the limit.
+    Measured 2026-09-11 on the shipped code: every workload in this file ratios
+    6 to 10 at 8x spacing (limit 22.6); the quadratic DSX-CODE-002 loop that
+    ``test_scaler_full_loop_timing_is_linear`` guards against was recorded at
+    64 over the same 2,000 -> 16,000 span.
+
+    Brakes. Sizes run ascending, and the single calibration call at the small
+    size must finish within ``hang_guard`` seconds, so a polynomial regression
+    is caught at the small size before the large one runs. There is no finer
+    brake: CPython's regex engine holds the interpreter lock for the whole
+    match (a worker thread cannot be timed out -- verified 2026-09-11), so
+    callers whose old construction was worse than quadratic choose sizes small
+    enough that even that construction finishes in seconds.
+    """
+    small = large // spacing
+    case.assertGreaterEqual(small, 1, f"{label}: large={large} is too small for {spacing}x spacing")
+    inputs = (make(small), make(large))
+
+    def bracket(inp: object, loops: int) -> float:
+        start = time.perf_counter()
+        for _ in range(loops):
+            run(inp)
+        return (time.perf_counter() - start) / loops
+
+    first = bracket(inputs[0], 1)
+    if first > hang_guard:
+        case.fail(
+            f"{label}: one call at the SMALL size ({small}) took {first:.3f}s "
+            f"(hang guard {hang_guard}s) -- a super-linear regression, caught "
+            f"before the large size ({large}) runs"
+        )
+    loops = max(1, min(100_000, math.ceil(floor / max(first, 1e-9))))
+    best = [math.inf, math.inf]
+    for _ in range(repeats):
+        for i, inp in enumerate(inputs):
+            best[i] = min(best[i], bracket(inp, loops))
+    ratio = best[1] / best[0]
+    limit = spacing**1.5
+    case.assertLess(
+        ratio,
+        limit,
+        f"{label}: {best[1]:.6f}s at size {large} vs {best[0]:.6f}s at size {small} "
+        f"-- ratio {ratio:.1f} at {spacing}x spacing (linear ~{spacing}, quadratic "
+        f"~{spacing**2}, limit {limit:.1f}; best of {repeats}, {loops} call(s) per "
+        "bracket) -- super-linear regression",
+    )
 
 
 # ── mathx ────────────────────────────────────────────────────────────────────
@@ -940,15 +1020,13 @@ class TestFalsifierLexicon(unittest.TestCase):
         self.assertFalse(is_placeholder_or_refusal("none identified"))
 
     def test_long_input_classifies_without_catastrophic_backtracking(self):
-        import time
-
         from dsx.spec import falsifier_is_discriminating
 
-        text = ("the result will look different than we expect " * 500)[:20000]
-        self.assertEqual(len(text), 20000)
-        start = time.perf_counter()
-        falsifier_is_discriminating(text)
-        self.assertLess(time.perf_counter() - start, 1.0)
+        def make(size):
+            return ("the result will look different than we expect " * 500)[:size]
+
+        self.assertEqual(len(make(20000)), 20000)
+        assert_linear_scaling(self, "falsifier_is_discriminating", make, falsifier_is_discriminating, 20000)
 
 
 # ── design ───────────────────────────────────────────────────────────────────
@@ -5380,23 +5458,24 @@ class TestPhase11_1Code(unittest.TestCase):
         # (11.1.1-RESEARCH.md Pitfall 6), not inherited from the
         # single-keyword-prefix figure. Two adversarial non-matching inputs
         # built from repeated `name=value,` pairs -- short values, and
-        # values at the inner run's `{0,80}` bound -- each under a
-        # 1.0-second budget.
-        import time
-
+        # values at the inner run's `{0,80}` bound -- each pinned linear in
+        # input length (assert_linear_scaling).
         from dsx.checks import code as code_mod
 
-        short_value = ".fit(" + "n=1," * 200_000
-        self.assertEqual(len(short_value), 800_005)
-        start = time.perf_counter()
-        code_mod.FIT_CALL_RE.search(short_value)
-        self.assertLess(time.perf_counter() - start, 1.0)
+        def short_value(size):
+            return ".fit(" + "n=1," * (size // 4)
 
-        long_value = ".fit(" + ("n=" + "v" * 80 + ",") * 20_000
-        self.assertEqual(len(long_value), 1_660_005)
-        start = time.perf_counter()
-        code_mod.FIT_CALL_RE.search(long_value)
-        self.assertLess(time.perf_counter() - start, 1.0)
+        def long_value(size):
+            return ".fit(" + ("n=" + "v" * 80 + ",") * (size // 83)
+
+        self.assertEqual(len(short_value(800_000)), 800_005)
+        self.assertEqual(len(long_value(1_660_000)), 1_660_005)
+        assert_linear_scaling(
+            self, "FIT_CALL_RE short keyword values", short_value, code_mod.FIT_CALL_RE.search, 800_000
+        )
+        assert_linear_scaling(
+            self, "FIT_CALL_RE 80-char keyword values", long_value, code_mod.FIT_CALL_RE.search, 1_660_000
+        )
 
     def test_keyword_beyond_the_skip_bound_stays_uncaught_by_design_on_the_fallback(
         self,
@@ -6614,111 +6693,78 @@ class TestPhase11_1Code(unittest.TestCase):
         self.assertTrue(m.group(1).startswith("data"))
 
     def test_fit_call_re_timing_no_catastrophic_backtracking(self):
-        import time
-
         from dsx.checks import code as code_mod
 
-        text = ".fit(" + ("a" * 19990)
-        self.assertEqual(len(text), 19995)
-        start = time.perf_counter()
-        code_mod.FIT_CALL_RE.search(text)
-        self.assertLess(time.perf_counter() - start, 1.0)
+        def make(size):
+            return ".fit(" + "a" * (size - 5)
+
+        self.assertEqual(len(make(19995)), 19995)
+        assert_linear_scaling(self, "FIT_CALL_RE non-matching", make, code_mod.FIT_CALL_RE.search, 19995)
 
     # ── Phase 11.1.1 plan 02: this mechanism's own timing pins, not ──────────
     # ── inherited from a sibling's linearity proof (T-11.1-01, Rule from ────
     # ── 11.1.1-RESEARCH.md Pitfall 6) ─────────────────────────────────────
 
     def test_ast_fit_argument_extraction_timing_is_linear(self):
-        # House shape: local imports, inline input, one perf_counter bracket
-        # per size, hard assertLess, no subTest. Measures parse + walk +
-        # sort + ast.unparse of every fit argument -- the mechanism task 2
-        # wires into DSX-CODE-021's consumer loop --
-        # NOT the full check() pipeline (test_ast_scan_timing_is_linear_
-        # on_a_large_entrypoint above already covers that). Passes before
-        # task 2: ast.parse, _call_sites (plan 01) and ast.unparse are
-        # already fast at these sizes -- measured this session, well under
-        # budget on both rows.
+        # Measures parse + walk + sort + ast.unparse of every fit argument --
+        # the mechanism wired into DSX-CODE-021's consumer loop -- NOT the
+        # full check() pipeline (test_ast_scan_timing_is_linear_on_a_large_
+        # entrypoint covers that). Pinned as a scaling ratio over 2,500 ->
+        # 20,000 lines (assert_linear_scaling); measured 2026-09-11 at
+        # 0.033 s / 0.344 s, ratio 10.4 against the 22.6 limit.
         import ast
-        import time
 
         from dsx.checks import code as code_mod
 
-        for size, budget in ((5_000, 0.5), (20_000, 1.0)):
-            source = "model.fit(df)\n" * size
-            start = time.perf_counter()
+        def make(size):
+            return "model.fit(df)\n" * size
+
+        def run(source):
             tree = ast.parse(source)
             for site in code_mod._call_sites(tree):
                 if site.name in code_mod.FIT_METHOD_NAMES and site.node.args:
                     ast.unparse(site.node.args[0])
-            elapsed = time.perf_counter() - start
-            self.assertLess(
-                elapsed,
-                budget,
-                f"AST fit-argument extraction took {elapsed:.4f}s over "
-                f"{size} lines (budget {budget}s) -- possible quadratic "
-                "regression",
-            )
+
+        assert_linear_scaling(self, "AST fit-argument extraction", make, run, 20000, repeats=3)
 
     def test_fit_call_re_timing_no_catastrophic_backtracking_with_keyword_form(self):
         # The widened FALLBACK pattern gets its own measurement, not an
         # inherited figure. A 19,995-character non-matching input and a
-        # 1,000,000-character adversarial near-miss built from ".fit("
-        # followed by 500,000 repetitions of "x=", each under a
-        # 1.0-second budget. Uses code_mod.FIT_CALL_RE directly, so this
-        # re-measures whatever pattern is currently installed -- passes
-        # before task 2 (the unwidened pattern is already linear) and
-        # continues to pass after task 2 widens it.
-        import time
-
+        # 1,000,005-character adversarial near-miss built from ".fit("
+        # followed by 500,000 repetitions of "x=", each pinned linear in
+        # input length (assert_linear_scaling). Uses code_mod.FIT_CALL_RE
+        # directly, so this re-measures whatever pattern is installed.
         from dsx.checks import code as code_mod
 
-        non_matching = ".fit(" + ("a" * 19990)
-        self.assertEqual(len(non_matching), 19995)
-        start = time.perf_counter()
-        code_mod.FIT_CALL_RE.search(non_matching)
-        self.assertLess(time.perf_counter() - start, 1.0)
+        def non_matching(size):
+            return ".fit(" + "a" * (size - 5)
 
-        near_miss = ".fit(" + ("x=" * 500_000)
-        self.assertEqual(len(near_miss), 1_000_005)
-        start = time.perf_counter()
-        code_mod.FIT_CALL_RE.search(near_miss)
-        self.assertLess(time.perf_counter() - start, 1.0)
+        def near_miss(size):
+            return ".fit(" + "x=" * (size // 2)
+
+        self.assertEqual(len(non_matching(19995)), 19995)
+        self.assertEqual(len(near_miss(1_000_000)), 1_000_005)
+        assert_linear_scaling(self, "FIT_CALL_RE non-matching", non_matching, code_mod.FIT_CALL_RE.search, 19995)
+        assert_linear_scaling(self, "FIT_CALL_RE x= near-miss", near_miss, code_mod.FIT_CALL_RE.search, 1_000_000)
 
     def test_full_frame_cleaning_predicates_timing_no_catastrophic_backtracking(self):
         # Phase 11.1.1 (threat T-11.1-01). The previous single-pattern
         # construction was cubic (spread filter) and quadratic (imputation) in
-        # line length: 800 characters already took 1.4 seconds, so at this size
-        # it would not have finished in any practical time. Same house bar as
-        # test_fit_call_re_timing_no_catastrophic_backtracking above (20,000
-        # characters), but an order of magnitude tighter, because the replacement
-        # runs in well under a millisecond and a loose threshold would let a
-        # regression back to a backtracking construction slip through.
-        import time
-
+        # line length: 800 characters already took 1.4 seconds. Pinned as a
+        # scaling ratio over 100 -> 800 characters (assert_linear_scaling).
+        # The sizes are small on purpose: a regression back to that cubic
+        # construction fails the ratio (512 against the 22.6 limit) within
+        # seconds, where the 20,000-character size the other regex pins use
+        # would run it for hours -- a regex search cannot be interrupted
+        # mid-match, so input size is the only brake.
         from dsx.checks import code as code_mod
 
-        # The sizes ascend deliberately, and this loop must NOT use subTest: a
-        # regression to the old cubic construction has to abort at 800
-        # characters (about 1.4 seconds) rather than continue to 20,000, where
-        # the same construction runs for hours and would hang the suite instead
-        # of failing it. subTest records a failure and keeps going, which is
-        # exactly the wrong behaviour here.
-        for size, budget in ((800, 0.05), (20000, 0.1)):
-            for predicate in (
-                code_mod._is_full_frame_impute,
-                code_mod._is_full_frame_spread_filter,
-            ):
-                line = "x" * size  # satisfies neither predicate
-                start = time.perf_counter()
-                self.assertFalse(predicate(line))
-                elapsed = time.perf_counter() - start
-                self.assertLess(
-                    elapsed,
-                    budget,
-                    f"{predicate.__name__} took {elapsed:.4f}s on a "
-                    f"{size}-character non-matching line (budget {budget}s) — "
-                    "super-linear regression",
-                )
+        for predicate in (
+            code_mod._is_full_frame_impute,
+            code_mod._is_full_frame_spread_filter,
+        ):
+            self.assertFalse(predicate("x" * 800))  # satisfies neither predicate
+            assert_linear_scaling(self, predicate.__name__, lambda size: "x" * size, predicate, 800)
 
     def test_good_fixture_still_passes_all_four_gate_points(self):
         from dsx import cli
@@ -7080,39 +7126,30 @@ class TestPhase11_1Code(unittest.TestCase):
     # -- already-over-budget quadratic fixed, the one retained pattern ----
     # -- made linear by construction -----------------------------------
 
+    def _timed_entrypoint(self, size: int, body: str, prefix: str = "") -> tuple[str, str]:
+        """``make`` for the full-pipeline scaling pins: a fresh directory
+        (cleaned up with the test) holding an entrypoint of ``prefix`` plus
+        ``size`` copies of ``body``."""
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        return tmp.name, self._entrypoint(tmp.name, prefix + body * size)
+
+    def _timed_check(self, target: tuple[str, str]):
+        """``run`` for the full-pipeline scaling pins: one check() call."""
+        return self._check(*target)
+
     def test_ast_scan_timing_is_linear_on_a_large_entrypoint(self):
         # The subject here is OUR code, not CPython's parser: the
         # regression guard against re-walking the tree per code, rendering
         # tokens for non-fit calls, or any accidental quadratic in
-        # call-site assembly. House shape: local imports, inline input,
-        # perf_counter around one check() call, hard assertLess, NO
-        # subTest (a super-linear regression must abort at the small size
-        # rather than hang the suite at the large one). Measured this
-        # session, full check() pipeline (not just ast.parse + walk):
-        # 0.107 s / 0.431 s on `python` 3.12.10, 0.104 s / 0.479 s on
-        # `python3` 3.14.6, at 5,000 / 20,000 lines of `model.fit(df)`.
-        import time
+        # call-site assembly. Full check() pipeline (not just ast.parse +
+        # walk), pinned as a scaling ratio over 2,500 -> 20,000 lines of
+        # `model.fit(df)` (assert_linear_scaling). Measured 2026-09-11:
+        # 0.056 s / 0.510 s, ratio 9.2 against the 22.6 limit.
+        def make(size):
+            return self._timed_entrypoint(size, "model.fit(df)\n")
 
-        from dsx.checks import code as code_mod
-
-        for size, budget in ((5000, 0.5), (20000, 1.0)):
-            with tempfile.TemporaryDirectory() as tmp:
-                entry = self._entrypoint(tmp, "model.fit(df)\n" * size)
-                start = time.perf_counter()
-                code_mod.check(
-                    {
-                        "model": {"task": "binary_classification"},
-                        "reproducibility": {"entrypoint": entry},
-                    },
-                    tmp,
-                )
-                elapsed = time.perf_counter() - start
-                self.assertLess(
-                    elapsed,
-                    budget,
-                    f"AST scan took {elapsed:.4f}s over {size} lines "
-                    f"(budget {budget}s) -- possible quadratic regression",
-                )
+        assert_linear_scaling(self, "AST scan (full check())", make, self._timed_check, 20000, repeats=3)
 
     def test_scaler_full_loop_timing_is_linear(self):
         # Phase 11.1.1 plan 01 (threat T-11.1.1-13). Input IS the matching
@@ -7121,39 +7158,23 @@ class TestPhase11_1Code(unittest.TestCase):
         # lines, each SUPPRESSED (X_train already in prior), which is
         # exactly the shape that made the old (break-inside-the-inner-if)
         # loop rebuild `"\n".join(lines[:index])` for every one of the N
-        # matching lines. Measured this session, the OLD loop alone (not
-        # the full check() pipeline): 0.0223 / 0.0852 / 0.4545 / 1.4211 s
-        # at 2,000 / 4,000 / 8,000 / 16,000 matching lines -- roughly 4x
-        # per doubling. No subTest: a regression must abort at the small
-        # size.
-        import time
+        # matching lines. Measured then, the OLD loop alone (not the full
+        # check() pipeline): 0.0223 / 0.0852 / 0.4545 / 1.4211 s at 2,000 /
+        # 4,000 / 8,000 / 16,000 matching lines -- a 2,000 -> 16,000 ratio
+        # of 64 where this pin allows 22.6 (assert_linear_scaling). The
+        # shipped loop measured 2026-09-11 (full check() pipeline): 0.054 s
+        # / 0.549 s at 2,000 / 16,000, ratio 10.1. This was the one timing
+        # test that failed under machine load on its old absolute budget
+        # (0.6 s at 8,000 lines); a ratio is what load cannot move.
+        def make(size):
+            return self._timed_entrypoint(
+                size, "StandardScaler().fit_transform(X)\n", prefix="X_train = 1\n"
+            )
 
-        from dsx.checks import code as code_mod
-
-        for size, budget in ((8000, 0.6), (16000, 1.0)):
-            with tempfile.TemporaryDirectory() as tmp:
-                entry = self._entrypoint(
-                    tmp,
-                    "X_train = 1\n"
-                    + "StandardScaler().fit_transform(X)\n" * size,
-                )
-                start = time.perf_counter()
-                report = code_mod.check(
-                    {
-                        "model": {"task": "binary_classification"},
-                        "reproducibility": {"entrypoint": entry},
-                    },
-                    tmp,
-                )
-                elapsed = time.perf_counter() - start
-                self.assertNotIn("DSX-CODE-002", codes(report))
-                self.assertLess(
-                    elapsed,
-                    budget,
-                    f"DSX-CODE-002 scan took {elapsed:.4f}s over {size} "
-                    f"suppressed matching lines (budget {budget}s) -- "
-                    "possible quadratic regression",
-                )
+        self.assertNotIn("DSX-CODE-002", codes(self._timed_check(make(16000))))
+        assert_linear_scaling(
+            self, "DSX-CODE-002 suppressed-match loop", make, self._timed_check, 16000, repeats=3
+        )
 
     def test_scaler_full_loop_finding_set_unchanged_by_the_break_hoist(self):
         # The equivalence proof (see the comment above the loop in
@@ -7191,29 +7212,27 @@ class TestPhase11_1Code(unittest.TestCase):
         # deliberately malformed (missing the closing paren and the final
         # "n" of X_train) so the overall match fails everywhere and
         # re.search must retry from every one of the n "Pipeline(" start
-        # positions. Measured this session at n = 4,000: the OLD `.*`
-        # pattern and an UNBOUNDED `[^)\n]*` swap are both still quadratic
-        # (0.1357s / 0.4360s); only bounding the repetition
-        # (`[^)\n]{0,200}`) makes each retry O(1) instead of
-        # O(remaining-length), measured 0.0048s at n = 4,000 and 0.33s
-        # even at n = 256,000. A budget a quadratic construction breaks.
-        import time
-
+        # positions. Measured then at n = 4,000: the OLD `.*` pattern and
+        # an UNBOUNDED `[^)\n]*` swap are both still quadratic (0.1357s /
+        # 0.4360s); only bounding the repetition (`[^)\n]{0,200}`) makes
+        # each retry O(1) instead of O(remaining-length), measured 0.0048s
+        # at n = 4,000 and 0.33s even at n = 256,000.
+        #
+        # Pinned as a scaling ratio over n = 500 -> 4,000
+        # (assert_linear_scaling): the bounded pattern measured 2026-09-11
+        # at a ratio of 7.6; the unbounded swap is quadratic and ratios ~64
+        # against the 22.6 limit. The earlier absolute pin (plan 03 task 3,
+        # Pin 2: 1.0 s tightened to 0.05 s) could only catch that regression
+        # by sitting 10x above one machine's measured time; the ratio
+        # catches it on any machine at any load.
         from dsx.checks import code as code_mod
 
-        text = "Pipeline(" * 4000 + ").fit(X_trai"
-        start = time.perf_counter()
-        code_mod.PIPELINE_FIT_TRAIN_RE.search(text)
-        elapsed = time.perf_counter() - start
-        # Phase 11.1.1 plan 03 task 3, Pin 2. Tightened from 1.0s to 0.05s:
-        # a 1.0s budget would NOT catch a regression back to the unbounded-
-        # but-still-quadratic `[^)\n]*` swap this same comment block already
-        # measured at 0.4360s at n=4,000 -- comfortably under 1.0s, so that
-        # budget could not have caught the exact regression this pin exists
-        # to catch. Measured this session on the shipped bounded pattern:
-        # 0.0048s (`python` 3.12.10), 0.0053s (`python3` 3.14.6) -- both
-        # comfortably under 0.05s.
-        self.assertLess(elapsed, 0.05)
+        def make(n):
+            return "Pipeline(" * n + ").fit(X_trai"
+
+        assert_linear_scaling(
+            self, "PIPELINE_FIT_TRAIN_RE worst shape", make, code_mod.PIPELINE_FIT_TRAIN_RE.search, 4000
+        )
 
     def test_pipeline_fit_train_re_match_set_unchanged_across_probe_shapes(self):
         # 14 probe shapes (matching and non-matching), recorded in the
@@ -7270,56 +7289,56 @@ class TestPhase11_1Code(unittest.TestCase):
 
     def test_fit_leak_markers_timing_no_catastrophic_backtracking(self):
         # FIT_LEAK_MARKERS -- three bounded `\.method\s*\(` patterns, no
-        # nested quantifier -- measured on a 20,000-character non-matching
-        # line and on a near-miss (".fit" followed by whitespace with no
-        # opening parenthesis, which makes the trailing `\(` fail after the
-        # bounded `\s*` repetition has already been walked once).
-        import re
-        import time
-
+        # nested quantifier -- pinned linear (assert_linear_scaling) on a
+        # 20,000-character non-matching line and on a near-miss (".fit"
+        # followed by whitespace with no opening parenthesis, which makes
+        # the trailing `\(` fail after the bounded `\s*` repetition has
+        # already been walked once).
         from dsx.checks import code as code_mod
 
-        non_matching = "a" * 20000
-        near_miss = ".fit" + (" " * 19990)
+        shapes = {
+            "non-matching": lambda size: "a" * size,
+            "near-miss": lambda size: ".fit" + " " * (size - 4),
+        }
         for pattern in code_mod.FIT_LEAK_MARKERS:
             compiled = re.compile(pattern)
-            for text in (non_matching, near_miss):
-                with self.subTest(pattern=pattern, text=text[:10]):
-                    start = time.perf_counter()
-                    compiled.search(text)
-                    self.assertLess(time.perf_counter() - start, 1.0)
+            for shape, make in shapes.items():
+                with self.subTest(pattern=pattern, shape=shape):
+                    assert_linear_scaling(self, f"{pattern} {shape}", make, compiled.search, 20000)
 
     def test_scaler_full_re_timing_no_catastrophic_backtracking(self):
-        # SCALER_FULL_RE. Near-miss: a real "StandardScaler()" prefix and a
-        # real "fit_transform(" suffix with 20,000 characters of dots
-        # between them, so the `\s*\.\s*` between the two halves is walked
-        # to the end before the whole match fails.
-        import time
-
+        # SCALER_FULL_RE, pinned linear (assert_linear_scaling). Near-miss:
+        # a real "StandardScaler()" prefix and a real "fit_transform(" suffix
+        # with ~20,000 characters of dots between them, so the `\s*\.\s*`
+        # between the two halves is walked to the end before the whole
+        # match fails.
         from dsx.checks import code as code_mod
 
-        non_matching = "a" * 20000
-        near_miss = "StandardScaler()" + ("." * 19980) + "fit_transform(X"
-        for text in (non_matching, near_miss):
-            with self.subTest(text=text[:20]):
-                start = time.perf_counter()
-                code_mod.SCALER_FULL_RE.search(text)
-                self.assertLess(time.perf_counter() - start, 1.0)
+        shapes = {
+            "non-matching": lambda size: "a" * size,
+            "near-miss": lambda size: "StandardScaler()" + "." * (size - 31) + "fit_transform(X",
+        }
+        for shape, make in shapes.items():
+            with self.subTest(shape=shape):
+                assert_linear_scaling(
+                    self, f"SCALER_FULL_RE {shape}", make, code_mod.SCALER_FULL_RE.search, 20000
+                )
 
     def test_resample_before_re_timing_no_catastrophic_backtracking(self):
         # RESAMPLE_BEFORE_RE -- a `\b`-anchored alternation of four literal
-        # names with no quantifier inside the alternation at all.
-        import time
-
+        # names with no quantifier inside the alternation at all -- pinned
+        # linear (assert_linear_scaling).
         from dsx.checks import code as code_mod
 
-        non_matching = "a" * 20000
-        near_miss = "SMOT" + ("x" * 19996)  # "SMOT" without the final "E"
-        for text in (non_matching, near_miss):
-            with self.subTest(text=text[:20]):
-                start = time.perf_counter()
-                code_mod.RESAMPLE_BEFORE_RE.search(text)
-                self.assertLess(time.perf_counter() - start, 1.0)
+        shapes = {
+            "non-matching": lambda size: "a" * size,
+            "near-miss": lambda size: "SMOT" + "x" * (size - 4),  # "SMOT" without the final "E"
+        }
+        for shape, make in shapes.items():
+            with self.subTest(shape=shape):
+                assert_linear_scaling(
+                    self, f"RESAMPLE_BEFORE_RE {shape}", make, code_mod.RESAMPLE_BEFORE_RE.search, 20000
+                )
 
     def test_every_dsx_code_report_add_call_resolves_to_check(self):
         # Pin 4: the D-05 structural guard made mechanical. The finding-
