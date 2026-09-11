@@ -474,6 +474,41 @@ def _render_token(node: ast.AST) -> str:
     return ast.unparse(node)
 
 
+def _first_unsuppressed_scaler_line(lines: list[str]) -> int | None:
+    """Index of the first ``StandardScaler().fit_transform`` line with no
+    ``X_train`` anywhere above it; ``None`` when that first line is already
+    suppressed or there is none. Pure on purpose (v2.6.1): the DSX-CODE-002
+    ``report.add`` stays in ``check()`` -- Phase 11.1.1 plan 03 Pin 4 keeps every
+    DSX-CODE emission lexically inside ``check`` -- and the timing pin times this
+    scan by itself; see the note below on why that matters.
+
+    Phase 11.1.1 plan 01 (threat T-11.1.1-13, Decision 8): the ``break`` used to
+    sit inside the inner ``if``, so a SUPPRESSED match (prior already names
+    X_train) did not stop the outer loop -- it kept rebuilding
+    ``prior = "\n".join(lines[:index])``, an O(index) operation, for every one
+    of the remaining matching lines, making the whole loop O(n^2) on the
+    PRIMARY path. Measured then with an ``X_train = 1`` line above N matching
+    ``StandardScaler().fit_transform`` lines: 0.0223 / 0.0852 / 0.4545 /
+    1.4211 s at 2,000 / 4,000 / 8,000 / 16,000 -- roughly 4x per doubling.
+    Hoisting the ``break`` out of the inner ``if`` is provably
+    behaviour-preserving: ``lines[:j]`` is a prefix superset of ``lines[:i]``
+    for ``j > i``, so once "X_train" is in ``prior`` it is in every later
+    ``prior`` too, and the loop is dead after the first suppressed match
+    exactly as much as after the first accepted one. Pinned by
+    ``test_scaler_full_loop_timing_is_linear``, whose input is this exact shape
+    and which times this function alone: inside the full ``check()`` pipeline
+    the parse and the other scans dilute a quadratic here to a ratio the pin
+    can barely tell from linear.
+    """
+    for index, line in enumerate(lines):
+        if SCALER_FULL_RE.search(line):
+            prior = "\n".join(lines[:index])
+            if "X_train" not in prior and "x_train" not in prior.lower():
+                return index
+            return None
+    return None
+
+
 def check(spec: dict, phase_dir: str | None = None) -> Report:
     """Entrypoint fit-before-split, full-frame-cleaning and fit-after-split scans
     (DSX-CODE-*).
@@ -937,35 +972,16 @@ def check(spec: dict, phase_dir: str | None = None) -> Report:
         ),
     )
 
-    # Phase 11.1.1 plan 01 (threat T-11.1.1-13, Decision 8): the `break`
-    # used to sit inside the inner `if`, so a SUPPRESSED match (prior
-    # already names X_train) did not stop the outer loop -- it kept
-    # rebuilding `prior = "\n".join(lines[:index])`, an O(index)
-    # operation, for every one of the remaining matching lines, making the
-    # whole loop O(n^2) on the PRIMARY path. Measured this session with an
-    # `X_train = 1` line above N matching `StandardScaler().fit_transform`
-    # lines: 0.0223 / 0.0852 / 0.4545 / 1.4211 s at 2,000 / 4,000 / 8,000 /
-    # 16,000 -- roughly 4x per doubling, 1.4 s at 16,000, already over the
-    # house budget. Hoisting the `break` out of the inner `if` is provably
-    # behaviour-preserving: `lines[:j]` is a prefix superset of `lines[:i]`
-    # for `j > i`, so once "X_train" is in `prior` it is in every later
-    # `prior` too, and the loop is dead after the first suppressed match
-    # exactly as much as after the first accepted one. Pinned by
-    # test_scaler_full_loop_timing_is_linear, whose input is this exact
-    # shape.
-    for index, line in enumerate(lines):
-        if SCALER_FULL_RE.search(line):
-            prior = "\n".join(lines[:index])
-            if "X_train" not in prior and "x_train" not in prior.lower():
-                report.add(
-                    "DSX-CODE-002",
-                    "HIGH",
-                    "StandardScaler().fit_transform on full frame with no prior X_train",
-                    detail=f"Line {index + 1}: {line.strip()[:120]}",
-                    remedy="Fit the scaler on X_train only, then transform X_train and X_test.",
-                    where=f"entrypoint:{entry}",
-                )
-            break
+    scaler_index = _first_unsuppressed_scaler_line(lines)
+    if scaler_index is not None:
+        report.add(
+            "DSX-CODE-002",
+            "HIGH",
+            "StandardScaler().fit_transform on full frame with no prior X_train",
+            detail=f"Line {scaler_index + 1}: {lines[scaler_index].strip()[:120]}",
+            remedy="Fit the scaler on X_train only, then transform X_train and X_test.",
+            where=f"entrypoint:{entry}",
+        )
 
     for index, line in enumerate(lines):
         if RESAMPLE_BEFORE_RE.search(line) and (first_split is None or index < first_split):

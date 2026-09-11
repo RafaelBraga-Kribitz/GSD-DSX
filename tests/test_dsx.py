@@ -5,10 +5,12 @@ Run:  python3 -m unittest discover -s tests -v
 
 from __future__ import annotations
 
+import gc
 import io
 import json
 import math
 import re
+import statistics
 import sys
 import tempfile
 import time
@@ -42,74 +44,144 @@ def assert_linear_scaling(
     run: Callable[[object], object],
     large: int,
     *,
-    spacing: int = 8,
+    spacing: int = 16,
     repeats: int = 5,
-    floor: float = 0.005,
+    floor: float = 0.05,
     hang_guard: float = 2.0,
-) -> None:
-    """Assert that ``run`` scales at most linearly in the size of ``make``'s input.
+) -> tuple[object, object]:
+    """Assert that ``run`` scales at most linearly in the size of ``make``'s input,
+    and return ``run``'s last result at the small and at the large size so the
+    caller asserts correctness on the very calls that were timed.
 
-    This is the v2.6.1 house shape for every timing pin in this file. It replaced
-    the earlier shape (one ``perf_counter`` bracket per size and a hard
-    ``assertLess(elapsed, budget)``) whose absolute budgets sat only 2-3x above
-    the measured time on the full-pipeline tests and failed under machine load.
-    A ratio is what load cannot move: contention inflates both sizes alike.
+    House shape for every timing pin in this file since v2.6.1. It replaced the
+    absolute-budget shape (one ``perf_counter`` bracket and ``assertLess(elapsed,
+    budget)``), whose budgets sat 2-3x above the measured time on the full-pipeline
+    tests and failed under machine load. The first ratio design (commit 40d96f2)
+    was then put through mutation tests and a flake hunt under saturating load:
+    the kills all worked, but the design took the best of several brackets per
+    size, and a 5 ms small bracket dodges a scheduler preemption far more often
+    than a 40-500 ms large one, so load pushed the ratio up (5 of 300 loaded runs
+    failed, none of 120 idle) and occasionally down. This version is what that
+    evidence asked for.
 
-    Method. Two sizes ``spacing`` apart -- ``large`` and ``large // spacing``.
-    ``make(size)`` builds the input outside the clock; ``run(input)`` is what
-    gets timed, as the best of ``repeats`` brackets taken interleaved (small,
-    large, small, large, ...) so both sizes sample the same moments of load.
-    Each bracket repeats the call until it lasts at least ``floor`` seconds, so
-    a microsecond regex search is not measured at timer resolution. The
-    large/small ratio must stay below ``spacing ** 1.5``: the geometric midpoint
-    between linear growth (``spacing``) and quadratic growth (``spacing ** 2``),
-    which puts a linear workload and a quadratic regression each a factor
-    ``sqrt(spacing)`` -- 2.8x at the default 8x spacing -- from the limit.
-    Measured 2026-09-11 on the shipped code: every workload in this file ratios
-    6 to 10 at 8x spacing (limit 22.6); the quadratic DSX-CODE-002 loop that
-    ``test_scaler_full_loop_timing_is_linear`` guards against was recorded at
-    64 over the same 2,000 -> 16,000 span.
+    Method.
+    * Two sizes ``spacing`` apart (default 16x): ``large`` and ``large // spacing``.
+      ``make(size)`` builds the input outside the clock; ``run(input)`` is timed.
+    * Calibration: two calls at each size, the faster one is the estimate (a cold
+      first call measured 20x slower than steady state on a microsecond regex).
+    * Equal-length brackets: a target duration ``T = max(floor, one large call)``
+      is chosen and each size is looped ``ceil(T / estimate)`` times per bracket,
+      so both brackets last the same wall time and a scheduler quantum (15.6 ms on
+      Windows) is a small fraction of either. ``floor`` defaults to 50 ms.
+    * ``repeats`` interleaved pairs (small, large, small, large, ...). The
+      statistic is the MEDIAN of the per-pair per-call ratios: a load burst that
+      spans a pair cancels out of its ratio, and a burst that hits one bracket of
+      a pair spoils one ratio, which the median of five ignores.
+    * The cyclic garbage collector is frozen around the brackets (``gc.freeze``),
+      so the ratio does not depend on how large a heap the suite has accumulated
+      by the time the test runs (measured at 20-30 percent of the ratio on the
+      ``ast`` workloads before this was added).
+    * Limit ``spacing ** 1.5`` -- 64 at 16x, the geometric midpoint between linear
+      growth (16) and quadratic growth (256).
 
-    Brakes. Sizes run ascending, and the single calibration call at the small
-    size must finish within ``hang_guard`` seconds, so a polynomial regression
-    is caught at the small size before the large one runs. There is no finer
-    brake: CPython's regex engine holds the interpreter lock for the whole
-    match (a worker thread cannot be timed out -- verified 2026-09-11), so
-    callers whose old construction was worse than quadratic choose sizes small
-    enough that even that construction finishes in seconds.
+    Brakes. Every call is watched: a call at the small size over ``hang_guard``
+    seconds, or at the large size over ``hang_guard * spacing``, fails at once with
+    the time it took, so a runaway regression costs one call, not ``repeats`` of
+    them; and when the two calibration estimates alone ratio above three times
+    the limit, the test fails there without running any bracket (a quadratic
+    regression ratios ~256 at 16x; a cubic one ~4,000; noise never reaches 192).
+    A genuinely exponential regex would still hang at the small size: CPython's
+    regex engine holds the interpreter lock for the whole match (a worker thread
+    cannot be timed out -- verified 2026-09-11), so callers whose old
+    construction was worse than quadratic keep their sizes small enough for that
+    construction to trip the small-size guard on its first call.
+
+    Measured with this code on 2026-09-11 (Windows 11, CPython 3.12.10, 16 logical
+    CPUs): 10 idle passes over every pin in this file and 10 passes under 16
+    busy-loop processes (a full suite run overlapped the loaded passes) -- 0
+    failures in 240 test runs. Median-of-pairs ratio, idle max -> loaded max,
+    against the limit of 64:
+
+      falsifier_is_discriminating, 1,250 -> 20,000 chars        14.5 -> 15.7
+      FIT_CALL_RE, four inputs, 1,250 -> 20,000 chars and up    17.0 -> 20.1
+      FIT_LEAK_MARKERS / SCALER_FULL_RE / RESAMPLE_BEFORE_RE    17.9 -> 21.3
+      PIPELINE_FIT_TRAIN_RE worst shape, n = 250 -> 4,000       17.2 -> 18.1
+      full-frame predicates, 2,000 -> 32,000 chars              10.8 -> 11.9
+      AST fit-argument extraction, 1,250 -> 20,000 lines        23.5 -> 23.5
+      AST scan through check(), 1,250 -> 20,000 lines           20.7 -> 21.7
+      DSX-CODE-002 scan, first match suppressed, 1,000 -> 16,000  1.1 -> 1.2
+
+    Largest ratio anywhere 23.5 (margin 2.7x); load moved no pin by more than
+    +3.4. The documented regressions, run through this same code: the unbounded
+    PIPELINE_FIT_TRAIN_RE 252, the pre-hardening quadratic imputation regex 255
+    and the pre-hoist DSX-CODE-002 loop 247 -- all three stopped at calibration;
+    a synthetic quadratic in falsifier_is_discriminating 209 at the bracket
+    ratio; and the pre-hardening cubic spread filter stopped by the call guard
+    after one 24.6 s call at 2,000 characters.
     """
     small = large // spacing
     case.assertGreaterEqual(small, 1, f"{label}: large={large} is too small for {spacing}x spacing")
+    sizes = (small, large)
     inputs = (make(small), make(large))
-
-    def bracket(inp: object, loops: int) -> float:
-        start = time.perf_counter()
-        for _ in range(loops):
-            run(inp)
-        return (time.perf_counter() - start) / loops
-
-    first = bracket(inputs[0], 1)
-    if first > hang_guard:
-        case.fail(
-            f"{label}: one call at the SMALL size ({small}) took {first:.3f}s "
-            f"(hang guard {hang_guard}s) -- a super-linear regression, caught "
-            f"before the large size ({large}) runs"
-        )
-    loops = max(1, min(100_000, math.ceil(floor / max(first, 1e-9))))
-    best = [math.inf, math.inf]
-    for _ in range(repeats):
-        for i, inp in enumerate(inputs):
-            best[i] = min(best[i], bracket(inp, loops))
-    ratio = best[1] / best[0]
+    results: list[object] = [None, None]
+    guards = (hang_guard, hang_guard * spacing)
     limit = spacing**1.5
+
+    def one_call(i: int) -> float:
+        start = time.perf_counter()
+        results[i] = run(inputs[i])
+        elapsed = time.perf_counter() - start
+        if elapsed > guards[i]:
+            case.fail(
+                f"{label}: one call at size {sizes[i]} took {elapsed:.3f}s (guard "
+                f"{guards[i]:.1f}s) -- runaway regression, stopped after that call"
+            )
+        return elapsed
+
+    estimate = [min(one_call(i), one_call(i)) for i in (0, 1)]
+    calibration_ratio = estimate[1] / max(estimate[0], 1e-9)
+    if calibration_ratio > 3 * limit:
+        case.fail(
+            f"{label}: the calibration calls alone ratio {calibration_ratio:.0f} at {spacing}x "
+            f"spacing ({estimate[1]:.6f}s at size {large} vs {estimate[0]:.6f}s at size {small}; "
+            f"limit {limit:.0f}) -- super-linear regression, stopped before the brackets"
+        )
+    target = max(floor, estimate[1])
+    loops = tuple(max(1, min(1_000_000, math.ceil(target / max(estimate[i], 1e-9)))) for i in (0, 1))
+
+    def bracket(i: int) -> float:
+        """Wall time per call over ``loops[i]`` calls at size ``sizes[i]``."""
+        start = time.perf_counter()
+        for _ in range(loops[i]):
+            results[i] = run(inputs[i])
+        elapsed = time.perf_counter() - start
+        if elapsed > guards[i] * loops[i]:
+            case.fail(
+                f"{label}: a bracket of {loops[i]} call(s) at size {sizes[i]} took {elapsed:.3f}s "
+                f"(guard {guards[i] * loops[i]:.1f}s) -- runaway regression, stopped after that bracket"
+            )
+        return elapsed / loops[i]
+
+    per_call: list[tuple[float, float]] = []
+    gc.collect()
+    gc.freeze()
+    try:
+        for _ in range(repeats):
+            per_call.append((bracket(0), bracket(1)))
+    finally:
+        gc.unfreeze()
+    ratios = [big / tiny for tiny, big in per_call]
+    ratio = statistics.median(ratios)
     case.assertLess(
         ratio,
         limit,
-        f"{label}: {best[1]:.6f}s at size {large} vs {best[0]:.6f}s at size {small} "
-        f"-- ratio {ratio:.1f} at {spacing}x spacing (linear ~{spacing}, quadratic "
-        f"~{spacing**2}, limit {limit:.1f}; best of {repeats}, {loops} call(s) per "
-        "bracket) -- super-linear regression",
+        f"{label}: median of {repeats} paired brackets ratio {ratio:.1f} at {spacing}x spacing "
+        f"(linear ~{spacing}, quadratic ~{spacing**2}, limit {limit:.0f}); pairs "
+        f"{', '.join(f'{r:.1f}' for r in ratios)}; medians {statistics.median(b for _, b in per_call):.6f}s/call "
+        f"at size {large} vs {statistics.median(t for t, _ in per_call):.6f}s/call at size {small}; "
+        f"{loops[0]}/{loops[1]} calls per bracket -- super-linear regression",
     )
+    return results[0], results[1]
 
 
 # ── mathx ────────────────────────────────────────────────────────────────────
@@ -6709,9 +6781,9 @@ class TestPhase11_1Code(unittest.TestCase):
         # Measures parse + walk + sort + ast.unparse of every fit argument --
         # the mechanism wired into DSX-CODE-021's consumer loop -- NOT the
         # full check() pipeline (test_ast_scan_timing_is_linear_on_a_large_
-        # entrypoint covers that). Pinned as a scaling ratio over 2,500 ->
-        # 20,000 lines (assert_linear_scaling); measured 2026-09-11 at
-        # 0.033 s / 0.344 s, ratio 10.4 against the 22.6 limit.
+        # entrypoint covers that). Pinned as a scaling ratio over 1,250 ->
+        # 20,000 lines; the measured figures live in assert_linear_scaling's
+        # docstring.
         import ast
 
         from dsx.checks import code as code_mod
@@ -6751,20 +6823,29 @@ class TestPhase11_1Code(unittest.TestCase):
         # Phase 11.1.1 (threat T-11.1-01). The previous single-pattern
         # construction was cubic (spread filter) and quadratic (imputation) in
         # line length: 800 characters already took 1.4 seconds. Pinned as a
-        # scaling ratio over 100 -> 800 characters (assert_linear_scaling).
-        # The sizes are small on purpose: a regression back to that cubic
-        # construction fails the ratio (512 against the 22.6 limit) within
-        # seconds, where the 20,000-character size the other regex pins use
-        # would run it for hours -- a regex search cannot be interrupted
-        # mid-match, so input size is the only brake.
+        # scaling ratio over 2,000 -> 32,000 characters (assert_linear_scaling).
+        # The small size is chosen twice over: large enough that the regex work
+        # (about 75 ps per character) is not buried under the ~0.14 us call
+        # overhead -- at 800 characters a quadratic regression would have
+        # ratioed only ~70 against the 64 limit -- and small enough that the
+        # cubic construction (2,000 chars: ~22 s per call) trips the 2 s guard
+        # on its first call instead of running for hours at 32,000: a regex
+        # search cannot be interrupted mid-match, so input size is the brake.
+        # Each near-miss satisfies the predicate's FIRST sub-pattern and fails
+        # the second, so both regexes run on every call; a plain "x" * n line
+        # fails the first and `and` never reaches the second, which is what the
+        # pre-v2.6.1 pin measured without knowing it.
         from dsx.checks import code as code_mod
 
-        for predicate in (
-            code_mod._is_full_frame_impute,
-            code_mod._is_full_frame_spread_filter,
+        for predicate, prefix in (
+            (code_mod._is_full_frame_impute, ".fillna("),
+            (code_mod._is_full_frame_spread_filter, "a["),
         ):
-            self.assertFalse(predicate("x" * 800))  # satisfies neither predicate
-            assert_linear_scaling(self, predicate.__name__, lambda size: "x" * size, predicate, 800)
+            small_result, large_result = assert_linear_scaling(
+                self, predicate.__name__, lambda size, p=prefix: p + "x" * (size - len(p)), predicate, 32000
+            )
+            self.assertFalse(small_result)
+            self.assertFalse(large_result)
 
     def test_good_fixture_still_passes_all_four_gate_points(self):
         from dsx import cli
@@ -7143,9 +7224,9 @@ class TestPhase11_1Code(unittest.TestCase):
         # regression guard against re-walking the tree per code, rendering
         # tokens for non-fit calls, or any accidental quadratic in
         # call-site assembly. Full check() pipeline (not just ast.parse +
-        # walk), pinned as a scaling ratio over 2,500 -> 20,000 lines of
-        # `model.fit(df)` (assert_linear_scaling). Measured 2026-09-11:
-        # 0.056 s / 0.510 s, ratio 9.2 against the 22.6 limit.
+        # walk), pinned as a scaling ratio over 1,250 -> 20,000 lines of
+        # `model.fit(df)`; the measured figures live in assert_linear_scaling's
+        # docstring.
         def make(size):
             return self._timed_entrypoint(size, "model.fit(df)\n")
 
@@ -7158,23 +7239,27 @@ class TestPhase11_1Code(unittest.TestCase):
         # lines, each SUPPRESSED (X_train already in prior), which is
         # exactly the shape that made the old (break-inside-the-inner-if)
         # loop rebuild `"\n".join(lines[:index])` for every one of the N
-        # matching lines. Measured then, the OLD loop alone (not the full
-        # check() pipeline): 0.0223 / 0.0852 / 0.4545 / 1.4211 s at 2,000 /
-        # 4,000 / 8,000 / 16,000 matching lines -- a 2,000 -> 16,000 ratio
-        # of 64 where this pin allows 22.6 (assert_linear_scaling). The
-        # shipped loop measured 2026-09-11 (full check() pipeline): 0.054 s
-        # / 0.549 s at 2,000 / 16,000, ratio 10.1. This was the one timing
-        # test that failed under machine load on its old absolute budget
-        # (0.6 s at 8,000 lines); a ratio is what load cannot move.
-        def make(size):
-            return self._timed_entrypoint(
-                size, "StandardScaler().fit_transform(X)\n", prefix="X_train = 1\n"
-            )
+        # matching lines. Measured then, the OLD loop alone: 0.0223 / 0.0852 /
+        # 0.4545 / 1.4211 s at 2,000 / 4,000 / 8,000 / 16,000 matching lines
+        # -- 4x per doubling, so ~256 over this pin's 1,000 -> 16,000 span
+        # against a limit of 64. The pin times `_first_unsuppressed_scaler_line`
+        # ALONE (the pure scan; the report.add stays in check() per Pin 4 below):
+        # inside the full check() pipeline the parse and the other scans
+        # diluted that quadratic to a ratio of 25-31 against the earlier 22.6
+        # limit (mutation-tested 2026-09-11), a margin no test should rest on.
+        # This was also the one timing test that failed under machine load on
+        # its old absolute budget (0.6 s at 8,000 lines).
+        from dsx.checks import code as code_mod
 
-        self.assertNotIn("DSX-CODE-002", codes(self._timed_check(make(16000))))
-        assert_linear_scaling(
-            self, "DSX-CODE-002 suppressed-match loop", make, self._timed_check, 16000, repeats=3
+        def make(size):
+            return ["X_train = 1", *(["StandardScaler().fit_transform(X)"] * size)]
+
+        small_index, large_index = assert_linear_scaling(
+            self, "DSX-CODE-002 suppressed-match loop", make, code_mod._first_unsuppressed_scaler_line, 16000
         )
+        self.assertIsNone(small_index)  # suppressed: X_train sits above the first match
+        self.assertIsNone(large_index)
+        self.assertEqual(code_mod._first_unsuppressed_scaler_line(make(3)[1:]), 0)  # unsuppressed: line 1
 
     def test_scaler_full_loop_finding_set_unchanged_by_the_break_hoist(self):
         # The equivalence proof (see the comment above the loop in
@@ -7218,13 +7303,12 @@ class TestPhase11_1Code(unittest.TestCase):
         # each retry O(1) instead of O(remaining-length), measured 0.0048s
         # at n = 4,000 and 0.33s even at n = 256,000.
         #
-        # Pinned as a scaling ratio over n = 500 -> 4,000
-        # (assert_linear_scaling): the bounded pattern measured 2026-09-11
-        # at a ratio of 7.6; the unbounded swap is quadratic and ratios ~64
-        # against the 22.6 limit. The earlier absolute pin (plan 03 task 3,
-        # Pin 2: 1.0 s tightened to 0.05 s) could only catch that regression
-        # by sitting 10x above one machine's measured time; the ratio
-        # catches it on any machine at any load.
+        # Pinned as a scaling ratio over n = 250 -> 4,000
+        # (assert_linear_scaling): the unbounded swap is quadratic and ratios
+        # ~256 against the 64 limit (mutation-tested 2026-09-11 at the earlier
+        # 8x spacing: 68.7 against 22.6). The earlier absolute pin (plan 03
+        # task 3, Pin 2: 1.0 s tightened to 0.05 s) could only catch that
+        # regression by sitting 10x above one machine's measured time.
         from dsx.checks import code as code_mod
 
         def make(n):
