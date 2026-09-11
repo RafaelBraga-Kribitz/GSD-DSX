@@ -2,11 +2,11 @@
 gsd_state_version: 1.0
 milestone: v2.6
 milestone_name: Exploration Depth and Backlog Evidence
-status: shipped — v2.6 closed 2026-09-10 (S7-5 archive + S7-6 merge to `main`, tag `v2.6.0`); no milestone open; the ceremony loop is PAUSED until v2.7 opens
-stopped_at: "v2.6 shipped 2026-09-10. Archive committed on gsd/v2.6.0-exploration-depth, merged into main by explicit branch name (--no-ff), tag v2.6.0 on the merge commit, pushed. Loop paused (.planning/loop-logs/.paused). Next = open v2.7 interactively."
-last_updated: "2026-09-10T22:44:00.000Z"
-last_activity: 2026-09-10
-last_activity_desc: "Pre-ship check on main + fresh clone caught 5 release defects (fixture pointers into .planning/phases; byte-hashed CSVs/YAML pins vs CRLF checkout; absolute path in a golden; long archive paths) — fixed e52d7da+0f61eb5, proven in a fresh clone, merge redone. v2.6 close-out (interactive, 2026-09-10T22:44Z): S7-2 sign-offs HQ-41..46; S7-5 archive (milestones/v2.6-*, phases archived, REQUIREMENTS.md removed after archival); S7-6 ship (merge --no-ff into main, tag v2.6.0). Kaufman D-05 upgraded to a first-hand read the same day (da99ccf). Ceremony paused until v2.7 opens."
+status: shipped — v2.6 closed 2026-09-10 (tag `v2.6.0`); v2.6.1 patch (the post-ship liabilities pass) shipped 2026-09-11 (tag `v2.6.1`); no milestone open; the ceremony loop is PAUSED (`.planning/loop-logs/.paused`) until v2.7 opens
+stopped_at: "v2.6.1 shipped 2026-09-11: chore/v2.6.1-liabilities merged into main by explicit branch name (--no-ff, rehearsed on a throwaway branch), verified on main and in a fresh clone, tagged v2.6.1 on the merge commit, branch deleted. Nothing open; loop paused; next is opening v2.7 interactively."
+last_updated: "2026-09-11T14:09:00.000Z"
+last_activity: 2026-09-11
+last_activity_desc: "v2.6.1 shipped: ruff + markdownlint adopted and clean, timing pins redesigned on verification evidence, catalogue rows complete, version 2.6.1 everywhere with a test, records backfilled, branch hygiene done, cloud job stopped. Suite 1633 OK on main and in a fresh clone."
 progress:
   total_phases: 6
   completed_phases: 6
@@ -20,10 +20,11 @@ current_phase_name: Calibration re-baseline (terminal — milestone shipped)
 # Project state
 
 **Status:** v2.6 Exploration Depth and Backlog Evidence — **SHIPPED 2026-09-10** (tag
-`v2.6.0`, merge commit on `main`). **No milestone is open.**
+`v2.6.0`, merge commit on `main`); **v2.6.1 SHIPPED 2026-09-11** (patch: the post-ship
+liabilities pass, tag `v2.6.1` on its merge commit). **No milestone is open.**
 **Progress:** [████████████████████] v2.6 — 6/6 phases, 16/16 plans, 18/18 requirements
 Met, milestone audit `passed`; catalogue 279 (zero-mint terminal phase verified);
-corpus 42 known-bad + 15 good-control; full suite 1629 OK on the real interpreter.
+corpus 42 known-bad + 15 good-control; full suite 1633 OK on the real interpreter (v2.6.1).
 **Predecessors:** v2.5.0 and v2.4.1 SHIPPED 2026-09-06 interactively (`ad43ec6`,
 `07d3db0`); v2.4 Visual Excellence SHIPPED 2026-09-03 (`v2.4.0`); v2.3 Test Catalog
 SHIPPED 2026-09-02 (`v2.3.0`); v2.2 Analytic Surface SHIPPED 2026-08-29 (`v2.2.0`);
