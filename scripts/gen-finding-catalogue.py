@@ -314,13 +314,48 @@ def collect() -> list[tuple[str, str, str, str]]:
         if source.name == "metrics.py":
             for code, severity, title in extract_sql_rules(source):
                 rows.append((code, severity, title, module))
-    rows.sort(key=lambda r: r[0])
-    seen: dict[str, tuple[str, str, str, str]] = {}
+    rows.sort(key=lambda r: r[0])  # stable: emit sites keep their source order within a code
+    return [_merge_code(group) for group in _group_by_code(rows)]
+
+
+# Ladder order for the severity cell of a code emitted at more than one severity.
+_SEVERITY_ORDER = ("CRITICAL", "HIGH", "MEDIUM", "LOW", "INFO")
+
+
+def _group_by_code(rows: list[tuple[str, str, str, str]]) -> list[list[tuple[str, str, str, str]]]:
+    groups: list[list[tuple[str, str, str, str]]] = []
     for row in rows:
-        if row[0] in seen and seen[row[0]][1:] != row[1:]:
-            print(f"warning: {row[0]} declared twice with different text", file=sys.stderr)
-        seen[row[0]] = row
-    return list(seen.values())
+        if groups and groups[-1][0][0] == row[0]:
+            groups[-1].append(row)
+        else:
+            groups.append([row])
+    return groups
+
+
+def _merge_code(group: list[tuple[str, str, str, str]]) -> tuple[str, str, str, str]:
+    """One catalogue row for one code, however many emit sites it has (v2.6.1).
+
+    A code emitted at more than one severity lists every severity it can carry,
+    ladder order (``CRITICAL / HIGH``); a code emitted with more than one message
+    lists the last-declared text first -- the emit sites of the nine such codes
+    are ordered so that the headline disposition comes last, see
+    ``tests/test_gen_finding_catalogue.py::_CANONICAL_DECLARATIONS`` -- and the
+    other distinct texts after ``also:``, in source order. Until v2.6.1 the row
+    kept only the last-seen severity and text and a warning was printed for the
+    rest; the catalogue then under-described nine codes (DSX-ML-034 was listed
+    CRITICAL only, although it also fires HIGH). The pin above is the guard that
+    a new divergence must pass; the warning added nothing to it.
+    """
+    code = group[0][0]
+    severities = sorted({row[1] for row in group}, key=_SEVERITY_ORDER.index)
+    titles: list[str] = []
+    for _code, _severity, title, _module in group:
+        if title not in titles:
+            titles.append(title)
+    headline = group[-1][2]
+    others = [title for title in titles if title != headline]
+    rendered = headline + (f" (also: {'; '.join(others)})" if others else "")
+    return (code, " / ".join(severities), rendered, group[-1][3])
 
 
 def render(rows: list[tuple[str, str, str, str]]) -> str:
@@ -339,6 +374,11 @@ def render(rows: list[tuple[str, str, str, str]]) -> str:
         "",
         "**Gate thresholds.** `plan` and `execute` block at CRITICAL; `verify` and",
         "`ship` block at HIGH.",
+        "",
+        "A code that fires at more than one severity lists every severity it can carry",
+        "(`CRITICAL / HIGH`). A code emitted with more than one message lists its",
+        "headline text first and the other texts after `also:`. `<…>` stands for a",
+        "value filled in at run time.",
         "",
         f"**Total: {len(rows)} codes.**",
         "",
