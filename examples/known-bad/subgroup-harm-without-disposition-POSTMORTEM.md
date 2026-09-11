@@ -65,7 +65,7 @@ while Gail & Simon supplies the enforcement *definition*.
 `dsx/` that reads `results.segments[]`. Its two emit gates, evaluated against this
 fixture (overall sign +, opposing = [('D', −0.06)], count 1 of 4):
 
-```
+```text
 DSX-MET-030 (metrics.py:316)  len(opposing) == len(effects):   1 == 4   -> False  (SILENT)
 DSX-MET-031 (metrics.py:334)  len(opposing) >= len(effects)/2: 1 >= 2.0 -> False  (SILENT)
 ```

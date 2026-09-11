@@ -18,6 +18,7 @@ Find the reason this analysis is wrong before a stakeholder does.
 <process>
 
 1. **Run the deterministic audit.** Its findings are facts, not opinions:
+
    ```bash
    dsx audit --phase-dir <phase-dir> --verbose --report <phase-dir>/DATA-REVIEW.md
    ```

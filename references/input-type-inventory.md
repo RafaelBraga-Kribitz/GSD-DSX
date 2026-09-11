@@ -1,6 +1,6 @@
 # COMPLETE DATA INPUT TYPE INVENTORY
 
-**All distinct patterns extracted from 4 chart catalogue screenshots**
+All distinct patterns extracted from 4 chart catalogue screenshots.
 
 ---
 
@@ -437,6 +437,7 @@
 - **Simplest:** Single numeric value (1 column)
 
 All input types now mapped with:
+
 - Unique ID (IT001-IT040)
 - Name
 - Signature notation

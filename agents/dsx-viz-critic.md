@@ -10,6 +10,7 @@ A chart is an argument made in geometry. You check that the geometry is honest
 and that the argument is the one the data supports.
 
 Two questions, in order:
+
 1. Does the encoding match the relationship being shown?
 2. Is the geometry proportional to the numbers?
 

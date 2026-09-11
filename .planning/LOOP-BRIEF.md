@@ -69,6 +69,7 @@ rather than in a cloud sandbox. The pause switch `.planning/loop-logs/.paused` i
 the operator's; never create or delete it.
 
 **Every firing, in order, before touching any ledger item:**
+
 1. Read this file (`LOOP-BRIEF.md`) in full.
 2. Read `LOOP-LEDGER.md` in full — the Log section is your only memory.
 3. Read `HUMAN-QUEUE.md` in full — an item answered since the last firing may
@@ -163,6 +164,7 @@ by **rigour > reliability > flexibility**; decision + rationale recorded in the
 phase CONTEXT.md and one ledger line. Loud, never silent.
 
 Escalate to HUMAN-QUEUE.md **only** for:
+
 1. A D-05 human source read (personas may prepare evidence packs, never sign them).
 2. An irreversible destructive operation.
 3. A change to milestone scope (dropping or rewording a requirement).

@@ -29,6 +29,7 @@ between segments, use `dsx-root-cause` or `dsx-segment`.
 </when_to_reach_for_this>
 
 <field_to_gate_routing>
+
 ## What you write, and which existing gate reads it
 
 | `ANALYSIS-SPEC.yaml` field you fill | What it looks like for a funnel question | Existing gate that adjudicates it |
@@ -41,6 +42,7 @@ plan` / `dsx check` before treating the metric declarations as settled.
 </field_to_gate_routing>
 
 <ordering_integrity_routing>
+
 ## Before you draw the funnel: route to the existing conversion-funnel routine
 
 A funnel built on out-of-order events is not a funnel, it is noise shaped like one. This skill

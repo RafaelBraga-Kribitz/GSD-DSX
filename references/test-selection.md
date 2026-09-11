@@ -185,7 +185,7 @@ footnote only. The absent DSX-STA-06x decade is the deliberate tell.
 
 | Declared table / question | Default test | Effect size | Primary citation |
 |---|---|---|---|
-| r × c independence | **N-1 chi-square** (the default replacing Yates) | Cramér's V | Campbell (2007), *Statistics in Medicine* 26(19):3661-3675 |
+| r × c independence | **N-1 chi-square** (the default replacing Yates)[^p19-ffh] | Cramér's V | Campbell (2007), *Statistics in Medicine* 26(19):3661-3675 |
 | goodness of fit | exact multinomial (small); Pearson χ² GOF (large) | — | — |
 | r × c, likelihood-ratio | G-test | Cramér's V | — |
 

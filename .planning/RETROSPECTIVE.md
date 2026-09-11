@@ -439,8 +439,8 @@ each: `DSX-ML-034` (feature provenance, attribution-only), `DSX-CLM-034`
 (subgroup-harm disposition, a real catch and the corpus's first `kind: target`).
 Phase 30 re-baselined calibration with the new cases classified: miss 5/5 by
 construction, FPR 0/15 with its one-sided 95% bound ≈0.181 stated as a bounded
-observation, zero-mint 279 → 279. Catalogue 276 → 279; corpus 39 → 42 known-bad
-+ 15 good-control; full suite 1629 OK.
+observation, zero-mint 279 → 279. Catalogue 276 → 279; corpus 39 → 42 known-bad +
+15 good-control; full suite 1629 OK.
 
 ### What Worked
 

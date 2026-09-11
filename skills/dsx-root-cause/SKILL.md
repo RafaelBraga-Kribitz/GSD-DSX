@@ -31,6 +31,7 @@ diagnostic one — route it through `dsx-design-experiment` instead.
 </when_to_reach_for_this>
 
 <field_to_gate_routing>
+
 ## What you write, and which existing gate reads it
 
 | `ANALYSIS-SPEC.yaml` field you fill | What it looks like for a root-cause question | Existing gate that adjudicates it |
@@ -43,6 +44,7 @@ as settled. The gate output is the ruling; this skill only tells you where to lo
 </field_to_gate_routing>
 
 <decomposition_body>
+
 ## The decomposition itself is not authored here
 
 The additive-decomposition table, the mix-vs-rate split, the residual-dimension rule, and the
@@ -54,6 +56,7 @@ it. Copy its `{name, effect, n}` output straight into `results.segments` and let
 </decomposition_body>
 
 <causal_guard>
+
 ## The causal guard — what keeps a diagnostic label honest
 
 A diagnostic finding names a decomposition, not a cause. `question_type: diagnostic` is strictly

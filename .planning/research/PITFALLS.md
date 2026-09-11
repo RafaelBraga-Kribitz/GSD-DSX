@@ -68,6 +68,7 @@ was fixed because `paradigm` was the one field someone thought to interrogate
 adversarially (D-09). The others were not yet subjected to the same audit.
 
 **How to avoid:**
+
 - For `interference.risk`: add an M2b finding (new code, HIGH) equivalent in
   spirit to D-10's manifest — not blocking on `risk: none`, but requiring a
   `basis` field (e.g., "no shared channel, no marketplace, no social feature in
@@ -133,6 +134,7 @@ question type. `validity_frame:` was drafted before that pattern was applied to 
 **How to avoid:**
 Gate sub-block *requiredness* by `question_type`, reusing the existing
 `DSX-COH-*` mechanism rather than inventing a new one:
+
 - `estimand`, `units`, `dependence`, `sampling_frame`, `measurement` — required
   for every question type (paradigm-independent per D-11, and every analysis has
   a unit of observation and a claimed population).
@@ -199,6 +201,7 @@ with no `method_family_required` set at all — absence, not a judgment call).
 
 **How to avoid:**
 Apply the same three-tier split the existing catalogue already uses:
+
 - CRITICAL: structural absence only (a required field or sub-block missing
   entirely, mirroring `DSX-SPEC-001`/`DSX-SPEC-020`) — e.g., no `estimand`
   block, no `units` block when `design.kind` is set.
@@ -272,6 +275,7 @@ doctrine in README.md). D-05 is the one load-bearing rule in this milestone
 that is currently *not* code.
 
 **How to avoid:**
+
 - Extend `scripts/gen-finding-catalogue.py` (or a sibling script run in the same
   CI step) to require a citation marker — a `# Source:` comment or a docstring
   line matching a simple pattern — within N lines of every new-family
@@ -319,6 +323,7 @@ convention), a test written against the wrong choice produces a plausible-lookin
 off-by-some-factor discrepancy that reads exactly like an arithmetic bug in the
 implementation.** Concrete places this can recur in this milestone beyond
 `DSX-PAR-011`:
+
 - Sequential-boundary critical values differ by boundary family
   (O'Brien-Fleming vs Pocock, both in `PEEKING_POLICIES`) at the same look
   count — testing a Pocock implementation against an O'Brien-Fleming table
@@ -551,6 +556,7 @@ fixtures are written fresh, not carried forward from a real pre-v2.0.0 spec.
 This project already has the exact mechanism needed: `dsx/suppressions.py`'s
 `suppressions[]` block, which requires a `reason` and an `authority` pointer and
 aborts (exit 2) on an unknown code. Two concrete, low-effort moves:
+
 1. Document, in the v2.0.0 CHANGELOG/README, the sanctioned migration path:
    add a scoped `suppressions[]` entry (e.g.,
    `authority: "v2.0.0 migration, backfill by <date>"`) for the new
@@ -605,9 +611,10 @@ load-bearing work — the inverse of D-05's warning ("if velocity pressure
 arrives, cut checks, never this") applied to a milestone rather than a check.
 
 **How to avoid:**
+
 - Build the ontology from the calibration corpus, not from taxonomic
   completeness: only add a family (and its aliases) when a real fixture — one
-  of the M1 pulled-forward fixtures, or the operator's own frame history — 
+  of the M1 pulled-forward fixtures, or the operator's own frame history —
   actually needs it, exactly as brief §6.6 already warns against scaffolding
   `references/families.yaml` early "to satisfy the boundary rule."
 - Rely on the explicit `no_admissible_procedure -> escalate` branch as the
@@ -732,6 +739,7 @@ meaningfully change this; not worth engineering around.
 ## Sources
 
 Primary (this project, HIGH confidence per this project's own D-05 standard):
+
 - `brief.md` — full document, especially §2 (Class A failure table), §4
   (D-01–D-14), §5 (contract), §6/6.5/6.6 (milestones, gated backlog, open
   items), §7 (citations), §8 (known limits)
@@ -746,6 +754,7 @@ Primary (this project, HIGH confidence per this project's own D-05 standard):
   confirmed absence of any D-05 enforcement mechanism
 
 External (MEDIUM confidence, general grounding for Pitfall 3 only):
+
 - [Lessons from Building Static Analysis Tools at Google — CACM](https://cacm.acm.org/research/lessons-from-building-static-analysis-tools-at-google/)
 - [Challenges with Responding to Static Analysis Tool Alerts (ResearchGate)](https://www.researchgate.net/publication/331792299_Challenges_with_Responding_to_Static_Analysis_Tool_Alerts)
 - [A Large-Scale Collection Of (Non-)Actionable Static Code Analysis Reports — Scientific Data](https://www.nature.com/articles/s41597-025-06154-7)

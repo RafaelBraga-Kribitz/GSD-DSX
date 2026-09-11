@@ -266,8 +266,11 @@ def extract_inputs_block(skill_text: str) -> str:
 
 def extract_key_region(inputs_text: str, header: str) -> list[str]:
     """The contiguous run of one-key-per-bullet keys following a region ``header``.
-    Each bullet must match ``^\\s*-\\s+`key`\\s*$``; the region ends at the first
-    line that does not (blank line, prose, or the next header)."""
+    Each bullet must match ``^\\s*-\\s+`key`\\s*$``. Blank lines between the header
+    and the first bullet are skipped -- a Markdown list is surrounded by blank lines
+    (markdownlint MD032, adopted 2026-09-11) -- and once the run has begun, the
+    region ends at the first line that is not a key bullet (blank line, prose, or
+    the next header)."""
     keys: list[str] = []
     in_region = False
     for ln in _lines(inputs_text):
@@ -275,6 +278,8 @@ def extract_key_region(inputs_text: str, header: str) -> list[str]:
             if ln.strip().startswith(header):
                 in_region = True
             continue
+        if not keys and not ln.strip():
+            continue  # the blank line that separates the header from its list
         m = _BULLET_KEY_RE.match(ln)
         if m:
             keys.append(m.group(1))

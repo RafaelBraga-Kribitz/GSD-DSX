@@ -23,12 +23,14 @@ metric is defined against the measured grain and duplicate rate, not a grain the
 author assumed.
 
 EDA front-matter keys read:
+
 - `grain.declared`
 - `grain.observed`
 - `grain.verdict`
 - `grain.duplicate_rate`
 
 DATA-PROFILE keys read (the fallback source when EDA is absent):
+
 - `primary_key`
 - `primary_key_unique`
 - `duplicate_rate`
@@ -81,9 +83,11 @@ Record the outcome in the spec's `reconciliation` block with an agreed tolerance
 </reconciliation>
 
 <sql_review>
+
 ```bash
 dsx check metrics --phase-dir <phase-dir> --verbose
 ```
+
 Lints for `NOT IN` against a nullable subquery, `COUNT(*)` after a `LEFT JOIN`,
 averaging a ratio, bare `UNION`, `BETWEEN` on timestamps, division without
 `NULLIF`, `= NULL`, `SELECT *`, `CROSS JOIN` without a filter, `JOIN` without

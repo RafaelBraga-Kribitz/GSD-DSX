@@ -102,7 +102,7 @@ never allowed to import `dsx.frame.*` either — the only place the two packages
 is `dsx/cli.py`, which imports both and wires them into `CHECKS`/`GATE_PROFILES`.
 That keeps the dependency graph a strict DAG with `cli.py` at the top:
 
-```
+```text
 dsx/cli.py
    │  imports both, wires CHECKS / GATE_PROFILES
    ├──> dsx/checks/*.py  ──┐
@@ -121,7 +121,7 @@ D-03a's rationale requires.
 
 ### Concrete file layout
 
-```
+```text
 dsx/
   cli.py                  # EXTENDED: CHECKS dict + GATE_PROFILES gain new keys (§3);
                            #   new `explain` subcommand (§5); GATE_THRESHOLDS unchanged.
@@ -597,7 +597,7 @@ harness — the harness already exists and is sufficient):
 
 ### Resulting order
 
-```
+```text
 M1 ──> M2a ──┬──> M3 ──┐
       (pref) │         │
              M2b        ├──> M4 ──> M5

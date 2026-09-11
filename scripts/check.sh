@@ -10,6 +10,13 @@ else
   echo "ruff not installed -- lint SKIPPED (pip install ruff)"
 fi
 
+echo "==> markdown lint (markdownlint-cli2, per .markdownlint-cli2.jsonc)"
+if command -v markdownlint-cli2 >/dev/null 2>&1; then
+  markdownlint-cli2 "**/*.md"
+else
+  echo "markdownlint-cli2 not installed -- markdown lint SKIPPED (npm install -g markdownlint-cli2)"
+fi
+
 echo "==> unit tests"
 python3 -m unittest discover -s tests -q
 

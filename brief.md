@@ -228,7 +228,7 @@ Neither paradigm gets the easy road. This pair ships together or neither ships.
 
 ### 5.4 The paradigm manifest (D-10)
 
-```
+```text
 [INFO] DSX-PAR-001  Bayesian paradigm declared.
     applied:     DSX-VAL-*, DSX-INT-*, DSX-PRE-*, DSX-PAR-002, DSX-PAR-011
     not applied: DSX-PAR-020, DSX-PAR-021 (prior justification and sensitivity)
@@ -272,6 +272,7 @@ Ordered by catastrophe-prevention value per unit of work, which is also the orde
 maximises what the operator learns while building.
 
 ### M1: Contract extension, decision record, real fixtures
+
 Extend `ANALYSIS-SPEC.yaml` with the `validity_frame:` block and the paradigm-aware
 `inference:` block. Extend closed vocabularies and `dsx vocab`. Decision-record schema,
 emitter, and the non-blocking `dsx explain` renderer. Extend both existing fixtures.
@@ -292,6 +293,7 @@ fixtures are committed with their documented post-mortems, and `dsx explain` ren
 readable decision trail.
 
 ### M2a: Validity frame checks (`DSX-VAL-*`)
+
 Estimand completeness and falsifiability. Unit triad reconciliation. Dependence declared with
 a matching method family. **Identification strength versus constraint source (`DSX-VAL-040`,
 `-041`).** Sampling frame versus claim population. Missingness mechanism versus implied
@@ -305,6 +307,7 @@ is the check that catches "flat priors on an MMM" and "ridge penalty tuned on th
 sample" with one rule.
 
 ### M2b: Interference, triggering, stability (`DSX-INT-*`)
+
 SUTVA risk declared with a mitigation or an explicit residual note. Shared-budget and
 marketplace patterns. Triggered-versus-eligible analysis population with dilution adjustment.
 Novelty and primacy assessment over the declared window.
@@ -336,6 +339,7 @@ fixtures, both carry citations per D-05, and neither can be satisfied by switchi
 declarations. See 6.5.
 
 ### M3: Pre-registered inference plan (`DSX-PRE-*`)
+
 The fallback-rule mini-DSL, `declared_at` provenance, and the reconciliation gate verifying
 the executed procedure matches the branch the declared rule selects against observed facts.
 
@@ -343,6 +347,7 @@ the executed procedure matches the branch the declared rule selects against obse
 declared branch and the executed branch both named in the finding.
 
 ### M4: Frequentist admissibility adjudicator (`DSX-ADM-*`)
+
 The estimator-family ontology as data in `references/families.yaml`: roughly 25 to 35
 families keyed on `estimand x family x inference method x dependence handling`, named tests
 as aliases resolving into families. Admissibility function, ranking policy, explicit
@@ -352,6 +357,7 @@ as aliases resolving into families. Admissibility function, ranking policy, expl
 refuses rather than guessing when the frame is underdetermined.
 
 ### M5: Calibration
+
 Extend the M1 corpus to full size: retracted papers with published post-mortems, documented
 p-hacking cases, and the operator's own past work where the answer is now known. Harness
 reporting catch rate and false-positive rate. Add `dsx stats --paradigm`, reporting the

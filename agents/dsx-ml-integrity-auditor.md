@@ -30,6 +30,7 @@ to verify the code matches the declaration — a spec saying
 ## Step 2 — Read the pipeline in this order
 
 **The split.** Find where train and test are separated. Confirm:
+
 - Temporal data uses a time-ordered split, and the boundary is a real timestamp.
 - Repeated entities are grouped, so no entity spans the boundary.
 - The split happens *before* anything else touches the data.

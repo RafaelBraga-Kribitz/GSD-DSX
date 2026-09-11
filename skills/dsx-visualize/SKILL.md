@@ -33,9 +33,11 @@ so the gate can prove the bytes match the declaration.
    `series_role: scenario` — only `component` stacks.
 
 5. **Write the artifact**, then seal it:
+
    ```bash
    dsx seal figures/<name>.svg
    ```
+
    Paste into `visuals[].svg_sha256`. Set `chart_id`, `artifact_path`, `generator`,
    and a shared `run_id` across figures from the same readout.
 
@@ -46,14 +48,17 @@ so the gate can prove the bytes match the declaration.
    (property check).
 
 7. **Audit.**
+
    ```bash
    dsx check viz smells figures --phase-dir <phase-dir> --verbose
    ```
+
    Then spawn `dsx-viz-critic` for judgement the linter cannot make.
 
 </method>
 
 <hard_rules>
+
 - Never a truncated baseline on a bar or area chart.
 - Never two y-axes.
 - Never a pie beyond five slices, and never in 3D.

@@ -97,7 +97,7 @@ are in the [operating guide](docs/operating-guide.md).
 
 ## What it adds to the loop
 
-```
+```text
   discuss ──▶ plan ──────▶ execute ──────▶ verify ──────▶ ship
                │             │               │              │
         ┌──────┴──────┐      │        ┌──────┴──────┐       │
@@ -322,7 +322,7 @@ finding itself already prints.
 
 Real output, not a description of it:
 
-```
+```bash
 $ dsx audit --spec examples/bad-ANALYSIS-SPEC.yaml
 
 [CRITICAL] DSX-EXP-006  Experiment is underpowered: 1,200 per arm vs 47,528 required

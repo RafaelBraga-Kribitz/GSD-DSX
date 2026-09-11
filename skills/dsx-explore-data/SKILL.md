@@ -76,11 +76,13 @@ runs profile the same set.
 <protocol>
 
 ## 1. Shape and identity
+
 Row count, column count, memory. Primary key candidate — is it actually unique?
 Duplicate rate on the intended grain. If duplicates exist, find out why before
 deduplicating; the reason is often the finding.
 
 ### 1a. Grain and dependence
+
 Compute rows ÷ distinct(analysis unit) — the unit in
 `validity_frame.units.analysis`; if the spec is unwritten, use the intended
 decision unit and say so. Record `rows_per_unit` p50 | p95 | max and
@@ -114,6 +116,7 @@ and the top rung `validity_frame.units.analysis`; a mismatch is a step-8
 `rows_per_unit: 1.0 (pk = analysis unit)`, ladder `flat at <grain>`.
 
 ### 1b. Joins (multi-table only)
+
 Before any join is trusted, build the fan-out matrix — one row per planned join:
 
 | join_id | left | right | keys | type | rows_before | rows_after | fanout | left_match_rate | null_key_rate |
@@ -129,6 +132,7 @@ the expected number is established.
 *Skip:* single input table, no join planned → `joins: none planned`.
 
 ## 2. Completeness
+
 Null rate per column (copied from the profile). Then the question that matters:
 **is nullness random or structured?** A column null for every row before a launch
 date is a schema change, not missing data. Cross-tabulate null indicators against
@@ -154,10 +158,12 @@ them — an unassessed key column means the spec value stays or becomes
 `not_assessed`, never a measured mechanism.
 
 ## 3. Time
+
 Min, max, and the gaps. Count rows per day and plot it — outages, backfills and
 double-loads all show up here and nowhere else.
 
 ### 3a. Time integrity
+
 Three numbers per timestamp column, recorded, not eyeballed:
 
 - **Staleness** — days between `max(timestamp)` and today. The profiler supplies
@@ -181,6 +187,7 @@ from trend statements. This is what "confirm the timezone, explicitly" means.
 *Skip:* no timestamp column → `time integrity: skipped (no time column)`.
 
 ## 4. Distributions
+
 Per numeric column: five-number summary (`min | q1 | median | q3 | max`), `mean`,
 `sd`, and the count of exact zeros and negatives (`n_zero` | `n_negative`) — all
 **copied from the profile**'s `columns.<col>.numeric` sub-map, never recomputed.
@@ -188,6 +195,7 @@ Sentinel values (-1, 999, 1900-01-01) masquerade as data. Per categorical:
 cardinality, top values, and the share in the tail.
 
 ### 4a. Summaries — classical vs robust
+
 The classical half — `min | q1 | median | q3 | max | mean | sd` and the
 `n_zero` / `n_negative` counts — is **copied from the profile**'s `numeric:`
 sub-map. The robust half stays **agent-computed** (it needs the metric
@@ -209,6 +217,7 @@ findings-ledger row, and route the column into 4c.
 *Skip:* no numeric column with n ≥ 30 → recorded.
 
 ### 4b. Concentration
+
 A categorical column's level concentration — `share_top1` and `share_top10` — is
 **copied from the profile**'s `categorical:` sub-map. The additive-measure
 concentration below stays **agent-computed** (it needs the metric's summed
@@ -237,6 +246,7 @@ handful of rows. Then:
 columns considered with each exclusion reason.
 
 ### 4c. Outlier taxonomy
+
 One fence, no discretion: rows outside [Q1 − 3·IQR, Q3 + 3·IQR] per numeric
 column. For each column with flagged rows, classify the flagged set — four tests,
 in order, first hit wins:
@@ -270,9 +280,11 @@ Table: column | n_flagged | pct_flagged | class | evidence | action_taken.
 `degenerate_scale` in 4a → `fence undefined`.
 
 ### 4d. Pathologies and impossible pairs
+
 Two tables, one pass.
 
 **Pathology sweep** — column | pathology | count | consequence:
+
 - constant or near-constant: dominant-value share ≥ 0.99 — a dead column, or an
   upstream filter nobody declared;
 - mixed types: a numeric column containing unparseable strings, or an object
@@ -306,6 +318,7 @@ previously swept extract (`pathology sweep: unchanged`). Invariants skip only as
 enumeration happened.
 
 ### 4e. Wide categoricals
+
 For each categorical with more than 50 distinct levels **or** top-20 coverage
 below 80% of rows, record: distinct count; coverage at top-5 / top-20 / top-50;
 `rare_share` and `n_singleton` — both **copied from the profile**'s
@@ -322,6 +335,7 @@ overrides it and records which. An unhandled 40,000-level column becomes a
 rows only.
 
 ### 4f. Base rate
+
 When a declared metric or target exists: the weekly `week | n | base_rate` table,
 `overall`, `weekly_range [lo, hi]`, and `verdict: stable | drifting` are **copied
 from the profile**'s `target:` block (produced by `dsx profile --target <col>`,
@@ -341,6 +355,7 @@ Do not proceed to the branch. Follow the abort close-out in step 9.
 ---
 
 ## 5. Question-type branch
+
 Exactly one branch runs, selected by `question_type` (and `design.kind` for
 experiments) — except `prescriptive`, which runs 5D then 5F, because prescriptive
 subsumes causal. No spec → no branch; record `branch.ran: none (no spec)`.
@@ -351,6 +366,7 @@ statistic**: `dsx-build-model` step 2 fixes the split before profiling,
 imputation or feature engineering, and EDA gets no exemption.
 
 ### 5A. Branch: descriptive — is the number the number?
+
 1. **Recompute the headline** from `metrics[].numerator` / `denominator` exactly
    as the spec writes them: spec_value | recomputed_value | match (y/n, tolerance).
    A mismatch is a definition dispute: stop and reconcile through
@@ -368,6 +384,7 @@ Period boundaries are covered by 3a and concentration by 4b — cite those table
 do not recompute them.
 
 ### 5B. Branch: diagnostic — decompose the change, account for all of it
+
 1. **Change statement.** One row: metric | P0 | P1 | value_P0 | value_P1 |
    delta_abs | delta_pct. Cannot state P0, P1 and the metric → this is not yet a
    diagnostic question; re-scope.
@@ -399,6 +416,7 @@ Every later "accounted for X% of the change" must quote a
 `contribution_pct_of_delta` cell, and nothing else.
 
 ### 5C. Branch: experiment (`design.kind: experiment`)
+
 Tables, not advice.
 
 1. **Assignment counts, arm × day.** day | n per arm | observed_share, plus
@@ -451,6 +469,7 @@ and power arithmetic.
 `validity_frame.identification.evidence` accordingly.
 
 ### 5D. Branch: causal / observational — is the design identified in THIS data?
+
 1. **Treatment over time.** period | n | treated_n | treated_share. Any period at
    0 or 1 has no contemporaneous comparison — flag it.
 2. **Never- and always-treated.** never_treated_n | never_treated_share |
@@ -481,6 +500,7 @@ and power arithmetic.
    `validity_frame.identification.strength`.
 
 ### 5E. Branch: predictive — split declared before any target statistic
+
 1. **Split declaration first.** Before **any** feature-vs-target number, write:
    split | period | rows | positive_rate for train/validation/test, plus the
    embargo gap in days. Copy the periods into `model.train_period` /
@@ -514,6 +534,7 @@ correlation matrix is not evidence. Split, then audit availability, then measure
 drift.
 
 ### 5F. Branch: prescriptive — the decision inputs are data too
+
 Runs after 5D. Checks 1–4 always run; none of them needs the causal estimate.
 
 1. **Decision-input table.** Every parameter in `decision.decision_rule`'s cost
@@ -535,6 +556,7 @@ No causal estimate with an interval yet → the branch **verdict** records
 these measurements, which stand as inputs awaiting the estimate.
 
 ### Branch verdict — every branch ends with one line
+
 `verdict: meets | falls_short | re-scope` against the type's minimum-evidence bar
 (`references/question-taxonomy.md`). When `falls_short`, add
 `downgrade_to: <type>` and name the missing evidence.
@@ -551,6 +573,7 @@ and when, not why" beats a confident coefficient. Amend `question_type` through
 stop-and-re-scope; do not soldier on to the original licensed verb.
 
 ## 5x. Optional routines
+
 Both are optional, run only after steps 1–4 and after step 6's planned-cuts list
 is written, and are **exploratory — never evidence**.
 
@@ -577,6 +600,7 @@ amendment through step 6.
 *Skip:* `no binarizable target` / `no declared event order`, recorded.
 
 ## 6. Segments
+
 "The most important splits" is computed, not felt.
 
 1. **Declared cuts first.** Write the planned-cuts list: cut | source, where
@@ -617,6 +641,7 @@ levels and no time column → `no split available`, and mark the reversing-segme
 row of step 10 accordingly.
 
 ## 7. Second-order look
+
 Compute the headline number the decision turns on. Then attack it. For **every**
 mechanism below whose input exists, compute the discriminating number and give a
 verdict — there is no plausibility selection, so two runs produce the same rows:
@@ -642,6 +667,7 @@ Close with `artifact_status: clean | contested | supports_artifact`. A
 *Skip:* no declared metric and no target → `no headline metric declared`.
 
 ## 8. Spec reconciliation
+
 The last analytical step. One row per spec path: spec_path | spec_value |
 eda_value | verdict | action. The verdicts are closed:
 
@@ -676,6 +702,7 @@ reason. No spec → the whole step records `no spec in phase dir`, with
 <registers>
 
 ## 9. Findings ledger
+
 Every flag raised in any step is filed the moment it fires — no anomaly lives
 only in prose. Columns: id (F-nn) | step | finding (one number, with units) |
 severity | alternative_explanation | discriminating_number | consequence.
@@ -715,6 +742,7 @@ any blocker or spec-amendment row has an empty consequence.** Close with
 *Never skipped.* An aborted run still ships its ledger — the abort is its top row.
 
 ## 10. Searched, not found
+
 Fill the fixed-row register — one row per pathology this protocol hunts:
 duplicates on the declared grain; structured nulls vs time; structured nulls vs
 target (train rows only); timezone mismatch; daily-volume spikes or outages;
@@ -731,6 +759,7 @@ Columns: pathology | checked (yes | skipped:`<reason>`) | result
 A step cannot be skipped and then claimed clean.
 
 ## 11. Comparisons ledger
+
 Every exploratory statistic computed against an outcome, target or metric — a
 correlation, a segment recompute, a funnel bin, a branch check, a cut computed
 and discarded — is one comparison, **counted at its first computation**, not when
@@ -764,6 +793,7 @@ evidence either way.
 profiling of a lookup table) → `comparisons_this_run: 0 (no outcome touched)`.
 
 ## Hypothesis register
+
 The findings, comparisons and searched-not-found ledgers above ARE the hypothesis
 register — no new format and no new spec field. Every untested belief the analysis
 rests on is routed to a carrier a shipped check already reads, keyed on its shape:
@@ -789,6 +819,7 @@ new spec field.
 <close_out>
 
 ## 12. Write the spec, once
+
 Spec side-effects are written **exactly once**, here, after every analytical step
 has settled: step 8's `fills`; `results.segments` from step 6; `model.*` fields
 from 5E; `results.observed_n` and `interim_looks` from 5C;
@@ -802,6 +833,7 @@ segments row — is otherwise discovered at the next gate, far from the write an
 blamed on the wrong actor.
 
 ## 13. Rerun contract (last action)
+
 EDA is a script; prove it. Re-run it once from a clean interpreter in
 **comparison mode**: it computes every number and **writes nothing** — no spec
 writes, no ledger appends, no fills — emitting the regenerated values to a
@@ -822,6 +854,7 @@ zero or the mutating source is named in the dataset's `known_gaps`.
 `rerun_clean: not_verified (<reason>)`. A local extract never qualifies.
 
 ## 14. Lifecycle
+
 - **After a stop.** `dsx-scope-analysis` owns the amendment and clears
   `stop_triggered`. On re-entry the trust core always re-runs; a branch re-runs
   when any of its inputs changed. Resume from `completed_through` only when the
@@ -852,9 +885,8 @@ Plus a hermetic profile:
    `computed_by: measured_export` with the query that produced the counts — not `manual`
    without a known_gaps note.
 
-Plus a data dictionary, authored next to the profile:
-
-4. Right after `dsx profile` runs, author `DATA-DICTIONARY.md` next to `DATA-PROFILE.yaml`,
+4. Plus a data dictionary, authored next to the profile. Right after `dsx profile` runs, author
+   `DATA-DICTIONARY.md` next to `DATA-PROFILE.yaml`,
    starting from `templates/DATA-DICTIONARY.md`. **Copy** the column roster (`column`, `dtype`,
    `null_rate`, `unique_count`) and `source_hash` **verbatim** from `DATA-PROFILE.yaml` — the same
    "never invent profile numbers / one extract, one set of numbers" discipline the `EDA.md` copy
