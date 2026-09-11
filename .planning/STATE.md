@@ -137,16 +137,35 @@ and the merge redone on the fixed tip before tagging.
 Stopped at: v2.6 shipped; loop paused; nothing open.
 Resume file: None.
 
+2026-09-11 (interactive): post-ship liabilities pass on `chore/v2.6.1-liabilities`
+(from `main` = `v2.6.0`): ruff adopted and clean (`348ca6e`), timing pins moved to
+scaling-ratio assertions (`40d96f2`; an adversarial verification then found the helper
+biased under machine load — redesign in progress), 47 archived summaries backfilled
+with `requirements-completed:` plus the missing `29-01-SUMMARY.md` and `SEED-004`
+(`b922f76`), markdownlint adopted on the live surface and clean (`530d5bf`), branch
+hygiene executed (Operator Next Steps below). Merge to `main` and tag `v2.6.1` only on
+the operator's go.
+
 ## Operator Next Steps
 
 - **Open v2.7 (interactive):** `/gsd-new-milestone` with scope from `SEED-003` and
   ROADMAP `## Next`; write the new `LOOP-BRIEF.md` / `LOOP-LEDGER.md` /
   `HUMAN-QUEUE.md`; cut `gsd/v2.7.0-<slug>` from `main`; repoint `$Branch` in
-  `scripts/run-ceremony-firing.ps1`; remove `.planning/loop-logs/.paused`.
+  `scripts/run-ceremony-firing.ps1` **before** removing `.planning/loop-logs/.paused`
+  — the v2.6 branch it still names was deleted on 2026-09-11 (merged; branch
+  hygiene), so an un-paused firing would abort at the wrapper's branch guard.
 - **Two kinds of local file stay untracked:** `references/The AI Data Scientist.md`
   (a full-text clipping of an arXiv paper — do not commit) and the `.claude/`,
   `.vscode/`, `graphify-out/` operator files.
-- The stale agent worktree at `.claude/worktrees/agent-a9a54fddf75afc02f` is fully
-  merged into `main`; `git worktree remove` it at leisure.
+- **Branch hygiene done 2026-09-11 (operator: Option A).** Every merged milestone
+  branch was deleted locally and on origin; the stale agent worktree was removed
+  (its 150-line uncommitted test edit, already in `main` under the same names, is
+  kept under `archive/worktree-agent-a9a54fddf75afc02f`); the two unmerged
+  `cursor/*` one-commit drafts are kept under `archive/cursor-*` tags. The remote
+  `gsd/v2.0.0-dsx-validity-frame` carried 49 no-op `docs(loop)` commits written by a
+  **cloud-scheduled Claude Code job** that kept firing the retired v2.0.0 brief every
+  ~4 h from 2026-09-01 to 2026-09-11 08:13Z; the operator stopped the job, the tip is
+  kept under `archive/v2.0.0-cloud-firings`, and the branch is deleted. If that branch
+  reappears on origin, the job is not off.
 - **Stamp records from `date -u`**, never from the session's local date — the
   project's convention is UTC and the two diverged at this close.
